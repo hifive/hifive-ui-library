@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+	<xs:element name="h5-code-assist">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="controller" type="controller"
+					maxOccurs="1" minOccurs="0">
+				</xs:element>
+				<xs:element name="logic" type="logic" maxOccurs="1"
+					minOccurs="0">
+				</xs:element>
+				<xs:element name="eventcontext" type="eventcontext"
+					maxOccurs="1" minOccurs="0">
+				</xs:element>
+				<xs:element name="initcontext"
+					type="InitializationContext" maxOccurs="1" minOccurs="0">
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+
+	<xs:complexType name="function">
+		<xs:sequence>
+			<xs:element name="argument" type="variable" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+			<xs:element name="description" type="xs:string" maxOccurs="1"
+				minOccurs="0">
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+		<xs:attribute name="returnType" type="xs:string" use="required">
+		</xs:attribute>
+		<xs:attribute name="returnDescription" type="xs:string"></xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="controller">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="function" type="function" maxOccurs="unbounded"
+				minOccurs="0"></xs:element>
+			<xs:element name="varRef" type="varReference" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+		</xs:choice>
+		<xs:attribute name="suffix" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="\w+"></xs:pattern>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="logic">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="function" type="function" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+			<xs:element name="varRef" type="varReference" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+		</xs:choice>
+		<xs:attribute name="suffix" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="\w+"></xs:pattern>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="controllerSuffix" type="xs:string"
+			use="required"></xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="variable">
+		<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
+		<xs:attribute name="type" type="xs:string" use="required"></xs:attribute>
+		<xs:attribute name="description" type="xs:string"></xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="eventcontext">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="function" type="function" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+			<xs:element name="varRef" type="varReference" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+		</xs:choice>
+		<xs:attribute name="controllerSuffix" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="\w+"></xs:pattern>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="InitializationContext">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="function" type="function" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+			<xs:element name="varRef" type="varReference" maxOccurs="unbounded"
+				minOccurs="0">
+			</xs:element>
+		</xs:choice>
+		<xs:attribute name="controllerSuffix" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="\w+"></xs:pattern>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+
+	<xs:complexType name="varReference">
+		<xs:attribute name="key" type="xs:string" use="required"></xs:attribute>
+		<xs:attribute name="className" type="xs:string" use="required"></xs:attribute>
+	</xs:complexType>
+
+</xs:schema>
+

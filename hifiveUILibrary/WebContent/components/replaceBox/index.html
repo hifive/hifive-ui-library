@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="pragma" content="no-cache"/>
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta name="viewport" content="width=device-width">
+
+		<link type="text/css" rel="stylesheet" href="../../res/lib/hifive/h5.css">
+
+		<style type="text/css">
+		.replaceBox ul{
+			display: block;
+			margin:0;
+			white-space: nowrap;
+			padding:0
+		}
+		.replaceBox li{
+			display: inline-block;
+			color:#ffffff;
+			text-align:center;
+			height:20%;
+			line-height:100px;
+			width:20%;
+		}
+		</style>
+
+		<script type="text/javascript" src="../../res/lib/jquery/jquery-1.9.1.js"></script>
+		<script type="text/javascript" src="../../res/lib/jqplugins/jquery.easing.1.3.js"></script>
+		<script type="text/javascript" src="../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script type="text/javascript" src="../../res/lib/hifive/h5.dev.js"></script>
+
+		<script>
+		var test_count = 0;
+		var test_color = [
+			['#0066ff', 'blue'],
+			['#ff6600', 'red'],
+			['#00ff66', 'green'],
+		];
+		function test(ul){
+			var color = test_color[test_count % 3];
+			for(var i = 0; i < 25; i++){
+				var li = $('<li>' + i + '</li>');
+				li.css('background-color', (i % 2 == 0) ? color[0] : color[1]);
+				ul.append(li);
+				if(i > 0 && (i + 1) % 5 == 0) ul.append('<br/>');
+			}
+			test_count++;
+		}
+		$(function(){
+			test($('.replaceBox ul'));
+		});
+		</script>
+
+		<script src="../animate/src/animate.js"></script>
+		<script src="src/replaceBox.js"></script>
+		<script src="sample/sample.js"></script>
+
+		<title>ボックス切り替え</title>
+	</head>
+	<body>
+
+		<h3>ボックス切り替え</h3>
+
+		<span>使用方法・制限事項</span>
+		<ul>
+			<li>
+			当機能は、以下のファイルに依存します。
+			<ul>
+				<li>components/animate/src/animate.js</li>
+				<li>res/lib/jqplugins/jquery.easing.1.3.js</li>
+			</ul>
+			</li>
+			<li>h5.ui.container.ReplaceBoxControllerを内部コントローラーとします。ここではそのrootElementを直下のreplaceBoxクラスの要素としています。</li>
+			<li>
+			要素直下には切り替え対象要素を一つだけ配置してください。<br/>
+			(スクリプトで囲むことも考えましたが、背景色等も考慮するとこの方がよいかと思いました。)
+			</li>
+			<li>
+			<i>replaceBoxController</i>.replaceを呼び出すことでボックス内を切り替えることができます。<br/>
+			ここではreplaceBoxクラス要素自体をクリックすることで実行します。<br/>
+			引数は以下となります。
+			<pre>
+replace(置換要素, {
+    duration   : 処理時間(ms)。デフォルト=400ms
+    easing     : animate関数と同様。
+                 jQuery.easingと同じ引数を設定可能。
+                 デフォルト=linear
+    completeCallback : 処理完了時に実行する関数。
+                 引数は置換対象要素、置換要素の二つ。
+                 <b>置換対象要素はこの時点でDOM上から消去されている</b>ため、
+                 保存する場合はここで行う。
+    transition : 切替効果指定。
+                 後述のreplaceBoxController._transition
+                 配下のメンバー名か、切替効果用関数。
+                 デフォルト=slideLeft
+});</pre>
+			また、処理完了時にrootElementで<b>replaceBoxComplete</b>イベントを発生させています。<br/>
+			引数のcontext.evArgのメンバは以下の通りです。<br/>
+			<ul>
+				<li>old : 置換対象要素</li>
+				<li>current : 置換要素</li>
+			</ul>
+			ここではtransitionCompleteを捕捉して置換要素の文字サイズを変更させています。
+			</li>
+			<li>
+			<i>replaceBoxController</i>.transitionNameの関数名を変更することで、切り替え効果を変えることができます。<br/>
+			ここに使用できる関数は、replaceBoxController._transition配下に作成しており、以下があります。<br/>
+			<ul>
+			<li>slideLeft : 右から左へスライド(デフォルト)</li>
+			<li>slideRight : 左から右へスライド</li>
+			<li>slideUp : 下から上へスライド</li>
+			<li>slideDown : 上から下へスライド</li>
+			<li>pushRight : 右へ押し出すようにスライド</li>
+			<li>pushLeft : 左へ押し出すようにスライド</li>
+			<li>pushUp : 上へ押し出すようにスライド</li>
+			<li>pushDown : 下へ押し出すようにスライド</li>
+			<li>openLeft : 置換対象要素が左へスライドして裏に配置した置換要素を表示</li>
+			<li>openRight : 置換対象要素が右へスライドして裏に配置した置換要素を表示</li>
+			<li>openUp : 置換対象要素が上へスライドして裏に配置した置換要素を表示</li>
+			<li>openDown : 置換対象要素が下へスライドして裏に配置した置換要素を表示</li>
+			<li>fade : 置換対象要素をフェードアウトして表示</li>
+			</ul>
+			ここではセレクトボックスで変更できます。
+			</li>
+			<li>
+			置換要素は強制的に置換対象要素と同じサイズに設定されます。同一となることを前提としてください。
+			</li>
+		</ul>
+		<div class="outerBox">
+			<select></select>
+			<div class="replaceBox" style="width:100%;height:500px;">
+				<div style="height:100%;"><ul></ul></div>
+			</div>
+		</div>
+	</body>
+</html>

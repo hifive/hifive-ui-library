@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="pragma" content="no-cache"/>
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta name="viewport" content="width=device-width">
+
+		<link type="text/css" rel="stylesheet" href="../../res/lib/hifive/h5.css">
+
+		<link href="../../res/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+		<style type="text/css">
+			body{
+				padding:1em;
+				margin-bottom:20em;
+			}
+			.contextMenuBox, ._contextMenuBox{
+				width:100%;
+				height:100px;
+				background-color: #99ccff;
+				position:relative;
+			}
+		</style>
+
+		<script type="text/javascript" src="../../res/lib/jquery/jquery-1.9.1.js"></script>
+		<script type="text/javascript" src="../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script type="text/javascript" src="../../res/lib/hifive/h5.dev.js"></script>
+
+		<script type="text/javascript" src="src/contextMenu.js"></script>
+		<script type="text/javascript" src="sample/contextMenuTest.js"></script>
+
+		<script>
+		$(function(){
+			$('.contextMenuBox').each(function(){
+				h5.core.controller(this, h5.ui.ContextMenuController);
+			});
+		});
+		</script>
+
+		<title>右クリックメニュー</title>
+	</head>
+	<body>
+
+		<h3>右クリックメニュー</h3>
+
+		<span>使用方法・制限事項</span>
+		<ul>
+			<li>単独で使用する場合、ルート要素にclass="contextMenuBox"を設定し、直下にclass="contextMenu"のメニュー要素を配置してください。</li>
+			<li>デフォルトではルート要素上右クリック時にclass="contextMenu"の要素をカーソル位置に表示します。</li>
+			<li>ルート要素にdata-targetall="false"を指定することで、class="contextMenuBtn"の要素上のみ右クリック時にメニュー要素を表示します。</li>
+			<li>
+			ルート要素にdata-contextmenuexp="<i>セレクタ表現</i>"を指定することで、メニュー要素のセレクタ表現を追加できます。<br/>
+			※class="contextMenu"は固定です。data-contextmenuexp=".contextMenu1"とすると、class="contextMenu contextMenu1"の要素が対象となります。<br/>
+			セレクタ"> .contextMenu"の末尾に追加する形なので、タグ名の指定等はできません。
+			</li>
+			<li>コントローラcontextMenuControllerを直接使用する場合、上記は初期化パラメータ、またはプロパティでも指定可能です。
+			<pre>
+初期化パラメータの例:
+h5.core.controller('._contextMenuBox', h5.sample.contextMenuBox.contextMenuController, {
+	targetAll: false，
+	contextMenuExp: '.contextMenu1'
+});
+----
+プロパティ指定の例(上位コントローラから):
+ :
+contextMenuController : h5.sample.contextMenuBox.contextMenuController,
+
+__meta : {
+	contextMenuController: {
+		rootElement: '> ._contextMenuBox'
+	},
+},
+
+__ready: function(context) {
+	this.contextMenuController.contextMenuExp = '.contextMenu1';
+	this.contextMenuController.targetAll = false;
+},
+ :</pre>
+			</li>
+			<li>
+			また、class="contextMenuBtn"の要素にdata-contextmenuexp="<i>セレクタ表現</i>"を指定することで、その要素で使用するメニュー要素を指定できます。<br/>
+			下の例では"contextMenuBtn For contextMenu3"のボタンがdata-contextmenuexp=".contextMenu3"を指定していて、固定でそのメニューを表示します。
+			</li>
+			<li>クリック位置に応じて画面内に収まるようにメニューの表示位置を調整します。</li>
+			<li>ropdown-submenuクラスを使用してサブメニューを作成した場合も表示位置を調整します。(pull-left指定、dropup指定は無視されます。)</li>
+		</ul>
+
+		<hr/>
+
+		<p>単独使用の例。ルート要素上のどこでもメニューを表示。</p>
+
+		<div class="contextMenuBox">
+		<!--
+		<div class="contextMenuBox" data-targetall="false">
+			<button class="contextMenuBtn btn">contextMenuBtn</button>
+		-->
+			<ul class="dropdown-menu contextMenu" role="menu" aria-labelledby="dLabel">
+				<li><a tabindex="-1" href="#">Action</a></li>
+				<li><a tabindex="-1" href="#">Another action</a></li>
+				<li><a tabindex="-1" href="#">Something else here</a></li>
+				<li class="divider"></li>
+				<li><a tabindex="-1" href="#">Separated link</a></li>
+				<li class="dropdown-submenu">
+					<a tabindex="-1" href="#">More options</a>
+					<ul class="dropdown-menu">
+						<li><a tabindex="-1" href="#">Second level link</a></li>
+						<li><a tabindex="-1" href="#">Second level link</a></li>
+						<li><a tabindex="-1" href="#">Second level link</a></li>
+						<li><a tabindex="-1" href="#">Second level link</a></li>
+						<li><a tabindex="-1" href="#">Second level link</a></li>
+						<li class="dropdown-submenu">
+							<a tabindex="-1" href="#">More options</a>
+							<ul class="dropdown-menu">
+								<li><a tabindex="-1" href="#">Third level link</a></li>
+								<li><a tabindex="-1" href="#">Third level link</a></li>
+								<li><a tabindex="-1" href="#">Third level link</a></li>
+								<li><a tabindex="-1" href="#">Third level link</a></li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+
+		<hr/>
+
+		<p>上位コントローラから使用した例。</p>
+
+		<div id="contextMenuTest">
+			targetAllを変更: <input type="checkbox" class="targetAll"  value="1" /><br/>
+			contextMenuExpを変更:
+			<select class="contextMenuExp" >
+				<option value=".contextMenu1">.contextMenu1</option>
+				<option value=".contextMenu2">.contextMenu2</option>
+			</select>
+			<div class="_contextMenuBox">
+				<button class="contextMenuBtn btn">contextMenuBtn</button>
+				<button class="contextMenuBtn btn" data-contextmenuexp=".contextMenu3">contextMenuBtn For contextMenu3</button>
+
+				<ul class="dropdown-menu contextMenu contextMenu1" role="menu" aria-labelledby="dLabel">
+					<li><a tabindex="-1" href="#">contextMenu1</a></li>
+					<li><a tabindex="-1" href="#">Action</a></li>
+					<li><a tabindex="-1" href="#">Another action</a></li>
+					<li><a tabindex="-1" href="#">Something else here</a></li>
+					<li class="divider"></li>
+					<li><a tabindex="-1" href="#">Separated link</a></li>
+					<li class="dropdown-submenu">
+						<a tabindex="-1" href="#">More options</a>
+						<ul class="dropdown-menu">
+							<li><a tabindex="-1" href="#">Second level link</a></li>
+							<li><a tabindex="-1" href="#">Second level link</a></li>
+							<li><a tabindex="-1" href="#">Second level link</a></li>
+							<li><a tabindex="-1" href="#">Second level link</a></li>
+							<li><a tabindex="-1" href="#">Second level link</a></li>
+						</ul>
+					</li>
+				</ul>
+
+				<ul class="dropdown-menu contextMenu contextMenu2" role="menu" aria-labelledby="dLabel">
+					<li><a tabindex="-1" href="#">contextMenu2</a></li>
+				</ul>
+
+				<ul class="dropdown-menu contextMenu contextMenu3" role="menu" aria-labelledby="dLabel">
+					<li><a tabindex="-1" href="#">contextMenu3</a></li>
+				</ul>
+
+			</div>
+		</div>
+
+	</body>
+</html>

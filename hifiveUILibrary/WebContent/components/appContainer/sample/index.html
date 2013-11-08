@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+
+<script type="text/javascript" src="../../../res/lib/jquery/jquery.js"></script>
+<script type="text/javascript"
+	src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script type="text/javascript" src="../../../res/lib/hifive/h5.dev.js"></script>
+
+<script src="../src/ApplicationController.js"></script>
+
+<script>
+	$(function() {
+		h5.core.controller(document.body, h5.ui.container.ApplicationController);
+
+		$('.current-time').html('ページ更新時刻<br>' + (new Date()).toTimeString());
+	});
+</script>
+
+<link rel="stylesheet" href="../src/ApplicationController.css" />
+<link rel="stylesheet" href="../../../res/lib/hifive/h5.css" />
+<style>
+h2 {
+	padding-top: 15px;
+	border-top: 1px solid #888;
+}
+
+form {
+	border: 1px solid blue;
+	padding: 5px;
+	margin: 5px;
+}
+
+.small {
+	font-size: 0.8em;
+}
+
+.link {
+	text-decoration: underline;
+	color: blue;
+}
+
+.note {
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid green;
+	color: green;
+}
+</style>
+
+<title>&lt;form&gt;の部分更新</title>
+</head>
+<body>
+	<h1>フォーム部分更新サンプル</h1>
+	<p>送信ボタンを押すと、画面遷移せずに&lt;form&gt;部分だけが更新されます。</p>
+	<p>サンプルでは、formのaction属性に"sample/jsp/*.jsp"を指定しています。</p>
+	<p class="current-time small"></p>
+
+	<h2>受け取ったJSONデータをバインド</h2>
+	<p>form内のdata-h5-bindを指定した要素に、受け取ったオブジェクトをバインドします。</p>
+	<form action="jsp/welcome-json.jsp">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+
+	<h2>受け取ったHTMLに差し替え</h2>
+	<p>formを受け取ったHTMLに差し替えます。formは削除されます。</p>
+	<form action="jsp/welcome-html.jsp">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p>名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+
+	<h2>受け取ったHTMLに差し替え(プレースホルダあり)</h2>
+	<p>受け取ったHTMLにh5-data-migrationでセレクタを指定している要素がある場合、そのセレクタにマッチするform内の要素でh5-data-migration指定要素を差し替えます。</p>
+	<form action="jsp/welcome-html-placeholder.jsp">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p>名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+		<div class="placeholder note">
+			<span class="link">←戻る</span> <span class="link">進む→</span>
+			<div class="small">(ここはh5-data-migrationで指定されている要素です)</div>
+		</div>
+	</form>
+
+
+	<h2>受け取ったHTMLをform内の指定された要素にバインド</h2>
+	<p>h5-bind-targetの指定された要素に受け取ったHTMLをバインドします。属性値にappend,prepend,updateを指定できます。</p>
+	<form action="jsp/welcome-li.jsp">
+		<label>名前</label><input type="text" name="name" value="たろう" /><input
+			type="submit" />
+		<ul h5-bind-target="append">
+			<li>h5-bind-target="append"</li>
+		</ul>
+		<ul h5-bind-target="prepend">
+			<li>h5-bind-target="prepend"</li>
+		</ul>
+		<ul h5-bind-target="update">
+			<li>h5-bind-target="update"</li>
+		</ul>
+	</form>
+
+	<h2>h5-refresh-group指定</h2>
+	<p>h5-refresh-groupにグループ名を指定し、フォームを送信するときに同一グループのフォームも同時に送信します。</p>
+	<form action="jsp/welcome-json.jsp" h5-refresh-group="group1">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+	<form action="jsp/welcome-json.jsp" h5-refresh-group="group1">
+		<label>名前</label><input type="text" name="name" value="はなこ" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+
+	<h2>h5-block-group指定</h2>
+	<p>h5-block-groupにグループ名を指定し、フォームを送信するときに同一グループの要素にインジケータを出します。</p>
+	<form action="jsp/welcome-json.jsp" h5-block-group="b1">
+		<div class="small">
+			<p>block-group指定要素(form)</p>
+		</div>
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+	<form action="jsp/welcome-json.jsp" h5-block-group="b1">
+		<div class="small">
+			<p>block-group指定要素(form)</p>
+		</div>
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+	<div class="small note" h5-block-group="b1">
+		<p>block-group指定要素(div)</p>
+	</div>
+
+	<h2>h5-block-group="screen"</h2>
+	<p>"screen"を指定した場合は画面全体にインジケータを出します。</p>
+	<form action="jsp/welcome-json.jsp" h5-block-group="screen">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+
+	<h2>h5-block-group="none"</h2>
+	<p>"none"を指定した場合はインジケータを出しません。</p>
+	<form action="jsp/welcome-json.jsp" h5-block-group="none">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+
+	<h2>target指定</h2>
+	<p>formのtarget属性に指定した名前(name属性)を持つフォームを更新の対象にします。</p>
+	<form action="jsp/welcome-json.jsp" name="form1" target="form2">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+		<div class="small">(下のフォームをtargetに指定しています)</div>
+	</form>
+	<form action="jsp/welcome-json.jsp" name="form2" target="form1">
+		<label>名前</label><input type="text" name="name" value="はなこ" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+		<div class="small">(上のフォームをtargetに指定しています)</div>
+	</form>
+
+	<h2>送信エラー</h2>
+	<p>エラーの場合はfailHandlerを実行します。デフォルトではログと通知バーを表示します。</p>
+	<form action="jsp/dummy">
+		<label>名前</label><input type="text" name="name" value="たろう" />
+		<p data-h5-bind="message">名前を入力して送信ボタンをクリックしてください</p>
+		<input type="submit" />
+	</form>
+</body>
+</html>

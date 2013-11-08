@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<eclipse-userlibraries version="2">
+    <library name="Hi5Lib">
+        <archive path="C:/jqmdev/workspace/Hi5/src/main/webapp/src/log.js"/>
+        <archive path="C:/jqmdev/workspace/Hi5/config/h5-codeAssist.js"/>
+        <archive path="C:/jqmdev/workspace/Hi5/config/jquery-codeAssist.js"/>
+    </library>
+</eclipse-userlibraries>

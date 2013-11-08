@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<h5-code-assist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="h5-code-assist.xsd">
+	<controller suffix="Controller">
+		<varRef key="rootElement" className="Object" />
+		<function name="$find" returnType="Object">
+			<argument name="selector" type="String|Object" />
+			<description>コントローラ内で指定されたセレクタにマッチする要素を選択します。</description>
+		</function>
+		<function name="getView" returnType="String">
+			<argument name="templateId" type="String" />
+			<argument name="data" type="Object" />
+			<description>指定されたテンプレートにパラメータをバインドした文字列を返します。</description>
+		</function>
+		<function name="updateView" returnType="String">
+			<argument name="element" type="String|Object" />
+			<argument name="templateId" type="String" />
+			<argument name="data" type="Object" />
+			<description>指定されたテンプレートにパラメータをバインドした文字列を作成し、対象の要素を書き換えます。</description>
+		</function>
+		<function name="appendView" returnType="String">
+			<argument name="element" type="String|Object" />
+			<argument name="templateId" type="String" />
+			<argument name="data" type="Object" />
+			<description>指定されたテンプレートにパラメータをバインドした文字列を作成し、対象の要素に追加します。</description>
+		</function>
+		<function name="prependview" returnType="String">
+			<argument name="element" type="String|Object" />
+			<argument name="templateId" type="String" />
+			<argument name="data" type="Object" />
+			<description>指定されたテンプレートにパラメータをバインドした文字列を作成し、対象の要素の一番最初に追加します。</description>
+		</function>
+		<function name="deferred" returnType="H5Deferred">
+			<description>Deferredオブジェクトを返します。</description>
+		</function>
+		<function name="trigger" returnType="void">
+			<argument name="eventName" type="String" />
+			<argument name="parameter" type="Object" />
+			<description>イベントを発火させます。</description>
+		</function>
+		<function name="own" returnType="Function">
+			<argument name="func" type="Function" />
+			<description>他のライブラリのコールバックにコントローラのメソッドを指定したい時に使用します。</description>
+		</function>
+		<function name="unbind" returnType="void">
+			<description>コントローラの要素へのバインドを解除します。</description>
+		</function>
+		<function name="block" returnType="void">
+			<argument name="option" type="Object" />
+			<description>コントローラを指定した要素全体をブロックします。</description>
+		</function>
+		<function name="unblock" returnType="void">
+			<description>blockメソッドを使ってコントローラを指定した要素全体のブロックを解除します。</description>
+		</function>
+		<function name="progressbar" returnType="void">
+			<argument name="option" type="Object" />
+			<description>コントローラを指定した要素全体をブロックし、プログレスバーを表示します。</description>
+		</function>
+		<function name="progress" returnType="void">
+			<argument name="num" type="Number" />
+			<description>表示されているプログレスバーの進捗を更新します。</description>
+		</function>
+		<function name="hideProgressbar" returnType="void">
+			<description>コントローラを指定した要素に表示されているプログレスバーを非表示にします。</description>
+		</function>
+		<function name="busyIndicator" returnType="void">
+			<argument name="option" type="Object" />
+			<description>指定した要素上にビジーインジケータを表示します。</description>
+		</function>
+		<function name="hideBusyIndicator" returnType="void">
+			<description>指定した要素上のビジーインジケータを非表示にします。</description>
+		</function>
+		<function name="blockParent" returnType="void">
+			<argument name="option" type="Object" />
+			<argument name="eventName" type="String" />
+		</function>
+		<function name="unblockParent" returnType="void">
+			<argument name="eventName" type="String" />
+		</function>
+		<function name="progressbarParent" returnType="void">
+			<argument name="option" type="Object" />
+			<argument name="eventName" type="String" />
+		</function>
+		<function name="hideProgressbarParent" returnType="void">
+			<argument name="eventName" type="String" />
+		</function>
+		<function name="busyIndicatorParent" returnType="void">
+			<argument name="option" type="Object" />
+			<argument name="eventName" type="String" />
+		</function>
+		<function name="hideBusyIndicatorParent" returnType="void">
+			<argument name="eventName" type="String" />
+		</function>
+	</controller>
+	<logic suffix="Logic" controllerSuffix="Controller">
+		<function name="deferred" returnType="String">
+			<description>Deferredオブジェクトを返します。</description>
+		</function>
+	</logic>
+	<eventcontext controllerSuffix="Controller">
+		<varRef key="controllerName" className="String" />
+		<varRef key="rootElement" className="Object" />
+		<varRef key="event" className="Object" />
+		<varRef key="evArg" className="Object" />
+	</eventcontext>
+	<initcontext controllerSuffix="Controller">
+		<varRef key="initcontext" className="String" />
+	</initcontext>
+</h5-code-assist>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+li {
+	line-height: 1.5em;
+}
+</style>
+<title>ApplicationController</title>
+</head>
+<body>
+
+	<h2>ApplicatoinController</h2>
+
+	<p>&lt;form&gt;要素に部分更新機能を追加します。</p>
+	<p>
+		<a href="sample/index.html">サンプルはこちら。</a>
+	</p>
+
+	<h3>使用方法</h3>
+	<ul>
+
+		<li>当機能は、以下のファイルに依存します。 <pre>components/appController/src/ApplicationController.js
+components/appController/src/ApplicationController.css
+- CSSファイルはエラー通知用です。デフォルトのfailHandlerを使用しない場合は不要です。(failHandlerの設定方法は後述)</pre>
+		</li>
+		<li>h5.ui.container.ApplicationController をコントローラ化して使用します。<br>
+			サンプルページでは全ての&lt;formに&gt;要素で部分更新機能を有効にするため、body要素にバインドしています。 <pre>
+$(function() {
+	h5.core.controller(document.body, h5.ui.container.ApplicationController);
+});</pre>
+		</li>
+		<li>
+			&lt;form&gt;がsubmitされると、action属性に指定されたURLにmethod属性で指定されたメソッド(指定無しならPOST)でajaxリクエストを送ります。
+		</li>
+		<li>
+			ajaxリクエストのレスポンスがJSONなら、&lt;form&gt;要素に対して受け取ったJSONオブジェクトでデータバインドを行います。<br>
+			data-h5-bindが指定されている要素が&lt;form&gt;内になければ何もしません。
+		</li>
+		<li>ajaxリクエストのレスポンスが文字列(HTML)なら、&lt;form&gt;要素を、受け取ったHTMLに差し替えます。<br>
+			&lt;form&gt;にバインドされていたコントローラ、及びその子要素にバインドされているコントローラはdisposeされます。<br>
+			<ul>
+				<li>レスポンスにdata-h5-migrationを指定した要素があれば、&lt;form&gt;要素を削除する前に&lt;form&gt;が持っていた要素を代入させることができます。</li>
+				<li>data-h5-migrationに指定したセレクタに該当する要素を&lt;form&gt;から探して、見つかった要素でdata-h5-migration指定要素と差し替えます。</li>
+			</ul>
+			<ul>
+				<li>$lt;form&gt;内に"h5-bind-target"を指定した要素があれば、その要素に受け取ったHTMLをバインドします。formは削除されません。</li>
+				<li>h5-bind-targetにはappend,prepend,updateのいずれかで属性値を指定します。</li>
+			</ul>
+		</li>
+		<li>h5-refresh-groupでグループ名を指定すると、同一のグループ名が指定されている他のフォームもsubmitします。</li>
+		<li>h5-block-groupでグループ名を指定すると、同一のグループ名が指定されている他の要素にもインジケータを表示します。<br>
+			<ul>
+				<li>h5-block-groupの指定がない場合はsubmitするフォームのみがブロックされます。</li>
+				<li>h5-block-group="screen"で全画面にインジケータを表示します。</li>
+				<li>h5-block-group="none"を指定した場合はインジケータを表示しません。</li>
+			</ul></li>
+
+		<li>&lt;form&gt;にtarget属性で他のフォームの名前(name属性の値)を指定すると更新対象のフォームを別のフォームにできます。</li>
+
+		<li>&lt;form&gt;の送信に失敗した場合は、ApplicationController.failHandlerが実行されます。<br>
+			<ul>
+				<li>デフォルトではログを出力し、通知を表示する関数が設定されています。</li>
+				<li>ApplicationController.failHandlerに自分で作成した関数を設定することができます。</li>
+				<li>failHandlerに渡される引数は、<pre>function failHandler(jqXHR, $form, controller){}</pre>のように引数を取ります。<br>
+					それぞれ、エラー時のjqXHRオブジェクト、エラーの発生したformのjQueryオブジェクト、ApplicationControllerインスタンスです。
+				</li>
+				<li>failHandler内のthisはajaxリクエストの設定オブジェクトです。</li>
+			</ul>
+
+		</li>
+
+	</ul>
+</body>
+</html>

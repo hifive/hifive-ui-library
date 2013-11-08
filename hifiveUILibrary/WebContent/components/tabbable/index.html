@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="pragma" content="no-cache"/>
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta name="viewport" content="width=device-width">
+
+		<link type="text/css" rel="stylesheet" href="../../res/lib/hifive/h5.css">
+
+		<link href="../../res/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+		<style type="text/css">
+			body{
+				padding:1em;
+				margin-bottom:10em;
+			}
+			.contextMenuBox, ._contextMenuBox{
+				width:100%;
+				height:100px;
+				background-color: #99ccff;
+			}
+			.tabbable{
+				width:500px;
+				border:solid #ccccff 1px;
+				padding:0.5em;
+				margin:0.5em;
+			}
+		</style>
+
+		<script type="text/javascript" src="../../res/lib/jquery/jquery-1.9.1.js"></script>
+
+		<script type="text/javascript" src="../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script type="text/javascript" src="../../res/lib/hifive/h5.dev.js"></script>
+
+		<script type="text/javascript" src="src/tabbable.js"></script>
+
+		<script>
+		$(function(){
+		});
+		</script>
+
+		<title>タブ切り替え</title>
+	</head>
+	<body>
+
+		<h3>タブ切り替え</h3>
+
+		<span>使用方法・制限事項</span>
+		<ul>
+			<li>
+			要素の構造についてはTwitterBootstrapのTabbableを基本とします。<br/>
+			(参考→<a href="http://twitter.github.com/bootstrap/components.html#navs">http://twitter.github.com/bootstrap/components.html#navs</a>以下の「Tabbable nav」)<br/>
+			CSSについても、TwitterBootstrapの使用を基本としますが、独自に作成することも可能です。<br/>
+			TwitterBootstrapを使用する場合は、以下のファイルを読み込んでください。
+			<ul>
+				<li>res/lib/bootstrap/css/bootstrap.min.css</li>
+			</ul>
+
+			</li>
+			<li>
+			スクリプトについてはTwitterBootstrapを使用しません。id属性が必須であり、これを回避するためです。<br/>
+			TwitterBootstrapではタブメニュー要素下のa要素href属性と、コンテンツ要素のid属性を関連付けますが、ここでは両者にdata-tab-name属性を設定して関連付けます。
+			</li>
+			<li>
+			<b>以下はスクリプトの処理上必要となる設定です。TwitterBootstrapで必要となるものは適宜設定してください。</b>
+			</li>
+			<li>ルート要素にtabbableクラスを設定します。</li>
+			</li>
+			<li>
+			各コンテンツのブロック要素を配置し、tab-paneクラスを設定します。このうち、初期表示するものにactiveクラスを設定します。<br/>
+			また、<b>data-tab-name属性にルート要素内で一意となる値を設定します。</b>
+			</li>
+			<li>
+			タブメニュー用の要素を配置し、nav-tabsクラスを設定します。
+			直下の各要素が各タブになります。初期選択されるものにactiveクラスを設定します。<br/>
+			その下にa要素を配置し、<b>data-tab-name属性に対応するコンテンツの値を設定します。</b>href属性は"#"を設定してください。
+			</li>
+		</ul>
+
+		<div class="tabbable">
+			<ul class="nav nav-tabs">
+				<li class="active"><a href="#" data-tab-name="tab1" data-toggle="tab">Section 1</a></li>
+				<li><a href="#" data-tab-name="tab2" data-toggle="tab">Section 2</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane active" data-tab-name="tab1">
+					<p>I'm in Section 1.</p>
+				</div>
+				<div class="tab-pane" data-tab-name="tab2">
+					<p>Howdy, I'm in Section 2.</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="tabbable tabs-below">
+			<div class="tab-content">
+				<div class="tab-pane active" data-tab-name="tab1">
+					<p>I'm in Section 1.</p>
+				</div>
+				<div class="tab-pane" data-tab-name="tab2">
+					<p>Howdy, I'm in Section 2.</p>
+				</div>
+			</div>
+			<ul class="nav nav-tabs">
+				<li class="active"><a href="#" data-tab-name="tab1" data-toggle="tab">Section 1</a></li>
+				<li><a href="#" data-tab-name="tab2" data-toggle="tab">Section 2</a></li>
+			</ul>
+		</div>
+
+		<div class="tabbable tabs-left">
+			<ul class="nav nav-tabs">
+				<li class="active"><a href="#" data-tab-name="tab1" data-toggle="tab">Section 1</a></li>
+				<li><a href="#" data-tab-name="tab2" data-toggle="tab">Section 2</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane active" data-tab-name="tab1">
+					<p>I'm in Section 1.</p>
+				</div>
+				<div class="tab-pane" data-tab-name="tab2">
+					<p>Howdy, I'm in Section 2.</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="tabbable tabs-right">
+			<ul class="nav nav-tabs">
+				<li class="active"><a href="#" data-tab-name="tab1" data-toggle="tab">Section 1</a></li>
+				<li><a href="#" data-tab-name="tab2" data-toggle="tab">Section 2</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane active" data-tab-name="tab1">
+					<p>I'm in Section 1.</p>
+				</div>
+				<div class="tab-pane" data-tab-name="tab2">
+					<p>Howdy, I'm in Section 2.</p>
+				</div>
+			</div>
+		</div>
+
+	</body>
+</html>

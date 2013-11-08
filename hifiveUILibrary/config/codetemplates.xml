@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><templates><template autoinsert="false" context="org.eclipse.jsdt.fieldcomment_context" deleted="false" description="Comment for vars" enabled="true" id="org.eclipse.wst.jsdt.ui.text.codetemplates.fieldcomment" name="fieldcomment">/**
+ * @memberOf ${field_type}
+ */</template><template autoinsert="false" context="org.eclipse.jsdt.constructorcomment_context" deleted="false" description="Comment for created constructors" enabled="true" id="org.eclipse.wst.jsdt.ui.text.codetemplates.constructorcomment" name="constructorcomment">/**
+ * @memberOf ${enclosing_type}
+ * ${tags}
+ */</template><template autoinsert="false" context="org.eclipse.jsdt.delegatecomment_context" deleted="false" description="Comment for delegate functions" enabled="true" id="org.eclipse.wst.jsdt.ui.text.codetemplates.delegatecomment" name="delegatecomment">/**
+ * @memberOf ${enclosing_type}
+ * ${tags}
+ * ${see_to_target}
+ */</template><template autoinsert="false" context="org.eclipse.jsdt.methodcomment_context" deleted="false" description="Comment for non-overriding function" enabled="true" id="org.eclipse.wst.jsdt.ui.text.codetemplates.methodcomment" name="methodcomment">/**
+ * @memberOf ${enclosing_type}
+ * ${tags} 
+ */</template></templates>
