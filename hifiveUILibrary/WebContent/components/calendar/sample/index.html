@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
+
+	<meta http-equiv="pragma" content="no-cache"/>
+	<meta http-equiv="cache-control" content="no-cache"/>
+	<meta name="viewport" content="width=device-width">
+
+	<title>CalendarController</title>
+
+	<link rel="stylesheet" href="../../../res/lib/hifive/h5.css">
+	<link rel="stylesheet" href="../src/CalendarController.css">
+	<link rel="stylesheet" href="sample.css">
+
+	<!-- 参照ライブラリ -->
+	<script type="text/javascript" src="../../../res/lib/jquery/jquery-1.9.1.js"></script>
+	<script type="text/javascript" src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+	<script type="text/javascript" src="../../../res/lib/hifive/h5.dev.js"></script>
+
+	<!-- Calendar Controller -->
+	<script type="text/javascript" src="../src/CalendarController.js"></script>
+
+	<!-- Sample -->
+	<script src="sample.js"></script>
+
+</head>
+<body>
+	<div id="body">
+		<div id="container"></div>
+
+		<div id="function_zone"  style="line-height: 150%">
+			<label>① 任意の年月を設定</label>
+			<br/>
+			年<select id="yearSelect" class="changeDate"></select>
+			月<select id="monthSelect" class="changeDate"></select>
+			日<select id="daySelect" ></select> &nbsp;&nbsp;&nbsp;
+			<input type="button" id="btnSetSelectedDate"  value="選択"/>
+			<br/>
+			選択した日付は<span id="spnSelectedDate" style='color:red;'></span>です。
+			<input type="button" id="btnGoToSelectedDate"  value="Go"/>
+			<br/>
+			今日は<span id="spnToday" style='color:red;'></span>はです。&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<input type="button" id="btnGoToToday" value="Go" />
+			<br/>--------------------------------<br/>
+
+			<label>選択モード</label>
+			<br/>
+			<select id="selSelectMode">
+				<option value="single" selected>特定の1日</option>
+				<option value="continue">連続する日</option>
+				<option value="multi">複数の日</option>
+			</select>
+			<br/>--------------------------------<br/>
+
+			<label>選択できない日付を指定</label>
+			<br/>
+			<input type="button" id="btnUnselectableDate" value="無効にする" />
+			<input type="button" id="btnUnselectableDateReset" value="リセット" />
+			<br/>--------------------------------<br/>
+
+			<label>特定の１日をCSSでカスタマイズする</label>
+			<br/>
+			<label>スタイル：</label>
+			<select id="selCssDate">
+				<option selected>default</option>
+				<option>style1</option>
+			</select>
+			<br/>
+			<input type="button" id="btnDateCssAdd"  value="適用" />
+			<br/>-------<br/>
+			<label>週間の日をCSSでカスタマイズする</label>
+			<br/>
+			<label>Day of Week</label>
+			<br/>
+			<select id="selDowName">
+				<option value="sun" selected>日曜日</option>
+				<option value="mon">月曜日</option>
+				<option value="tue">火曜日</option>
+				<option value="wed">水曜日</option>
+				<option value="thu">木曜日</option>
+				<option value="fri">金曜日</option>
+				<option value="sat">土曜日</option>
+			</select>
+			<br/>
+			<label>CSS</label>
+			<br/>
+			<select id="selCssDowName">
+				<option selected>default</option>
+				<option>style1</option>
+			</select>
+			<br/>
+			<input type="button" id="btnCssDow" value="適用"  style="margin-left: 0px"/>
+			<br/>--------------------------------<br/>
+
+			<label>特別の日を指定する<span style='color:red;'>（日付：①で設定した日付）</span></label>
+			<br/>
+			----------------
+			<br/>
+			日マーカー：<input type="checkbox" id="chkMarkDate" />
+			<br/>
+			テキスト：<input type="text" id="txtContentDate"  size="40"/>
+			<input type="button" id="btnSetTextDate" value="設定" />
+		</div>
+	</div>
+
+</body>
+</html>
