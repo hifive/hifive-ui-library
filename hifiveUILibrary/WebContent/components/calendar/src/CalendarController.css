@@ -49,7 +49,7 @@ table {
 .noday {
 	color: #bbb;
 	font-weight: normal;
-	cursor: auto; !important;
+	cursor: auto;
 	background: #ddd;
 }
 
@@ -86,7 +86,7 @@ table {
 	display: none;
 }
 
-.dow,
-.monyear {
-	cursor: auto;
-}
+/* .prev-arrow, */
+/* .next-arrow { */
+/* 	cursor: pointer; */
+/* } */

@@ -51,8 +51,6 @@ $(function() {
 		 */
 		_root: null,
 
-		_zIndex: 1000,
-
 		// カレンダーでの選択方
 		// ３種類あります。
 		// 'single':特定の1日を選択する, 'continue':連続する日, 'multi':任意の日を複数指定できる。
@@ -103,19 +101,10 @@ $(function() {
 
 			// 初期
 			this._root = $(this.rootElement);
-			this.size = 600;
+			this.size = 400;
 			this.userCssName = 'default ';
 			this.todayDate.setHours(0, 0, 0, 0);
 			this.selectMode = 'single';
-
-			// 選択されている日付
-			//			if (this._selectedDate.length == 0) {
-			//				if (typeof context.evArg == 'undefined') {
-			//					this._selectedDate.push(this.todayDate);
-			//				} else {
-			//					this._selectedDate.push(context.evArg.selectedDate);
-			//				}
-			//			}
 
 			// 選択されている月の最初の日
 			this._firstDate = new Date(this.todayDate);
@@ -124,8 +113,8 @@ $(function() {
 			//Gen calendar Id
 			this.id = 'calendar_' + Math.round(Math.random() * 1e10);
 
-			// render with user-defined size and default CSS
-			this._monthCount = 1;
+			// Gen with number of months displayed
+			this._monthCount = 3;
 			this._render();
 		},
 
@@ -141,22 +130,23 @@ $(function() {
 			// カレンダーのの枠のDOMを作成する
 			var calendar = null;
 			if ($('#' + this.id).length == 0) {
-				calendar = $('<div/>').attr('id', this.id).data('is', true).css({
-					zIndex: this._zIndex,
-				//width: (cellWidth * maxCol) + 'px'
-				});
+				calendar = $('<div/>').attr('id', this.id);
+				calendar.data('is', true);
 
 				root.append(calendar);
 			} else {
 				calendar = $('#' + this.id);
 			}
-			$(calendar).addClass('calendar').children().remove();
+			calendar.addClass('calendar');
+			calendar.children().remove();
 
 			var defaultGroup = this._renderMonth(this._firstDate);
-			$(calendar).append(defaultGroup);
+			defaultGroup.attr('id', this.id + '_group0');
+			calendar.append(defaultGroup);
 			for ( var i = 1; i < this._monthCount; i++) {
 				var group = this._renderMonth(this.getFirstDate(this._firstDate, i));
-				$(calendar).append(group);
+				group.attr('id', this.id + '_group' + i);
+				calendar.append(group);
 			}
 		},
 
@@ -168,7 +158,6 @@ $(function() {
 		 * @returns UI要素
 		 */
 		_renderMonth: function(firstDate) {
-
 			var that = this;
 
 			// 全ての要素のClass
@@ -193,18 +182,14 @@ $(function() {
 			var cellWidth = this._getCellSize(containerWidth, maxCol);
 			var cellHeight = this._getCellSize(containerHeight, maxRow + 2);
 
-			var group1 = $('<div/>').data('is', true).css({
-				zIndex: this._zIndex,
-				width: (cellWidth * maxCol) + 'px'
+			// 既定のカレンダー
+			var group = $('<table />').data('is', true);
+			group.css({
+				width: (cellWidth * maxCol) + 'px',
+				margin: '1px',
+				//横方向又は、縦方向で表示する
+				//float: 'left'
 			});
-
-
-			// CellのCSSを定義する
-			var cellTitleCSS = {
-				width: cellWidth + 'px',
-				height: cellHeight + 'px',
-				lineHeight: cellHeight + 'px'
-			};
 
 			// 前後の月の最初日を取得する
 			var prevFirstDate = this.getFirstDate(firstDate, -1);
@@ -224,52 +209,51 @@ $(function() {
 			var lastMonthDate = this.getFirstDate(this._firstDate, this._monthCount - 1);
 			var showNext = (firstDate.getTime() == lastMonthDate.getTime());
 
-			// Create the arrows and title
 			var monyearClass = coreClass + 'monyear ';
-			var prevCell = $('<div/>').addClass(monyearClass).css($.extend({}, cellTitleCSS, {
-				borderWidth: borderSize + 'px 0 0 ' + borderSize + 'px',
-				float: 'left'
-			})).append(
+			var title = $('<tr/>').css({
+				height: cellHeight + 'px',
+				lineHeight: cellHeight + 'px',
+				borderWidth: borderSize + 'px',
+			});
+			title.addClass(coreClass);
+			group.append(title);
+
+			// Create the arrows and title
+			var prevCell = $('<td/>').addClass(monyearClass + 'prev-arrow ');
+			prevCell.append(
 					$('<a/>').addClass('prev-arrow' + (showPrev ? '' : '-off'))
 							.html(this.prevArrow)).mousedown(function() {
 				return false;
 			}).click(function(e) {
-				if (this.prevArrow != '' && showPrev) {
+				if (showPrev) {
 					e.stopPropagation();
 					that.setFirstDate(prevFirstDate);
 				}
 			});
 
-			var titleCellCount = maxCol - 2;
-			var titleWidth = (cellWidth * titleCellCount);
-			var titleCell = $('<div/>').addClass(monyearClass + 'title').css(
-					$.extend({}, cellTitleCSS, {
-						width: titleWidth + 'px',
-						borderTopWidth: borderSize,
-						float: 'left'
-					}));
+			var titleCell = $('<td colspan="5"/>').addClass(monyearClass + 'title');
+			var firstDateMonth = firstDate.getMonth();
+			var monthText = $('<span/>').html(monthNames[firstDateMonth]);
+			var yearText = $('<span/>').html(firstDate.getFullYear());
+			var titleYearMonth = $('<div/>').append(monthText).append(yearText);
+			titleCell.append(titleYearMonth);
 
-			var nextCell = $('<div/>').addClass(monyearClass).css($.extend({}, cellTitleCSS, {
-				borderWidth: borderSize + 'px ' + borderSize + 'px 0 0',
-				float: 'left'
-			})).append(
+			var nextCell = $('<td/>').addClass(monyearClass + 'next-arrow ');
+			nextCell.append(
 					$('<a/>').addClass('next-arrow' + (showNext ? '' : '-off'))
 							.html(this.nextArrow)).mousedown(function() {
 				return false;
 			}).click(function(e) {
-				if (this.nextArrow != '' && showNext) {
+				if (showNext) {
 					e.stopPropagation();
 					that.setFirstDate(nextFirstDate);
 				}
 			});
 
 			// Add cells for prev/title/next
-			group1.append(prevCell).append(titleCell).append(nextCell);
+			title.append(prevCell).append(titleCell).append(nextCell);
 
-			var calendarData = $('<table />');
 			// Add all the cells to the calendar
-			var firstDateMonth = firstDate.getMonth();
-			var firstDateYear = firstDate.getFullYear();
 			for ( var row = 0, cellIndex = 0; row < maxRow + 1; row++) {
 				var rowLine = $('<tr/>');
 				for ( var col = 0; col < maxCol; col++, cellIndex++) {
@@ -284,16 +268,15 @@ $(function() {
 						cell.html(dowNames[col]);
 						cellDate = null;
 
-						// Update the css for the cell
-						$.extend(cellTitleCSS, {
+						// Assign other properties to the cell
+						cell.addClass(coreClass + cellClass).css({
+							height: cellHeight + 'px',
+							lineHeight: cellHeight + 'px',
 							borderTopWidth: borderSize,
 							borderBottomWidth: borderSize,
 							borderLeftWidth: (row > 0 || (!row && !col)) ? borderSize : 0,
 							borderRightWidth: (row > 0 || (!row && col == 6)) ? borderSize : 0,
-						// zIndex: cellZIndex
 						});
-						// Assign other properties to the cell
-						cell.addClass(coreClass + cellClass).css(cellTitleCSS);
 					} else {
 						var specialData = '';
 						// Get the new date for this cell
@@ -467,28 +450,17 @@ $(function() {
 							height: cellHeight + 'px',
 							lineHeight: cellHeight / 3 + 'px',
 							borderWidth: borderSize,
-						// zIndex: cellZIndex
-
 						});
 					}
 
 					// Add cell to calendar
 					rowLine.append(cell);
 				}
-				calendarData.append(rowLine);
+				group.append(rowLine);
 			}
-			group1.append(calendarData);
+			//group.append(calendarData);
 
-			// Render the month / year title
-			var monthText = $('<span/>').html(monthNames[firstDateMonth]);
-			var yearText = $('<span/>').html(firstDateYear);
-			var titleYearMonth = $('<div/>').append(monthText).append(yearText);
-
-			// Add to title
-			titleCell.children().remove();
-			titleCell.append(titleYearMonth);
-
-			return group1;
+			return group;
 
 		},
 
