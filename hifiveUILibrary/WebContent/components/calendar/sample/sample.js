@@ -35,21 +35,21 @@ $(function(){
 			this.view.append('#monthSelect', 'monthSelect');
 			this.view.append('#daySelect', 'daySelect', {date : date});
 
-			$('#spnSelectedDate').html(date.toLocaleDateString());
-			$('#spnToday').html(date.toLocaleDateString());
+			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
+			this.$find('#spnToday').html(date.toLocaleDateString());
 
 		},
 
 		//---------任意の年月を設定する----------
 
 		// カレンダーで選択すると、Select要素を更新する
-		'#container syncWithCalendar': function(context) {
-			var date = context.evArg.date;
-			$('#yearSelect').val(date.getFullYear());
-			$('#monthSelect').val(date.getMonth() + 1);
-			$('#daySelect').val(date.getDate());
-			$('#spnSelectedDate').html(date.toLocaleDateString());
-		},
+//		'#container syncWithCalendar': function(context) {
+//			var date = context.evArg.date;
+//			this.$find('#yearSelect').val(date.getFullYear());
+//			this.$find('#monthSelect').val(date.getMonth() + 1);
+//			this.$find('#daySelect').val(date.getDate());
+//			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
+//		},
 
 		'.changeDate change': function(context) {
 			var date = this._getDateInfo();
@@ -61,13 +61,7 @@ $(function(){
 		'#btnSetSelectedDate click': function() {
 			var date = this._getDateInfo();
 			this.calendarController.setDate(date);
-			this.calendarController.render();
-			$('#spnSelectedDate').html(date.toLocaleDateString());
-		},
-
-		'#btnGoToSelectedDate click': function() {
-			var date = this._getDateInfo();
-			this.calendarController.setFirstDate(date);
+			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
 		},
 
 		'#btnGoToToday click': function() {
@@ -77,12 +71,15 @@ $(function(){
 
 		// Select要素から、ユーザを選択する日付を取得する
 		_getDateInfo: function(){
-			return new Date($('#yearSelect').val(), $('#monthSelect').val() - 1, $('#daySelect').val());
+			var year = this.$find('#yearSelect').val();
+			var month = this.$find('#monthSelect').val() - 1;
+			var day = this.$find('#daySelect').val();
+			return new Date(year, month, day);
 		},
 
 		//-------選択するモードを変更する--------
 		'#selSelectMode change': function() {
-			this.calendarController.setSelectMode($('#selSelectMode').val());
+			this.calendarController.setSelectMode(this.$find('#selSelectMode').val());
 		},
 
 		// ---------選択できない日付を指定する------------------
@@ -100,33 +97,19 @@ $(function(){
 		'#btnDateCssAdd click': function() {
 			var dates = this.calendarController.getSelectedDate();
 			//for (var i=0; i<dates.length; i++) {
-				this.calendarController.setCssClass(dates, $("#selCssDate").val());
+				this.calendarController.setCssClass(dates, this.$find("#selCssDate").val());
 			//}
 		},
 
 		// 週間の日のスタイルにCSSでカスタマイズ
 		'#btnCssDow click': function() {
-			this.calendarController.setCssClassForDow($('#selDowName').val(), $("#selCssDowName").val());
+			this.calendarController.setCssClassForDow(this.$find('#selDowName').val(), this.$find("#selCssDowName").val());
 		},
 
 		// ---------特別の日付を指定する------------------
-
-		'#btnSetSpecDate click': function(){
-			var date = this._getDateInfo();
-			var isMark = $('#chkMarkDate').is(':checked');
-			var data = $('#txtContentDate').val();
-			//var cssName = $('#selCssSpecDate').val();
-
-			this.calendarController.setSpecialDate(date, {
-				data: data,
-				isMark: isMark,
-				//cssName: cssName
-			});
-		},
-
 		'#chkMarkDate change': function(){
 			var dates = this.calendarController.getSelectedDate();
-			var isMarker = $('#chkMarkDate').is(':checked');
+			var isMarker = this.$find('#chkMarkDate').is(':checked');
 			for (var i=0; i<dates.length; i++) {
 				this.calendarController.setMarker(dates[i], isMarker);
 			}
@@ -134,7 +117,7 @@ $(function(){
 
 		'#btnSetTextDate click': function(){
 			var dates = this.calendarController.getSelectedDate();
-			var data = $('#txtContentDate').val();
+			var data = this.$find('#txtContentDate').val();
 			for (var i=0; i<dates.length; i++) {
 				this.calendarController.setText(dates[i], data);
 			}

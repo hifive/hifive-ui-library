@@ -14,7 +14,14 @@
  * limitations under the License.
  *
  */
-$(function() {
+(function($){
+
+	// 週間の日名
+	var dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+	// 月名
+	var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
 
 	/**
 	 * カレンダーコントローラ
@@ -27,16 +34,22 @@ $(function() {
 		/**
 		 * コントローラ名(必須)
 		 *
-		 * @instance
 		 * @memberOf h5.ui.components.Calendar
 		 * @type String
 		 */
 		__name: 'h5.ui.components.Calendar',
 
 		/**
+		 * 日のクラス
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type 定数
+		 */
+		dowNameClasses: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
+
+		/**
 		 * DOMカレンダー要素のID
 		 *
-		 * @instance
 		 * @memberOf h5.ui.components.Calendar
 		 * @type String
 		 */
@@ -45,50 +58,90 @@ $(function() {
 		/**
 		 * カレンダーを添付される要素
 		 *
-		 * @instance
 		 * @memberOf h5.ui.components.Calendar
 		 * @type
 		 */
 		_root: null,
 
-		// カレンダーでの選択方
-		// ３種類あります。
-		// 'single':特定の1日を選択する, 'continue':連続する日, 'multi':任意の日を複数指定できる。
+		/**
+		 * カレンダーでの選択方('single':特定の1日, 'continue':連続する日, 'multi':複数の日)
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type String
+		 */
 		selectMode: null,
 
-		// 選択した日付
+		/**
+		 * 選択した日付
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Array
+		 */
 		_selectedDate: [],
 
-		// １ヶ月の最初の日
+		/**
+		 * 月の最初の日(表示中の日付の指定用)
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Date
+		 */
 		_firstDate: null,
 
-		// 今日
+		/**
+		 * 今日
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Date
+		 */
 		todayDate: new Date(),
 
-		// 全前の月を移動するためにのアイコン
+		/**
+		 * ←と→のアイコン（全前の月の移動用）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Date
+		 */
 		prevArrow: '\u25c4',
 		nextArrow: '\u25ba',
 
-		// カレンダーのサイズ
-		size: null,
+		/**
+		 * カレンダーのサイズ（pixelで計測する）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Integer
+		 */
+		size: 0,
 
-		// カレンダーのスタイル
-
-
-		userCssName: null,
-
-		// 選択できない日付
+		/**
+		 * 選択できない日付
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Array
+		 */
 		_unselectableDates: [],
 
-		// 週間の日によって、Cssでカスタマイズするマップ。
+		/**
+		 * Cssでカスタマイズされている週間の日
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Map
+		 */
 		_userCssDow: {},
 
-		// 特別の日付
-		// 属性が３つあります。
-		// 'cssClass'：Cssでカスタマイズされるクラス名、 'isMark'：マーカー日、 'text':ツールチップのテキスト
+		/**
+		 * 特別の日（Cssでカスタマイズされている日、マーカー日又は、ツールチップがある日）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Map
+		 */
 		_specialDates: {},
 
-		// ビューモード
+		/**
+		 * 表示される月の数
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @type Integer
+		 */
 		_monthCount: 1,
 
 		/**
@@ -102,9 +155,24 @@ $(function() {
 			// 初期
 			this._root = $(this.rootElement);
 			this.size = 400;
-			this.userCssName = 'default ';
 			this.todayDate.setHours(0, 0, 0, 0);
 			this.selectMode = 'single';
+
+			// 全ての要素のClass
+			this.coreClass = ' core border ';
+
+			this.option = {
+				maxRow: 6,
+				maxCol: 7,
+				borderSize: 1,
+				cellWidth: 0,
+				cellHeight: 0
+			};
+			// カレンダーのサイズに基づいて、日のCellのサイズを計測する
+			this.option.cellWidth = this._getCellSize(this.size, this.option.maxCol);
+			this.option.cellHeight = this._getCellSize(this.size, this.option.maxRow + 2);
+
+
 
 			// 選択されている月の最初の日
 			this._firstDate = new Date(this.todayDate);
@@ -114,7 +182,7 @@ $(function() {
 			this.id = 'calendar_' + Math.round(Math.random() * 1e10);
 
 			// Gen with number of months displayed
-			this._monthCount = 3;
+			this._monthCount = 1;
 			this._render();
 		},
 
@@ -128,14 +196,11 @@ $(function() {
 			var root = this._root;
 
 			// カレンダーのの枠のDOMを作成する
-			var calendar = null;
-			if ($('#' + this.id).length == 0) {
+			var calendar = this.$find('#' + this.id);
+			if (calendar.length == 0) {
 				calendar = $('<div/>').attr('id', this.id);
 				calendar.data('is', true);
-
 				root.append(calendar);
-			} else {
-				calendar = $('#' + this.id);
 			}
 			calendar.addClass('calendar');
 			calendar.children().remove();
@@ -159,41 +224,22 @@ $(function() {
 		 */
 		_renderMonth: function(firstDate) {
 			var that = this;
-
-			// 全ての要素のClass
-			var coreClass = ' core border ';
-
-			// 定数
-			var maxRow = 6;
-			var maxCol = 7;
-			var borderSize = 1;
+			var option = this.option;
 
 			// 日と月名の配列
-			var dowNames = ['日', '月', '火', '水', '木', '金', '土'];
-			var dowNameClasses = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-			var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月',
-					'12月'];
-
-			// カレンダーのサイズ
-			var containerWidth = this.size;
-			var containerHeight = this.size;
-
-			// カレンダーのサイズに基づいて、日のCellのサイズを計測する
-			var cellWidth = this._getCellSize(containerWidth, maxCol);
-			var cellHeight = this._getCellSize(containerHeight, maxRow + 2);
+			var dowNameClasses = this.dowNameClasses;
 
 			// 既定のカレンダー
 			var group = $('<table />').data('is', true);
 			group.css({
-				width: (cellWidth * maxCol) + 'px',
+				width: (option.cellWidth * option.maxCol) + 'px',
 				margin: '1px',
-				//横方向又は、縦方向で表示する
-				//float: 'left'
+			//横方向又は、縦方向で表示する
+			//float: 'left'
 			});
 
-			// 前後の月の最初日を取得する
-			var prevFirstDate = this.getFirstDate(firstDate, -1);
-			var nextFirstDate = this.getFirstDate(firstDate, 1);
+			var title = this._renderTitle(firstDate, option);
+			group.append(title);
 
 			// カレンダーで、最初の日を取得する（先月の日）
 			var startDate = new Date(firstDate);
@@ -204,19 +250,181 @@ $(function() {
 				startDate.setDate(startDate.getDate() - startOffset);
 			}
 
-			// Gather flags for prev/next arrows
-			var showPrev = (firstDate.getTime() == this._firstDate.getTime());
-			var lastMonthDate = this.getFirstDate(this._firstDate, this._monthCount - 1);
-			var showNext = (firstDate.getTime() == lastMonthDate.getTime());
+			// Add all the cells to the calendar
+			for ( var row = 0, cellIndex = 0; row < option.maxRow + 1; row++) {
+				var rowLine = $('<tr/>');
+				for ( var col = 0; col < option.maxCol; col++, cellIndex++) {
+					var cellDate = new Date(startDate);
+					var cellClass = 'day';
+					var cell = $('<td/>');
 
-			var monyearClass = coreClass + 'monyear ';
+					// row = Oの場合、週間の日付
+					if (!row) {
+						cellClass = 'dow';
+						cell.html(dowNames[col]);
+						cellDate = null;
+
+						// Assign other properties to the cell
+						cell.addClass(this.coreClass + cellClass);
+						cell.css({
+							height: option.cellHeight + 'px',
+							lineHeight: option.cellHeight + 'px',
+							borderTopWidth: option.borderSize,
+							borderBottomWidth: option.borderSize,
+							borderLeftWidth: (row > 0 || (!row && !col)) ? option.borderSize : 0,
+							borderRightWidth: (row > 0 || (!row && col == 6)) ? option.borderSize
+									: 0,
+						});
+					} else {
+						var specialData = '';
+						// Get the new date for this cell
+						cellDate.setDate(cellDate.getDate() + col + ((row - 1) * option.maxCol));
+
+						// Get value for this date
+						var cellDateTime = cellDate.getTime();
+
+						// Assign date for the cell
+						cell.html(cellDate.getDate());
+						// Handle active dates and weekends
+						var classDow = dowNameClasses[cellDate.getDay()];
+						cellClass += ' ' + classDow;
+
+						// 選択できないデートのハンドル
+						if ($.inArray(cellDate.getTime(), this._unselectableDates) != -1) {
+							cellClass += ' noday';
+						} else {
+							// 先月の日のハンドル
+							if (firstDate.getMonth() != cellDate.getMonth()) {
+								cellClass += ' outday';
+							}
+							// 今日のハンドル
+							if (this.todayDate.getTime() == cellDateTime) {
+								cellClass += ' today';
+							}
+							// 選択したデートのハンドル
+							var dates = this.getSelectedDate();
+							for ( var i = 0; i < dates.length; i++) {
+								if (this._compareDate(cellDate, dates[i]) == 0) {
+									cellClass += ' selected';
+									break;
+								}
+							}
+
+							// 特別の日のハンドル
+							if (this._specialDates.hasOwnProperty(cellDate)) {
+								var date = this._specialDates[cellDate];
+								for ( var i in date) {
+									if (i == 'isMark') {
+										if (date['isMark']) {
+											cell.append("<br/>●");
+										}
+									} else if (i == 'data') {
+										if (date['data'] != '') {
+											specialData = date['data'];
+										}
+									} else if (i == 'cssClass') {
+										if (date['cssClass'] != 'default') {
+											cellClass += ' ' + date['cssClass'];
+										}
+									}
+								}
+							}
+
+							if (this._userCssDow.hasOwnProperty(classDow)) {
+								cellClass += ' ' + this._userCssDow[classDow];
+							}
+
+							cell.mouseover(
+									function() {
+										var clickedData = $(this).data('data');
+										if (clickedData.data) {
+											var text = clickedData.data;
+											$(this).append(
+													'<div class="tooltips" style="top:'
+															+ option.cellHeight + 'px">' + text
+															+ '</div>');
+										}
+									}).mouseout(function() {
+								$(this).find(".tooltips").remove();
+							}).mousedown(function() {
+								return false;
+							}).click(function(e) {
+								e.stopPropagation();
+
+								// Get the data from this cell
+								var clickedData = $(this).data('data');
+
+								// Save date to selected and first
+								switch (that.selectMode) {
+								case 'continue':
+									if (that._selectedDate.length <= 1) {
+										that._selectedDate.push(new Date(clickedData.date));
+									} else {
+										that._selectedDate[0] = new Date(that._selectedDate[1]);
+										that._selectedDate[1] = new Date(clickedData.date);
+									}
+									break;
+								case 'multi':
+									that._selectedDate.push(new Date(clickedData.date));
+									break;
+								default:
+									that._selectedDate[0] = clickedData.date;
+									break;
+								}
+
+								that.setFirstDate(clickedData.date);
+							});
+						}
+
+						// Assign other properties to the cell
+						cell.data('data', {
+							date: cellDate,
+							data: specialData
+						}).addClass(this.coreClass + cellClass).css({
+							width: option.cellWidth + 'px',
+							height: option.cellHeight + 'px',
+							lineHeight: option.cellHeight / 3 + 'px',
+							borderWidth: option.borderSize,
+						});
+					}
+
+					// Add cell to calendar
+					rowLine.append(cell);
+				}
+				group.append(rowLine);
+			}
+
+			return group;
+		},
+
+		//
+
+		/**
+		 * カレンダーのタイトルを生成する。
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param firstDate
+		 * @param option Use for setting CSS
+		 * @returns Dom要素
+		 */
+		_renderTitle: function(firstDate, option) {
+			var that = this;
+			// 前後の月の最初日を取得する
+			var prevFirstDate = this.getFirstDate(firstDate, -1);
+			var nextFirstDate = this.getFirstDate(firstDate, 1);
+
+			// Gather flags for prev/next arrows
+			var showPrev = (this._compareDate(firstDate, this._firstDate) == 0);
+			var lastMonthDate = this.getFirstDate(this._firstDate, this._monthCount - 1);
+			var showNext = (this._compareDate(firstDate, lastMonthDate) == 0);
+
+			var monyearClass = this.coreClass + 'monyear ';
 			var title = $('<tr/>').css({
-				height: cellHeight + 'px',
-				lineHeight: cellHeight + 'px',
-				borderWidth: borderSize + 'px',
+				height: option.cellHeight + 'px',
+				lineHeight: option.cellHeight + 'px',
+				borderWidth: option.borderSize + 'px',
 			});
-			title.addClass(coreClass);
-			group.append(title);
+			title.addClass(this.coreClass);
 
 			// Create the arrows and title
 			var prevCell = $('<td/>').addClass(monyearClass + 'prev-arrow ');
@@ -252,216 +460,7 @@ $(function() {
 
 			// Add cells for prev/title/next
 			title.append(prevCell).append(titleCell).append(nextCell);
-
-			// Add all the cells to the calendar
-			for ( var row = 0, cellIndex = 0; row < maxRow + 1; row++) {
-				var rowLine = $('<tr/>');
-				for ( var col = 0; col < maxCol; col++, cellIndex++) {
-					var cellDate = new Date(startDate);
-					var cellClass = 'day';
-					var cellZIndex = this._zIndex + (cellIndex);
-					var cell = $('<td/>');
-
-					// row = Oの場合、週間の日付
-					if (!row) {
-						cellClass = 'dow';
-						cell.html(dowNames[col]);
-						cellDate = null;
-
-						// Assign other properties to the cell
-						cell.addClass(coreClass + cellClass).css({
-							height: cellHeight + 'px',
-							lineHeight: cellHeight + 'px',
-							borderTopWidth: borderSize,
-							borderBottomWidth: borderSize,
-							borderLeftWidth: (row > 0 || (!row && !col)) ? borderSize : 0,
-							borderRightWidth: (row > 0 || (!row && col == 6)) ? borderSize : 0,
-						});
-					} else {
-						var specialData = '';
-						// Get the new date for this cell
-						cellDate.setDate(cellDate.getDate() + col + ((row - 1) * maxCol));
-						cellDate.setHours(0, 0, 0, 0);
-
-						// Get value for this date
-						var cellDateTime = cellDate.getTime();
-
-						// Assign date for the cell
-						cell.html(cellDate.getDate());
-						// Handle active dates and weekends
-						var classDow = dowNameClasses[cellDate.getDay()];
-						cellClass += ' ' + classDow;
-
-						// 選択できないデートのハンドル
-						if ($.inArray(cellDate.getTime(), this._unselectableDates) != -1) {
-							cellClass += ' noday';
-						} else {
-							// 先月の日のハンドル
-							if (firstDateMonth != cellDate.getMonth()) {
-								cellClass += ' outday';
-							}
-							// 今日のハンドル
-							if (this.todayDate.getTime() == cellDateTime) {
-								cellClass += ' today';
-								cellZIndex += 50;
-							}
-							// 選択したデートのハンドル
-							switch (that.selectMode) {
-							case 'continue':
-								var start = this._selectedDate[0] || 0;
-								var end = this._selectedDate[1] || 0;
-
-								if (start == 0) {
-									alert("Logic Error!");
-									return;
-								} else {
-									if (start.getTime() == cellDateTime) {
-										cellClass += ' selected';
-										cellZIndex += 51;
-									}
-
-									if (end == 0) {
-										break;
-									}
-
-									var temp = null;
-									if (start > end) {
-										temp = end;
-										end = start;
-										start = temp;
-									}
-
-									if (start.getTime() <= cellDateTime
-											&& cellDateTime <= end.getTime()) {
-										cellClass += ' selected';
-										cellZIndex += 51;
-									}
-								}
-								break;
-							case 'multi':
-								for ( var i = 0; i < this._selectedDate.length; i++) {
-									if (this._selectedDate[i].getTime() == cellDateTime) {
-										cellClass += ' selected';
-										cellZIndex += 51;
-										break;
-									}
-								}
-
-								break;
-							default:
-								if (this._selectedDate.length > 0
-										&& this._selectedDate[0].getTime() == cellDateTime) {
-									cellClass += ' selected';
-									cellZIndex += 51;
-								}
-								break;
-							}
-
-							// 特別の日のハンドル
-							if (this._specialDates.hasOwnProperty(cellDate)) {
-								cellZIndex += 53;
-								var date = this._specialDates[cellDate];
-								for ( var i in date) {
-									switch (i) {
-									case 'isMark':
-										if (date['isMark']) {
-											cell.append("<br/>●");
-										}
-										break;
-									case 'data':
-										if (date['data'] != '') {
-											specialData = date['data'];
-										}
-										break;
-									case 'cssClass':
-										if (date['cssClass'] != 'default') {
-											cellClass += ' ' + date['cssClass'];
-											cellZIndex += 53;
-										}
-										break;
-									}
-								}
-							}
-
-							if (this._userCssDow.hasOwnProperty(classDow)) {
-								cellClass += ' ' + this._userCssDow[classDow];
-								cellZIndex += 54;
-							}
-
-							cell.mouseover(
-									function() {
-										var clickedData = $(this).data('data');
-										var text;
-										if (clickedData.data) {
-											text = clickedData.data;
-											$(this)
-													.append(
-															'<div class="tooltips" style="top:'
-																	+ cellHeight + 'px">' + text
-																	+ '</div>');
-										}
-									}).mouseout(function() {
-								$(this).find(".tooltips").remove();
-							}).mousedown(function() {
-								return false;
-							}).click(function(e) {
-								e.stopPropagation();
-
-								// Get the data from this cell
-								var clickedData = $(this).data('data');
-
-								// Save date to selected and first
-								switch (that.selectMode) {
-								case 'continue':
-
-									if (that._selectedDate.length == 1) {
-										that._selectedDate.push(new Date(clickedData.date));
-									} else {
-										that._selectedDate[0] = new Date(that._selectedDate[1]);
-										that._selectedDate[1] = new Date(clickedData.date);
-									}
-									break;
-								case 'multi':
-									that._selectedDate.push(new Date(clickedData.date));
-									break;
-								default:
-									that._selectedDate[0] = clickedData.date;
-									break;
-								}
-								;
-
-								// that._selectedDate[0] = clickedData.date;
-								that._firstDate = new Date(clickedData.date);
-								that._firstDate.setDate(1);
-
-								that._render();
-								that.trigger('syncWithCalendar', {
-									date: clickedData.date
-								});
-							});
-						}
-
-						// Assign other properties to the cell
-						cell.data('data', {
-							date: cellDate,
-							data: specialData
-						}).addClass(coreClass + cellClass).css({
-							width: cellWidth + 'px',
-							height: cellHeight + 'px',
-							lineHeight: cellHeight / 3 + 'px',
-							borderWidth: borderSize,
-						});
-					}
-
-					// Add cell to calendar
-					rowLine.append(cell);
-				}
-				group.append(rowLine);
-			}
-			//group.append(calendarData);
-
-			return group;
-
+			return title;
 		},
 
 		/**
@@ -474,6 +473,25 @@ $(function() {
 		 */
 		_getCellSize: function(_size, _count) {
 			return (_size / _count) + ((1 / _count) * (_count - 1));
+		},
+
+		/**
+		 * Dateオブジェクトの比較
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param date1
+		 * @param date2
+		 * @returns 0: date1 = date2
+		 */
+		_compareDate: function(date1, date2) {
+			if (date1.getTime() == date2.getTime()) {
+				return 0;
+			} else if (date1.getTime() < date2.getTime()) {
+				return 1;
+
+			} else {
+				return 2;
+			}
 		},
 
 		/**
@@ -546,25 +564,37 @@ $(function() {
 		 */
 		getSelectedDate: function() {
 			var dates = [];
-			switch (this.selectMode) {
-			case 'single':
-				dates.push(this._selectedDate[0]);
-				break;
-			case 'continue':
-				var start = (this._selectedDate[0].getTime() <= this._selectedDate[1]) ? new Date(
-						this._selectedDate[0]) : new Date(this._selectedDate[1]);
-				var end = (this._selectedDate[0].getTime() > this._selectedDate[1]) ? new Date(
-						this._selectedDate[0]) : new Date(this._selectedDate[1]);
-				while (start.getTime() <= end.getTime()) {
-					dates.push(new Date(start));
-					start = new Date(start.setDate(start.getDate() + 1));
+			if (this._selectedDate.length != 0) {
+				switch (this.selectMode) {
+				case 'single':
+					dates.push(this._selectedDate[0]);
+					break;
+				case 'continue':
+					if (this._selectedDate.length == 1) {
+						dates.push(this._selectedDate[0]);
+					} else {
+						// pre-selected date > after-selected dateのチェック
+						var start = (this
+								._compareDate(this._selectedDate[0], this._selectedDate[1]) != 2) ? new Date(
+								this._selectedDate[0])
+								: new Date(this._selectedDate[1]);
+						//
+						var end = (this._compareDate(this._selectedDate[0], this._selectedDate[1]) != 1) ? new Date(
+								this._selectedDate[0])
+
+								: new Date(this._selectedDate[1]);
+						while (start.getTime() <= end.getTime()) {
+							dates.push(new Date(start));
+							start = new Date(start.setDate(start.getDate() + 1));
+						}
+					}
+					break;
+				case 'multi':
+					dates = this._selectedDate;
+					break;
+				default:
+					break;
 				}
-				break;
-			case 'multi':
-				dates = this._selectedDate;
-				break;
-			default:
-				break;
 			}
 			return dates;
 		},
@@ -743,4 +773,4 @@ $(function() {
 	};
 
 	h5.core.expose(calendarController);
-});
+})(jQuery);
