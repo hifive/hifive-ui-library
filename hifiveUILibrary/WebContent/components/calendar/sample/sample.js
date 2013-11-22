@@ -53,20 +53,20 @@ $(function(){
 
 		'.changeDate change': function(context) {
 			var date = this._getDateInfo();
-			this.calendarController.setFirstDate(date);
+			this.calendarController.setCalendar(date.getFullYear(), date.getMonth());
 			this.view.update('#daySelect', 'daySelect', {date : date} );
 		},
 
 		// 年・月・日を指定する
 		'#btnSetSelectedDate click': function() {
 			var date = this._getDateInfo();
-			this.calendarController.setDate(date);
+			this.calendarController.select(date);
 			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
 		},
 
 		'#btnGoToToday click': function() {
 			var date = new Date();
-			this.calendarController.setFirstDate(date);
+			this.calendarController.setCalendar(date.getFullYear(), date.getMonth());
 		},
 
 		// Select要素から、ユーザを選択する日付を取得する
@@ -85,10 +85,10 @@ $(function(){
 		// ---------選択できない日付を指定する------------------
 		'#btnUnselectableDate click': function(){
 			var dates = this.calendarController.getSelectedDate();
-			this.calendarController.setUnselectedDate(dates);
+			this.calendarController.setSelectable(dates, false);
 		},
 		'#btnUnselectableDateReset click': function(){
-			this.calendarController.setUnselectedDate();
+			this.calendarController.setSelectable();
 		},
 
 		//----------CSSでカスタマイズ機能------------------
@@ -119,7 +119,7 @@ $(function(){
 			var dates = this.calendarController.getSelectedDate();
 			var data = this.$find('#txtContentDate').val();
 			for (var i=0; i<dates.length; i++) {
-				this.calendarController.setText(dates[i], data);
+				this.calendarController.setTooltip(dates[i], data);
 			}
 		},
 	};
