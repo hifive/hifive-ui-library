@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-(function($){
+(function($) {
 
 	// =========================================================================
 	//
@@ -32,10 +32,10 @@
 	// =========================================================================
 
 	// 週間の日名
-	var dowNames = ['日', '月', '火', '水', '木', '金', '土'];
+	var DOW_NAME = ['日', '月', '火', '水', '木', '金', '土'];
 
 	// 月名
-	var monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+	var MON_NAME = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
 
 	// =========================================================================
@@ -73,7 +73,6 @@
 	//
 	// =========================================================================
 
-	//TODO コントローラやロジックを記述します。
 	/**
 	 * カレンダーコントローラ
 	 *
@@ -96,15 +95,7 @@
 		 * @memberOf h5.ui.components.Calendar
 		 * @type 定数
 		 */
-		dowNameClasses: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
-
-		/**
-		 * DOMカレンダー要素のID
-		 *
-		 * @memberOf h5.ui.components.Calendar
-		 * @type String
-		 */
-		id: null,
+		DOW_NAME_CLASSES: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
 
 		/**
 		 * カレンダーを添付される要素
@@ -128,7 +119,7 @@
 		 * @memberOf h5.ui.components.Calendar
 		 * @type Array
 		 */
-		_selectedDate: [],
+		_selectedDates: [],
 
 		/**
 		 * 月の最初の日(表示中の日付の指定用)
@@ -141,6 +132,7 @@
 		/**
 		 * 今日
 		 *
+		 * @instance
 		 * @memberOf h5.ui.components.Calendar
 		 * @type Date
 		 */
@@ -149,19 +141,12 @@
 		/**
 		 * ←と→のアイコン（全前の月の移動用）
 		 *
+		 * @instance
 		 * @memberOf h5.ui.components.Calendar
 		 * @type Date
 		 */
 		prevArrow: '\u25c4',
 		nextArrow: '\u25ba',
-
-		/**
-		 * カレンダーのサイズ（pixelで計測する）
-		 *
-		 * @memberOf h5.ui.components.Calendar
-		 * @type Integer
-		 */
-		size: 0,
 
 		/**
 		 * 選択できない日付
@@ -180,12 +165,12 @@
 		_userCssDow: {},
 
 		/**
-		 * 特別の日（Cssでカスタマイズされている日、マーカー日又は、ツールチップがある日）
+		 * 特別の日
 		 *
 		 * @memberOf h5.ui.components.Calendar
-		 * @type Map
+		 * @type Map (キー：日付、値：Object{CssClass、isMarker、tooltip-text})
 		 */
-		_specialDates: {},
+		_specialDateMap: {},
 
 		/**
 		 * 表示される月の数
@@ -204,33 +189,35 @@
 		__init: function(context) {
 
 			// 初期
-			this._root = $(this.rootElement);
-			this.size = 400;
+			var root = this._root = $(this.rootElement);
 			this.todayDate.setHours(0, 0, 0, 0);
 			this.selectMode = 'single';
 
-			// 全ての要素のClass
-			this.coreClass = ' core border ';
+			// 既定のサイズを設定する
+			root.addClass('calendar');
 
-			this.option = {
+			// 全ての要素のClass
+			this._coreCssClass = 'core border ';
+
+			this._option = {
 				maxRow: 6,
 				maxCol: 7,
 				borderSize: 1,
 				cellWidth: 0,
 				cellHeight: 0
 			};
-			// カレンダーのサイズに基づいて、日のCellのサイズを計測する
-			this.option.cellWidth = this._getCellSize(this.size, this.option.maxCol);
-			this.option.cellHeight = this._getCellSize(this.size, this.option.maxRow + 2);
+			var containerWidth = root[0].offsetWidth;
+			var containerHeight = containerWidth;
 
-
+			// カレンダーのCSSに基づいて、日のCellのサイズを計測する
+			this._option.cellWidth = this._getCellSize(containerWidth, this._option.maxCol);
+			this._option.cellHeight = this._getCellSize(containerHeight, this._option.maxRow + 2);
+			this._option.width = containerWidth;
+			this._option.height = containerHeight;
 
 			// 選択されている月の最初の日
 			this._firstDate = new Date(this.todayDate);
 			this._firstDate.setDate(1);
-
-			//Gen calendar Id
-			this.id = 'calendar_' + Math.round(Math.random() * 1e10);
 
 			// Gen with number of months displayed
 			this._monthCount = 1;
@@ -243,27 +230,21 @@
 		 * @memberOf h5.ui.components.Calendar
 		 */
 		_render: function() {
+			starttime = (new Date()).getTime();
 
 			var root = this._root;
-
-			// カレンダーのの枠のDOMを作成する
-			var calendar = this.$find('#' + this.id);
-			if (calendar.length == 0) {
-				calendar = $('<div/>').attr('id', this.id);
-				calendar.data('is', true);
-				root.append(calendar);
-			}
-			calendar.addClass('calendar');
-			calendar.children().remove();
-
+			root.children().remove();
 			var defaultGroup = this._renderMonth(this._firstDate);
-			defaultGroup.attr('id', this.id + '_group0');
-			calendar.append(defaultGroup);
+			defaultGroup.attr('id', root.attr('id') + '_calendar_group0');
+			root.append(defaultGroup);
 			for ( var i = 1; i < this._monthCount; i++) {
-				var group = this._renderMonth(this.getFirstDate(this._firstDate, i));
-				group.attr('id', this.id + '_group' + i);
-				calendar.append(group);
+				var group = this._renderMonth(this._getFirstDayOfMonth(this._firstDate, i));
+				group.attr('id', root.attr('id') + '_calendar_group' + i);
+				root.append(group);
 			}
+
+			endtime = (new Date()).getTime();
+			console.log('_render() Function execute in ' + (endtime - starttime) + 'ms');
 		},
 
 		/**
@@ -274,23 +255,14 @@
 		 * @returns UI要素
 		 */
 		_renderMonth: function(firstDate) {
-			var that = this;
-			var option = this.option;
-
-			// 日と月名の配列
-			var dowNameClasses = this.dowNameClasses;
+			var option = this._option;
 
 			// 既定のカレンダー
-			var group = $('<table />').data('is', true);
-			group.css({
-				width: (option.cellWidth * option.maxCol) + 'px',
-				margin: '1px',
-			//横方向又は、縦方向で表示する
-			//float: 'left'
-			});
+			var $group = $('<table />').data('is', true);
 
-			var title = this._renderTitle(firstDate, option);
-			group.append(title);
+			// タイトルを生成する。
+			var $title = this._createTitleBar(firstDate);
+			$group.append($title);
 
 			// カレンダーで、最初の日を取得する（先月の日）
 			var startDate = new Date(firstDate);
@@ -303,22 +275,22 @@
 
 			// Add all the cells to the calendar
 			for ( var row = 0, cellIndex = 0; row < option.maxRow + 1; row++) {
-				var rowLine = $('<tr/>');
+				var $rowLine = $('<tr/>');
 				for ( var col = 0; col < option.maxCol; col++, cellIndex++) {
 					var cellDate = new Date(startDate);
 					var cellClass = 'day';
-					var cell = $('<td/>');
+					var $cell = $('<td/>');
 
 					// row = Oの場合、週間の日付
 					if (!row) {
 						cellClass = 'dow';
-						cell.html(dowNames[col]);
+						$cell.html(DOW_NAME[col]);
 						cellDate = null;
 
 						// Assign other properties to the cell
-						cell.addClass(this.coreClass + cellClass);
-						cell.css({
-							height: option.cellHeight + 'px',
+						$cell.addClass(this._coreCssClass + cellClass);
+						$cell.css({
+							height: option.cellHeight,
 							lineHeight: option.cellHeight + 'px',
 							borderTopWidth: option.borderSize,
 							borderBottomWidth: option.borderSize,
@@ -330,125 +302,92 @@
 						var specialData = '';
 						// Get the new date for this cell
 						cellDate.setDate(cellDate.getDate() + col + ((row - 1) * option.maxCol));
+						cellClass = this._createCellClass(cellDate, firstDate);
+						$cell.html(cellDate.getDate());
 
-						// Get value for this date
-						var cellDateTime = cellDate.getTime();
-
-						// Assign date for the cell
-						cell.html(cellDate.getDate());
-						// Handle active dates and weekends
-						var classDow = dowNameClasses[cellDate.getDay()];
-						cellClass += ' ' + classDow;
-
-						// 選択できないデートのハンドル
-						if ($.inArray(cellDate.getTime(), this._unselectableDates) != -1) {
-							cellClass += ' noday';
-						} else {
-							// 先月の日のハンドル
-							if (firstDate.getMonth() != cellDate.getMonth()) {
-								cellClass += ' outday';
-							}
-							// 今日のハンドル
-							if (this.todayDate.getTime() == cellDateTime) {
-								cellClass += ' today';
-							}
-							// 選択したデートのハンドル
-							var dates = this.getSelectedDate();
-							for ( var i = 0; i < dates.length; i++) {
-								if (this._compareDate(cellDate, dates[i]) == 0) {
-									cellClass += ' selected';
-									break;
-								}
-							}
-
-							// 特別の日のハンドル
-							if (this._specialDates.hasOwnProperty(cellDate)) {
-								var date = this._specialDates[cellDate];
-								for ( var i in date) {
-									if (i == 'isMark') {
-										if (date['isMark']) {
-											cell.append("<br/>●");
-										}
-									} else if (i == 'data') {
-										if (date['data'] != '') {
-											specialData = date['data'];
-										}
-									} else if (i == 'cssClass') {
-										if (date['cssClass'] != 'default') {
-											cellClass += ' ' + date['cssClass'];
-										}
+						// 特別の日のハンドル
+						if (this._specialDateMap.hasOwnProperty(cellDate)) {
+							var date = this._specialDateMap[cellDate];
+							for ( var i in date) {
+								if (i == 'isMark') {
+									if (date['isMark']) {
+										$cell.append("<br/>●");
+									}
+								} else if (i == 'data') {
+									if (date['data'] != '') {
+										specialData = date['data'];
 									}
 								}
 							}
-
-							if (this._userCssDow.hasOwnProperty(classDow)) {
-								cellClass += ' ' + this._userCssDow[classDow];
-							}
-
-							cell.mouseover(
-									function() {
-										var clickedData = $(this).data('data');
-										if (clickedData.data) {
-											var text = clickedData.data;
-											$(this).append(
-													'<div class="tooltips" style="top:'
-															+ option.cellHeight + 'px">' + text
-															+ '</div>');
-										}
-									}).mouseout(function() {
-								$(this).find(".tooltips").remove();
-							}).mousedown(function() {
-								return false;
-							}).click(function(e) {
-								e.stopPropagation();
-
-								// Get the data from this cell
-								var clickedData = $(this).data('data');
-
-								// Save date to selected and first
-								switch (that.selectMode) {
-								case 'continue':
-									if (that._selectedDate.length <= 1) {
-										that._selectedDate.push(new Date(clickedData.date));
-									} else {
-										that._selectedDate[0] = new Date(that._selectedDate[1]);
-										that._selectedDate[1] = new Date(clickedData.date);
-									}
-									break;
-								case 'multi':
-									that._selectedDate.push(new Date(clickedData.date));
-									break;
-								default:
-									that._selectedDate[0] = clickedData.date;
-									break;
-								}
-
-								that.setFirstDate(clickedData.date);
-							});
 						}
 
 						// Assign other properties to the cell
-						cell.data('data', {
+						$cell.data('data', {
 							date: cellDate,
 							data: specialData
-						}).addClass(this.coreClass + cellClass).css({
-							width: option.cellWidth + 'px',
-							height: option.cellHeight + 'px',
+						}).addClass(this._coreCssClass + cellClass).css({
+							width: option.cellWidth,
+							height: option.cellHeight,
 							lineHeight: option.cellHeight / 3 + 'px',
 							borderWidth: option.borderSize,
 						});
 					}
 
 					// Add cell to calendar
-					rowLine.append(cell);
+					$rowLine.append($cell);
 				}
-				group.append(rowLine);
+				$group.append($rowLine);
 			}
-
-			return group;
+			return $group;
 		},
 
-		//
+		/**
+		 * 日付を基に、セルのCSSクラスを作成する。
+		 *
+		 * @param cellDate 日付
+		 * @param firstDate 表示中の最初の日
+		 * @returns String CSSクラス
+		 */
+		_createCellClass: function(cellDate, firstDate) {
+			var cellDateTime = cellDate.getTime();
+
+			// 日付と曜日のclassを追加する。
+			var classDow = this.DOW_NAME_CLASSES[cellDate.getDay()];
+			var cellClass = 'day ' + classDow;
+
+			// 選択できないデートのハンドル
+			if ($.inArray(cellDate.getTime(), this._unselectableDates) != -1) {
+				cellClass += ' noday';
+			} else {
+				// 先月の日のハンドル
+				if (firstDate.getMonth() != cellDate.getMonth()) {
+					cellClass += ' outday';
+				}
+
+				// 選択したデートのハンドル
+				if (this._isSelectedDateTime(cellDateTime)) {
+					cellClass += ' selected';
+				}
+
+				// 今日のハンドル
+				if (this.todayDate.getTime() == cellDateTime) {
+					cellClass += ' today';
+				}
+
+				// 特別の日のハンドル
+				if (this._specialDateMap.hasOwnProperty(cellDate)) {
+					var date = this._specialDateMap[cellDate];
+					if (date['cssClass'] && date['cssClass'] != 'default') {
+						cellClass += ' ' + date['cssClass'];
+					}
+				}
+
+				if (this._userCssDow.hasOwnProperty(classDow)) {
+					cellClass += ' ' + this._userCssDow[classDow];
+				}
+			}
+			return cellClass;
+		},
 
 		/**
 		 * カレンダーのタイトルを生成する。
@@ -458,60 +397,160 @@
 		 * @param option Use for setting CSS
 		 * @returns Dom要素
 		 */
-		_renderTitle: function(firstDate, option) {
+		_createTitleBar: function(firstDate) {
 			var that = this;
 			// 前後の月の最初日を取得する
-			var prevFirstDate = this.getFirstDate(firstDate, -1);
-			var nextFirstDate = this.getFirstDate(firstDate, 1);
+			var prevFirstDate = this._getFirstDayOfMonth(firstDate, -1);
+			var nextFirstDate = this._getFirstDayOfMonth(firstDate, 1);
 
 			// Gather flags for prev/next arrows
 			var showPrev = (this._compareDate(firstDate, this._firstDate) == 0);
-			var lastMonthDate = this.getFirstDate(this._firstDate, this._monthCount - 1);
+			var lastMonthDate = this._getFirstDayOfMonth(this._firstDate, this._monthCount - 1);
 			var showNext = (this._compareDate(firstDate, lastMonthDate) == 0);
 
-			var monyearClass = this.coreClass + 'monyear ';
-			var title = $('<tr/>').css({
-				height: option.cellHeight + 'px',
-				lineHeight: option.cellHeight + 'px',
-				borderWidth: option.borderSize + 'px',
+			var monyearClass = this._coreCssClass + 'monyear ';
+			var $title = $('<tr/>').css({
+				height: this._option.cellHeight,
+				lineHeight: this._option.cellHeight + 'px',
+				borderWidth: this._option.borderSize,
 			});
-			title.addClass(this.coreClass);
+			$title.addClass(this._coreCssClass);
 
 			// Create the arrows and title
-			var prevCell = $('<td/>').addClass(monyearClass + 'prev-arrow ');
-			prevCell.append(
+			var $prevCell = $('<td/>').addClass(monyearClass + 'prev-arrow ');
+			$prevCell.append(
 					$('<a/>').addClass('prev-arrow' + (showPrev ? '' : '-off'))
 							.html(this.prevArrow)).mousedown(function() {
 				return false;
 			}).click(function(e) {
 				if (showPrev) {
 					e.stopPropagation();
-					that.setFirstDate(prevFirstDate);
+					that._setFirstDate(prevFirstDate);
 				}
 			});
 
-			var titleCell = $('<td colspan="5"/>').addClass(monyearClass + 'title');
+			var $titleCell = $('<td colspan="5"/>').addClass(monyearClass + 'title');
 			var firstDateMonth = firstDate.getMonth();
-			var monthText = $('<span/>').html(monthNames[firstDateMonth]);
-			var yearText = $('<span/>').html(firstDate.getFullYear());
-			var titleYearMonth = $('<div/>').append(monthText).append(yearText);
-			titleCell.append(titleYearMonth);
+			var $monthText = $('<span/>').html(MON_NAME[firstDateMonth]);
+			var $yearText = $('<span/>').html(firstDate.getFullYear());
+			var $titleYearMonth = $('<div/>').append($monthText).append($yearText);
+			$titleCell.append($titleYearMonth);
 
-			var nextCell = $('<td/>').addClass(monyearClass + 'next-arrow ');
-			nextCell.append(
+			var $nextCell = $('<td/>').addClass(monyearClass + 'next-arrow ');
+			$nextCell.append(
 					$('<a/>').addClass('next-arrow' + (showNext ? '' : '-off'))
 							.html(this.nextArrow)).mousedown(function() {
 				return false;
 			}).click(function(e) {
 				if (showNext) {
 					e.stopPropagation();
-					that.setFirstDate(nextFirstDate);
+					that._setFirstDate(nextFirstDate);
 				}
 			});
 
 			// Add cells for prev/title/next
-			title.append(prevCell).append(titleCell).append(nextCell);
-			return title;
+			$title.append($prevCell).append($titleCell).append($nextCell);
+			return $title;
+		},
+
+		/**
+		 * 表示中の月のカレンダーを更新する。
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param firstDate
+		 * @returns UI要素
+		 */
+		_updateCalendar: function() {
+			//For all class .day for update option
+			var $dateDOMs = this.$find('.day');
+			for ( var cnt = 0; cnt < $dateDOMs.length; cnt++) {
+				var $cell = $($dateDOMs[cnt]);
+
+				// Get value for this date
+				var cellDate = $cell.data('data').date;
+				var cellClass = this._createCellClass(cellDate, this._firstDate);
+
+				var html = $cell.html();
+				var isMarker = (html.split('●').length > 1);
+				var specialData = $cell.data('data').data;
+				var isToolTip = (specialData != '');
+
+				// 特別の日のハンドル
+				if (this._specialDateMap.hasOwnProperty(cellDate)) {
+					var date = this._specialDateMap[cellDate];
+					for ( var i in date) {
+						if (i == 'isMark') {
+							if (!isMarker && date['isMark']) {
+								$cell.html(cellDate.getDate() + "<br/>●");
+							}
+							if (isMarker && !date['isMark']) {
+								$cell.html(cellDate.getDate());
+							}
+						} else if (i == 'data') {
+							if (specialData != date['data']) {
+								$cell.data('data').data = date['data'];
+							}
+						}
+					}
+				} else {
+					if (isMarker) {
+						$cell.html(cellDate.getDate());
+					}
+					if (isToolTip) {
+						$cell.data('data').data = '';
+					}
+				}
+
+				var classAttr = $cell.attr('class');
+				cellClass = this._coreCssClass + cellClass;
+				if (classAttr != cellClass) {
+					$cell.removeClass();
+					$cell.addClass(this._coreCssClass + cellClass);
+				}
+			}
+		},
+
+		/**
+		 * カレンダーで日付をクリックする処理（日付選択）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param context
+		 * @param el（クリックされた要素）
+		 */
+		'.day click': function(context, el) {
+			context.event.stopPropagation();
+			// Get the data from this cell
+			var clickedData = $(el).data('data');
+			this.select(clickedData.date);
+		},
+
+		/**
+		 * カレンダーでマウスオーバーしたときの処理（ツールチップ表示）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param context
+		 * @param el
+		 */
+		'.day mouseover': function(context, el) {
+			context.event.stopPropagation();
+			var clickedData = $(el).data('data');
+			var text = clickedData.data;
+			if (text) {
+				$(el).append(
+						'<div class="tooltips" style="top:' + this._option.cellHeight + 'px">' + text+ '</div>');
+			}
+		},
+
+		/**
+		 * カレンダーでマウスアウトしたときの処理（ツールチップ削除）
+		 *
+		 * @memberOf h5.ui.components.Calendar
+		 * @param context
+		 * @param el（クリックされた要素）
+		 */
+		'.day mouseout': function(context, el) {
+			context.event.stopPropagation();
+			$(el).find(".tooltips").remove();
 		},
 
 		/**
@@ -523,7 +562,7 @@
 		 * @returns セルのサイズ 補充：カレンダーUIをテーブルで表示される。この関数をセル要素のサイズを計測する。
 		 */
 		_getCellSize: function(_size, _count) {
-			return (_size / _count) + ((1 / _count) * (_count - 1));
+			return ((_size - 2) / _count);
 		},
 
 		/**
@@ -535,14 +574,15 @@
 		 * @returns 0: date1 = date2
 		 */
 		_compareDate: function(date1, date2) {
-			if (date1.getTime() == date2.getTime()) {
-				return 0;
-			} else if (date1.getTime() < date2.getTime()) {
-				return 1;
-
-			} else {
-				return 2;
+			if (date1.getTime() < date2.getTime()) {
+				return -1;
 			}
+
+			if (date1.getTime() > date2.getTime()) {
+				return 1;
+			}
+
+			return 0;
 		},
 
 		/**
@@ -551,9 +591,47 @@
 		 * @memberOf h5.ui.components.Calendar
 		 * @param date
 		 */
-		setDate: function(date) {
-			this._selectedDate[0] = date;
-			this.setFirstDate(date);
+		select: function(date) {
+			// Get the data from this cell
+			var dateTime = date.getTime();
+
+			if ($.inArray(dateTime, this._unselectableDates) == -1) {
+				var index = $.inArray(dateTime, this._selectedDates);
+				if (index == -1) {
+					switch (this.selectMode) {
+					case 'single':
+						this._selectedDates[0] = dateTime;
+						break;
+					case 'continue':
+						if (this._selectedDates.length <= 1) {
+							this._selectedDates.push(dateTime);
+						} else {
+							this._selectedDates[0] = this._selectedDates[1];
+							this._selectedDates[1] = dateTime;
+						}
+						break;
+					case 'multi':
+						this._selectedDates.push(dateTime);
+						break;
+					}
+				} else {
+					this._selectedDates.splice(index, 1);
+				}
+				if (date.getMonth() == this._firstDate.getMonth()) {
+					this._updateCalendar();
+				} else {
+					this._setFirstDate(date);
+				}
+			}
+		},
+
+		unselect: function(date) {
+			var dateTime = date.getTime();
+			var index = $.inArray(dateTime, this._selectedDates);
+			if (index != -1) {
+				this._selectedDates.splice(index, 1);
+			}
+			this._updateCalendar();
 		},
 
 		/**
@@ -562,13 +640,10 @@
 		 * @memberOf h5.ui.components.Calendar
 		 * @param date
 		 */
-		setFirstDate: function(date) {
-			if (date) {
-				this._firstDate = new Date(date);
-				this._firstDate.setDate(1);
-				this._render();
-			}
-
+		_setFirstDate: function(date) {
+			this._firstDate = new Date(date);
+			this._firstDate.setDate(1);
+			this._render();
 		},
 
 		/**
@@ -579,7 +654,7 @@
 		 * @param offset 前後の月で設定
 		 * @returns 月の最初の日
 		 */
-		getFirstDate: function(date, offset) {
+		_getFirstDayOfMonth: function(date, offset) {
 			var tmpDate = new Date(date);
 			// Default is no offset
 			offset = offset || 0;
@@ -588,6 +663,31 @@
 			tmpDate.setDate(1);
 
 			return tmpDate;
+		},
+
+		/**
+		 * 任意の年を設定する
+		 *
+		 * @param year
+		 */
+		setYear: function(year) {
+			var date = new Date(year, this._firstDate.getMonth(), 1);
+			this._setFirstDate(date);
+		},
+
+		/**
+		 * 任意の月を設定する
+		 *
+		 * @param month
+		 */
+		setMonth: function(month) {
+			var date = new Date(this._firstDate.getFullYear(), month, 1);
+			this._setFirstDate(date);
+		},
+
+		setCalendar: function(year, month) {
+			var date = new Date(year, month, 1);
+			this._setFirstDate(date);
 		},
 
 		/**
@@ -600,10 +700,10 @@
 			var tempDate;
 
 			this.selectMode = mode;
-			if (this._selectedDate.length > 0) {
-				tempDate = this._selectedDate[this._selectedDate.length - 1];
-				this._selectedDate = [];
-				this._selectedDate.push(tempDate);
+			if (this._selectedDates.length > 0) {
+				tempDate = this._selectedDates[this._selectedDates.length - 1];
+				this._selectedDates = [];
+				this._selectedDates.push(tempDate);
 			}
 		},
 
@@ -615,25 +715,23 @@
 		 */
 		getSelectedDate: function() {
 			var dates = [];
-			if (this._selectedDate.length != 0) {
+			if (this._selectedDates.length != 0) {
 				switch (this.selectMode) {
 				case 'single':
-					dates.push(this._selectedDate[0]);
+					dates.push(new Date(this._selectedDates[0]));
 					break;
 				case 'continue':
-					if (this._selectedDate.length == 1) {
-						dates.push(this._selectedDate[0]);
+					if (this._selectedDates.length == 1) {
+						dates.push(new Date(this._selectedDates[0]));
 					} else {
-						// pre-selected date > after-selected dateのチェック
-						var start = (this
-								._compareDate(this._selectedDate[0], this._selectedDate[1]) != 2) ? new Date(
-								this._selectedDate[0])
-								: new Date(this._selectedDate[1]);
-						//
-						var end = (this._compareDate(this._selectedDate[0], this._selectedDate[1]) != 1) ? new Date(
-								this._selectedDate[0])
+						var start = new Date(this._selectedDates[0]);
+						var end = new Date(this._selectedDates[1]);
+						//startSelectedDate > endSelectedDateの場合
+						if (this._compareDate(start, end) == 1) {
+							start = new Date(this._selectedDates[1]);
+							end = new Date(this._selectedDates[0]);
+						}
 
-								: new Date(this._selectedDate[1]);
 						while (start.getTime() <= end.getTime()) {
 							dates.push(new Date(start));
 							start = new Date(start.setDate(start.getDate() + 1));
@@ -641,13 +739,60 @@
 					}
 					break;
 				case 'multi':
-					dates = this._selectedDate;
+					for ( var i = 0; i < this._selectedDates.length; i++) {
+						dates.push(new Date(this._selectedDates[i]));
+					}
 					break;
 				default:
 					break;
 				}
 			}
+
+			for ( var i = 0; i < dates.length; i++) {
+				var datetime = dates[i].getTime();
+				if ($.inArray(datetime, this._unselectableDates) != -1) {
+					dates.splice(i, 1);
+				}
+			}
 			return dates;
+		},
+
+		_isSelectedDateTime: function(dateTime) {
+			if ($.inArray(dateTime, this._unselectableDates) != -1) {
+				return false;
+			}
+
+			if (this._selectedDates.length != 0) {
+				switch (this.selectMode) {
+				case 'single':
+					return (this._selectedDates[0] == dateTime);
+					break;
+				case 'continue':
+					if (this._selectedDates.length == 1) {
+						return (this._selectedDates[0] == dateTime);
+					} else {
+						var start = this._selectedDates[0];
+						var end = this._selectedDates[1];
+						//startSelectedDate > endSelectedDateの場合
+						if (start > end) {
+							start = this._selectedDates[1];
+							end = this._selectedDates[0];
+						}
+
+						if (start <= dateTime && dateTime <= end) {
+							return true;
+						}
+					}
+					break;
+				case 'multi':
+					return ($.inArray(dateTime, this._selectedDates) != -1);
+					break;
+				default:
+					break;
+				}
+			}
+
+			return false;
 		},
 
 		/**
@@ -656,20 +801,35 @@
 		 * @memberOf h5.ui.components.Calendar
 		 * @param dates
 		 */
-		setUnselectedDate: function(dates) {
+		setSelectable: function(dates, isSelectable) {
 			var dateTime;
 			if (dates == undefined) {
 				this._unselectableDates = [];
 			} else {
 				for ( var i = 0; i < dates.length; i++) {
 					dateTime = dates[i].getTime();
-					if ($.inArray(dateTime, this._unselectableDates) == -1) {
-						this._unselectableDates.push(dateTime);
+					var index = $.inArray(dateTime, this._unselectableDates);
+					if (!isSelectable) {
+						if (index == -1) {
+							this._unselectableDates.push(dateTime);
+							var selectIndex = $.inArray(dateTime, this._selectedDates);
+							if (selectIndex != -1) {
+								this._selectedDates.splice(selectIndex, 1);
+							}
+						}
+					} else {
+						if (index != -1) {
+							this._unselectableDates.splice(index, 1);
+						}
 					}
 				}
 			}
 
-			this._render();
+			this._updateCalendar();
+		},
+
+		isSelectable: function(date) {
+			return ($.inArray(date.getTime(), this._unselectableDates) == -1);
 		},
 
 		/**
@@ -684,28 +844,28 @@
 			for ( var i = 0; i < dates.length; i++) {
 				var date = dates[i];
 				if (className == 'default') {
-					if (this._specialDates.hasOwnProperty(date)) {
-						specDate = this._specialDates[date];
+					if (this._specialDateMap.hasOwnProperty(date)) {
+						specDate = this._specialDateMap[date];
 						if (specDate.hasOwnProperty('cssClass')) {
 							delete specDate['cssClass'];
 						}
 						if (this._getSizeOfObject(specDate) == 0) {
-							delete this._specialDates[date];
+							delete this._specialDateMap[date];
 						}
 					}
 				} else {
-					if (this._specialDates.hasOwnProperty(date)) {
-						specDate = this._specialDates[date];
+					if (this._specialDateMap.hasOwnProperty(date)) {
+						specDate = this._specialDateMap[date];
 						specDate['cssClass'] = className;
 					} else {
-						this._specialDates[date] = {
+						this._specialDateMap[date] = {
 							cssClass: className
 						};
 					}
 				}
 			}
 
-			this._render();
+			this._updateCalendar();
 		},
 
 		/**
@@ -723,7 +883,7 @@
 			} else {
 				this._userCssDow[dow] = className;
 			}
-			this._render();
+			this._updateCalendar();
 		},
 
 		/**
@@ -737,27 +897,27 @@
 			var specDate = {};
 
 			if (!isMark) {
-				if (this._specialDates.hasOwnProperty(date)) {
-					specDate = this._specialDates[date];
+				if (this._specialDateMap.hasOwnProperty(date)) {
+					specDate = this._specialDateMap[date];
 					if (specDate.hasOwnProperty('isMark')) {
 						delete specDate['isMark'];
 					}
 					if (this._getSizeOfObject(specDate) == 0) {
-						delete this._specialDates[date];
+						delete this._specialDateMap[date];
 					}
 				}
 			} else {
-				if (this._specialDates.hasOwnProperty(date)) {
-					specDate = this._specialDates[date];
+				if (this._specialDateMap.hasOwnProperty(date)) {
+					specDate = this._specialDateMap[date];
 					specDate['isMark'] = isMark;
 				} else {
-					this._specialDates[date] = {
+					this._specialDateMap[date] = {
 						isMark: isMark
 					};
 				}
 			}
 
-			this._render();
+			this._updateCalendar();
 		},
 
 		/**
@@ -767,42 +927,31 @@
 		 * @param date
 		 * @param text
 		 */
-		setText: function(date, text) {
+		setTooltip: function(date, text) {
 			var specDate = {};
 
 			if (text == '') {
-				if (this._specialDates.hasOwnProperty(date)) {
-					specDate = this._specialDates[date];
+				if (this._specialDateMap.hasOwnProperty(date)) {
+					specDate = this._specialDateMap[date];
 					if (specDate.hasOwnProperty('data')) {
 						delete specDate['data'];
 					}
 					if (this._getSizeOfObject(specDate) == 0) {
-						delete this._specialDates[date];
+						delete this._specialDateMap[date];
 					}
 				}
 			} else {
-				if (this._specialDates.hasOwnProperty(date)) {
-					specDate = this._specialDates[date];
+				if (this._specialDateMap.hasOwnProperty(date)) {
+					specDate = this._specialDateMap[date];
 					specDate['data'] = text;
 				} else {
-					this._specialDates[date] = {
+					this._specialDateMap[date] = {
 						data: text
 					};
 				}
 			}
 
-			this._render();
-		},
-
-		/**
-		 * ビューモードの変更；特定の月又は、複数の月を表示する。
-		 *
-		 * @memberOf h5.ui.components.Calendar
-		 * @param count
-		 */
-		setViewMode: function(count) {
-		//			this._monthCount = count;
-		//			this._render();
+			this._updateCalendar();
 		},
 
 		/**
