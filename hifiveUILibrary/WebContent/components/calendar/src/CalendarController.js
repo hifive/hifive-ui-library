@@ -626,6 +626,7 @@
 		},
 
 		unselect: function(date) {
+			var dateTime = date.getTime();
 			var index = $.inArray(dateTime, this._selectedDates);
 			if (index != -1) {
 				this._selectedDates.splice(index, 1);

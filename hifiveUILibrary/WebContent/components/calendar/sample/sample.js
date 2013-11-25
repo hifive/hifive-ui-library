@@ -51,17 +51,16 @@ $(function(){
 //			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
 //		},
 
-		'.changeDate change': function(context) {
+		// 年を指定する
+		'#yearSelect change': function() {
 			var date = this._getDateInfo();
-			this.calendarController.setCalendar(date.getFullYear(), date.getMonth());
-			this.view.update('#daySelect', 'daySelect', {date : date} );
+			this.calendarController.setYear(date.getFullYear());
 		},
 
-		// 年・月・日を指定する
-		'#btnSetSelectedDate click': function() {
+		// 月を指定する
+		'#monthSelect change': function() {
 			var date = this._getDateInfo();
-			this.calendarController.select(date);
-			this.$find('#spnSelectedDate').html(date.toLocaleDateString());
+			this.calendarController.setMonth(date.getMonth());
 		},
 
 		'#btnGoToToday click': function() {
@@ -73,8 +72,7 @@ $(function(){
 		_getDateInfo: function(){
 			var year = this.$find('#yearSelect').val();
 			var month = this.$find('#monthSelect').val() - 1;
-			var day = this.$find('#daySelect').val();
-			return new Date(year, month, day);
+			return new Date(year, month, 1);
 		},
 
 		//-------選択するモードを変更する--------
@@ -87,6 +85,7 @@ $(function(){
 			var dates = this.calendarController.getSelectedDate();
 			this.calendarController.setSelectable(dates, false);
 		},
+
 		'#btnUnselectableDateReset click': function(){
 			this.calendarController.setSelectable();
 		},
