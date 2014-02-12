@@ -1,0 +1,277 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link type="text/css" rel="stylesheet" href="../../res/lib/hifive/h5.css">
+<link type="text/css" rel="stylesheet" href="src/screen.css">
+<style>
+.screen-wrapper {
+	margin: 10px 0 0 40px;
+}
+
+.screen-nav {
+	width: 400px;
+	border: 1px solid #ccc;
+	cursor: pointer;
+}
+
+.screen-nav .screentrack {
+	font-size: 1.5em;
+	text-align: center;
+}
+
+.screen-nav .prevpage {
+	text-decoration: none;
+	border-right: 1px solid #ccc;
+	display: block;
+	font-size: 1.5em;
+	float: left;
+}
+
+.screen-nav .nextpage {
+	text-decoration: none;
+	border-left: 1px solid #ccc;
+	display: block;
+	font-size: 1.5em;
+	float: right;
+}
+
+.screen {
+	width: 400px;
+	height: 400px;
+	border: 1px solid #ccc;
+}
+</style>
+<script type="text/javascript" src="../../res/lib/jquery/jquery.js"></script>
+<script type="text/javascript" src="../../res/lib/hifive/ejs-h5mod.js"></script>
+<script type="text/javascript" src="../../res/lib/hifive/h5.dev.js"></script>
+
+<script type="text/javascript" src="src/PageLoadLogic.js"></script>
+<script type="text/javascript" src="src/ScreenUIController.js"></script>
+
+<script type="text/javascript" src="sample/NavigationController.js"></script>
+
+<script>
+	$(function() {
+		h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
+			navigationController: app.controller.NavigationController, // UI部品には含まれていません。個別の実装が必要です。
+			navigationRootElement: '.screen-nav'
+		});
+	});
+</script>
+<title>ScreenUI</title>
+</head>
+<body>
+
+	<h1>ScreenUI</h1>
+	<p>複数のDOM要素をコンテンツとして扱い、1つづつスライドさせて表示するスクリーン機能をサポートする部品です。</p>
+
+	<h2>使用方法</h2>
+	<ul>
+		<li>スクリーンをスライドを操作するために、スライドを操作するDOM要素とコントローラ(ナビゲーションコントローラ)を記述する必要があります。</li>
+		<li>ScreenUIControllerをバインドすることでスクリーン機能が有効になります。</li>
+		<li>ScreenUIControllerのバインド対象要素は、screenクラスを持つ要素(スクリーン本体)と、スライドを操作する要素を含む要素を指定してください。</li>
+		<li>ScreenUIControllerのバインド時にパラメータでナビゲーションコントローラとそのルートエレメント(スライドを操作するDOM要素)を指定します。 <pre>
+<code>HTML記述例：
+&lt;div class=&quot;screen-wrapper&quot;&gt;
+	&lt;div class=&quot;screen-nav&quot;&gt;
+		&lt;a class=&quot;prevpage&quot;&gt;前へ&lt;/a&gt;
+		&lt;a class=&quot;nextpage&quot;&gt;次へ&lt;/a&gt;
+		&lt;a class=&quot;screentrack&quot;&gt;&lt;/a&gt;
+	&lt;/div&gt;
+	&lt;div class=&quot;screen&quot;&gt;
+		&lt;div&gt;ページ1&lt;/div&gt;
+		&lt;div&gt;ページ2&lt;/div&gt;
+		&lt;div&gt;ページ3&lt;/div&gt;
+	&lt;/div&gt;
+&lt;/div&gt;
+
+初期化パラメータの例:
+h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
+	navigationController: app.controller.NavigationController, // UI部品には含まれていません。個別の実装が必要です。
+	navigationRootElement: '.screen-nav'
+});</code>
+			</pre>
+		</li>
+	</ul>
+
+	<h2>ナビゲーションコントローラの実装</h2>
+	<p>ナビゲーションコントローラは、イベントをトリガしてスクリーンを操作するよう実装します。</p>
+	<p>トリガされたイベントは、ScreenUIControllerによって処理されます。ScreenUIControllerが受け付けているイベントは以下です。
+	<dl>
+		<dt>prevPage</dt>
+		<dd>
+			前のページへ移動。以下のパラメータを渡すことができます。
+			<dl>
+				<dt>url</dt>
+				<dd>スクリーンを移動した後、移動後のコンテンツ領域に表示させるコンテンツのURLを指定します。指定しない場合はロードしません。</dd>
+				<dt>force</dt>
+				<dd>移動後のページがすでにコンテンツをロード済みの時に、再ロードするかどうかを指定します。trueなら再ロード、falseならロードしません。</dd>
+			</dl>
+		</dd>
+		<dt>nextPage</dt>
+		<dd>次のページへ移動。渡せるパラメータはprevPageイベントと同じです。</dd>
+		<dt>loadPage</dt>
+		<dd>現在表示中のスクリーン内のコンテンツに指定したURLのコンテンツをロードします。渡せるパラメータはprevPageイベントと同じです。</dd>
+		<dt>screenTrackstart</dt>
+		<dd>
+			スクリーンをpx単位で移動(トラック操作)する準備を開始します。このイベントをトリガすると、screenTrackmoveイベントを受け付けるようになります。以下のようにパラメータを渡します。
+			<dl>
+				<dt>trackSize</dt>
+				<dd>ここで指定した値の範囲内の移動が、スクリーン上での1ページ分の移動距離になります。スクリーン幅と移動距離を1:1で対応させる場合はスクリーン幅を指定してください。</dd>
+			</dl>
+		</dd>
+		<dt>screenTrackmove</dt>
+		<dd>
+			スクリーンをpx単位で移動します。パラメータ指定された分だけ動かします。以下のようにパラメータを指定します。
+			<dl>
+				<dt>dx</dt>
+				<dd>移動距離</dd>
+			</dl>
+		</dd>
+		<dt>screenTrackend</dt>
+		<dd>
+			スクリーンのトラック操作を終了します。トラック操作終了時のスクリーンの位置からパラメータで指定したページへ移動します。パラメータは以下のように渡します。
+			<dl>
+				<dt>page</dt>
+				<dd>'current'または'next'または'prev'を指定します。トラック操作開始時(screenTrackstart時)のページへ移動させるなら'current'、次(右)へ移動させるなら'next'、前(左)へ移動させるなら'prev'を指定します。</dd>
+				<dt>url</dt>
+				<dd>移動後のコンテンツ領域に表示させるコンテンツのURLを指定します。指定しない場合はロードされません。</dd>
+				<dt>force</dt>
+				<dd>移動後のページがすでにコンテンツをロード済みの時に、再ロードするかどうかを指定します。trueなら再ロード、falseならロードしません。</dd>
+			</dl>
+		</dd>
+	</dl>
+	<p>ScreenUIコントローラはスクリーンが移動中であることを通知するために、移動開始と移動終了のタイミングで'screenSlideStart'、'screenSlideEnd'のイベントがそれぞれ、.screen要素から上がります。</p>
+
+	<h3>実装例</h3>
+	<pre><code>
+(function() {
+	var navigationController = {
+		/**
+		 * @memberOf app.controller.NavigationController
+		 */
+		__name: 'app.controller.NavigationController',
+
+		_urlList: ['page1.html', 'page2.html', 'page3.html'],
+
+		_urlIndex: 0,
+
+		_totalSlideAmount: 0,
+
+		/**
+		 * @memberOf app.controller.NavigationController
+		 */
+		__ready: function() {
+			this._$trackArea = this.$find('.screentrack');
+			// URLリストの最初のページをロード
+			this.trigger('loadPage', {
+				url: this._urlList[this._urlIndex]
+			});
+		},
+
+		/**
+		 * @memberOf app.controller.NavigationController
+		 * @param context
+		 */
+		'.prevpage click': function(context) {
+			context.event.preventDefault();
+			// 前(左)のページへスライドして、指定したURLをロード
+			this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;
+			this.trigger('prevPage', {
+				url: this._urlList[this._urlIndex]
+			});
+		},
+
+		/**
+		 * @memberOf app.controller.NavigationController
+		 * @param context
+		 */
+		'.nextpage click': function(context) {
+			context.event.preventDefault();
+			// 前(左)のページへスライドして、指定したURLをロード
+			this._urlIndex = this._urlIndex === this._urlList.length - 1 ? 0 : ++this._urlIndex;
+			this.trigger('nextPage', {
+				url: this._urlList[this._urlIndex]
+			});
+		},
+
+		/**
+		 * トラック
+		 *
+		 * @param context
+		 * @memberOf app.controller.NavigationController
+		 */
+		'.screentrack h5trackstart': function(context) {
+			this.trigger('screenTrackstart', {
+				trackSize: this.$find('.screentrack').width()
+			});
+			this._totalSlideAmount = 0;
+		},
+
+		/**
+		 * トラック
+		 *
+		 * @param context
+		 * @memberOf app.controller.NavigationController
+		 */
+		'.screentrack h5trackmove': function(context) {
+			var offsetX = context.event.offsetX;
+			// トラック可能領域を制限
+			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
+				return;
+			}
+			var dx = context.event.dx;
+			this._totalSlideAmount += dx;
+			this.trigger('screenTrackmove', {
+				dx: dx
+			});
+		},
+
+		/**
+		 * トラック
+		 *
+		 * @param context
+		 * @memberOf app.controller.NavigationController
+		 */
+		'.screentrack h5trackend': function(context) {
+			// スクロール量で移動先を判定
+			if (this._totalSlideAmount > 100) {
+				page = 'prev';
+				this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;
+			} else if (this._totalSlideAmount < -100) {
+				page = 'next';
+				this._urlIndex = this._urlIndex === this._urlList.length - 1 ? 0 : ++this._urlIndex;
+			} else {
+				page = 'current';
+			}
+
+			this.trigger('screenTrackend', {
+				page: page,
+				url: this._urlList[this._urlIndex]
+			});
+		}
+	};
+	h5.core.expose(navigationController);
+})();
+</code>
+	</pre>
+
+	<p>サンプル</p>
+	<div class="screen-wrapper">
+		<div class="screen-nav">
+			<a class="prevpage">前へ</a> <a class="nextpage">次へ</a>
+			<div class="screentrack">スクロールエリア</div>
+		</div>
+		<div class="screen">
+			<div>ページ1(未ロード)</div>
+			<div>ページ2(未ロード)</div>
+			<div>ページ3(未ロード)</div>
+		</div>
+	</div>
+</body>
+</html>
