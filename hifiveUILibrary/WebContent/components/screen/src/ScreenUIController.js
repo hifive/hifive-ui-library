@@ -71,7 +71,8 @@
 			// ページ数を設定
 			this.numberOfPages = $contents.length;
 			// 先頭のコンテンツをカレントとして設定
-			$contents.eq(0).addClass('current').css('display', 'block');
+			var $current = $contents.eq(0);
+			$current.addClass('current').css('display', 'block');
 
 			// スクロール用のDOMを作成
 			this._$scrollingBase = $('<div class="scrollingBase"></div>').css({
@@ -79,7 +80,9 @@
 				left: 0,
 				margin: 0,
 				padding: 0,
-				position: 'relative'
+				position: 'relative',
+				height: $current.height(),
+				overflowY: 'hidden'
 			});
 			this._$scrollingBase.append($contents);
 			$(this.rootElement).css('overflow-x', 'hidden').append(this._$scrollingBase);
@@ -110,6 +113,10 @@
 				$right = this.$find('.h5screenContent:first');
 				this._$scrollingBase.append($right);
 			}
+			// コンテンツ幅を固定にする
+			$current.add($left).add($right).css('width', screenWidth);
+			// scrollingBaseの幅をスクロールバーが出ないように設定
+			this._$scrollingBase.css('width', screenWidth * 2);
 			$left.css({
 				left: -screenWidth,
 				display: 'block'
@@ -118,6 +125,9 @@
 				left: screenWidth,
 				display: 'block'
 			});
+			// scrollingBaseの高さを設定
+			this._$scrollingBase.css('height', Math.max($left.height(), $current.height(), $right
+					.height()));
 			this._isAnimation = true;
 			$(this.rootElement).addClass('inOperation');
 			this._animationDfd = h5.async.deferred();
@@ -132,9 +142,16 @@
 			this.$find('.h5screenContent.dummy').remove();
 			// カレント以外非表示
 			this.$find('.h5screenContent:not(.current)').css('display', 'none');
-			// scrollingBaseの位置調整
+			var $current = this.$find('.h5screenContent.current');
+			// 幅の固定化を元に戻す
+			this._$scrollingBase.css('width', '100%');
+			$current.css('width', '100%');
+			// scrollingBaseの位置と幅と高さ調整
 			var left = parseInt(this._$scrollingBase.css('left'));
-			this._$scrollingBase.css('left', 0);
+			this._$scrollingBase.css({
+				left: 0,
+				height: $current.height()
+			});
 			this._$scrollingBase.children().each(function() {
 				$(this).css('left', parseInt($(this).css('left')) + left);
 			});
@@ -225,7 +242,7 @@
 			var $current = this.$find('.h5screenContent.current');
 			// ページのロード
 			var promise = this._pageLoadLogic.load(url).done(
-					function(data) {
+					this.own(function(data) {
 						var $target = $current;
 						// cloneしたものがあればそこにもロード結果を反映する
 						var cloneIndex = $current.attr('data-h5screencloneindex');
@@ -234,7 +251,15 @@
 									'[data-h5screencloneindex="' + cloneIndex + '"]'));
 						}
 						$target.html(data).addClass('loaded');
-					});
+						// scrollingBaseの位置と高さ調整
+						var height = $target.outerHeight();
+						this._$scrollingBase.css('height', height);
+						setTimeout(this.own(function() {
+							if (height !== $target.outerHeight()) {
+								this._$scrollingBase.css('height', $target.outerHeight);
+							}
+						}), 5);
+					}));
 			this.indicator({
 				target: $current,
 				promises: promise
