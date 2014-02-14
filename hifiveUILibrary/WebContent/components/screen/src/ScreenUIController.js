@@ -119,6 +119,7 @@
 				display: 'block'
 			});
 			this._isAnimation = true;
+			$(this.rootElement).addClass('inOperation');
 			this._animationDfd = h5.async.deferred();
 		},
 		/**
@@ -138,6 +139,7 @@
 				$(this).css('left', parseInt($(this).css('left')) + left);
 			});
 			this._isAnimation = false;
+			$(this.rootElement).removeClass('inOperation');
 			this._animationDfd.resolve();
 		},
 

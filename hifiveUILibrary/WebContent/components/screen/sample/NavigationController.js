@@ -5,11 +5,33 @@
 		 */
 		__name: 'app.controller.NavigationController',
 
+		/**
+		 * スクリーンのコンテンツURLリスト
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_urlList: ['page1.html', 'page2.html', 'page3.html'],
 
+		/**
+		 * 現在スクリーンに表示中のコンテンツURLのインデックス
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_urlIndex: 0,
 
+		/**
+		 * トラック操作開始からの移動量
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_totalSlideAmount: 0,
+
+		/**
+		 * トラック操作中かどうか
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
+		_isTracking: false,
 
 		/**
 		 * @memberOf app.controller.NavigationController
@@ -55,6 +77,11 @@
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackstart': function(context) {
+			// スクリーンがアニメーション動作中ならキャンセル
+			if ($('.screen').hasClass('inOperation')) {
+				return;
+			}
+			this._isTracking = true;
 			this.trigger('screenTrackstart', {
 				trackSize: this.$find('.screentrack').width()
 			});
@@ -68,6 +95,9 @@
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackmove': function(context) {
+			if (!this._isTracking) {
+				return;
+			}
 			var offsetX = context.event.offsetX;
 			// トラック可能領域を制限
 			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
@@ -87,7 +117,11 @@
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackend': function(context) {
-			// スクロール量で移動先を判定
+			if (!this._isTracking) {
+				return;
+			}
+			this._isTracking = false;
+			// 移動先を判定
 			if (this._totalSlideAmount > 100) {
 				page = 'prev';
 				this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;

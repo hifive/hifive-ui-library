@@ -146,10 +146,11 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 			</dl>
 		</dd>
 	</dl>
-	<p>ScreenUIコントローラはスクリーンが移動中であることを通知するために、移動開始と移動終了のタイミングで'screenSlideStart'、'screenSlideEnd'のイベントがそれぞれ、.screen要素から上がります。</p>
+	<p>.screen要素は、アニメーション動作中には'isOperation'クラスが追加されます。</p>
+	<p>スクリーンがアニメション中かどうかは<code>$('.screen').hasClass('isOperation');</code>で確認できます。</p>
 
-	<h3>実装例</h3>
-	<pre><code>
+	<h3>ナビゲーションコントローラの実装例と動作確認</h3>
+	<pre>実装例<code>
 (function() {
 	var navigationController = {
 		/**
@@ -157,11 +158,33 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 		 */
 		__name: 'app.controller.NavigationController',
 
+		/**
+		 * スクリーンのコンテンツURLリスト
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_urlList: ['page1.html', 'page2.html', 'page3.html'],
 
+		/**
+		 * 現在スクリーンに表示中のコンテンツURLのインデックス
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_urlIndex: 0,
 
+		/**
+		 * トラック操作開始からの移動量
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
 		_totalSlideAmount: 0,
+
+		/**
+		 * トラック操作中かどうか
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
+		_isTracking: false,
 
 		/**
 		 * @memberOf app.controller.NavigationController
@@ -207,6 +230,11 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackstart': function(context) {
+			// スクリーンがアニメーション動作中ならキャンセル
+			if ($('.screen').hasClass('inOperation')) {
+				return;
+			}
+			this._isTracking = true;
 			this.trigger('screenTrackstart', {
 				trackSize: this.$find('.screentrack').width()
 			});
@@ -220,6 +248,9 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackmove': function(context) {
+			if (!this._isTracking) {
+				return;
+			}
 			var offsetX = context.event.offsetX;
 			// トラック可能領域を制限
 			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
@@ -239,7 +270,11 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 		 * @memberOf app.controller.NavigationController
 		 */
 		'.screentrack h5trackend': function(context) {
-			// スクロール量で移動先を判定
+			if (!this._isTracking) {
+				return;
+			}
+			this._isTracking = false;
+			// 移動先を判定
 			if (this._totalSlideAmount > 100) {
 				page = 'prev';
 				this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;
@@ -261,11 +296,11 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 </code>
 	</pre>
 
-	<p>サンプル</p>
+	<p>動作確認</p>
 	<div class="screen-wrapper">
 		<div class="screen-nav">
 			<a class="prevpage">前へ</a> <a class="nextpage">次へ</a>
-			<div class="screentrack">スクロールエリア</div>
+			<div class="screentrack">トラックエリア</div>
 		</div>
 		<div class="screen">
 			<div>ページ1(未ロード)</div>
