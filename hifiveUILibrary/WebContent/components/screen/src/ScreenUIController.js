@@ -125,9 +125,11 @@
 				left: screenWidth,
 				display: 'block'
 			});
-			// scrollingBaseの高さを設定
-			this._$scrollingBase.css('height', Math.max($left.height(), $current.height(), $right
-					.height()));
+			// scrollingBaseの高さと、overflow:visibleを設定。
+			this._$scrollingBase.css({
+				height: Math.max($left.height(), $current.height(), $right.height()),
+				overflow: 'visible'
+			});
 			this._isAnimation = true;
 			$(this.rootElement).addClass('inOperation');
 			this._animationDfd = h5.async.deferred();
@@ -150,7 +152,8 @@
 			var left = parseInt(this._$scrollingBase.css('left'));
 			this._$scrollingBase.css({
 				left: 0,
-				height: $current.height()
+				height: $current.height(),
+				overflow: 'hidden'
 			});
 			this._$scrollingBase.children().each(function() {
 				$(this).css('left', parseInt($(this).css('left')) + left);

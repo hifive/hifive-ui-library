@@ -121,7 +121,7 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 			スクリーンをpx単位で移動(トラック操作)する準備を開始します。このイベントをトリガすると、screenTrackmoveイベントを受け付けるようになります。以下のようにパラメータを渡します。
 			<dl>
 				<dt>trackSize</dt>
-				<dd>ここで指定した値の範囲内の移動が、スクリーン上での1ページ分の移動距離になります。スクリーン幅と移動距離を1:1で対応させる場合はスクリーン幅を指定してください。</dd>
+				<dd>ここで指定した距離(px)のトラック操作が、スクリーン上での1ページ分の移動になります。トラック操作を行う要素の幅を指定すると、その要素の端から端までトラック操作をした時にスクリーン1ページ分移動するようになります。スクリーン幅と移動距離を1:1で対応させる場合はスクリーン幅を指定してください。</dd>
 			</dl>
 		</dd>
 		<dt>screenTrackmove</dt>
@@ -129,7 +129,7 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 			スクリーンをpx単位で移動します。パラメータ指定された分だけ動かします。以下のようにパラメータを指定します。
 			<dl>
 				<dt>dx</dt>
-				<dd>移動距離</dd>
+				<dd>移動距離。screenTrackstartイベント時に渡したtrackSizeに基づいてスクリーンの移動距離が計算されます。</dd>
 			</dl>
 		</dd>
 		<dt>screenTrackend</dt>
@@ -146,7 +146,11 @@ h5.core.controller('.screen-wrapper', h5.ui.ScreenUIController, {
 		</dd>
 	</dl>
 	<p>.screen要素は、アニメーション動作中には'isOperation'クラスが追加されます。</p>
-	<p>スクリーンがアニメション中かどうかは<code>$('.screen').hasClass('isOperation');</code>で確認できます。</p>
+	<p>
+		スクリーンがアニメション中かどうかは
+		<code>$('.screen').hasClass('isOperation');</code>
+		で確認できます。
+	</p>
 
 	<h3>ナビゲーションコントローラの実装例と動作確認</h3>
 	<pre>実装例<code>
