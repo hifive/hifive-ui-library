@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
-		<title>hifive UI Library Top</title>
+		<title>hifive UI Library Top Page</title>
 	</head>
 	<body>
 		<h1>hifive UI Library パーツ一覧</h1>
@@ -20,20 +20,6 @@
 			<li><a href="components/tabbable/index.html">タブ切り替え</a></li>
 		</ul>
 
-		<div>
-		<h2>部品を追加したい場合</h2>
-		<div>
-			<ol>
-				<li>WebContent/components 以下に部品名のフォルダを作成</li>
-				<li>src, testフォルダを作成　⇒　JS,CSSどちらもsrcに置く（フォルダ分けは原則不要）。<br>
-				srcのJSファイル名は「部品名.js」。CSSも同様。min版がある場合は部品名.min.js/css。<br>
-				testはQUnitテストのJSとランナーHTMLを置く。JSは「部品名.test.js」、HTMLは「index.html」。</li>
-				<li>サンプルがある場合はさらにsampleフォルダを作ってそこにindex.htmlと必要なJS、CSSを置く。</li>
-				<li>index.htmlを作成　⇒　動作サンプル、使い方、パラメータ仕様など部品の仕様書・取扱説明書</li>
-			</ol>
-		</div>
-※src以下のJS,CSSは、そのまま読み込めるようになっていること。他に依存ライブラリが必要な場合、それらを内包する必要はない。<br>
-ただし、依存するライブラリについて仕様書のはじめに書いておくこと。jQueryとhifiveは書かなくてよい（バージョン依存がある場合は別）。
-		</div>
+		<p style="margin-top: 30px; font-size: 70%;"><a href="index-dev.html">ライブラリ開発者向けページはこちら</a></p>
 	</body>
 </html>
