@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link type="text/css" rel="stylesheet" href="../../../res/lib/hifive/h5.css">
+<link type="text/css" rel="stylesheet" href="sample.css">
+
+<script type="text/javascript" src="../../../res/lib/jquery/jquery.js"></script>
+<script type="text/javascript" src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script type="text/javascript" src="../../../res/lib/hifive/h5.js"></script>
+
+<script type="text/javascript" src="../src/CarouselController.js"></script>
+<script type="text/javascript" src="init.js"></script>
+
+<style>
+</style>
+<title>Carousel サンプル</title>
+</head>
+<body>
+
+	<h1>Carousel サンプル</h1>
+	<div class="carousel-wrapper">
+		<div class="item red">
+			<p>アイテム1</p>
+		</div>
+		<div class="item blue">
+			<p>アイテム2</p>
+		</div>
+		<div class="item green">
+			<p>アイテム3</p>
+		</div>
+		<div class="item yellow">
+			<p>アイテム4</p>
+		</div>
+		<div class="item purple">
+			<p>アイテム5</p>
+		</div>
+		<div class="item gray">
+			<p>アイテム6</p>
+		</div>
+	</div>
+
+	<h2>使用方法</h2>
+	<ul>
+		<li>h5.ui.components.carousel.CarouselControllerをバインドした要素の直下にある要素がカルーセルのアイテムになります。</li>
+		<li>上のサンプルは、以下のようなコードで記述されています。</li>
+		<li>HTML<pre><code class="html">&lt;div class=&quot;carousel-wrapper&quot;&gt;
+  &lt;div class=&quot;item red&quot;&gt;
+    &lt;p&gt;アイテム1&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;item blue&quot;&gt;
+    &lt;p&gt;アイテム2&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;item green&quot;&gt;
+    &lt;p&gt;アイテム3&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;item yellow&quot;&gt;
+    &lt;p&gt;アイテム4&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;item purple&quot;&gt;
+    &lt;p&gt;アイテム5&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;item gray&quot;&gt;
+    &lt;p&gt;アイテム6&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre></li>
+		<li>js<pre><code class="js">$(function() {
+	h5.core.controller(&#039;.carousel-wrapper&#039;, h5.ui.components.carousel.CarouselController);
+});</code></pre></li>
+		<li>動的な追加・削除を行いたい場合は、CarouselControllerを子コントローラとしてバインドし、親コントローラからCarouselControllerのメソッドを呼ぶようにするのがよいでしょう。</li>
+	</ul>
+</body>
+</html>

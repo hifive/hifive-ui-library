@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<link type="text/css" rel="stylesheet" href="../../../res/lib/hifive/h5.css">
+
+<script type="text/javascript" src="../../../res/lib/jquery/jquery.js"></script>
+<script type="text/javascript" src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script type="text/javascript" src="../../../res/lib/hifive/h5.js"></script>
+
+<!-- ボックスレイアウト部品 -->
+<link rel="stylesheet" href="../src/tileContainer.css" />
+<script src="../src/tileContainer.js"></script>
+
+<link rel="stylesheet" href="sample.css" />
+
+<script type="text/javascript">
+	$(function() {
+		h5.core.controller('.columns', h5.ui.components.tileContainer.tileContainerController);
+	});
+</script>
+
+<title>タイルコンテナ サンプル</title>
+</head>
+<h1>タイルコンテナ サンプル</h1>
+<body>
+	<div class="sample-wrapper">
+		<div class="columns">
+			<div class="column box_content">
+				<h1 class="header">カラム１</h1>
+			</div>
+
+			<div class="column box_content">
+				<h1 class="header">カラム２</h1>
+			</div>
+
+			<div class="column box_content">
+				<h1 class="header">カラム３</h1>
+			</div>
+
+			<div class="column column2 box_content">
+				<h1 class="header">2倍幅のカラム</h1>
+			</div>
+
+			<div class="column box_content">
+				<h1 class="header">カラム４</h1>
+			</div>
+		</div>
+	</div>
+	<ul>
+		<li>タイルコンテナにしたい要素にcolumnクラスを指定し、それらの親にcolumnsクラスを指定します。</li>
+		<li>h5.ui.components.tileContainer.tileContainerControllerをcolumnsクラスに指定して使用します。</li>
+	</ul>
+</body>
+</html>
