@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width = device-width, user-scalable = yes">
+
+<style>
+li {
+	line-height: 1.5em;
+}
+</style>
+<title>ArrorwBox</title>
+</head>
+<body>
+	<h2>ArrowBox</h2>
+	<p>吹き出しを表示するUIコンポーネントです</p>
+	<p>
+		サンプルは<a href="sample/">こちら</a>
+	</p>
+
+	<h3>使用方法</h3>
+	<ul>
+		<li>srcフォルダ以下にある、以下のファイルが必要です。使用するページで読み込んでください。
+			<ul>
+				<li>arrowbox.css</li>
+				<li>arrowbox.js</li>
+			</ul>
+		</li>
+		<li>h5.ui.components.ArrowBoxController(以下、ArrowBoxContorller)をコントローラ化します。</li>
+		<li>ArrowBoxControllerを子コントローラとしてコントローラ化する場合、そのコントローラでsrcフォルダにあるarrowbox.ejsをテンプレートに追加してください。</li>
+		<li>ArrowBoxControllerを使って、ArrowBoxインスタンスを作成し、ArrowBoxインスタンスを操作して吹き出しの表示や消去を行います。</li>
+		<li>ArrowBoxControllerには、以下のメソッドがあります。
+			<dl>
+				<dt>create(cotnent, option)</dt>
+				<dd>
+					ArrowBoxインスタンスを作成します。戻り値はArrowBoxインスタンスです。
+					<dl>
+						<dt>content</dt>
+						<dd>吹き出しの中身(DOM|jQuery|String)</dd>
+						<dt>option</dt>
+						<dd>option.cls 吹き出しに追加するクラス</dd>
+					</dl>
+				</dd>
+				<dt>getArrowBoxFromElement(elm)</dt>
+				<dd>
+					吹き出しの要素から、その吹き出しを管理するArrowBoxインスタンスを返します。
+					<dl>
+						<dt>elm</dt>
+						<dd>要素(DOM|jQuery|String(セレクタ))</dd>
+					</dl>
+				</dd>
+			</dl>
+		</li>
+		<li>ArrowBoxのメソッドは以下の通りです。
+			<dl>
+				<dt>show(option)</dt>
+				<dd>
+					吹き出しを表示します
+					<dl>
+						<dt>option.position</dt>
+						<dd>吹き出しを表示する位置を指定します。{top:xx, left:xx}のように指定します。指定した位置が吹き出しの指す位置になります。</dd>
+						<dt>option.direction</dt>
+						<dd>吹き出しの方向を指定します。up,down,right,leftのいずれかを指定します。</dd>
+						<dt>option.target</dt>
+						<dd>吹き出しが指す要素を指定します。positionが指定してある場合は無効です。</dd>
+					</dl>
+				</dd>
+				<dt>hide()</dt>
+				<dd>吹き出しを非表示にします。</dd>
+				<dt>dispose()</dt>
+				<dd>吹き出しを消去します。disposeを読んだ後のArrowBoxインスタンスは操作できません。</dd>
+				<dt>setContent(content)</dt>
+				<dd>
+					吹き出しの中身を指定します
+					<dl>
+						<dt>content</dt>
+						<dd>吹き出しの中身(DOM|jQuery|String(セレクタ))</dd>
+					</dl>
+				</dd>
+			</dl>
+		</li>
+		<li>以下、サンプルコードです。<pre>
+
+(function() {
+	var controller = {
+		/**
+		 * @memberOf sample.PageController
+		 */
+		__name: 'sample.PageController',
+
+		/**
+		 * テンプレート。ArrowBoxを使用するので、arrowbox.ejsを読み込む。
+		 *
+		 * @memberOf sample.PageController
+		 */
+		__templates: '../src/arrowbox.ejs',
+
+		/**
+		 * ArrowBoxControllerを子コントローラとして定義する
+		 *
+		 * @memberOf sample.PageController
+		 */
+		_arrowboxController: h5.ui.components.ArrowBoxController,
+
+		/**
+		 * @memberOf sample.PageController
+		 */
+		__ready: function() {
+			// 吹き出しに表示するメッセージの設定
+			this.view
+					.register(
+							'message',
+							'&lt;div&rt;&lt;p&rt;吹き出しサンプル&lt;/p&rt;&lt;p&rt;吹き出しサンプルです&lt;/p&rt;&lt;button class="removeArrowBox" style="float: right"&rt;OK&lt;/button&rt;&lt;/div&rt;');
+		},
+
+		/**
+		 * 吹き出し表示ボタンクリック
+		 *
+		 * @memberOf sample.PageController
+		 * @param context
+		 */
+		'.sampleDiv1 .sample-btn click': function(context, $el) {
+			// 吹き出しを表示する方向を取得。up, down, left, rightのいずれか。
+			var direction = $el.data('direction');
+			// ボタン要素の親要素を吹き出しを表示するターゲットにする
+			var $target = $el.parent();
+			// createでArrowBoxインスタンスを作成
+			var arrowbox = this._arrowboxController.create(this.view.get('message'));
+			// 吹き出しの表示
+			arrowbox.show({
+				target: $target,
+				direction: direction
+			});
+		},
+
+		/**
+		 * 吹き出しをクリックした箇所に表示
+		 *
+		 * @memberOf sample.PageController
+		 * @param context
+		 */
+		'.sampleDiv2 click': function(context) {
+			var x = context.event.pageX;
+			var y = context.event.pageY;
+			// 既にposition-setクラスを持つ吹き出しがあったら削除する
+			var $arrowbox = this.$find('.position-set');
+			// 吹き出しの要素からArrowBoxインスタンスを取得
+			var preArrowbox = this._arrowboxController.getArrowBoxFromElement($arrowbox);
+			// 吹き出しをdispose
+			preArrowbox && preArrowbox.dispose();
+
+			// 第2引数でクラスを追加する
+			var arrowbox = this._arrowboxController.create(this.view.get('message'), {
+				cls: 'position-set'
+			});
+			arrowbox.show({
+				position: {
+					left: x,
+					top: y
+				}
+			});
+		},
+
+		/**
+		 * 吹き出し内のOKボタンクリック。吹き出しを削除する。
+		 *
+		 * @memberOf sample.PageController
+		 * @param context
+		 */
+		'.removeArrowBox click': function(context, $el) {
+			// 吹き出し要素の取得
+			var $arrowbox = $el.parents('.h5arrowbox');
+			// ArrowBoxインスタンスの取り出し
+			var arrowbox = this._arrowboxController.getArrowBoxFromElement($arrowbox);
+			// 吹き出しの削除
+			arrowbox.dispose();
+		}
+	};
+	h5.core.expose(controller);
+})();
+
+$(function() {
+	// コントローラのバインド
+	h5.core.controller('body', sample.PageController);
+});
+		</pre></li>
+	</ul>
+</body>
+</html>
