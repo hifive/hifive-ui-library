@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width = device-width, user-scalable = yes">
+
+<link rel="stylesheet" href="../../../res/lib/hifive/h5.css" />
+
+<script src="../../../res/lib/jquery/jquery.js"></script>
+<script src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script src="../../../res/lib/hifive/h5.dev.js"></script>
+
+<link rel="stylesheet" href="../src/arrowbox.css" />
+<script src="../src/arrowbox.js"></script>
+
+<script src="pageController.js"></script>
+<script src="init.js"></script>
+
+<style type="text/css">
+.sampleDiv {
+	position: relative;
+	margin: auto;
+	margin-top: 30px;
+	margin-bottom: 30px;
+	width: 300px;
+	padding: 10px;
+	border: 1px solid #ccc;
+	text-align: center;
+}
+
+.sampleDiv2 {
+	height: 300px;
+}
+</style>
+<title>ArrorwBox</title>
+</head>
+<body>
+	<h3>ArrowBox</h3>
+
+	<span>使用方法・制限事項</span>
+
+	<hr />
+
+	<h3>ターゲットの上下左右に吹き出しを出す例</h3>
+
+	<div class="sampleDiv sampleDiv1">
+		<button class="sample-btn" data-direction="up">上</button>
+		<button class="sample-btn" data-direction="right">右</button>
+		<button class="sample-btn" data-direction="down">下</button>
+		<button class="sample-btn" data-direction="left">左</button>
+	</div>
+
+	<hr />
+
+	<h3>位置を指定して吹き出しを出す例</h3>
+	<div class="sampleDiv sampleDiv2">
+		<p>クリックした位置に吹き出しを表示します</p>
+	</div>
+
+</body>
+</html>

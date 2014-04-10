@@ -14,10 +14,23 @@
  * limitations under the License.
  *
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+ .h5mag-groupHandle {
+	position: absolute;
+	z-index: 6;
+	height: 44px;
+	width: 44px;
+	border: 1px solid #ccc;
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+.h5mag-groupWrap {
+	position: absolute;
+	z-index: 0;
+	border: #ccc 2px solid;
+	box-sizing: border-box;
+	background-color: rgba(240, 240, 240, 0.5);
+}
+
+.magnetDragging{
+	z-index: 2;
+}

@@ -14,10 +14,20 @@
  * limitations under the License.
  *
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+$(function() {
+	h5.core.controller('.magnet-wrapper', h5.ui.components.MagnetContainer.MagnetController).readyPromise
+			.done(function() {
+				// 動的追加
+				$('.magnet-wrapper').append('<div class="sample purple"></div>');
+				$('.magnet-wrapper').append('<div class="sample gray"></div>');
+
+				// 初期位置を離して設置
+				$('.sample').each(function(i) {
+					$(this).css({
+						top: 200 * parseInt(i / 3),
+						left: 200 * (i % 3)
+					});
+				});
+
+			});
+});

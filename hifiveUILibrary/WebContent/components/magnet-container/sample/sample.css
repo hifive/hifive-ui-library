@@ -14,10 +14,38 @@
  * limitations under the License.
  *
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+ .magnet-wrapper {
+	position: relative;
+}
+
+.sample {
+	width: 120px;
+	height: 120px;
+	float: left;
+	cursor: pointer;
+	position: absolute;
+}
+
+.red {
+	background-color: #F3C0AB;
+}
+
+.blue {
+	background-color: #99CFE5;
+}
+
+.green {
+	background-color: #98DE8D;
+}
+
+.yellow {
+	background-color: #FFF599;
+}
+
+.purple {
+	background-color: #D27EB3;
+}
+
+.gray {
+	background-color: #E3E3E3;
+}

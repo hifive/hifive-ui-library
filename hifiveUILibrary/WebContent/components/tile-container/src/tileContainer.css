@@ -1,3 +1,4 @@
+@charset 'utf-8';
 /*
  * Copyright (C) 2012-2014 NS Solutions Corporation
  *
@@ -14,10 +15,20 @@
  * limitations under the License.
  *
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+ .columns .column {
+	position: absolute;
+}
+
+.columns .header:hover {
+	cursor: move;
+	filter: alpha(opacity = 80);
+	opacity: 0.8;
+}
+
+.columns .dummy-column {
+	border: 2px dashed #888 !important;
+	background-color: #ddd;
+	margin: 0 5px;
+	z-index: -1;
+	display: none;
+}

@@ -1,3 +1,4 @@
+@charset 'utf-8';
 /*
  * Copyright (C) 2012-2014 NS Solutions Corporation
  *
@@ -14,10 +15,44 @@
  * limitations under the License.
  *
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+.box_content {
+	border: 2px solid #000;
+	padding: 5px;
+	border-radius: 5px;
+	margin: 5px;
+	height: 200px;
+	width: 300px;
+}
+
+.box_content h1 {
+	font-size: 1.2em;
+	color: #ffffff;
+	background-color: #797979;
+	height: 30px;
+}
+
+.sample-wrapper {
+	height: 680px;
+}
+
+.column2 {
+	width: 620px
+}
+
+/** 説明用 **/
+pre {
+	padding: 9.5px;
+	margin: 0 0 10px;
+	font-size: 13px;
+	line-height: 1.42857143;
+	word-break: break-all;
+	word-wrap: break-word;
+	color: #333;
+	background-color: #f5f5f5;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+li {
+	line-height: 1.5em;
+}

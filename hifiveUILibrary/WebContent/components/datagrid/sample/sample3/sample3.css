@@ -1,5 +1,7 @@
+@charset "utf-8";
+
 /*
- * Copyright (C) 2012-2014 NS Solutions Corporation
+ * Copyright (C) 2013-2014 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * hifive
  */
-var PageLoadLogic = {
-	__name: 'h5.ui.PageLoadLogic',
-	load: function(url) {
-		return h5.ajax(url);
-	}
-};
-h5.core.expose(PageLoadLogic);
+
+#grid {
+	margin: 0 auto;
+}
+
+#grid td {
+	border: solid 1px #888;
+}
+
+#grid td.grid-selected {
+	background-color: #1E90FF;
+	color: white;
+}
+
+#grid td input[type="checkbox"] {
+	vertical-align: middle;
+}
+
+#grid div.grid-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+#grid .grid-main-box td[data-h5-dyn-grid-property-name="col6"] div.grid-cell {
+	text-align: right;
+	padding-right: 5px;
+}
+

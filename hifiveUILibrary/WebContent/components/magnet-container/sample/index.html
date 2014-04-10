@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<!-- コンテンツ幅に合わせる場合、コンテンツの数値(width)を指定する。-->
+<!-- スケールをコンテンツに合わせる場合、minimum-scale=1, maximum-scale=1 を指定する。-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- 全画面表示化するかどうかの設定。ホーム画面から起動したときしか効かない。 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+
+<!-- ライブラリのロード -->
+<script src="../../../res/lib/jquery/jquery.js"></script>
+<script src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script src="../../../res/lib/jqplugins/jquery.animate-shadow-min.js"></script>
+<script src="../../../res/lib/hifive/h5.js"></script>
+
+<script src="../src/MagnetController.js"></script>
+
+<!-- ユーザCSS・JS -->
+<script src="init.js"></script>
+<link rel="stylesheet" href="sample.css">
+
+<title>マグネットコンテナ サンプル</title>
+</head>
+<body>
+	<h1>マグネットコンテナ サンプル</h1>
+	<div class="magnet-wrapper">
+		<div class="sample red"></div>
+		<div class="sample blue"></div>
+		<div class="sample green"></div>
+		<div class="sample yellow"></div>
+	</div>
+</body>
+</html>

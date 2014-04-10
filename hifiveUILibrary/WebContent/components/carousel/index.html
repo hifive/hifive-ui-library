@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link type="text/css" rel="stylesheet" href="../../res/lib/hifive/h5.css">
+<link type="text/css" rel="stylesheet" href="sample.css">
+
+<script type="text/javascript" src="../../res/lib/jquery/jquery.js"></script>
+<script type="text/javascript" src="../../res/lib/hifive/ejs-h5mod.js"></script>
+<script type="text/javascript" src="../../res/lib/hifive/h5.dev.js"></script>
+
+<title>Carousel</title>
+</head>
+<body>
+
+	<h1>Carousel</h1>
+	<p>要素を横並びにしてスライドできるようにするコンポーネントです。</p>
+	<p>
+		サンプルは<a href="sample/">こちら。</a>
+	</p>
+
+	<h2>使用方法</h2>
+	<ul>
+		<li>CarouselController.jsを読み込みます。</li>
+		<li>h5.ui.components.carousel.CarouselControllerをバインドした要素の子要素がカルーセルのアイテムになります。</li>
+		<li>CarouselControllerにはアイテムの追加、削除をするメソッドを用意しており、動的に追加・削除ができます。</li>
+		<li><ul>
+				<li>appendItem(elm) 指定された要素を後ろに追加します</li>
+				<li>prependItem(elm) 指定された要素を前に追加します</li>
+				<li>removeItem(elm) 指定された追加済みアイテムを削除します</li>
+			</ul></li>
+	</ul>
+</body>
+</html>

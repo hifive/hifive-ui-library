@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+	<link rel="stylesheet" href="../../res/lib/hifive/h5.css" />
+	<link rel="stylesheet" href="src/chart.css" />
+
+	<script src="../../res/lib/jquery/jquery.js"></script>
+	<script src="../../res/lib/hifive/h5.dev.js"></script>
+
+	<!-- チャート部品 -->
+  	<script src="src/graphic-renderer.js"></script>
+  	<script src="src/chart.js"></script>
+
+	<script type="text/javascript">
+	(function() {
+
+		var DUMMY_DATA_SIZE = 300;
+
+		/**
+		 * データ生成関数
+		 */
+		function createChartDummyData(median, vibration) {
+			var ret = [];
+			for (var i = 0; i < DUMMY_DATA_SIZE; i++) {
+				ret.push({
+					val: median + (Math.random() - 0.5) * vibration * 2
+				});
+			}
+			return ret;
+		}
+
+		/**
+		 * @class
+		 * @memberOF ui.sample.chart
+		 */
+		var pageController = {
+			/**
+			 * @memberOf ui.sample.chart.pageController
+			 */
+			__name: 'ui.sample.chart.pageController',
+
+			_chartController: h5.ui.components.chart.ChartController, // チャートライブラリ
+
+			__meta: {
+				_chartController: {
+					rootElement: '#chart'
+				}
+			},
+
+			__ready: function(context) {
+				// 取得したデータをもとにチャートを表示
+				this._chartController.draw({
+					chartSetting: {
+						width: 600,
+						height: 480
+					},
+					axes: { // 軸の設定
+						xaxis: { // x軸
+							off: true
+						//x軸に垂直な線を引かない
+						},
+						yaxis: { // y軸
+							lineNum: 10, // y軸の補助線の数(上部は含む)
+							fontSize: '7pt', // ラベルのフォントサイズ
+							autoScale: function(min, max) { // オートスケールの定義
+								return {
+									rangeMax: Math.ceil(max / 200) * 200,
+									rangeMin: Math.floor(min / 200) * 200
+								};
+							},
+							range: { //Y軸の表示領域
+								min: 0,
+								max: 500
+							}
+						}
+					},
+					seriesDefault: { // すべての系列のデフォルト設定
+						dispDataSize: 100,
+						// 表示データ数
+						mouseover: {
+							tooltip: false
+						}
+					},
+					// 系列データ
+					series: [{
+						name: 'sample', //系列名(キーとして使用する)
+						type: 'line', // 線種(line, stacked_line, candleStick)
+						data: createChartDummyData(400, 100), // データ
+						propNames: { // チャートに表示するときに使用するプロパティ名
+							y: 'val' // lineチャートのときは、yのプロパティ名を指定する(デフォルトはy)
+						},
+						fillColor: 'blue'
+					}]
+				});
+			}
+		};
+
+		h5.core.expose(pageController);
+	})();
+
+	$(function() {
+		h5.core.controller('body', ui.sample.chart.pageController);
+	});
+	</script>
+
+	<title>チャート</title>
+</head>
+<body>
+	<h2>Chart</h2>
+	<p>ラインチャート・ローソクチャートを表示可能な部品です</p>
+	<p>
+		サンプルは<a href="sample/">こちら</a>
+	</p>
+
+	<h5>折れ線グラフサンプル</h5>
+	<div id="chart" ></div>
+	<h3>使用方法</h3>
+	<ul>
+		<li>srcフォルダ以下にある、以下のファイルが必要です。使用するページで読み込んでください。
+			<ul>
+				<li>chart.css</li>
+				<li>chart.js</li>
+			</ul>
+		</li>
+	</ul>
+	<ul>
+		<li>
+			h5.ui.components.chart.ChartControllerを子コントローラに持つコントローラを作成し、chartController#drawメソッドを呼ぶとチャートが描画されます
+			<pre>
+var pageController = {
+	__name: 'ui.sample.chart.pageController',
+	_chartController: h5.ui.components.chart.ChartController, // チャートライブラリ
+
+	__meta: {
+		_chartController: {
+			rootElement: '#chart'
+		}
+	},
+
+	__ready: function(context) {
+		this._chartController.draw({
+			chartSetting: {
+				width: 600,
+				height: 480
+			},
+			axes: { // 軸の設定
+				xaxis: { // x軸
+					//x軸に垂直な線を引かない
+					off: true
+				},
+				yaxis: { // y軸
+					lineNum: 10, // y軸の補助線の数(上部は含む)
+					fontSize: '7pt', // ラベルのフォントサイズ
+					autoScale: function(min, max) { // オートスケールの定義
+						return {
+							rangeMax: Math.ceil(max / 200) * 200,
+							rangeMin: Math.floor(min / 200) * 200
+						};
+					},
+					range: { //Y軸の表示領域
+						min: 0,
+						max: 500
+					}
+				}
+			},
+			seriesDefault: { // すべての系列のデフォルト設定
+				dispDataSize: 100,
+				// 表示データ数
+				mouseover: {
+					tooltip: false
+				}
+			},
+			// 系列データ
+			series: [{
+				name: 'sample', //系列名(キーとして使用する)
+				type: 'line', // 線種(line, stacked_line, candleStick)
+				data: [], // データ
+				propNames: { // チャートに表示するときに使用するプロパティ名
+					y: 'val' // lineチャートのときは、yのプロパティ名を指定する(デフォルトはy)
+				},
+				fillColor: 'blue'
+			}]
+		});
+	}
+};
+h5.core.controller('body', pageController);
+			</pre>
+		</li>
+		<li>以下の機能を持つ
+		 	<ul>
+		 	    <li>折れ線、折れ線(積み上げ)、ローソクチャートの表示が可能(※塗りつぶすことで面グラフも表示可能)</li>
+		 		<li>1領域内に複数系列(複数種類)表示可能</li>
+		 		<li>複数領域の表示も可能(領域間の連携は未実装)</li>
+		 		<li>表示後のデータの追加が可能</li>
+		 		<li>表示後の新しい系列の追加が可能</li>
+		 		<li>表示サイズの変更が可能(※ただし、初期サイズ以上にならないバグあり)</li>
+		 		<li>ローソクの場合はツールチップ、ハイライト機能あり(※折れ線では実装中)</li>
+		 	</ul>
+		 </li>
+	</ul>
+</body>
+</html>
