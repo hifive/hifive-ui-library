@@ -65,3 +65,14 @@ License:Dual licensed under the MIT and GPL licenses
 	https://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt
 Local Modifications: None.
 
+
+-----
+Code:
+WebContent/res/lib/jqplugins/jquery.animate-shadow-min.js
+
+Qunit
+URL:http://www.bitstorm.org/jquery/shadow-animation/
+License:Dual licensed under the MIT and GPL licenses
+	https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt
+	https://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt
+Local Modifications: None.
