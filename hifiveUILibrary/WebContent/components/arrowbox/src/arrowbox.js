@@ -15,7 +15,7 @@
  *
  */
 (function() {
-	var fwLogger = h5.log.createLogger('h5.ui.components.ArrowBoxController');
+	var fwLogger = h5.log.createLogger('h5.ui.components.arrowbox.ArrowBoxController');
 
 	var MSG_CANNOT_CALL_METHOD_DISPOSED = fwLogger.info('dispose済みのArrowBoxは操作できません');
 
@@ -130,7 +130,7 @@
 	/**
 	 * ArrowBoxController定義
 	 *
-	 * @name h5.ui.components.ArrowBoxController
+	 * @name h5.ui.components.arrowbox.ArrowBoxController
 	 * @namespace
 	 */
 	var arrowboxController = {
@@ -138,15 +138,15 @@
 		/**
 		 * コントローラ名
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 * @type String
 		 */
-		__name: 'h5.ui.components.ArrowBoxController',
+		__name: 'h5.ui.components.arrowbox.ArrowBoxController',
 
 		/**
 		 * テンプレート
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 * @type String
 		 */
 		__templates: null,
@@ -154,14 +154,14 @@
 		/**
 		 * ArrowBoxのテンプレート
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 */
 		_arrowboxTmpl: null,
 
 		/**
 		 * ライフサイクルイベント __ready
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 * @param context
 		 */
 		__ready: function(context) {
@@ -177,7 +177,7 @@
 		/**
 		 * ArrowBoxインスタンスを作って返す
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 * @param {String|DOM|jQuery} content 吹き出しの中身
 		 */
 		create: function(content, option) {
@@ -187,7 +187,7 @@
 		/**
 		 * ArrowBoxのDOM要素からArrowBoxインスタンスを取得して返す
 		 *
-		 * @memberOf h5.ui.components.ArrowBoxController
+		 * @memberOf h5.ui.components.arrowbox.ArrowBoxController
 		 * @param {DOM|jQuery|String} elm 要素またはセレクタ
 		 */
 		getArrowBoxFromElement: function(elm) {
