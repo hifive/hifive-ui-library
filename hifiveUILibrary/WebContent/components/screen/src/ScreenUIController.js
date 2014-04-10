@@ -1,26 +1,42 @@
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 (function() {
 	var ScreenController = {
 		/**
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
-		__name: 'h5.ui.ScreenController',
+		__name: 'h5.ui.components.screen.ScreenController',
 
 		/**
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		_pageLoadLogic: h5.ui.PageLoadLogic,
 
 		/**
 		 * アニメーション中かどうか
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		_isAnimation: false,
 
 		/**
 		 * スクロールラッパー要素
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		_$scrollingBase: null,
 
@@ -38,7 +54,7 @@
 		numberOfPages: Infinity,
 
 		/**
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		__ready: function() {
 			// screen内に配置されているDOMをコンテンツとして設定
@@ -91,7 +107,7 @@
 		/**
 		 * アニメーションをスタートする。
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		startAnimation: function() {
 			if (this._isAnimation) {
@@ -137,7 +153,7 @@
 		/**
 		 * アニメーションをストップする
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		stopAnimation: function() {
 			// ダミーを削除
@@ -164,7 +180,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 * @param {Number} left 移動先の位置
 		 * @param {String|Number} duration アニメーション速度
 		 * @returns promise
@@ -180,7 +196,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		move: function(d) {
 			this._$scrollingBase.css('left', parseInt(this._$scrollingBase.css('left')) + d);
@@ -189,7 +205,7 @@
 		/**
 		 * 右に1ページ移動
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 * @returns promise
 		 */
 		next: function() {
@@ -199,7 +215,7 @@
 		/**
 		 * 左に1ページ移動
 		 *
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 * @returns promise
 		 */
 		prev: function() {
@@ -238,7 +254,7 @@
 		 * ページをロード
 		 *
 		 * @param {String} url
-		 * @memberOf h5.ui.ScreenController
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		load: function(url) {
 			// ロード開始時のカレントを覚えておく
@@ -275,31 +291,31 @@
 (function() {
 	var ScreenUIController = {
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
-		__name: 'h5.ui.ScreenUIController',
+		__name: 'h5.ui.components.screen.ScreenUIController',
 
 		/**
 		 * 指でスライドするときの、スライド距離と移動距離のレート(移動距離/スライド距離)
 		 *
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		_slideRate: 1,
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
-		_screenController: h5.ui.ScreenController,
+		_screenController: h5.ui.components.screen.ScreenController,
 
 		/**
 		 * trackstart時のスクリーン幅を覚えておく
 		 *
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		_screenWidth: 0,
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		__ready: function(context) {
 			// コントローラのパラメータで渡されたナビゲーションコントローラをバインドします
@@ -312,14 +328,14 @@
 		/**
 		 * スクリーンがアニメーション中かどうかを返す
 		 *
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		isAnimation: function() {
 			return this._screenController._isAnimation;
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		__meta: {
 			_screenController: {
@@ -328,14 +344,14 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} loadPage': function(context) {
 			this._loadPage(context);
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 * @param url
 		 */
 		_loadPage: function(context) {
@@ -350,7 +366,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} nextPage': function(context) {
 			this._screenController.next().done(this.own(function() {
@@ -359,7 +375,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} prevPage': function(context) {
 			this._screenController.prev().done(this.own(function() {
@@ -368,7 +384,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} screenTrackstart': function(context) {
 			if (this._screenController._isAnimation) {
@@ -381,14 +397,14 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} screenTrackmove': function(context) {
 			this._screenController.move(context.evArg.dx * this._slideRate);
 		},
 
 		/**
-		 * @memberOf h5.ui.ScreenUIController
+		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} screenTrackend': function(context) {
 			var $current = this.$find('.h5screenContent.current');
