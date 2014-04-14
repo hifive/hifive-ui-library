@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 (function() {
 
 	var DUMMY_DATA_SIZE = 300;
@@ -57,28 +73,28 @@
 
 		/**
 		 * チャートに表示している系列の配列
-		 * 
+		 *
 		 * @memberOf ui.sample.chart.pageController
 		 */
 		_series: [],
 
 		/**
 		 * データ内の右端のインデックス
-		 * 
+		 *
 		 * @memberOf ui.sample.chart.pageController
 		 */
 		_dataIndex: 0,
 
 		/**
 		 * 初期幅
-		 * 
+		 *
 		 * @memberOf ui.sample.chart.pageController
 		 */
 		_width: 600,
 
 		/**
 		 * 初期高さ
-		 * 
+		 *
 		 * @memberOf ui.sample.chart.pageController
 		 */
 		_height: 480,
@@ -220,7 +236,7 @@
 
 		/**
 		 * 系列の定義オブジェクトを生成する
-		 * 
+		 *
 		 * @memberOf ui.sample.chart.pageController
 		 * @returns {Object} 系列の定義オブジェクト
 		 */
