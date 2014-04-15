@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>PagingGrid のサンプル</title>
+
+		<link rel="stylesheet" type="text/css" href="./sample2.css">
+
+		<script type="text/javascript" src="../../../../res/lib/jquery/jquery-1.9.1.js"></script>
+		<script type="text/javascript" src="../../../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script type="text/javascript" src="../../../../res/lib/hifive/h5.dev.js"></script>
+
+		<script type="text/javascript" src="../../../virtual-scroll/src/data-source.js"></script>
+		<script type="text/javascript" src="../../../virtual-scroll/src/virtual-scroll.js"></script>
+		<script type="text/javascript" src="../../src/datagrid.js"></script>
+
+		<script type="text/javascript" src="./sample2.js"></script>
+	</head>
+	<body>
+		<h2>PagingGrid のサンプル</h2>
+		<div id="grid"></div>
+		<div id="pager">
+			<a href="#" id="prevPage">前の 20件</a>
+			<div id="pageInfo">
+				<input id="currentPage" type="text"> / <span id="totalPages">xx</span>ページ
+			</div>
+			<a href="#" id="nextPage">次の 20件</a>
+		</div>
+		<br>
+		<div style="text-align: center;">
+			<input id="unselectAll" type="button" value="選択の全解除">
+			選択中のデータ: <span id="selectedDataIds"></span>
+		</div>
+	</body>
+</html>
