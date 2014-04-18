@@ -1,0 +1,86 @@
+@charset 'utf-8';
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+.screen-wrapper {
+	width: 80%;
+	margin: auto;
+}
+
+.screen-nav {
+	border: 1px solid #ccc;
+	cursor: pointer;
+}
+
+.screen-nav .screentrack {
+	font-size: 1.5em;
+	text-align: center;
+}
+
+.screen-nav .prevpage {
+	text-decoration: none;
+	border-right: 1px solid #ccc;
+	display: block;
+	font-size: 1.5em;
+	float: left;
+}
+
+.screen-nav .nextpage {
+	text-decoration: none;
+	border-left: 1px solid #ccc;
+	display: block;
+	font-size: 1.5em;
+	float: right;
+}
+
+.screen.fixheight {
+	height: 400px;
+	border: 1px solid #ccc;
+}
+
+.fix {
+	border: 3px dashed #ccccff;
+}
+
+.height1 {
+	height: 150px;
+}
+
+.height2 {
+	height: 250px;
+}
+
+.height3 {
+	height: 550px;
+}
+
+/** 説明用 **/
+pre {
+	padding: 9.5px;
+	margin: 0 0 10px;
+	font-size: 13px;
+	line-height: 1.42857143;
+	word-break: break-all;
+	word-wrap: break-word;
+	color: #333;
+	background-color: #f5f5f5;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+li {
+	line-height: 1.5em;
+}

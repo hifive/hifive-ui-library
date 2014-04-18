@@ -7,59 +7,6 @@
 <meta name="viewport" content="width=device-width">
 
 <link type="text/css" rel="stylesheet" href="../../../res/lib/hifive/h5.css">
-<style>
-.screen-wrapper {
-	width: 80%;
-	margin: auto;
-}
-
-.screen-nav {
-	border: 1px solid #ccc;
-	cursor: pointer;
-}
-
-.screen-nav .screentrack {
-	font-size: 1.5em;
-	text-align: center;
-}
-
-.screen-nav .prevpage {
-	text-decoration: none;
-	border-right: 1px solid #ccc;
-	display: block;
-	font-size: 1.5em;
-	float: left;
-}
-
-.screen-nav .nextpage {
-	text-decoration: none;
-	border-left: 1px solid #ccc;
-	display: block;
-	font-size: 1.5em;
-	float: right;
-}
-
-.screen.fixheight {
-	height: 400px;
-	border: 1px solid #ccc;
-}
-
-.fix {
-	border: 3px dashed #ccccff;
-}
-
-.height1 {
-	height: 150px;
-}
-
-.height2 {
-	height: 250px;
-}
-
-.height3 {
-	height: 550px;
-}
-</style>
 <script type="text/javascript" src="../../../res/lib/jquery/jquery.js"></script>
 <script type="text/javascript" src="../../../res/lib/hifive/ejs-h5mod.js"></script>
 <script type="text/javascript" src="../../../res/lib/hifive/h5.js"></script>
@@ -68,6 +15,7 @@
 <script type="text/javascript" src="../src/PageLoadLogic.js"></script>
 <script type="text/javascript" src="../src/ScreenUIController.js"></script>
 
+<link type="text/css" rel="stylesheet" href="sample.css">
 <script type="text/javascript" src="NavigationController.js"></script>
 <script type="text/javascript" src="init.js"></script>
 
@@ -87,10 +35,22 @@
 		</div>
 	</div>
 
-	<h2>ソースコード</h2>
+	<h3>スクリーンの高さが固定でない(中身によって可変)の場合のサンプル</h3>
+	<div class="screen-wrapper">
+		<div class="screen-nav">
+			<a class="prevpage">前へ</a> <a class="nextpage">次へ</a>
+			<div class="screentrack">トラックエリア</div>
+		</div>
+		<div class="screen">
+			<div data-sample-url="page1.html" class="fix height1">ページ1(未ロード)</div>
+			<div data-sample-url="page2.html" class="fix height2">ページ2(未ロード)</div>
+			<div data-sample-url="page3.html" class="fix height3">ページ3(未ロード)</div>
+		</div>
+	</div>
+
+	<h2>ソースコード例</h2>
 	<h3>HTML</h3>
-	<pre>
-		<code>&lt;div class=&quot;screen-wrapper&quot;&gt;
+	<pre><code>&lt;div class=&quot;screen-wrapper&quot;&gt;
 	&lt;div class=&quot;screen-nav&quot;&gt;
 		&lt;a class=&quot;prevpage&quot;&gt;前へ&lt;/a&gt;
 		&lt;a class=&quot;nextpage&quot;&gt;次へ&lt;/a&gt;
@@ -101,9 +61,7 @@
 		&lt;div data-sample-url=&quot;page2.html&quot;&gt;ページ2(未ロード)&lt;/div&gt;
 		&lt;div data-sample-url=&quot;page3.html&quot;&gt;ページ3(未ロード)&lt;/div&gt;
 	&lt;/div&gt;
-&lt;/div&gt;
-</code>
-	</pre>
+&lt;/div&gt;</code></pre>
 	<h3>ナビゲーションコントローラの実装</h3>
 	<pre>
 		<code>(function() {
@@ -263,27 +221,11 @@
 		}
 	};
 	h5.core.expose(navigationController);
-})();</code>
-	</pre>
+})();</code></pre>
 	<h3>コントローラのバインド</h3>
-	<pre>
-		<code>h5.core.controller('.screen-wrapper', h5.ui.components.screen.ScreenUIController, {
+	<pre><code>h5.core.controller('.screen-wrapper', h5.ui.components.screen.ScreenUIController, {
 	navigationController: app.controller.NavigationController,
 	navigationRootElement: '.screen-nav'
-});</code>
-	</pre>
-
-	<h3>スクリーンの高さが固定でない(中身によって可変)の場合のサンプル</h3>
-	<div class="screen-wrapper">
-		<div class="screen-nav">
-			<a class="prevpage">前へ</a> <a class="nextpage">次へ</a>
-			<div class="screentrack">トラックエリア</div>
-		</div>
-		<div class="screen">
-			<div data-sample-url="page1.html" class="fix height1">ページ1(未ロード)</div>
-			<div data-sample-url="page2.html" class="fix height2">ページ2(未ロード)</div>
-			<div data-sample-url="page3.html" class="fix height3">ページ3(未ロード)</div>
-		</div>
-	</div>
+});</code></pre>
 </body>
 </html>
