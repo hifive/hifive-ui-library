@@ -54,6 +54,13 @@
 		 */
 		__ready: function() {
 			this._$trackArea = this.$find('.screentrack');
+			var urlList = [];
+			// urlListにDOMに記述されているURLを保存する。
+			// urlが記述されていない箇所についてはundefinedになるので、ロードはされなくなる。
+			this.$find('.h5screenContent').each(function(index) {
+				urlList.push($(this).data('sample-url'));
+			});
+			this._urlList = urlList;
 			// URLリストの最初のページをロード
 			this.trigger('loadPage', {
 				url: this._urlList[this._urlIndex]

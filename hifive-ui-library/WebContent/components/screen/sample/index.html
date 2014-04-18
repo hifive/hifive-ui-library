@@ -49,25 +49,26 @@
 <script type="text/javascript" src="../../../res/lib/hifive/ejs-h5mod.js"></script>
 <script type="text/javascript" src="../../../res/lib/hifive/h5.js"></script>
 
+<link type="text/css" rel="stylesheet" href="../src/screen.css">
 <script type="text/javascript" src="../src/PageLoadLogic.js"></script>
 <script type="text/javascript" src="../src/ScreenUIController.js"></script>
 
 <script type="text/javascript" src="NavigationController.js"></script>
 <script type="text/javascript" src="init.js"></script>
 
-<title>Screen サンプル</title>
+<title>スクリーン サンプル</title>
 </head>
 <body>
-	<h1>Screen サンプル</h1>
+	<h1>スクリーン サンプル</h1>
 	<div class="screen-wrapper">
 		<div class="screen-nav">
 			<a class="prevpage">前へ</a> <a class="nextpage">次へ</a>
 			<div class="screentrack">トラックエリア</div>
 		</div>
 		<div class="screen">
-			<div>ページ1(未ロード)</div>
-			<div>ページ2(未ロード)</div>
-			<div>ページ3(未ロード)</div>
+			<div data-sample-url="page1.html">ページ1(未ロード)</div>
+			<div data-sample-url="page2.html">ページ2(未ロード)</div>
+			<div data-sample-url="page3.html">ページ3(未ロード)</div>
 		</div>
 	</div>
 
