@@ -179,8 +179,8 @@
 			// screenに高さが設定されていない(position:absoluteの要素しか中にない場合に高さが0になっている)場合は一時的に高さを固定にする
 			if (!$(this.rootElement).height()) {
 				this._$scrollingBase.css({
-					height: Math.max((leftIgnore ? 0 : $left.outerHeight()), $current.outerHeight(),
-							(rightIgnore ? 0 : $right.outerHeight()))
+					height: Math.max((leftIgnore ? 0 : $left.outerHeight()),
+							$current.outerHeight(), (rightIgnore ? 0 : $right.outerHeight()))
 				});
 			}
 
@@ -539,7 +539,9 @@
 			// コントローラのパラメータで渡されたナビゲーションコントローラをバインドします
 			var navigationController = context.args.navigationController;
 			this._navController = h5.core.controller(context.args.navigationRootElement
-					|| this.rootElement, navigationController);
+					|| this.rootElement, navigationController, {
+				$screen: this.$find('.screen')
+			});
 		},
 
 		/**

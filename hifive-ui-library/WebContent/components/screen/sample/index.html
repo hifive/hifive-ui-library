@@ -93,14 +93,14 @@
 		/**
 		 * @memberOf app.controller.NavigationController
 		 */
-		__name: 'app.controller.NavigationController',
+		__name: &#039;app.controller.NavigationController&#039;,
 
 		/**
 		 * スクリーンのコンテンツURLリスト
 		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		_urlList: ['page1.html', 'page2.html', 'page3.html'],
+		_urlList: [],
 
 		/**
 		 * 現在スクリーンに表示中のコンテンツURLのインデックス
@@ -124,25 +124,41 @@
 		_isTracking: false,
 
 		/**
+		 * スクリーン要素
+		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		__ready: function() {
-			this._$trackArea = this.$find('.screentrack');
-			// URLリストの最初のページをロード
-			this.trigger('loadPage', {
-				url: this._urlList[this._urlIndex]
+		_$screen: null,
+
+		/**
+		 * @memberOf app.controller.NavigationController
+		 */
+		__ready: function(context) {
+			this._$screen = context.args.$screen;
+			this._$trackArea = this.$find(&#039;.screentrack&#039;);
+			var urlList = this._urlList;
+			// urlListにDOMに記述されているURLを保存する。
+			// urlが記述されていない箇所についてはundefinedになるので、ロードはされなくなる。
+			this._$screen.find(&#039;.h5screenContent&#039;).each(function(index) {
+				urlList.push($(this).data(&#039;sample-url&#039;));
 			});
+			// URLリストの最初のページをロード
+			if (this._urlList[this._urlIndex]) {
+				this.trigger(&#039;loadPage&#039;, {
+					url: this._urlList[this._urlIndex]
+				});
+			}
 		},
 
 		/**
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
-		'.prevpage click': function(context) {
+		&#039;.prevpage click&#039;: function(context) {
 			context.event.preventDefault();
 			// 前(左)のページへスライドして、指定したURLをロード
 			this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;
-			this.trigger('prevPage', {
+			this.trigger(&#039;prevPage&#039;, {
 				url: this._urlList[this._urlIndex]
 			});
 		},
@@ -151,11 +167,11 @@
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
-		'.nextpage click': function(context) {
+		&#039;.nextpage click&#039;: function(context) {
 			context.event.preventDefault();
 			// 前(左)のページへスライドして、指定したURLをロード
 			this._urlIndex = this._urlIndex === this._urlList.length - 1 ? 0 : ++this._urlIndex;
-			this.trigger('nextPage', {
+			this.trigger(&#039;nextPage&#039;, {
 				url: this._urlList[this._urlIndex]
 			});
 		},
@@ -166,14 +182,14 @@
 		 * @param context
 		 * @memberOf app.controller.NavigationController
 		 */
-		'.screentrack h5trackstart': function(context) {
+		&#039;.screentrack h5trackstart&#039;: function(context) {
 			// スクリーンがアニメーション動作中ならキャンセル
-			if ($('.screen').hasClass('inOperation')) {
+			if ($(&#039;.screen&#039;).hasClass(&#039;inOperation&#039;)) {
 				return;
 			}
 			this._isTracking = true;
-			this.trigger('screenTrackstart', {
-				trackSize: this.$find('.screentrack').width()
+			this.trigger(&#039;screenTrackstart&#039;, {
+				trackSize: this.$find(&#039;.screentrack&#039;).width()
 			});
 			this._totalSlideAmount = 0;
 		},
@@ -184,18 +200,18 @@
 		 * @param context
 		 * @memberOf app.controller.NavigationController
 		 */
-		'.screentrack h5trackmove': function(context) {
+		&#039;.screentrack h5trackmove&#039;: function(context) {
 			if (!this._isTracking) {
 				return;
 			}
 			var offsetX = context.event.offsetX;
 			// トラック可能領域を制限
-			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
+			if (offsetX &lt; 0 || this.$find(&#039;.screentrack&#039;).width() &lt; offsetX) {
 				return;
 			}
 			var dx = context.event.dx;
 			this._totalSlideAmount += dx;
-			this.trigger('screenTrackmove', {
+			this.trigger(&#039;screenTrackmove&#039;, {
 				dx: dx
 			});
 		},
@@ -206,23 +222,23 @@
 		 * @param context
 		 * @memberOf app.controller.NavigationController
 		 */
-		'.screentrack h5trackend': function(context) {
+		&#039;.screentrack h5trackend&#039;: function(context) {
 			if (!this._isTracking) {
 				return;
 			}
 			this._isTracking = false;
 			// 移動先を判定
-			if (this._totalSlideAmount > 100) {
-				page = 'prev';
+			if (this._totalSlideAmount &gt; 100) {
+				page = &#039;prev&#039;;
 				this._urlIndex = this._urlIndex === 0 ? this._urlList.length - 1 : --this._urlIndex;
-			} else if (this._totalSlideAmount < -100) {
-				page = 'next';
+			} else if (this._totalSlideAmount &lt; -100) {
+				page = &#039;next&#039;;
 				this._urlIndex = this._urlIndex === this._urlList.length - 1 ? 0 : ++this._urlIndex;
 			} else {
-				page = 'current';
+				page = &#039;current&#039;;
 			}
 
-			this.trigger('screenTrackend', {
+			this.trigger(&#039;screenTrackend&#039;, {
 				page: page,
 				url: this._urlList[this._urlIndex]
 			});
