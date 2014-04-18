@@ -322,14 +322,6 @@
 									'[data-h5screencloneindex="' + cloneIndex + '"]'));
 						}
 						$target.html(data).addClass('loaded');
-						// scrollingBaseの位置と高さ調整
-						var height = $target.outerHeight();
-						this._$scrollingBase.css('height', height);
-						setTimeout(this.own(function() {
-							if (height !== $target.outerHeight()) {
-								this._$scrollingBase.css('height', $target.outerHeight);
-							}
-						}), 5);
 					}));
 			this.indicator({
 				target: $current,
