@@ -179,8 +179,8 @@
 			// screenに高さが設定されていない(position:absoluteの要素しか中にない場合に高さが0になっている)場合は一時的に高さを固定にする
 			if (!$(this.rootElement).height()) {
 				this._$scrollingBase.css({
-					height: Math.max((leftIgnore ? 0 : $left.outerHeight()), $current.outerHeight(),
-							(rightIgnore ? 0 : $right.outerHeight()))
+					height: Math.max((leftIgnore ? 0 : $left.outerHeight()),
+							$current.outerHeight(), (rightIgnore ? 0 : $right.outerHeight()))
 				});
 			}
 
@@ -201,6 +201,7 @@
 			$content.css({
 				display: 'none',
 				position: '',
+				width: '',
 				top: '',
 				left: ''
 			});
@@ -321,14 +322,6 @@
 									'[data-h5screencloneindex="' + cloneIndex + '"]'));
 						}
 						$target.html(data).addClass('loaded');
-						// scrollingBaseの位置と高さ調整
-						var height = $target.outerHeight();
-						this._$scrollingBase.css('height', height);
-						setTimeout(this.own(function() {
-							if (height !== $target.outerHeight()) {
-								this._$scrollingBase.css('height', $target.outerHeight);
-							}
-						}), 5);
 					}));
 			this.indicator({
 				target: $current,
@@ -539,7 +532,9 @@
 			// コントローラのパラメータで渡されたナビゲーションコントローラをバインドします
 			var navigationController = context.args.navigationController;
 			this._navController = h5.core.controller(context.args.navigationRootElement
-					|| this.rootElement, navigationController);
+					|| this.rootElement, navigationController, {
+				$screen: this.$find('.screen')
+			});
 		},
 
 		/**

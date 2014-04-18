@@ -26,7 +26,7 @@
 		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		_urlList: ['page1.html', 'page2.html', 'page3.html'],
+		_urlList: [],
 
 		/**
 		 * 現在スクリーンに表示中のコンテンツURLのインデックス
@@ -50,21 +50,30 @@
 		_isTracking: false,
 
 		/**
+		 * スクリーン要素
+		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		__ready: function() {
+		_$screen: null,
+
+		/**
+		 * @memberOf app.controller.NavigationController
+		 */
+		__ready: function(context) {
+			this._$screen = context.args.$screen;
 			this._$trackArea = this.$find('.screentrack');
-			var urlList = [];
+			var urlList = this._urlList;
 			// urlListにDOMに記述されているURLを保存する。
 			// urlが記述されていない箇所についてはundefinedになるので、ロードはされなくなる。
-			this.$find('.h5screenContent').each(function(index) {
+			this._$screen.find('.h5screenContent').each(function(index) {
 				urlList.push($(this).data('sample-url'));
 			});
-			this._urlList = urlList;
 			// URLリストの最初のページをロード
-			this.trigger('loadPage', {
-				url: this._urlList[this._urlIndex]
-			});
+			if (this._urlList[this._urlIndex]) {
+				this.trigger('loadPage', {
+					url: this._urlList[this._urlIndex]
+				});
+			}
 		},
 
 		/**
