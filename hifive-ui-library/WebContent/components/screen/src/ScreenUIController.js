@@ -201,6 +201,7 @@
 			$content.css({
 				display: 'none',
 				position: '',
+				width: '',
 				top: '',
 				left: ''
 			});
