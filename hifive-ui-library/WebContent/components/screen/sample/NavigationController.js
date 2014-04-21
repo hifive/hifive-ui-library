@@ -57,6 +57,8 @@
 		_$screen: null,
 
 		/**
+		 * 初期設定
+		 *
 		 * @memberOf app.controller.NavigationController
 		 */
 		__ready: function(context) {
@@ -77,6 +79,8 @@
 		},
 
 		/**
+		 * 前へボタンクリック
+		 *
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
@@ -90,6 +94,8 @@
 		},
 
 		/**
+		 * 次へボタンクリック
+		 *
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
