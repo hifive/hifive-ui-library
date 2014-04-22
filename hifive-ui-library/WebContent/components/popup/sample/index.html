@@ -24,6 +24,15 @@
 			}
 		</style>
 
+		<script type="text/ejs" id="multi-popup">
+			<div>[%= modal ? 'modal' : 'modeless' %]なポップアップです</div>
+			<br>
+			<div>
+				<button class="modal">modalで開く</button>
+				<button class="modeless">modelessで開く</button>
+			</div>
+		</script>
+
 		<script type="text/javascript" src="index.js"></script>
 		<title>ポップアップ</title>
 	</head>
@@ -49,6 +58,10 @@
 			<div class="sample-wrap">
 				<label>top:30px</label><br>
 				<button class="top-30px-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>複数ポップアップ</label><br>
+				<button class="multi-popup">開く</button>
 			</div>
 		</div>
 	</body>

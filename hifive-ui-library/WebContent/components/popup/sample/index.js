@@ -14,6 +14,43 @@
  * limitations under the License.
  *
  */
+ (function($) {
+	 var count = 0;
+
+	h5.u.obj.expose('sample', {
+		showPopup: function(modal) {
+			var content = h5.core.view.get('multi-popup', {
+				modal: modal
+			});
+			var popup = h5.ui.popupManager.createPopup('sample' + count, '複数階層ポップアップ' + count, content, sample.popupController, {
+				draggable: true
+			});
+			count++;
+			popup.setContentsSize(250, 100);
+			popup.show({
+				overlay: modal
+			});
+			popup.setPosition(null, {
+				top: count * 50,
+				left: count * 50
+			});
+			return popup;
+		}
+	});
+})(jQuery);
+(function($) {
+	var popupController = {
+		__name: 'sample.popupController',
+
+		'.modal click': function() {
+			sample.showPopup(true);
+		},
+		'.modeless click': function() {
+			sample.showPopup(false);
+		}
+	};
+	h5.core.expose(popupController);
+})(jQuery);
 (function($) {
 	var pageController = {
 		/**
@@ -87,6 +124,10 @@
 			});
 			popup.setContentsSize(250, 50);
 			popup.show();
+		},
+
+		'button.multi-popup click': function(context, $el) {
+			sample.showPopup(true);
 		}
 	};
 	h5.core.expose(pageController);

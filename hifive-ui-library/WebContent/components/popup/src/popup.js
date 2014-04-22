@@ -110,6 +110,13 @@
 		return $(str)[0];
 	}
 
+	function removeGroupOrder(group) {
+		var thisIndex = $.inArray(group, popupGroupOrderArray);
+		if (thisIndex !== -1) {
+			popupGroupOrderArray.splice(thisIndex, 1);
+		}
+	}
+
 	function movePopup(target, position) {
 		var bw = $(window).width();
 		var bh = $(window).height();
@@ -231,6 +238,10 @@
 					this._isShowing = true;
 					option = option || {};
 
+					// 表示の順序を更新する
+					removeGroupOrder(this.group);
+					popupGroupOrderArray.push(this.group);
+
 					// オーバレイの表示(デフォルトは表示、falseが指定されていたら非表示)
 					this._overlay = option.overlay !== false;
 					if (this._overlay) {
@@ -241,12 +252,15 @@
 								// 開こうとしているポップアップは無視する
 								continue;
 							}
-							$(popupGroupMap[group].rootElement).removeClass('current');
+							var p = popupGroupMap[group];
+							$(p.rootElement).removeClass('current');
+							p._current = false;
 						}
 					}
 
 					var $root = $(this.rootElement);
 					$root.addClass('current');
+					this._current = true;
 					$root.css('visibility', 'visible');
 					this.refresh();
 
@@ -260,12 +274,18 @@
 					}
 					this._isShowing = false;
 
+					$(this.rootElement).css('visibility', 'hidden');
+
 					// overlayの上に表示するポップアップにcurrentクラスを付ける
-					// 新しい方から数えて、最初にthis._overlay = trueとなるポップアップまでが操作可能(currentクラスがつく)
-					for (var i = popupGroupOrderArray.length - 1; i >= 0; i--) {
+					for (var i = popupGroupOrderArray.length- 1; i >= 0; i--) {
 						var p = popupGroupMap[popupGroupOrderArray[i]];
 						if (p._isShowing) {
+							if (p._current) {
+								break;
+							}
+
 							$(p.rootElement).addClass('current');
+							p._current = true;
 							if (p._overlay) {
 								break;
 							}
@@ -276,8 +296,6 @@
 							removeOverlay();
 						}
 					}
-
-					$(this.rootElement).css('visibility', 'hidden');
 				},
 
 				close: function(args) {
@@ -297,8 +315,7 @@
 					this.contents = null;
 
 					delete popupGroupMap[this.group];
-					var index = $.inArray(this.group, popupGroupOrderArray);
-					popupGroupOrderArray.splice(index, 1);
+					removeGroupOrder(this.group);
 
 					// プロミスから登録されたdoneハンドラを実行
 					this._deferred.resolve(args);
@@ -439,11 +456,9 @@
 			var lastPopup = popupGroupMap[group];
 			if (lastPopup) {
 				lastPopup.close();
-				var index = $.inArray(group, popupGroupOrderArray);
-				popupGroupOrderArray.splice(index, 1);
+				removeGroupOrder(this.group);
 			}
 			popupGroupMap[group] = p;
-			popupGroupOrderArray.push(group);
 		}
 
 		return p;
