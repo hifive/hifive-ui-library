@@ -184,7 +184,7 @@
 		var $root = $(rootElement);
 
 		if (option.header === true) {
-			this.header = h5.core.view.get(POPUP_HEADER_TEMPLATE_ID);
+			this.header = parseHTML(h5.core.view.get(POPUP_HEADER_TEMPLATE_ID));
 			$root.append(this.header);
 			// TODO この形式は1.6で動かない
 			// ポップアップの閉じるボタンが押された時のイベントハンドラ
