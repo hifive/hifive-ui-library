@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+		<link rel="stylesheet" href="../../../res/lib/hifive/h5.css" />
+		<link rel="stylesheet" href="../src/popup.css" />
+
+		<script src="../../../res/lib/jquery/jquery.js"></script>
+		<script src="../../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script src="../../../res/lib/hifive/h5.dev.js"></script>
+
+		<script type="text/javascript" src="../src/popup.js"></script>
+
+		<style type="text/css">
+			/** ポップアップの色調整 **/
+			.h5Popup {
+				background-color: #f5f5f5;
+				border: solid 1px white;
+				color: #303030;
+			}
+		</style>
+
+		<script type="text/ejs" id="multi-popup">
+			<div>[%= modal ? 'modal' : 'modeless' %]なポップアップです</div>
+			<br>
+			<div>
+				<button class="modal">modalで開く</button>
+				<button class="modeless">modelessで開く</button>
+			</div>
+		</script>
+
+		<script type="text/javascript" src="index.js"></script>
+		<title>ポップアップ</title>
+	</head>
+	<body>
+		<h1>ポップアップサンプル</h1>
+		<div class="contents">
+			<div class="sample-wrap">
+				<label>メッセージ表示</label><br>
+				<button class="normal-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>モーダレスポップアップ(オーバレイなし)</label><br>
+				<button class="modeless-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>動く(ドラッグ可能)</label><br>
+				<button class="draggable-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>上</label><br>
+				<button class="top-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>top:30px</label><br>
+				<button class="top-30px-popup">開く</button>
+			</div>
+			<div class="sample-wrap">
+				<label>複数ポップアップ</label><br>
+				<button class="multi-popup">開く</button>
+			</div>
+		</div>
+	</body>
+</html>
