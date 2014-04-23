@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+		<link rel="stylesheet" href="../../res/lib/hifive/h5.css" />
+		<link rel="stylesheet" href="src/popup.css" />
+
+		<script src="../../res/lib/jquery/jquery.js"></script>
+		<script src="../../res/lib/hifive/ejs-h5mod.js"></script>
+		<script src="../../res/lib/hifive/h5.dev.js"></script>
+
+		<script type="text/javascript" src="src/popup.js"></script>
+
+		<script type="text/javascript">
+		(function($) {
+			var pageController = {
+				__name: 'sample.PageController',
+
+				'.popup click': function(context, $el) {
+					var popup = h5.ui.popupManager.createPopup('sample', 'タイトル', '内容', null, {
+						draggable: true
+					});
+					popup.setContentsSize(300, 300);
+					popup.show();
+				}
+			};
+			h5.core.expose(pageController);
+		})(jQuery);
+		$(function() {
+			h5.core.controller('body', sample.PageController);
+		});
+		</script>
+		<title>ポップアップ</title>
+	</head>
+	<body>
+		<h1>ポップアップ</h1>
+		<p>タイトルバーとコンテンツエリアを持つウィンドウを画面に表示する部品です</p>
+		<div>サンプルは<a href="sample/index.html">こちら</a></div>
+		<br>
+		<button class="popup">ポップアップのサンプル</button>
+
+		<h3>使用方法</h3>
+		<ul>
+			<li>srcフォルダにある、以下のファイルが必要です。使用するページで読み込んでください。
+				<ul>
+					<li>popup.js</li>
+					<li>popup.css</li>
+				</ul>
+			</li>
+			<li>src/img/close-icon.pngは×ボタンの表示に必要になります(配置のみ必要です)</li>
+			<li>h5.ui.popupManager.createPopupでポップアップを作成、返り値のインスタンスが持つshowメソッドでポップアップを表示します
+				<pre>
+					h5.ui.popupManager.createPopup('sample', 'タイトル', '内容').show();
+				</pre>
+			</li>
+		</ul>
+		<h3>プロパティとメソッド</h3>
+		h5.ui.popupManagerには以下のメソッドが公開されています
+		<ul>
+			<li>createPopup(group, title, contents, controller, param) ： ポップアップを生成します。引数として以下を指定できます
+				<table border="1">
+					<tr><td>名前</td><td>型</td><td>説明</td><td>必須</td></tr>
+					<tr><td>group</td><td>String</td><td>グループを指定します。同じグループに属するポップアップは一つしか開けません</td><td>○</td></tr>
+					<tr><td>title</td><td>String</td><td>ポップアップのタイトルを指定します</td><td>×</td></tr>
+					<tr><td>contents</td><td>String | html | jQuery</td><td>ポップアップの内容を指定します</td><td>×</td></tr>
+					<tr><td>controller</td><td>Controller</td><td>ポップアップのコンテンツエリアにバインドするコントローラを指定します</td><td>×</td></tr>
+					<tr><td>param</td><td>Object</td><td>以下のパラメータを指定します
+						<table border="1">
+							<tr><td>名前</td><td>型</td><td>説明</td><td>デフォルト値</td></tr>
+							<tr><td>position</td><td>String</td><td>ポップアップに適用するpositionスタイル</td><td>absolute</td></tr>
+							<tr><td>header</td><td>boolean</td><td>タイトル領域を表示するか</td><td>true</td></tr>
+							<tr><td>draggable</td><td>boolean</td><td>ポップアップを移動できるようにするか</td><td>false</td></tr>
+						</table>
+					</td><td>×</td></tr>
+				</table>
+			</li>
+			<li>getPopup(group)：指定したグループのポップアップのインスタンスを取得します
+				<table border="1">
+					<tr><td>名前</td><td>型</td><td>説明</td><td>必須</td></tr>
+					<tr><td>group</td><td>String</td><td>グループを指定します。</td><td>○</td></tr>
+				</table>
+		</ul>
+
+		ポップアップインスタンスは以下のメソッドを持ちます
+		<table border="1">
+			<tr><td rowspan="2">名前</td><td rowspan="2">型</td><td rowspan="2">説明</td><td colspan="4">引数</td></tr>
+			<tr><td>名前</td><td>型</td><td>説明</td><td>デフォルト値</td></tr>
+			<tr><td>show</td><td></td><td>ポップアップを表示します</td><td>option.overlay</td><td>boolean</td><td>オーバーレイを表示するか</td><td>true</td></tr>
+			<tr><td>hide</td><td></td><td>ポップアップを非表示にします</td><td colspan="4"></td></tr>
+			<tr><td>close</td><td></td><td>ポップアップを削除します。削除するとポップアップからpopupClosedイベントが発生します</td><td>args</td><td>Object</td><td>popupClosedイベントで渡される引数オブジェクトです</td><td></td></tr>
+			<tr><td>getSize</td><td>Object</td><td>ポップアップの高さ(height)と幅(width)を持ったオブジェクトを返します</td><td colspan="4"></td></tr>
+			<tr><td>setTitle</td><td></td><td>タイトルを指定します</td><td>title</td><td>String</td><td>表示するタイトル</td><td></td></tr>
+			<tr><td>getTitle</td><td>String</td><td>タイトルを取得します</td><td colspan="4"></td></tr>
+			<tr><td rowspan="2">setContentsSize</td><td rowspan="2"></td><td rowspan="2">コンテンツエリアのサイズを指定します</td><td>width</td><td>number</td><td>幅</td><td></td></tr>
+			<tr><td>height</td><td>number</td><td>高さ</td><td></td></tr>
+			<tr><td>getContentsSize</td><td>Object</td><td>コンテンツエリアの高さ(height)と幅(width)を持ったオブジェクトを返します</td><td colspan="4"></td></tr>
+			<tr><td rowspan="2">setContents</td><td rowspan="2"></td><td rowspan="2">コンテンツを指定します</td><td>contents</td><td>String | DOM | jQuery</td><td>表示するコンテンツ</td><td></td></tr>
+			<tr><td>controller</td><td>Controller</td><td>コンテンツエリアにバインドするコントローラ</td><td></td></tr>
+			<tr><td>getContents</td><td>jQuery</td><td>コンテンツを取得します</td><td colspan="4"></td></tr>
+			<tr><td rowspan="2">setPosition</td><td rowspan="2"></td><td rowspan="2">ポップアップの位置を取得します</td><td>constraint</td><td>String</td><td>表示位置を文字列で指定します。指定できる文字列は、top/mid/bottomおよびleft/center/rightです。top-leftのような指定も可能です</td></tr>
+			<tr><td>position</td><td>Object</td><td>top, leftを数値で指定すると、画面全体からそれだけ移動した位置にポップアップを表示する</td><td></td></tr>
+		</table>
+	</body>
+</html>

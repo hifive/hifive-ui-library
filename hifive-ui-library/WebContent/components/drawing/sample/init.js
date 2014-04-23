@@ -14,11 +14,7 @@
  * limitations under the License.
  *
  */
-$(function(){
-	$('.screen-wrapper').each(function(){
-		h5.core.controller(this, h5.ui.components.screen.ScreenUIController, {
-			navigationController: app.controller.NavigationController,
-			navigationRootElement: $(this).find('.screen-nav')
-		});
-	});
+$(function() {
+	h5.core.controller('.drawing-wrapper1', h5.ui.components.drawing.DrawingController);
+	h5.core.controller('.drawing-wrapper2', sample.DrawingWrapperController);
 });
