@@ -28,7 +28,7 @@
 
 	/**
 	 * SVG用描画コントローラ
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui.components.chart
 	 * @name SVGRenderer
@@ -36,7 +36,7 @@
 	var svgRenderer = {
 		/**
 		 * SVG用描画コントローラであるか
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @returns {Boolean}
 		 */
@@ -44,7 +44,7 @@
 
 		/**
 		 * SVG要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param props
 		 * @returns
@@ -59,7 +59,7 @@
 
 		/**
 		 * SVG要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param attrs
 		 * @returns
@@ -88,7 +88,7 @@
 
 		/**
 		 * 指定したタグ名の要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param name SVG要素名
 		 * @returns 指定したSVG要素のオブジェクト
@@ -108,7 +108,7 @@
 
 		/**
 		 * LINE要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param x1 x1属性
 		 * @param y1 y1属性
@@ -130,7 +130,7 @@
 
 		/**
 		 * RECT要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param x x属性
 		 * @param y y属性
@@ -173,7 +173,7 @@
 
 		/**
 		 * TEXT要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param str 表示する文字列
 		 * @param x x属性
@@ -280,7 +280,7 @@
 	// -------------------------------------------------------------------------
 	/**
 	 * VML用描画コントローラ
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui
 	 * @name VMLRenderer
@@ -290,7 +290,7 @@
 
 		/**
 		 * VMLのルート要素(DIV)を生成します
-		 * 
+		 *
 		 * @param props
 		 */
 		createGraphicRootElm: function(props) {
@@ -307,7 +307,7 @@
 
 		/**
 		 * GROUP要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param attrs
 		 * @returns
@@ -328,7 +328,7 @@
 
 		/**
 		 * LINE要素を追加する
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param x1 x1属性
 		 * @param y1 y1属性
@@ -368,7 +368,7 @@
 
 		/**
 		 * 追加する
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param str 表示する文字列
 		 * @param x x属性
@@ -402,7 +402,7 @@
 
 		/**
 		 * FILL要素を生成し、指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem
 		 * @param props
@@ -416,7 +416,7 @@
 
 		/**
 		 * STROKE要 指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem
 		 * @param props
@@ -429,20 +429,46 @@
 		},
 
 		gradient: function(id, attrs) {
-			var ret = {
-				type: 'gradient'
-			};
+			var color = null;
+			var color2 = null;
+			var colors = [];
 
 			var stops = attrs.stops;
 			for (var i = 0, len = stops.length; i < len; i++) {
-				ret[i === 1 ? 'color' : 'color2'] = stops[i].color;
+				var offset;
+				// 百分率(%なし)に直した値に変更
+				if (h5.u.str.endsWith(stops[i].offset, '%')) {
+					// %はとる
+					offset = parseInt(stops[i].offset.slice(0, -1), 10);
+				} else {
+					offset = stops[i].offset * 100;
+				}
+
+				if (isNaN(offset)) {
+					// 不正な値を指定した時
+					// TODO: 例外の出し方は全体的に見直して一括で修正する
+					throw new Error('offsetに不正な値を指定しています: 値 = ' + stops[i].offset);
+				}
+
+				if  (offset <= 0) {
+					color = stops[i].color;
+				} else if (offset >= 100) {
+					color2 = stops[i].color;
+				} else {
+					colors.push(offset + '% ' + stops[i].color);
+				}
 			}
-			return ret;
+			return {
+				type: 'gradient',
+				color: color,
+				color2: color2,
+				colors : colors.join(', ')
+			};
 		},
 
 		/**
 		 * 指定されたタグ名の要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param name
 		 * @param attrs
@@ -463,7 +489,7 @@
 
 		/**
 		 * ルート要素を生成し、指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param name
 		 * @param attrs
@@ -478,7 +504,7 @@
 
 		/**
 		 * LINE要素の生成に必要な情報を持つDataItemまたはObservableItemからLINE要素を生成し、 指定されたGROUP要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param lines {DataItem|ObservableItem} LINE要素の生成に必要な情報を持つDataItemまたはObservableItemオブジェクト
 		 * @param g {DOM} GROUP要素
@@ -494,7 +520,7 @@
 
 		/**
 		 * LEFTプロパティに値を設定します
-		 * 
+		 *
 		 * @param $elem translateを設定するjQuery要素
 		 * @param x x座標
 		 * @memberOf h5.ui.components.chart.VMLRenderer
