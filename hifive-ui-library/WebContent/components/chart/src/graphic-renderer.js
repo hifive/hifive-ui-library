@@ -428,6 +428,18 @@
 			$.extend(stroke, props);
 		},
 
+		gradient: function(id, attrs) {
+			var ret = {
+				type: 'gradient'
+			};
+
+			var stops = attrs.stops;
+			for (var i = 0, len = stops.length; i < len; i++) {
+				ret[i === 1 ? 'color' : 'color2'] = stops[i].color;
+			}
+			return ret;
+		},
+
 		/**
 		 * 指定されたタグ名の要素を生成します
 		 * 
