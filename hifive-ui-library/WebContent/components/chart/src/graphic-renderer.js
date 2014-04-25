@@ -450,7 +450,7 @@
 					throw new Error('offsetに不正な値を指定しています: 値 = ' + stops[i].offset);
 				}
 
-				if  (offset <= 0) {
+				if (offset <= 0) {
 					color = stops[i].color;
 				} else if (offset >= 100) {
 					color2 = stops[i].color;
@@ -462,7 +462,7 @@
 				type: 'gradient',
 				color: color,
 				color2: color2,
-				colors : colors.join(', ')
+				colors: colors.join(', ')
 			};
 		},
 
