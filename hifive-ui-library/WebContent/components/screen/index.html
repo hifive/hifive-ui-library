@@ -11,7 +11,7 @@
 <body>
 
 	<h1>スクリーン</h1>
-	<p>複数のDOM要素をコンテンツとして扱い、1つづつスライドさせて表示するスクリーン機能をサポートする部品です。</p>
+	<p>複数のDOM要素をコンテンツとして扱い、1つづつスライドさせて表示するスクリーン機能をサポートする部品です。横並び、縦並びに対応しています。</p>
 	<p>
 		サンプルは<a href="sample/">こちら。</a>
 	</p>
@@ -21,7 +21,12 @@
 		<li>screen.css、PageLoadLogic.js、ScreenUIController.jsを読み込んでください。</li>
 		<li>screenクラスの要素を作成し、その中にコンテンツ要素を記述します。</li>
 		<li>screenクラスの要素と、スクリーンを操作するための要素を含む要素にh5.ui.components.screen.ScreenUIControllerをバインドして使用します。</li>
-		<li>バインド時のパラメータに、スクリーンの操作を行うためのナビゲーションコントローラと、スクリーンの操作をするための要素を指定します。</li>
+		<li>ScreenUIControllerバインド時のパラメータは、以下のように設定します。</li>
+		<li><pre>{
+  navigationController: ナビゲーションコントローラ定義オブジェクト,
+  navigationRootElement: ナビゲーションコントローラをバインドするオブジェクト,
+  isVertical: 縦並びの場合はtrueを指定。デフォルトは横並び。
+}</pre></li>
 	</ul>
 
 	<h2>ナビゲーションコントローラの実装について</h2>
@@ -54,7 +59,7 @@
 		<dd>
 			スクリーンをpx単位で移動します。パラメータ指定された分だけ動かします。以下のようにパラメータを指定します。
 			<dl>
-				<dt>dx</dt>
+				<dt>dist</dt>
 				<dd>移動距離。screenTrackstartイベント時に渡したtrackSizeに基づいてスクリーンの移動距離が計算されます。</dd>
 			</dl>
 		</dd>
