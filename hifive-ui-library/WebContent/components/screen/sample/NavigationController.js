@@ -83,7 +83,6 @@
 					url: this._urlList[this._urlIndex]
 				});
 			}
-			//
 			this._isVertical = context.args.isVertical;
 		},
 
