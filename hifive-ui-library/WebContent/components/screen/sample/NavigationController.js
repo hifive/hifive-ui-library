@@ -57,6 +57,13 @@
 		_$screen: null,
 
 		/**
+		 * 縦スクロールのナビゲーションかどうか
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
+		_isVertical: false,
+
+		/**
 		 * 初期設定
 		 *
 		 * @memberOf app.controller.NavigationController
@@ -76,6 +83,8 @@
 					url: this._urlList[this._urlIndex]
 				});
 			}
+			//
+			this._isVertical = context.args.isVertical;
 		},
 
 		/**
@@ -120,8 +129,9 @@
 				return;
 			}
 			this._isTracking = true;
+			var isVertical = this._isVertical;
 			this.trigger('screenTrackstart', {
-				trackSize: this.$find('.screentrack').width()
+				trackSize: this.$find('.screentrack')[isVertical ? 'height' : 'width']()
 			});
 			this._totalSlideAmount = 0;
 		},
@@ -136,15 +146,10 @@
 			if (!this._isTracking) {
 				return;
 			}
-			var offsetX = context.event.offsetX;
-			// トラック可能領域を制限
-			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
-				return;
-			}
-			var dx = context.event.dx;
-			this._totalSlideAmount += dx;
+			var dist = context.event[this._isVertical ? 'dy' : 'dx'];
+			this._totalSlideAmount += dist;
 			this.trigger('screenTrackmove', {
-				dx: dx
+				dist: dist
 			});
 		},
 
