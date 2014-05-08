@@ -22,9 +22,14 @@
 		__name: 'h5.ui.components.screen.ScreenController',
 
 		/**
+		 * PageLoadLogic
+		 * <p>
+		 * PageLoadLogic.jsを呼んでいない場合はundefined
+		 * </p>
+		 *
 		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
-		_pageLoadLogic: h5.ui.PageLoadLogic,
+		_pageLoadLogic: h5.u.obj.ns('h5.ui.components.screen').PageLoadLogic,
 
 		/**
 		 * アニメーション中かどうか
@@ -351,6 +356,9 @@
 		load: function(url) {
 			if (!url) {
 				return;
+			}
+			if (!this._pageLoadLogic) {
+				throw new Error('コンテンツのロード機能を使用するにはPageLoadLogic.jsが必要です');
 			}
 			// ロード開始時のカレントを覚えておく
 			var $current = this.$find('.h5screenContent.current');
