@@ -15,6 +15,10 @@
  * limitations under the License.
  *
  */
+.clear {
+	clear: both;
+}
+
 .screen-wrapper {
 	width: 80%;
 	margin: auto;
@@ -31,19 +35,63 @@
 }
 
 .screen-nav .prevpage {
+	text-align: center;
 	text-decoration: none;
-	border-right: 1px solid #ccc;
 	display: block;
 	font-size: 1.5em;
-	float: left;
+	text-decoration: none;
 }
 
 .screen-nav .nextpage {
+	text-align: center;
 	text-decoration: none;
-	border-left: 1px solid #ccc;
 	display: block;
 	font-size: 1.5em;
+}
+
+.horizonal .screen-nav .prevpage {
+	border-right: 1px solid #ccc;
+	float: left;
+	width: 30px;
+}
+
+.horizonal .screen-nav .nextpage {
+	border-left: 1px solid #ccc;
 	float: right;
+	width: 30px;
+}
+
+.vertical {
+	height: 350px;
+}
+
+.vertical .screen-nav {
+	width: 2em;
+	float: left;
+	text-align: center;
+	height: 100%;
+}
+
+.vertical .screentrack {
+	height: 300px;
+}
+
+.vertical .screen-nav .prevpage {
+	border-bottom: 1px solid #ccc;
+	height: 30px;
+}
+
+.vertical .screen-nav .nextpage {
+	border-bottom: 1px solid #ccc;
+	height: 30px;
+}
+
+.vertical .screen {
+	float: left;
+}
+
+.vertical .screen:after {
+	clear: both;
 }
 
 .screen.fixheight {
@@ -64,7 +112,19 @@
 }
 
 .height3 {
-	height: 550px;
+	height: 350px;
+}
+
+.width1 {
+	width: 150px;
+}
+
+.width2 {
+	width: 250px;
+}
+
+.width3 {
+	width: 550px;
 }
 
 /** 説明用 **/

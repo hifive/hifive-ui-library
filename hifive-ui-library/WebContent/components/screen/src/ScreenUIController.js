@@ -22,9 +22,14 @@
 		__name: 'h5.ui.components.screen.ScreenController',
 
 		/**
+		 * PageLoadLogic
+		 * <p>
+		 * PageLoadLogic.jsを呼んでいない場合はundefined
+		 * </p>
+		 *
 		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
-		_pageLoadLogic: h5.ui.PageLoadLogic,
+		_pageLoadLogic: h5.u.obj.ns('h5.ui.components.screen').PageLoadLogic,
 
 		/**
 		 * アニメーション中かどうか
@@ -41,22 +46,24 @@
 		_$scrollingBase: null,
 
 		/**
-		 * スクリーン幅
+		 * トラック操作中のスクリーン幅(高さ)
 		 */
-		_screenWidth: 0,
+		_screenWH: 0,
 
 		/**
-		 * ページ数
-		 * <p>
-		 * デフォルトではスライドされるたびに無限に要素を増やしていくが、ページ数が設定されている場合はその範囲で繰り返す。
-		 * </p>
+		 * 縦スクロールかどうか。デフォルトはfalseで横スクロール
+		 *
+		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
-		numberOfPages: Infinity,
+		isVertical: false,
 
 		/**
 		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
-		__ready: function() {
+		__ready: function(context) {
+			// 縦か横かを取得
+			this.isVertical = context.args.isVertical;
+
 			// screen内に配置されているDOMをコンテンツとして設定
 			var $contents = this.$find('>*');
 			$contents.css({
@@ -81,8 +88,6 @@
 				$contents = this.$find('>*');
 			}
 
-			// ページ数を設定
-			this.numberOfPages = $contents.length;
 			// 先頭のコンテンツをカレントとして設定
 			var $current = $contents.eq(0);
 			$current.addClass('current').css('display', 'block');
@@ -108,84 +113,120 @@
 		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		startAnimation: function(nextOrPrev) {
-			var leftIgnore = nextOrPrev === 'next';
-			var rightIgnore = nextOrPrev === 'prev';
 			if (this._isAnimation) {
 				return;
 			}
+			var outerWH = this.isVertical ? 'outerHeight' : 'outerWidth';
+
 			// スクリーン幅を取得
-			var screenWidth = $(this.rootElement).outerWidth();
+			var screenWH = $(this.rootElement)[outerWH]();
 			var $current = this.$find('.h5screenContent.current');
-			// 左右のコンテンツを表示。無ければ反対端から持ってくる。
-			var $left = null;
-			if (!leftIgnore) {
-				$left = $current.prev();
-				if (!$left.length) {
+			// 左右(上下)のコンテンツを表示。無ければ反対端から持ってくる。
+			var $prev = null;
+			if (nextOrPrev !== 'next') {
+				$prev = $current.prev();
+				if (!$prev.length) {
 					// コンテンツ数がページ数を超えていれば、左側の要素は右端から持ってくる
-					$left = this.$find('.h5screenContent:last');
-					this._$scrollingBase.prepend($left);
+					// (TODO loopする場合のみ)
+					$prev = this.$find('.h5screenContent:last');
+					this._$scrollingBase.prepend($prev);
 				}
-				$left.css('display', 'block');
+				$prev.css('display', 'block');
 			}
-			var $right = null;
-			if (!rightIgnore) {
-				$right = $current.next();
-				if (!$right.length) {
+			var $next = null;
+			if (nextOrPrev !== 'prev') {
+				$next = $current.next();
+				if (!$next.length) {
 					// コンテンツ数がページ数を超えていれば、右側の要素は左端から持ってくる
-					$right = this.$find('.h5screenContent:first');
-					this._$scrollingBase.append($right);
+					$next = this.$find('.h5screenContent:first');
+					this._$scrollingBase.append($next);
 				}
-				$right.css('display', 'block');
+				$next.css('display', 'block');
 			}
 
-			// display;blockにしてから幅を取得
-			var currentWidth = $current.outerWidth();
-			var leftWidth = leftIgnore ? 0 : $left.outerWidth();
-			var rightWidth = rightIgnore ? 0 : $right.outerWidth();
+			// display;blockにしてから幅(高さ)を取得
+			var currentWH = $current[outerWH]();
+			var prevWH = $prev ? $prev[outerWH]() : 0;
+			var nextWH = $next ? $next[outerWH]() : 0;
 
-			// scrollingBaseの幅を設定
-			this._$scrollingBase.css({
-				width: leftWidth + currentWidth + rightWidth,
-				left: -leftWidth
-			});
-
-			// current,left,rightの位置調整
-			// 幅を一時的に固定。固定しないとscrollingBaseの幅によって可変になってしまうため
-			$current.css({
-				position: 'absolute',
-				top: 0,
-				left: leftWidth,
-				width: currentWidth
-			});
-
-			if (!leftIgnore) {
-				$left.css({
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					width: leftWidth
-				});
-			}
-			if (!rightIgnore) {
-				$right.css({
-					position: 'absolute',
-					top: 0,
-					left: leftWidth + currentWidth,
-					width: rightWidth
-				});
-			}
-
-			// scrollingBaseの高さを設定。
-			// screenに高さが設定されていない(position:absoluteの要素しか中にない場合に高さが0になっている)場合は一時的に高さを固定にする
-			if (!$(this.rootElement).height()) {
+			// scrollingBaseの幅(高さ)を設定
+			if (this.isVertical) {
 				this._$scrollingBase.css({
-					height: Math.max((leftIgnore ? 0 : $left.outerHeight()),
-							$current.outerHeight(), (rightIgnore ? 0 : $right.outerHeight()))
+					height: prevWH + currentWH + nextWH,
+					top: -prevWH
+				});
+			} else {
+				this._$scrollingBase.css({
+					width: prevWH + currentWH + nextWH,
+					left: -prevWH
+				});
+			}
+
+			// current,prev,nextの位置調整
+			// 幅(高さ)を一時的に固定。固定しないとscrollingBaseの幅によって可変になってしまうため
+			$current.add($prev).add($next).css('position', 'absolute');
+			if (this.isVertical) {
+				$current.css({
+					left: 0,
+					top: prevWH,
+					height: currentWH
+				});
+
+				if ($prev) {
+					$prev.css({
+						left: 0,
+						top: 0,
+						height: prevWH
+					});
+				}
+				if ($next) {
+					$next.css({
+						left: 0,
+						top: prevWH + currentWH,
+						height: nextWH
+					});
+				}
+			} else {
+				$current.css({
+					top: 0,
+					left: prevWH,
+					width: currentWH
+				});
+
+				if ($prev) {
+					$prev.css({
+						left: 0,
+						top: 0,
+						width: prevWH
+					});
+				}
+				if ($next) {
+					$next.css({
+						top: 0,
+						left: prevWH + currentWH,
+						width: nextWH
+					});
+				}
+			}
+
+			// scrollingBaseの高さ(幅)を設定。横スクロールなら高さ、縦スクロールなら幅を設定する。
+			// screenに高さが設定されていない(position:absoluteの要素しか中にない場合に高さが0になっている)場合は一時的に高さを固定にする
+			if (!this.isVertical && !$(this.rootElement).height()) {
+				this._$scrollingBase.css({
+					height: Math.max(($prev ? $prev.outerHeight() : 0), $current.outerHeight(),
+							($next ? $next.outerHeight() : 0))
+				});
+			}
+			if (this.isVertical && !$(this.rootElement).width()) {
+				this._$scrollingBase.css({
+					width: Math.max(($prev ? $prev.outerWidth() : 0), $current.outerWidth(),
+							($next ? $next.outerWidth() : 0))
 				});
 			}
 
 			this._isAnimation = true;
-			$(this.rootElement).addClass('inOperation');
+			$(this.rootElement).addClass(
+					'inOperation ' + (this.isVertical ? 'vertical' : 'horizonal'));
 			this._animationDfd = h5.async.deferred();
 		},
 		/**
@@ -205,39 +246,45 @@
 				top: '',
 				left: ''
 			});
+			$content.css(this.isVertical ? 'height' : 'width', '');
 
 			var $current = this.$find('.h5screenContent.current');
 			$current.css({
 				display: 'block'
 			});
 			// scrollingBaseの位置と幅と高さ調整
-			var left = parseInt(this._$scrollingBase.css('left'));
+			var ltProp = this.isVertical ? 'top' : 'left';
+			var lt = parseInt(this._$scrollingBase.css(ltProp));
 			this._$scrollingBase.css({
 				left: 0,
+				top: 0,
+				width: '',
 				height: '',
-				overflow: 'visible',
-				width: ''
+				overflow: 'visible'
 			});
 			this._$scrollingBase.children().each(function() {
-				$(this).css('left', parseInt($(this).css('left')) + left);
+				$(this).css(ltProp, parseInt($(this).css(ltProp)) + lt);
 			});
 
 			this._isAnimation = false;
 			$(this.rootElement).removeClass('inOperation');
+			$(this.rootElement).removeClass(this.isVertical ? 'vertical' : 'horizonal');
 			this._animationDfd.resolve();
 		},
 
 		/**
 		 * @memberOf h5.ui.components.screen.ScreenController
-		 * @param {Number} left 移動先の位置
+		 * @param {Number} position 移動先の位置
 		 * @param {String|Number} duration アニメーション速度
 		 * @returns promise
 		 */
-		slide: function(left, duration) {
+		slide: function(position, duration) {
 			var dfd = h5.async.deferred();
-			this._$scrollingBase.animate({
-				left: left
-			}, duration, null, function() {
+			this._$scrollingBase.animate((this.isVertical ? {
+				top: position
+			} : {
+				left: position
+			}), duration, null, function() {
 				dfd.resolve();
 			});
 			return dfd.promise();
@@ -247,7 +294,7 @@
 		 * @memberOf h5.ui.components.screen.ScreenController
 		 */
 		track: function(d) {
-			var leftOrTop = this._vertical ? 'top' : 'left';
+			var leftOrTop = this.isVertical ? 'top' : 'left';
 			this._$scrollingBase.css(leftOrTop, parseInt(this._$scrollingBase.css(leftOrTop)) + d);
 		},
 
@@ -289,7 +336,8 @@
 				return dfd.promise();
 			}
 			// スクロールする量を、startAnimationする前に取得する(スクロールバーが表示される前)
-			var scrollAmount = nextOrPrev === 'prev' ? 0 : -$(this.rootElement).innerWidth();
+			var scrollAmount = nextOrPrev === 'prev' ? 0
+					: -$(this.rootElement)[this.isVertical ? 'innerHeight' : 'innerWidth']();
 			this.startAnimation(nextOrPrev);
 			return this.slide(scrollAmount).done(this.own(function() {
 				// カレントの入れ替え
@@ -308,6 +356,9 @@
 		load: function(url) {
 			if (!url) {
 				return;
+			}
+			if (!this._pageLoadLogic) {
+				throw new Error('コンテンツのロード機能を使用するにはPageLoadLogic.jsが必要です');
 			}
 			// ロード開始時のカレントを覚えておく
 			var $current = this.$find('.h5screenContent.current');
@@ -523,7 +574,7 @@
 		 *
 		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
-		_screenWidth: 0,
+		_screenWH: 0,
 
 		/**
 		 * @memberOf h5.ui.components.screen.ScreenUIController
@@ -532,9 +583,9 @@
 			// コントローラのパラメータで渡されたナビゲーションコントローラをバインドします
 			var navigationController = context.args.navigationController;
 			this._navController = h5.core.controller(context.args.navigationRootElement
-					|| this.rootElement, navigationController, {
+					|| this.rootElement, navigationController, $.extend({}, context.args, {
 				$screen: this.$find('.screen')
-			});
+			}));
 		},
 
 		/**
@@ -640,8 +691,9 @@
 				return;
 			}
 			var trackSize = context.evArg.trackSize;
-			this._screenWidth = this.$find('.screen').width();
-			this._slideRate = this._screenWidth / trackSize;
+			this._screenWH = this.$find('.screen')[this._screenController.isVertical ? 'height'
+					: 'width']();
+			this._slideRate = this._screenWH / trackSize;
 			this._screenController.startAnimation();
 		},
 
@@ -649,7 +701,11 @@
 		 * @memberOf h5.ui.components.screen.ScreenUIController
 		 */
 		'{rootElement} screenTrackmove': function(context) {
-			this._screenController.track(context.evArg.dx * this._slideRate);
+			var d = context.evArg.dist * this._slideRate;
+			if (d === 0) {
+				return;
+			}
+			this._screenController.track(d);
 		},
 
 		/**
@@ -664,13 +720,13 @@
 			var slideDist;
 			if (page === 'current') {
 				$newCurrent = $current;
-				slideDist = -this._screenWidth;
+				slideDist = -this._screenWH;
 			} else {
 				changed = true;
 				$newCurrent = $current[page]();
 				$current.removeClass('current');
 				$newCurrent.addClass('current');
-				slideDist = (page === 'next' ? -2 : 0) * this._screenWidth;
+				slideDist = (page === 'next' ? -2 : 0) * this._screenWH;
 			}
 			this._screenController.slide(slideDist, 'fast').done(this.own(function() {
 				this._screenController.stopAnimation();

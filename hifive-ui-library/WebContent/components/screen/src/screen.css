@@ -21,6 +21,9 @@
 }
 
 /* アニメーション中はscreenの横にはみ出たものが見えないようにする */
-.screen.inOperation {
+.screen.inOperation.horizonal {
 	overflow-x: hidden;
+}
+.screen.inOperation.vertical {
+	overflow-y: hidden;
 }
