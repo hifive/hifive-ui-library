@@ -218,6 +218,10 @@
 	 * @name h5.ui.components.graph.RendererQueue
 	 */
 	function RendererQueue() {
+		this.queue = [];
+		for (var i = 0; i < this.rank; i++) {
+			this.queue[i] = [];
+		}
 	}
 	RendererQueue.prototype = new PriorityQueueBase(5);
 	RendererQueue.IMMEDIATE = 0;
@@ -2027,7 +2031,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_rendererQueue : new h5.ui.components.graph.primitive.RendererQueue(),
+		_rendererQueue : null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
@@ -2222,6 +2226,7 @@
 			}
 
 			new EventDispatcher(this);
+			this._rendererQueue = new h5.ui.components.graph.primitive.RendererQueue();
 
 		},
 
