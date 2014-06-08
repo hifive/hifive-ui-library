@@ -843,7 +843,7 @@
 		},
 
 		_removeEdge : function(edge) {
-			var edgeIdKey = this._edgeModel.idKey;
+			var edgeIdKey = this._edgeModel._idKey;
 
 			var removingEdgeId = edge.get(edgeIdKey);
 
@@ -2255,8 +2255,8 @@
 
 			var graph = this._graph;
 
-			this._nodeIdKey = graph._nodeModel.idKey;
-			this._edgeIdKey = graph._edgeModel.idKey;
+			this._nodeIdKey = graph._nodeModel._idKey;
+			this._edgeIdKey = graph._edgeModel._idKey;
 
 			var nodeModel = graph._nodeModel;
 			for ( var keys = enumKeys(nodeModel.items), i = 0, count = keys.length; i < count; i++) {
