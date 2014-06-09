@@ -218,6 +218,10 @@
 	 * @name h5.ui.components.graph.RendererQueue
 	 */
 	function RendererQueue() {
+		this.queue = [];
+		for (var i = 0; i < this.rank; i++) {
+			this.queue[i] = [];
+		}
 	}
 	RendererQueue.prototype = new PriorityQueueBase(5);
 	RendererQueue.IMMEDIATE = 0;
@@ -843,7 +847,7 @@
 		},
 
 		_removeEdge : function(edge) {
-			var edgeIdKey = this._edgeModel.idKey;
+			var edgeIdKey = this._edgeModel._idKey;
 
 			var removingEdgeId = edge.get(edgeIdKey);
 
@@ -2027,7 +2031,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_rendererQueue : new h5.ui.components.graph.primitive.RendererQueue(),
+		_rendererQueue : null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
@@ -2222,6 +2226,7 @@
 			}
 
 			new EventDispatcher(this);
+			this._rendererQueue = new h5.ui.components.graph.primitive.RendererQueue();
 
 		},
 
@@ -2255,8 +2260,8 @@
 
 			var graph = this._graph;
 
-			this._nodeIdKey = graph._nodeModel.idKey;
-			this._edgeIdKey = graph._edgeModel.idKey;
+			this._nodeIdKey = graph._nodeModel._idKey;
+			this._edgeIdKey = graph._edgeModel._idKey;
 
 			var nodeModel = graph._nodeModel;
 			for ( var keys = enumKeys(nodeModel.items), i = 0, count = keys.length; i < count; i++) {
