@@ -15,10 +15,17 @@
  *
  */
 $(function(){
-	$('.screen-wrapper').each(function(){
+	$('.screen-wrapper.horizonal').each(function(){
 		h5.core.controller(this, h5.ui.components.screen.ScreenUIController, {
 			navigationController: app.controller.NavigationController,
 			navigationRootElement: $(this).find('.screen-nav')
+		});
+	});
+	$('.screen-wrapper.vertical').each(function(){
+		h5.core.controller(this, h5.ui.components.screen.ScreenUIController, {
+			navigationController: app.controller.NavigationController,
+			navigationRootElement: $(this).find('.screen-nav'),
+			isVertical: true
 		});
 	});
 });
