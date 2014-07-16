@@ -149,7 +149,7 @@
 
 	/**
 	 * ローソク表示用データを保持するモ
-	 * 
+	 *
 	 * @name chartModel
 	 */
 	var candleStickSchema = {
@@ -243,7 +243,7 @@
 
 	/**
 	 * グループ内でのY座標の位置を計算します
-	 * 
+	 *
 	 * @param val
 	 * @returns {Number}
 	 */
@@ -254,7 +254,7 @@
 
 	/**
 	 * ２つの値からグループ内でのY座標の位置の差を計算します
-	 * 
+	 *
 	 * @param val1
 	 * @param val2
 	 * @returns {Number}
@@ -289,7 +289,12 @@
 		this.name = name;
 		this.seriesSetting = seriesSetting;
 		this.number = number;
-		this.sequence = h5.core.data.createSequence(SEQUENCE_START_INDEX);
+		
+		// 右端がkeepDataSizeで指定したIDになるようにシーケンスを作成する
+		// 指定されていなければ、単純に左端が１からになるようにする
+		var keepDataSize = seriesSetting.keepDataSize || 0;
+		var startIndex = Math.max(keepDataSize - seriesSetting.data.length, 0) + 1;
+		this.sequence = h5.core.data.createSequence(startIndex);
 		this.xLabelArray = null;
 	}
 
@@ -303,7 +308,7 @@
 
 		/**
 		 * チャート 行
-		 * 
+		 *
 		 * @memberOf
 		 * @returns Promiseオブジェクト
 		 */
@@ -550,9 +555,11 @@
 				return;
 			}
 
+			var removedHigh = removedItem ? removedItem.get(this.highProp) : null;
+			var removedLow = removedItem ? removedItem.get(this.lowProp) : null;
+
 			this.manager.checkRange(addedItem.get(this.highProp), addedItem.get(this.lowProp),
-					removedItem.get(this.highProp), removedItem.get(this.lowProp), rightEndId,
-					dispDataSize);
+					removedHigh, removedLow, rightEndId, dispDataSize);
 		}
 	};
 
@@ -852,11 +859,11 @@
 				var id = rightItemId - dispSizeNum + 1;
 				for (var i = 0; i <= vertLineNum; i++) {
 					var item = this.dataSource.getDataObj(id);
+					id += itemInterval;
 					this.xLabelArray.set(i, {
-						value: item[this.dataSource.xProp],
+						value: item ? item[this.dataSource.xProp] : '', // 表示するデータがなければ空文字
 						item: item
 					});
-					id += itemInterval;
 				}
 
 				return this.xLabelArray;
@@ -895,7 +902,7 @@
 
 					/**
 					 * ーソク を生成する
-					 * 
+					 *
 					 * @memberOf candleStickRenderer
 					 */
 					createCandleStickDataItems: function() {
@@ -919,7 +926,7 @@
 
 					/**
 					 * * ロ ータを取得す
-					 * 
+					 *
 					 * @memberOf candleStickRenderer
 					 * @param {object} chart チャート情報
 					 * @returns {object} ローソクの座標情報
@@ -1220,7 +1227,7 @@
 
 	/**
 	 * ラインチャートレンダラ―を生成する。
-	 * 
+	 *
 	 * @private
 	 * @returns LineChartRenderer
 	 */
@@ -1334,11 +1341,11 @@
 							position: 'absolute'
 						});
 						var fill = this._getFill();
-						//						if (!fill) {
-						//							fill = {
-						//								color: '#000'
-						//							};
-						//						}
+						// if (!fill) {
+						// fill = {
+						// color: '#000'
+						// };
+						// }
 						graphicRenderer.fill(lineShape, fill);
 						graphicRenderer.stroke(lineShape, {
 							on: true,
@@ -1419,18 +1426,16 @@
 					toData: function(currentItem) {
 						var id = currentItem.get('id');
 						var pre = this.dataSource.dataModel.get(id - 1);
-						if (pre == null) {
-							// preがnullのときは、データとしても端であり、このときはただの点を表示する
-							pre = currentItem;
-						}
+						// preがnullのときは、データとしても端であり、このときはただの点を表示する
+						var isEdge = pre == null;
 
 						var min = this.chartSetting.get('rangeMin');
 						var max = this.chartSetting.get('rangeMax');
 						var height = this.chartSetting.get('height');
 
 						var yProp = this.dataSource.propNames.y;
-						//var yProp = 'y';
-						var fromY = pre.get(yProp);
+						// var yProp = 'y';
+						var fromY = isEdge ? currentItem.get(yProp) : pre.get(yProp);
 						var toY = currentItem.get(yProp);
 
 						if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
@@ -1438,11 +1443,13 @@
 							toY += this.dataSource.getStackedData(currentItem)[yProp];
 						}
 
+						var dx = this.chartSetting.get('dx');
+						var toX = id * dx + this.chartSetting.get('width');
+
 						return {
 							id: id,
-							fromX: (id - 1) * this.chartSetting.get('dx')
-									+ this.chartSetting.get('width'),
-							toX: id * this.chartSetting.get('dx') + this.chartSetting.get('width'),
+							fromX: !isEdge ? toX - dx : toX, // 右端はX座標は一定
+							toX: toX,
 							fromY: calcYPos(fromY, min, max, height),
 							toY: calcYPos(toY, min, max, height)
 						};
@@ -1605,8 +1612,8 @@
 
 					var value = ev.args[1].value;
 					var index = ev.args[0];
-					var orgValue = this.get(index).value;
-					if (ev.method !== 'set' || value === orgValue) {
+					var orgLabel = this.get(index);
+					if (ev.method !== 'set' || (orgLabel && value === orgLabel.value)) {
 						return;
 					}
 					var label = that._getXLabel(ev.args[1], index);
@@ -1635,6 +1642,10 @@
 		},
 
 		_getXLabel: function(xLabelObj, index) {
+			if (!xLabelObj || !xLabelObj.item) {
+			    // 対象となるデータが存在しないときは空文字を表示
+				return '';
+			}
 			return this._xLabelFormatter(xLabelObj.value, xLabelObj.item, index);
 		},
 
@@ -1667,7 +1678,7 @@
 
 		/**
 		 * チャートの横の補助線を引く
-		 * 
+		 *
 		 * @memberOf AxisRenderer
 		 */
 		_drawHorizLines: function() {
@@ -1712,7 +1723,7 @@
 
 		/**
 		 * チャートの縦の補助線を引く
-		 * 
+		 *
 		 * @memberOf AxisRenderer
 		 */
 		_drawVertLines: function(renderer) {
@@ -1781,7 +1792,7 @@
 
 	/**
 	 * 描画を行うコントローラ
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui.components.chart
 	 * @name ChartController
@@ -1850,7 +1861,7 @@
 
 		/**
 		 * * チャートの初期表示を行う
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.ChartController
 		 */
 		_initChart: function(firstChartRenderer) {
