@@ -289,7 +289,7 @@
 		this.name = name;
 		this.seriesSetting = seriesSetting;
 		this.number = number;
-		
+
 		// 右端がkeepDataSizeで指定したIDになるようにシーケンスを作成する
 		// 指定されていなければ、単純に左端が１からになるようにする
 		var keepDataSize = seriesSetting.keepDataSize || 0;
@@ -1346,11 +1346,17 @@
 						// color: '#000'
 						// };
 						// }
-						graphicRenderer.fill(lineShape, fill);
 						graphicRenderer.stroke(lineShape, {
 							on: true,
-							fill: fill.color
+							color: this.seriesSetting.color || '#000'
 						});
+						if (fill) {
+							graphicRenderer.fill(lineShape, fill);
+						} else {
+							graphicRenderer.fill(lineShape, {
+								on: false
+							});
+						}
 						lineShape.className = 'LineChart chartElm';
 						lineShape.coordsize = this.COORDSIZE;
 
