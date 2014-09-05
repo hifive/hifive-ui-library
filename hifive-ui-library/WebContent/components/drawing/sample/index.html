@@ -2,54 +2,47 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
 <meta name="viewport" content="width = device-width, user-scalable = yes">
+<link rel="stylesheet" href="../../../res/lib/hifive/h5.css">
 
-<link rel="stylesheet" href="../../../res/lib/hifive/h5.css" />
-
-<script src="../../../res/lib/jquery/jquery.js"></script>
+<!-- ライブラリCSS・JS -->
+<script src="../../../res/lib/jquery/jquery-1.9.1.js"></script>
+<link rel="stylesheet" href="../../../res/lib/jqplugins/jquery.nouislider.css">
+<script src="../../../res/lib/jqplugins/jquery.nouislider.min.js"></script>
+<script src="src/h5preinit.js"></script>
 <script src="../../../res/lib/hifive/ejs-h5mod.js"></script>
 <script src="../../../res/lib/hifive/h5.dev.js"></script>
 
+<!-- drawing部品 -->
+<link rel="stylesheet" href="../src/drawing.css">
 <script src="../src/DrawingController.js"></script>
-<script src="DrawingWrapper.js"></script>
-<script src="init.js"></script>
+<script src="../src/DrawingOperationController.js"></script>
 
-<style type="text/css">
-.drawing-canvas {
-	border: 2px solid #ccc;
-	cursor: pointer;
-	margin: 0 1em 0 1em;
-}
+<!-- ユーザCSS・JS -->
+<link rel="stylesheet" href="css/index.css" />
+<script src="src/util.js"></script>
+<script src="src/ToolbarController.js"></script>
+<script src="src/PageController.js"></script>
 
-.float-l {
-	float: left;
-}
+<script>
+	$(function() {
+		// コントローラのバインド
+		var $root = $('.sketch-canvas');
+		h5.core.controller($root, sample.PageController, {
+			canvasSize: {
+				height: 300,
+				width: $root.innerWidth()
+			}
+		});
+	});
+</script>
 
-.drawing-controller label {
-	padding-left: 1em;
-	margin-bottom: 1em;
-	display: block;
-}
-</style>
-<title>手書きカンバス サンプル</title>
+<title>drawing</title>
 </head>
 <body>
-	<h3>手書きカンバス サンプル</h3>
-
-	<h3>デフォルト設定</h3>
-	<div class="drawing-wrapper1">
-		<canvas class="drawing-canvas" width="300" height="300"></canvas>
-	</div>
-
-	<h3>親コントローラでDrawingControllerの設定を行えるようにした例</h3>
-	<div class="drawing-wrapper2">
-		<canvas class="drawing-canvas float-l" width="300" height="300"></canvas>
-
-		<div class="drawing-controller">
-			<label class="disp-block">描画可能<input type="checkbox" name="drawable"></label> <label class="disp-block">色<input
-				type="text" name="color"></label> <label class="disp-block">太さ<input type="text" name="width"></label>
-		</div>
-	</div>
+	<h1>drawing</h1>
+	<div class="sketch-canvas"></div>
 </body>
 </html>

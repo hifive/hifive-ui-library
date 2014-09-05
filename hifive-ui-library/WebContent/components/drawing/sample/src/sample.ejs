@@ -1,0 +1,85 @@
+<script type="text/ejs" id="toolbar">
+<div class="drawing-toolbar">
+	<div class="toolbar-operation">
+		<div class="remove-all-shape border-box"><img class="icon64" src="res/img/toolicon/Typicons_e108(0)_64.png"></div>
+		<div class="undo border-box disabled"><img class="icon64" src="res/img/toolicon/Typicons_e006(1)_64.png"></div>
+		<div class="redo border-box disabled"><img class="icon64" src="res/img/toolicon/Typicons_e00b(0)_64.png"></div>
+		<div class="shape-select border-box"><img class="icon64" src="res/img/toolicon/Typicons_e092(0)_64.png"></div>
+	</div>
+	<div class="toolbar-drawing-tool">
+		<img class="toolbar-icon selected icon64" data-tool-name="pen" src="res/img/toolicon/Typicons_e0b5(0)_64.png">
+		<img class="toolbar-icon icon64" data-tool-name="line" src="res/img/toolicon/line.png">
+		<img class="toolbar-icon icon64" data-tool-name="rect" src="res/img/toolicon/rect.png">
+		<img class="toolbar-icon icon64" data-tool-name="fillrect" src="res/img/toolicon/fillrect.png">
+		<img class="toolbar-icon icon64" data-tool-name="circle" src="res/img/toolicon/circle.png">
+		<img class="toolbar-icon icon64" data-tool-name="fillcircle" src="res/img/toolicon/fillcircle.png">
+		<img class="toolbar-icon icon64" data-tool-name="stamp" src="res/img/toolicon/Typicons_e082(0)_64.png">
+	</div>
+	<div class="color-pallete">
+		<div class="selected-color-wrapper stroke selected">
+			<div class="selected-color stroke border-box" style="background-color:[%= colors[0] %]"></div>
+			<div class="opacity-slidebar-wrapper border-box opacity-stroke display-none">
+				<label class="slidebar-label slider-value">100</label>
+				<div class="opacity-slidebar opacity-stroke"></div>
+			</div>
+		</div>
+		<div class="selected-color-wrapper fill">
+			<div class="selected-color fill border-box" style="background-color:[%= colors[1] %]"></div>
+			<div class="opacity-slidebar-wrapper border-box opacity-fill display-none">
+				<label class="slidebar-label slider-value">100</label>
+				<div class="opacity-slidebar opacity-fill"></div>
+			</div>
+		</div>
+		[% for(var i = 0, l = colors.length; i < l; i++){ var color= colors[i]; %]
+		<div class="pallete-color" style="background-color:[%= color %]"></div>
+		[% } %]
+	</div>
+	
+	<div class="stroke-width-slider-wrapper stroke-width">
+		<label class="slider-label"><span>線の幅</span><span class="slider-value">5</span></label>
+		<div class="stroke-width-slidebar"></div>
+	</div>
+
+	<div class="stamp-list display-none">
+		<div class="stamp-img selected"><img class="icon64 drawing-image" data-stamp-id="home" src="res/img/stamp/home_64_trim.png"></div>
+		<div class="stamp-img"><img class="icon64 drawing-image" data-stamp-id="check" src="res/img/stamp/check_64_trim.png"></div>
+		<div class="stamp-img"><img class="icon64 drawing-image" data-stamp-id="close" src="res/img/stamp/close_64_trim.png"></div>
+	</div>
+		
+	<div class="background-select-wrapper">
+		<label class="background-list-label">背景設定</label>
+		<select class="background-list">
+			<option value="none">なし</option>
+			<option value="color">塗りつぶし</option>
+			<option value="0">砂漠</option>
+			<option value="1">灯台</option>
+			<option value="2">チューリップ</option>
+			<option value="3">チェック</option>
+		</select>
+		<label class="background-fillmode-list-label display-none">fillMode</label>
+		<select class="background-fillmode-list display-none">
+			<option value="none">none</option>
+			<option value="none-center">none(中央配置)</option>
+			<option value="contain">contain</option>
+			<option value="cover">cover</option>
+			<option value="stretch">stretch</option>
+		</select>
+		<button class="set-background">背景に設定</button>
+		<img class="drawing-image display-none" src="res/img/background/Desert.jpg">
+		<img class="drawing-image display-none" src="res/img/background/Lighthouse.jpg">
+		<img class="drawing-image display-none" src="res/img/background/Tulips.jpg">
+	</div>
+		
+	<button class="remove-selected-shape disabled">選択された図形を削除</button>
+	
+	<div class="toolbar-file-operation clear-both">
+		<div class="export-img border-box"><img class="icon64" src="res/img/toolicon/Typicons_e068(0)_64.png"></div>
+		<div class="save-button border-box"><img class="icon64" src="res/img/toolicon/Typicons_e061(0)_64.png"></div>
+		<div class="load-select-wrapper display-none"><select class="load-data-list"></select><button class="load-button">Load</button></div>
+	</div>
+</div>
+</script>
+
+<script type="text/ejs" id="saved-img-wrapper">
+	<div class="saved-img-wrapper"></div>
+</script>

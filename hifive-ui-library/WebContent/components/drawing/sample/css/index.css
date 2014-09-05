@@ -1,0 +1,182 @@
+@charset 'utf-8';
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+html,body {
+	margin: 0
+}
+
+h1 {
+	margin: 0
+}
+
+.clear-both {
+	clear: both;
+}
+
+.display-none {
+	display: none;
+}
+
+.drawing-toolbar .disabled {
+	opacity: 0.3;
+}
+
+.border-box {
+	box-sizing: border-box;
+}
+
+.h5drawing-canvas-wrapper {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+.toolbar-operation>* {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
+
+.toolbar-operation .disabled {
+	background-color: #ccc;
+	opacity: 0.2;
+}
+
+.drawing-toolbar {
+	padding: 10px 0;
+}
+
+.toolbar-operation,.toolbar-drawing-tool,.color-pallete {
+	display: inline-block;
+	float: left;
+}
+
+.toolbar-drawing-tool {
+	margin-left: 20px;
+}
+
+.toolbar-drawing-tool .toolbar-icon {
+	height: 64px;
+	width: 64px;
+	display: inline-block;
+	border: 2px solid #ccc;
+}
+
+.selected-color-wrapper.selected .selected-color {
+	border: 2px solid #f8e;
+}
+
+.toolbar-drawing-tool .selected,.toolbar-operation .selected {
+	border: 2px solid #f8e;
+}
+
+.color-pallete {
+	width: 476px;
+	padding-top: 10px;
+	clear: both;
+}
+
+.pallete-color {
+	float: left;
+	height: 32px;
+	width: 32px;
+	margin: 1px;
+}
+
+.selected-color-wrapper {
+	position: relative;
+}
+
+.selected-color {
+	float: left;
+	margin: 1px;
+	width: 64px;
+	height: 64px;
+	width: 64px;
+	border: 1px solid #ccc;
+	overflow: visible;
+}
+
+.stamp-list {
+	position: absolute;
+	padding: 4px;
+	border: 1px solid #ccc;
+	background-color: #fff;
+}
+
+.stamp-img {
+	display: inline-block;
+	border: 2px solid #fff;
+}
+
+.stamp-img.dragging {
+	display: block;
+	z-index: 101;
+}
+
+/* 透明度設定スライドバー */
+.opacity-slidebar-wrapper {
+	position: absolute;
+	border: 1px solid #ccc;
+	background-color: rgba(255, 255, 255, 0.9);
+	height: 170px;
+	width: 64px;
+	text-align: center;
+}
+
+.slidebar-label {
+	display: block;
+	text-align: center;
+}
+
+.opacity-slidebar {
+	position: relative;
+	top: 15px;
+	height: 130px;
+	display: inline-block;
+}
+
+/* 線の幅スライドバー */
+.stroke-width-slider-wrapper {
+	width: 200px;
+	display: inline-block;
+	margin: 20px;
+}
+
+.stroke-width-slider-wrapper .slider-label {
+	display: inline-block;
+	padding-bottom: 10px;
+}
+
+.stroke-width-slider-wrapper .slider-value {
+	padding-left: 7px;
+}
+
+.load-select-wrapper {
+	position: relative;
+	top: -20px;
+}
+
+/* 削除ボタン */
+.remove-selected-shape {
+	line-height: 32px;
+	padding: 10px;
+	text-decoration: underline;
+}
+
+.toolbar-file-operation>* {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
