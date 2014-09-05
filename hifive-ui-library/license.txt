@@ -60,3 +60,13 @@ License:Dual licensed under the MIT and GPL licenses
 	https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt
 	https://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt
 Local Modifications: None.
+
+-----
+Code under:
+WebContent/res/lib/jqplugins/nouislider
+
+Shadow animation jQuery plugin
+URL:http://refreshless.com/nouislider/
+License:WTFPL
+	http://www.wtfpl.net/txt/copying/
+Local Modifications: None.
