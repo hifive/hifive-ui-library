@@ -148,7 +148,7 @@
 				var attr = this._data.attr;
 				var attrNS = this._data.attrNS;
 				var element = this._data.element;
-				var beforeAttr,beforeAttrNS;
+				var beforeAttr, beforeAttrNS;
 				if (attr) {
 					beforeAttr = {};
 					for ( var p in attr) {
@@ -728,8 +728,6 @@
 				element: this.getElement()
 			});
 			this._commandManager.append(command.execute());
-			// 追加されたレイヤを覚えておく
-			this._parentLayer = layer;
 		},
 
 		/**
@@ -742,8 +740,6 @@
 				element: this.getElement()
 			});
 			this._commandManager.append(command.execute());
-			// レイヤを削除
-			this._parentLayer = null;
 		},
 
 		/**
@@ -782,7 +778,7 @@
 		 * @returns {Boolean}
 		 */
 		isAppending: function() {
-			return !!this._parentLayer;
+			return !!this._element.parentNode;
 		},
 
 		/**
@@ -1760,13 +1756,18 @@
 		 * コントローラ管理下にある図形(Shape)を全て取得
 		 *
 		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @param {Boolean} isAppendingOnly trueの場合描画されている図形のみ
 		 * @returns {DRShape[]}
 		 */
-		getAllShapes: function() {
+		getAllShapes: function(isAppendingOnly) {
 			var shapes = [];
 			var shapeMap = this._shapeMap;
 			for ( var id in shapeMap) {
-				shapes.push(shapeMap[id]);
+				var shape = shapeMap[id];
+				if (isAppendingOnly && !shape.isAppending()) {
+					continue;
+				}
+				shapes.push(shape);
 			}
 			return shapes;
 		},
@@ -2169,7 +2170,7 @@
 						case 'contain':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
-							var w,h;
+							var w, h;
 							if (canvasRate < imgRate) {
 								w = canvas.width;
 								h = w * imgRate;
@@ -2182,7 +2183,7 @@
 						case 'cover':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
-							var w,h;
+							var w, h;
 							if (canvasRate < imgRate) {
 								h = canvas.height;
 								w = h / imgRate;

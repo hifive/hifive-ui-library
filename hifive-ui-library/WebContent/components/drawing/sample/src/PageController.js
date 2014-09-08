@@ -187,9 +187,7 @@
 			case 65: //a
 				if (ctrlKey) { // ctrl + a
 					// すべて選択
-					this._drawingOperationController.selectAll();
-					this._drawingOperationController
-							.setMode(this._drawingOperationController.MODE_SELECT);
+					this._selectAll();
 					event.preventDefault();
 				}
 				break;
@@ -429,13 +427,11 @@
 				var id = $(arg.element).data(DATA_DRAWING_IMAGE_ID);
 
 				var fillMode = arg.fillMode;
-				var x,y;
+				var x, y;
 				if (fillMode === 'none-center') {
 					// 中央配置
-					$(arg.element).css('display', 'block');
-					var w = $(arg.element).width();
-					var h = $(arg.element).height();
-					$(arg.element).css('display', '');
+					var w = arg.element.width;
+					var h = arg.element.height;
 					fillMode = 'none';
 					x = (this._$canvasWrapper.innerWidth() - w) / 2;
 					y = (this._$canvasWrapper.innerHeight() - h) / 2;
@@ -461,7 +457,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} export-img': function() {
+		'{this._$toolbar} export': function() {
 			this._drawingOperationController.drawingController.getImage().done(
 					this.own(function(dataUrl) {
 						this._$savedImgWrapper
@@ -504,12 +500,13 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} remove-all-shape': function() {
+		'{this._$toolbar} remove-all': function() {
 			if (!confirm('描画されている図形をすべて削除します')) {
 				return;
 			}
-			var drawingCtrl = this._drawingOperationController.drawingController;
-			var shapes = drawingCtrl.getAllShapes();
+			var operationCtrl = this._drawingOperationController;
+			var drawingCtrl = operationCtrl.drawingController;
+			var shapes = drawingCtrl.getAllShapes(true);
 			if (!shapes.length) {
 				return;
 			}
@@ -519,6 +516,14 @@
 				shapes[i].remove();
 			}
 			drawingCtrl.endUpdate();
+			operationCtrl.unselectAll();
+		},
+
+		/**
+		 * 全ての図形を選択
+		 */
+		'{this._$toolbar} select-all': function() {
+			this._selectAll();
 		},
 
 		'{this._$canvasWrapper} enable-undo': function() {
@@ -610,7 +615,15 @@
 				toolCtrl.enableStrokeWidth();
 			}
 			this._existSelectedShape = true;
-		}
+		},
+
+		/**
+		 * 全ての図形を選択
+		 */
+		_selectAll: function() {
+			this._drawingOperationController.selectAll();
+			this._drawingOperationController.setMode(this._drawingOperationController.MODE_SELECT);
+		},
 	};
 	h5.core.expose(controller);
 })();

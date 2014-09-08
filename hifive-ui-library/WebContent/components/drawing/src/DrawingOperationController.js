@@ -888,26 +888,6 @@
 		// 円描画
 		//--------------------------------------------------------------
 		/**
-		 * 円描画開始
-		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
-		 * @private
-		 * @param context
-		 * @param isFill 塗りつぶすかどうか
-		 */
-		_circleDrawStart: function(context, isFill) {
-			var event = context.event;
-			var x = event.offsetX;
-			var y = event.offsetY;
-			this._trackingData = {
-				start: {
-					x: x,
-					y: y
-				}
-			};
-		},
-
-		/**
 		 * 円描画移動
 		 *
 		 * @param context

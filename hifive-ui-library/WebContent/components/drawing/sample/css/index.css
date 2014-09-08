@@ -23,30 +23,110 @@ h1 {
 	margin: 0
 }
 
-.clear-both {
+.border1 {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+/** カンバスの設定 **/
+.h5drawing-canvas-wrapper {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+/** ポップアップ **/
+.popupContents {
+	padding: 10px;
+}
+
+.popupBtn-wrapper {
+	padding-top: 10px;
+	padding-right: 20px;
+	height: 26px;
+	text-align: right;
+}
+
+.popupBtn-wrapper>* {
+	cursor: pointer;
+	display: inline-block;
+	padding: 5px;
+	width: 80px;
+	text-align: center;
+	padding: 5px;
+}
+
+/** 背景画像設定ポップアップ **/
+.background-popup .background-color-palette {
+	width: 238px;
+	height: 102px;
+	margin-bottom: 10px;
+	background-color: #fff;
+}
+
+.background-popup .background-color-selected-wrapper {
+	width: 80px;
+	height: 20px;
+	display: inline-block;
+	background-color: #fff;
+}
+
+.background-popup .background-color-selected {
+	width: 100%;
+	height: 100%;
+}
+
+.background-popup .background-color-slidebar {
+	margin: 5px 40px 0px 0px;
+}
+
+/** ツールバー設定 **/
+.drawing-toolbar .icon48 {
+	width: 48px;
+	height: 48px;
+}
+
+.drawing-toolbar .clear-both {
 	clear: both;
 }
 
+.load-data-list {
+	width: 150px;
+}
+/** メニュー **/
+.drawing-toolbar .menu-wrapper {
+	position: relative;
+	overflow: visible;
+}
+
+.drawing-toolbar .menu-list {
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.drawing-toolbar .menu-list>* {
+	padding: 10px;
+	border-top: 1px solid #fff;
+	cursor: pointer;
+}
+
+.drawing-toolbar .menu-list>.disabled {
+	color: rgba(0, 0, 0, 0.7);
+	cursor: not-allowed;
+}
+
 .display-none {
-	display: none;
+	display: none!important;
 }
 
 .drawing-toolbar .disabled {
 	opacity: 0.3;
 }
 
-.border-box {
-	box-sizing: border-box;
-}
-
-.h5drawing-canvas-wrapper {
-	border: 1px solid #ccc;
-	box-sizing: border-box;
-}
-
 .toolbar-operation>* {
 	display: inline-block;
-	border: 2px solid #ccc;
 }
 
 .toolbar-operation .disabled {
@@ -68,8 +148,6 @@ h1 {
 }
 
 .toolbar-drawing-tool .toolbar-icon {
-	height: 64px;
-	width: 64px;
 	display: inline-block;
 	border: 2px solid #ccc;
 }
@@ -78,8 +156,8 @@ h1 {
 	border: 2px solid #f8e;
 }
 
-.toolbar-drawing-tool .selected,.toolbar-operation .selected {
-	border: 2px solid #f8e;
+.drawing-toolbar .border1.selected {
+	border-color: #f8e;
 }
 
 .color-pallete {
@@ -105,14 +183,12 @@ h1 {
 	width: 64px;
 	height: 64px;
 	width: 64px;
-	border: 1px solid #ccc;
 	overflow: visible;
 }
 
 .stamp-list {
 	position: absolute;
 	padding: 4px;
-	border: 1px solid #ccc;
 	background-color: #fff;
 }
 
@@ -129,7 +205,6 @@ h1 {
 /* 透明度設定スライドバー */
 .opacity-slidebar-wrapper {
 	position: absolute;
-	border: 1px solid #ccc;
 	background-color: rgba(255, 255, 255, 0.9);
 	height: 170px;
 	width: 64px;
@@ -167,13 +242,6 @@ h1 {
 .load-select-wrapper {
 	position: relative;
 	top: -20px;
-}
-
-/* 削除ボタン */
-.remove-selected-shape {
-	line-height: 32px;
-	padding: 10px;
-	text-decoration: underline;
 }
 
 .toolbar-file-operation>* {
