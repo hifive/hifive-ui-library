@@ -1402,14 +1402,8 @@
 			if (this._disable) {
 				throw new Error(ERR_MSG_DRAGSESSION_DISABLED);
 			}
-			var translateValue = h5.u.str.format('translate({0}px,{1}px)', x, y);
-			$(this.shape.getElement()).css({
-				'-webkit-transform': translateValue,
-				'-moz-transform': translateValue,
-				'-o-transform': translateValue,
-				'-ms-transform': translateValue,
-				transform: translateValue
-			});
+			var transformValue = h5.u.str.format('translate({0},{1})', x, y);
+			$(this.shape.getElement()).attr('transform', transformValue);
 		}
 	});
 
