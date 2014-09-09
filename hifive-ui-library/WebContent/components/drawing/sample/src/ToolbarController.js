@@ -411,9 +411,12 @@
 				fillMode = $parent.find('.background-fillmode-list').val();
 			}
 			var color, opacity;
-			if ($parent.find('.background-color-list') !== 'none') {
+			if ($parent.find('.background-color-list').val() !== 'none') {
 				color = $parent.find('.background-color-selected').css('background-color');
 				opacity = $parent.find('.background-color-selected').css('opacity');
+			} else {
+				color = 'rgb(255,255,255)';
+				opacity = 1;
 			}
 
 			this.trigger('set-background', {
