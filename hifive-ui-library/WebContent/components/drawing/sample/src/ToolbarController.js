@@ -1,9 +1,19 @@
 (function() {
+
+	/**
+	 * 画像IDを保持するデータ属性名
+	 */
+	var DATA_DRAWING_IMAGE_ID = sample.consts.DATA_DRAWING_IMAGE_ID;
+
 	//--------------------------------------------
 	// ToolbarControllerで使用する内部コントローラ
 	//--------------------------------------------
 	/**
 	 * ツールメニューの開閉を行うコントローラ
+	 *
+	 * @private
+	 * @class
+	 * @name sample.ToolMenuController
 	 */
 	var toolMenuController = {
 		/**
@@ -17,6 +27,7 @@
 		/**
 		 * メニューの開閉
 		 *
+		 * @memberOf sample.ToolMenuController
 		 * @param context
 		 */
 		'.menu-wrapper .menu-button h5trackstart': function(context, $el) {
@@ -32,6 +43,7 @@
 		/**
 		 * メニューリストの何れかが選択されたらメニューを隠す
 		 *
+		 * @memberOf sample.ToolMenuController
 		 * @param context
 		 * @param $el
 		 */
@@ -46,6 +58,7 @@
 		/**
 		 * メニューを開く
 		 *
+		 * @memberOf sample.ToolMenuController
 		 * @private
 		 * @param $wrapper
 		 */
@@ -66,6 +79,7 @@
 		/**
 		 * メニューを閉じる
 		 *
+		 * @memberOf sample.ToolMenuController
 		 * @private
 		 * @param $wrapper
 		 */
@@ -78,10 +92,10 @@
 	//--------------------------------------------
 	// ToolbarController
 	//--------------------------------------------
-
 	/**
 	 * ToolbarController
 	 *
+	 * @class
 	 * @name sample.ToolbarController
 	 */
 	var controller = {
@@ -96,30 +110,69 @@
 		/**
 		 * メニューコントローラ
 		 *
-		 * @private
 		 * @memberOf sample.ToolbarController
+		 * @private
 		 */
 		_menuController: toolMenuController,
 
 		/**
+		 * DrawingController.
+		 * <p>
+		 * ToolbarControllerの子コントローラとしてではなく、すでにバインド済みのインスタンスを設定する(親コントローラが設定している)。
+		 * スタンプの配置時にはツールバー上の操作で直接DrawingControllerのメソッドを呼んでスタンプを配置する。
+		 * </p>
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @type {h5.ui.components.drawing.controller.DrawingController}
+		 */
+		drawingCtrl: null,
+
+		/**
 		 * スタンプリスト要素
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
 		 */
 		_$stampList: null,
 
 		/**
 		 * ドラッグ中のスタンプ
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
 		 */
 		_$draggingStamp: null,
 
 		/**
-		 * 設定の一時保存
+		 * ツールバー設定の一時保存
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
 		 */
 		_savedSettings: null,
 
+		/**
+		 * ポップアップ名とポップアップのマップ
+		 * <p>
+		 * '.popup-open[data-popup-name="hoge"]'の要素をクリックすると、popupMap['hoge']に登録されたポップアップが開きます。
+		 * </p>
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @type {Object}
+		 */
+		popupMap: {},
+
+		/**
+		 * __initイベント
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
 		__init: function() {
+			// スタンプリストの設定
 			this._$stampList = this.$find('.stamp-list');
 
-			// スライダーの設定(nouislider使用)
+			// 各スライダーの設定(nouislider使用)
 			$('.opacity-slidebar').each(function() {
 				var $this = $(this);
 				$this.noUiSlider({
@@ -153,57 +206,74 @@
 			});
 
 			// ポップアップの設定
-			this._backgroundPopup = h5.ui.popupManager.createPopup('backgroundPopup', null, null,
-					null, {
-						header: false
-					});
-			this._backgroundPopup.setContents(this.$find('.popup-contents-wrapper').find(
-					'.background-popup'));
-
-			this._loadPopup = h5.ui.popupManager.createPopup('loadPopup', null, null, null, {
+			// 背景画像設定ポップアップ
+			this._backgroundPopup = h5.ui.popupManager.createPopup('backgroundPopup', '', this
+					.$find('.popup-contents-wrapper').find('.background-popup'), null, {
 				header: false
 			});
-			this._loadPopup.setContents(this.$find('.popup-contents-wrapper').find('.load-popup'));
+
+			// ロードデータ選択ポップアップ
+			this._loadPopup = h5.ui.popupManager.createPopup('loadPopup', '', this.$find(
+					'.popup-contents-wrapper').find('.load-popup'), null, {
+				header: false
+			});
+
+			this.popupMap = {
+				'background-popup': this._backgroundPopup,
+				'load-popup': this._loadPopup
+			};
 		},
 
 		/**
 		 * ポップアップを表示
+		 * <p>
+		 * クリックされた要素の'data-popup-name'に指定されたポップアップ名のポップアップを開きます
+		 * </p>
 		 *
-		 * @param
+		 * @memberOf sample.ToolbarController
+		 * @param context
+		 * @param $el
 		 */
 		'.popup-open h5trackstart': function(context, $el) {
 			if ($el.hasClass('disabled')) {
 				return;
 			}
-			var popupCls = $el.data('popup-cls');
+			var popupCls = $el.data('popup-name');
 			this._showPopup(popupCls);
 		},
 
 		/**
 		 * undo
 		 *
+		 * @memberOf sample.ToolbarController
 		 * @param context
 		 */
 		'.undo h5trackstart': function(context) {
 			// ダブルタップによるzoomが動かないようにpreventDefault
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('undo');
+			this.trigger('unselect-all');
+			this.drawingCtrl.undo();
 		},
 
 		/**
 		 * redo
 		 *
+		 * @memberOf sample.ToolbarController
 		 * @param context
 		 */
 		'.redo h5trackstart': function(context) {
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('redo');
+			this.trigger('unselect-all');
+			this.drawingCtrl.redo();
 		},
 
 		/**
 		 * 全て選択
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @param context
 		 */
 		'.select-all h5trackstart': function(context) {
 			this.trigger('select-all');
@@ -378,14 +448,28 @@
 		},
 
 		'.stamp-list .stamp-img h5trackend': function(context) {
-			var $stamp = this._$draggingStamp;
 			var event = context.event;
-			var height = $stamp.height();
-			var width = $stamp.width();
-			this.trigger('dropstamp', {
-				img: this._$draggingStamp,
-				x: event.pageX - width / 2,
-				y: event.pageY - height / 2
+			var drawingCtrl = this.drawingCtrl;
+			var $stamp = this._$draggingStamp;
+			var height = $stamp[0].height;
+			var width = $stamp[0].width;
+			var offset = $(drawingCtrl.rootElement).offset();
+			var x = event.pageX - width / 2 - offset.left;
+			var y = event.pageY - height / 2 - offset.top;
+
+			var $drawingRoot = $(drawingCtrl.rootElement);
+			if (x + width < 0 || y + height < 0 || x > $drawingRoot.innerWidth()
+					|| y > $drawingRoot.innerHeight()) {
+				// 範囲外なら何もしない
+				return;
+			}
+
+			drawingCtrl.drawImage({
+				id: $stamp.data(DATA_DRAWING_IMAGE_ID),
+				x: x,
+				y: y,
+				width: width,
+				height: height
 			});
 
 			$stamp.removeClass('dragging');
@@ -633,7 +717,7 @@
 		 */
 		'.save h5trackstart': function() {
 			this.trigger('save');
-			this.$find('.popup-open[data-popup-cls="load-popup"]').removeClass('disabled');
+			this.$find('.popup-open[data-popup-name="load-popup"]').removeClass('disabled');
 		},
 
 		/**
@@ -680,13 +764,8 @@
 		 * @param cls
 		 */
 		_showPopup: function(cls) {
-			switch (cls) {
-			case 'background-popup':
-				this._backgroundPopup.show();
-				break;
-			case 'load-popup':
-				this._loadPopup.show();
-			}
+			var popup = this.popupMap[cls];
+			popup.show();
 		},
 		/**
 		 * ポップアップを隠す

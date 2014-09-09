@@ -3,31 +3,7 @@
 	/**
 	 * 画像IDを保持するデータ属性名
 	 */
-	var DATA_DRAWING_IMAGE_ID = 'drawing-image-id';
-
-	/**
-	 * rgbカラーにopacityを追加してrgbaカラーにする
-	 *
-	 * @param color rgb()またはrgba()形式の色指定文字列
-	 * @param opacity
-	 * @returns {String}
-	 */
-	function rgbToRgba(color, opacity) {
-		opacity = parseFloat(opacity);
-		if (opacity === 1) {
-			// opacityが1ならそのままcolorを返す
-			return color;
-		}
-		if (/^rgb\(/.test(color)) {
-			// rgb()形式の場合は後ろにopacityを追加して返す
-			return color.replace(')', ', ' + opacity + ')').replace(/^rgb/, 'rgba');
-		}
-
-		// rgba()形式の場合はcolorに指定されている色にopacityを掛ける
-		var parse = color.match(/^(rgba\(.*,.*,.*,)(.*)(\))/);
-		parse[2] = parseFloat(parse[2]) * opacity;
-		return parse[1] + parse[2] + parse[3];
-	}
+	var DATA_DRAWING_IMAGE_ID = sample.consts.DATA_DRAWING_IMAGE_ID;
 
 	/**
 	 * ToolController
@@ -161,7 +137,8 @@
 		__ready: function() {
 			// 画像にIDを振り、ソースファイルとの対応付けを行う
 			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
-			var srcMap = this._drawingOperationController.drawingController.imageSourceMap;
+			var drawingCtrl = this._drawingOperationController.drawingController;
+			var srcMap = drawingCtrl.imageSourceMap;
 			var seq = h5.core.data.createSequence();
 			this.$find('.drawing-image').each(function() {
 				var id = seq.next();
@@ -170,6 +147,10 @@
 				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
 				srcMap[id] = $this.attr('src');
 			});
+
+			// ツールバーコントローラにdrawingControllerを持たせる
+			// (スタンプの配置はToolbarから直接行うため)
+			this._toolbarController.drawingCtrl = drawingCtrl;
 		},
 
 		//---------------------------------------------------------------
@@ -196,18 +177,7 @@
 
 		//-------------------------------------------------------------------------------
 		// ツールバーの上げるイベント
-		// (TODO ツールバーにdrawingControllerを渡して直接操作できるものはそうする)
 		//-------------------------------------------------------------------------------
-		'{this._$toolbar} undo': function() {
-			this._drawingOperationController.unselectAll();
-			this._drawingOperationController.drawingController.undo();
-		},
-
-		'{this._$toolbar} redo': function() {
-			this._drawingOperationController.unselectAll();
-			this._drawingOperationController.drawingController.redo();
-		},
-
 		'{this._$toolbar} shape-select': function() {
 			this._drawingOperationController.unselectAll();
 			this._drawingOperationController.setMode(this._drawingOperationController.MODE_SELECT);
@@ -357,30 +327,6 @@
 			}
 		},
 
-		'{this._$toolbar} dropstamp': function(context) {
-			var arg = context.evArg;
-			var $stamp = $(arg.img);
-			var drawingCtrl = this._drawingOperationController.drawingController;
-			var offset = $(drawingCtrl.rootElement).offset();
-			var x = arg.x - offset.left;
-			var y = arg.y - offset.top;
-			var width = $stamp.width();
-			var height = $stamp.height();
-			if (x + width < 0 || y + height < 0 || x > $(this._$canvasWrapper).innerWidth()
-					|| y > $(this._$canvasWrapper).innerHeight()) {
-				// 範囲外なら何もしない
-				return;
-			}
-
-			drawingCtrl.drawImage({
-				id: $stamp.data(DATA_DRAWING_IMAGE_ID),
-				x: x,
-				y: y,
-				width: width,
-				height: height
-			});
-		},
-
 		/**
 		 * 選択中の図形を消去
 		 *
@@ -430,8 +376,8 @@
 				var x, y;
 				if (fillMode === 'none-center') {
 					// 中央配置
-					var w = arg.element.width;
-					var h = arg.element.height;
+					var w = arg.element.naturalWidth;
+					var h = arg.element.naturalHeight;
 					fillMode = 'none';
 					x = (this._$canvasWrapper.innerWidth() - w) / 2;
 					y = (this._$canvasWrapper.innerHeight() - h) / 2;
@@ -446,7 +392,7 @@
 			if (arg.color) {
 				// 背景色の設定
 				// rgba()に変換
-				var rgbaColor = rgbToRgba(arg.color, arg.opacity);
+				var rgbaColor = sample.util.rgbToRgba(arg.color, arg.opacity);
 				drawingCtrl.setBackgroundColor(rgbaColor);
 			}
 			drawingCtrl.endUpdate();
@@ -524,6 +470,13 @@
 		 */
 		'{this._$toolbar} select-all': function() {
 			this._selectAll();
+		},
+
+		/**
+		 * 全ての図形の選択を解除
+		 */
+		'{this._$toolbar} unselect-all': function() {
+			this._drawingOperationController.unselectAll();
 		},
 
 		'{this._$canvasWrapper} enable-undo': function() {
