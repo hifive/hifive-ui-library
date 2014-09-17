@@ -677,6 +677,17 @@
 
 		getSelectedDataIds: function() {
 			return this._selector.getSelectedKeys();
+		},
+
+		getColumns: function() {
+			return $.extend(true, [], this._columns);
+		},
+
+		setColumns: function(columns) {
+			this._columns = columns;
+			this.dispatchEvent({
+				type: 'changeCellSize'
+			});
 		}
 
 	});
@@ -3710,6 +3721,14 @@
 
 		resize: function() {
 			this._gridLayoutController.resize();
+		},
+
+		getColumns: function() {
+			return this._converter.getColumns();
+		},
+
+		setColumns: function(columns) {
+			this._converter.setColumns(columns);
 		}
 	};
 
