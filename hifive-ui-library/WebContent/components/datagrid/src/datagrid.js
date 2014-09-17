@@ -945,12 +945,8 @@
 		},
 
 		_refreshBoxPosition: function() {
-			var that = this;
-
-			this._verticalBarController.initPromise.then(function() {
-
-
-				var $root = $(that.rootElement);
+			this._verticalBarController.initPromise.then(this.own(function() {
+				var $root = $(this.rootElement);
 				var $headerCells = $root.children('.' + HEADER_TOP_LEFT_CELLS_CLASS);
 				var $headerRows = $root.children('.' + HEADER_ROWS_CLASS);
 				var $headerColumns = $root.children('.' + HEADER_COLUMNS_CLASS);
@@ -963,26 +959,46 @@
 				var rootHeight = $root.height();
 				var rootWidth = $root.width();
 
-				if (typeof that._headerColumns === 'number') {
-					that._headerWidth = 1;
-					var columnsWidth = that._converter.getColumnsWidth();
+				var columnsWidth = this._converter.getColumnsWidth();
+				var renderWidth = 0;
 
-					for (var i = 0; i < that._headerColumns; i++) {
-						that._headerWidth += columnsWidth[i];
+				$.each(columnsWidth, function(i, width) {
+					renderWidth += width;
+				});
+
+				var renderHeight = this._converter.getTotalRows() * this._converter.getDefaultRowHeight();
+
+				if (typeof this._headerColumns === 'number') {
+					this._headerWidth = 1;
+
+					for (var i = 0; i < this._headerColumns; i++) {
+						this._headerWidth += columnsWidth[i];
 					}
 				}
 
 				// TODO: headerHeight の更新
 
 
-				var headerHeight = that._headerHeight;
-				var headerWidth = that._headerWidth;
+				var headerHeight = this._headerHeight;
+				var headerWidth = this._headerWidth;
 
-				var mainHeight = rootHeight - headerHeight - scrollBarWidth + 1;
-				var mainWidth = rootWidth - headerWidth - scrollBarWidth + 1;
+				var mainHeight = rootHeight - headerHeight + 1;
+				var mainWidth = rootWidth - headerWidth + 1;
 
-				that._mainHeight = mainHeight;
-				that._mainWidth = mainWidth;
+				if (rootHeight <= renderHeight) {
+					mainWidth -= scrollBarWidth;
+
+					if (rootWidth - scrollBarWidth <= renderWidth) {
+						mainHeight -= scrollBarWidth;
+					}
+				} else {
+					if (rootWidth <= renderWidth) {
+						mainHeight -= scrollBarWidth;
+					}
+				}
+
+				this._mainHeight = mainHeight;
+				this._mainWidth = mainWidth;
 
 				var mainLeft = (0 < headerWidth) ? headerWidth - 1 : 0;
 				var mainTop = (0 < headerHeight) ? headerHeight - 1 : 0;
@@ -1031,7 +1047,7 @@
 					left: mainLeft,
 					width: mainWidth
 				});
-			});
+			}));
 		},
 
 		_setKnownHeightAndWidth: function(gridData) {
@@ -1308,7 +1324,12 @@
 				vLen = Math.ceil(windowHeight / defaultRowHeight) + 1;
 			}
 
-			if (vScrollInfo.isEnd) {
+			if (totalRows < vLen) {
+				this._rowStart = 0;
+				this._rowEnd = totalRows;
+				this._mainBoxController.setVerticalPosition(0);
+				this._headerColumnsController.setVerticalPosition(0);
+			} else if (vScrollInfo.isEnd) {
 				this._rowStart = vIndex - vLen;
 				this._rowEnd = vIndex;
 				this._mainBoxController.setVerticalPositionBottom();
@@ -1572,11 +1593,12 @@
 
 				that._converter.addEventListener('changeSource', function() {
 					that.trigger('changeSource');
+					that._refreshBoxPosition();
 					that.refresh();
 				});
 
 				that._converter.addEventListener('changeData', function() {
-					that.refresh();
+					that._scroll(0, 0);
 				});
 
 				that._converter.addEventListener('changeCellSize', function() {
@@ -1601,6 +1623,11 @@
 
 		getInitializePromise: function() {
 			return this._initializeDeferred.promise();
+		},
+
+		resize: function() {
+			this._refreshBoxPosition();
+			this.refresh();
 		}
 	};
 
@@ -3679,6 +3706,10 @@
 				this.throwError(msg, rowId);
 			}
 			return this._converter.getCachedOriginData(rowId);
+		},
+
+		resize: function() {
+			this._gridLayoutController.resize();
 		}
 	};
 
