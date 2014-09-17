@@ -747,6 +747,512 @@
 })(jQuery);
 
 
+//---- GridHorizontalDataConverter ---- //
+(function($) {
+	'use strict';
+
+	var EventDispatcher = h5.ui.components.virtualScroll.data.EventDispatcher;
+
+
+	var GridHorizontalDataConverter = function(params) {
+		this._source = params.dataSource;
+		this._idKey = params.idKey;
+		this._selector = params.selector;
+		this._defaultRowHeight = params.defaultRowHeight;
+		this._defaultColumnWidth = params.defaultColumnWidth;
+
+		this._rows = [];
+
+		this._heightMap = {};
+		this._widthMap = {};
+		this._sortable = {};
+		this._modified = {};
+
+		for (var i = 0, len = params.rows.length; i < len; i++) {
+			this._rows.push({
+				key: params.rows[i]
+			});
+		}
+
+		var that = this;
+		if (params.rowsOption != null) {
+			this._rowsHeader = {};
+			$.each(params.rowsOption, function(key, option) {
+				if (option.height != null) {
+					that._heightMap[key] = option.height;
+				}
+				if (option.header != null) {
+					that._rowsHeader[key] = option.header;
+				}
+				that._sortable[key] = !!option.sortable;
+			});
+		}
+
+		this._init();
+	};
+
+
+	$.extend(GridHorizontalDataConverter.prototype, new EventDispatcher(), {
+
+		// --- Property --- //
+
+
+		/**
+		 * @memberOf h5.ui.components.datagrid.GridHorizontalDataConverter
+		 */
+		_source: null,
+
+		_idKey: null,
+
+		_rows: null,
+
+
+		_selector: null,
+
+		_heightMap: null,
+
+		_widthMap: null,
+
+		_sortable: null,
+
+		_defaultRowHeight: null,
+
+		_defaultColumnWidth: null,
+
+		_rowsHeader: null,
+
+		_modified: null,
+
+
+
+		// --- Private Method --- //
+
+		_dataToId: function(data) {
+			if (data == null) {
+				return null;
+			}
+			return data[this._idKey];
+		},
+
+		_cellToEditKey: function(rowId, columnId, data) {
+			return this._rows[rowId].key;
+		},
+
+		_cellToSelectKey: function(rowId, columnId, data) {
+			return this._dataToId(data);
+		},
+
+		_cellToHeightKey: function(rowId, data) {
+			return this._rows[rowId].key;
+		},
+
+		_cellToWidthKey: function(columnId, data) {
+			return this._dataToId(data);
+		},
+
+		_cellToValue: function(rowId, columnId, data) {
+			if (data == null) {
+				return null;
+			}
+			var key = this._rows[rowId].key;
+			return data[key];
+		},
+
+		_range2DTo1D: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var start = columnStart;
+			var end = columnEnd;
+			if (this._rowsHeader != null) {
+				start -= 1;
+				end -= 1;
+
+				if (start < 0) {
+					start = 0;
+				}
+			}
+			return {
+				start: start,
+				end: end
+			};
+		},
+
+		_createHeaderColumn: function(rowStart, rowEnd) {
+
+			var searchOptions = this._source.getSearchOptions();
+			var sorts = {};
+
+			if (searchOptions.sort != null) {
+				$.each(searchOptions.sort, function(i, elem) {
+					sorts[elem.property] = elem.order;
+				});
+			}
+
+			var column = [];
+			for (var i = rowStart; i < rowEnd; i += 1) {
+				var key = this._rows[i].key;
+				var header = key;
+				if (this._rowsHeader[key] != null) {
+					header = this._rowsHeader[key];
+				}
+
+				var rowId = i;
+				var width = this._defaultColumnWidth;
+
+				var heightKey = this._cellToHeightKey(rowId, null);
+				var height = this._defaultRowHeight;
+				if (this._heightMap.hasOwnProperty(heightKey)) {
+					height = this._heightMap[heightKey];
+				}
+
+				var isSortableColumn = this._sortable[key];
+				var sortOrder = null;
+				if (sorts.hasOwnProperty(key)) {
+					sortOrder = sorts[key];
+				}
+
+				var cellData = {
+					dataId: null,
+					rowId: rowId,
+					columnId: 0,
+
+					propertyName: key,
+					editKey: null,
+					selectKey: null,
+					heightKey: heightKey,
+					widthKey: null,
+
+					selected: false,
+					height: height,
+					width: width,
+
+					isHeaderRow: true,
+					isSortableColumn: isSortableColumn,
+					sortOrder: sortOrder,
+
+					columnData: null,
+					value: header
+				};
+
+				column.push([cellData]);
+			}
+			return column;
+		},
+
+		_convert: function(dataArray, rowStart, rowEnd, columnStart, columnEnd) {
+			var cells = [];
+
+			var rangeHeight = 0;
+			var rangeWidth = 0;
+
+			var i = 0;
+			var columnId = columnStart;
+			var len = dataArray.length;
+
+			if (this._rowsHeader != null) {
+				if (columnStart === 0 && 0 < columnEnd) {
+					var headerColumn = this._createHeaderColumn(rowStart, rowEnd);
+					$.each(headerColumn, function(index, headerRow) {
+						var headerCell = headerRow[0];
+						if (index === 0) {
+							rangeWidth += headerCell.width;
+						}
+						rangeHeight += headerCell.height;
+					});
+					for (i = rowStart; i < rowEnd; i += 1) {
+						cells.push(headerColumn[i - rowStart]);
+					}
+				} else {
+					for (i = rowStart; i < rowEnd; i += 1) {
+						cells.push([]);
+					}
+				}
+			}
+
+			for (i = 0; i < len; i += 1) {
+				var data = dataArray[i];
+				var dataId = this._dataToId(data);
+
+				var widthKey = this._cellToWidthKey(columnId, data);
+				var width = this._defaultColumnWidth;
+				if (this._widthMap.hasOwnProperty(widthKey)) {
+					width = this._widthMap[widthKey];
+				}
+
+				rangeWidth += width;
+
+				for (var j = rowStart; j < rowEnd; j += 1) {
+					var rowId = j;
+
+					var heightKey = this._cellToHeightKey(rowId, data);
+					var height = this._defaultColumnHeight;
+					if (this._heightMap.hasOwnProperty(heightKey)) {
+						height = this._heightMap[heightKey];
+					}
+
+					var selectKey = this._cellToSelectKey(rowId, columnId, data);
+					var selected = this._selector.isSelected(selectKey);
+
+					if (i === 0 && (0 < columnStart || this._rowsHeader == null)) {
+						rangeHeight += height;
+					}
+
+
+					var propertyName = this._rows[j].key;
+					var isSortableColumn = this._sortable[propertyName];
+
+					var modified = false;
+					var value = this._cellToValue(rowId, columnId, data);
+
+					if (this._modified[dataId] != null && this._modified[dataId][propertyName] != null) {
+						modified = true;
+						value = this._modified[dataId][propertyName];
+					}
+
+					var cellData = {
+						dataId: dataId,
+						rowId: rowId,
+						columnId: columnId,
+
+						propertyName: propertyName,
+						editKey: this._cellToEditKey(rowId, columnId, data),
+						selectKey: selectKey,
+						heightKey: heightKey,
+						widthKey: widthKey,
+
+						selected: selected,
+						height: height,
+						width: width,
+
+						isModified: modified,
+						isHeaderRow: false,
+						isSortableColumn: isSortableColumn,
+
+						value: value,
+						rowData: data
+					};
+
+					cells[j - rowStart].push(cellData);
+				}
+
+				columnId += 1;
+			}
+
+			return {
+				cells: cells,
+				rangeHeight: rangeHeight,
+				rangeWidth: rangeWidth
+			};
+		},
+
+
+		_init: function() {
+			var that = this;
+			this._source.addEventListener('changeSource', function(ev) {
+				that.dispatchEvent(ev);
+			});
+		},
+
+
+		// --- Public Method --- //
+
+		sliceAsync2D: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var range = this._range2DTo1D(rowStart, rowEnd, columnStart, columnEnd);
+
+			var that = this;
+
+			return this._source.sliceAsync(range.start, range.end).then(function(dataArray) {
+				var gridData = that._convert(dataArray, rowStart, rowEnd, columnStart, columnEnd);
+				gridData.rowsHeight = that.getRowsHeight();
+
+				return gridData;
+			});
+		},
+
+		isCached2D: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var range = this._range2DTo1D(rowStart, rowEnd, columnStart, columnEnd);
+			return this._source.isCached(range.start, range.end);
+		},
+
+		sliceCachedData2D: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var range = this._range2DTo1D(rowStart, rowEnd, columnStart, columnEnd);
+
+			var dataArray = this._source.sliceCachedData(range.start, range.end);
+			var gridData = this._convert(dataArray, rowStart, rowEnd, columnStart, columnEnd);
+
+			return gridData;
+		},
+
+		getCachedData2D: function(rowId, columnId) {
+			var gridData = this.sliceCachedData2D(rowId, rowId + 1, columnId, columnId + 1);
+			return gridData[0][0];
+		},
+
+		getCachedOriginData: function(rowId) {
+			var range = this._range2DTo1D(rowId, rowId + 1, 0, -1);
+
+			var dataArray = this._source.sliceCachedData(range.start, range.end);
+
+			return dataArray[0];
+		},
+
+		isCachedAllWidth: function() {
+			return false;
+		},
+
+		isCachedAllHeight: function() {
+			return true;
+		},
+
+		getTotalRows: function() {
+			return this._rows.length;
+		},
+
+		getTotalColumns: function() {
+			var totalColumns = this._source.getTotalLength();
+			if (this._rowsHeader != null) {
+				totalColumns += 1;
+			}
+			return totalColumns;
+		},
+
+		getDefaultRowHeight: function() {
+			return this._defaultRowHeight;
+		},
+
+		getDefaultColumnWidth: function() {
+			return this._defaultColumnWidth;
+		},
+
+		getRowsHeight: function() {
+			var result = [];
+
+			var len = this._rows.length;
+			for (var i = 0; i < len; i += 1) {
+				var heightKey = this._rows[i].key;
+
+				var rowHeight = this._defaultRowHeight;
+				if (this._heightMap.hasOwnProperty(heightKey)) {
+					rowHeight = this._heightMap[heightKey];
+				}
+
+				result.push(rowHeight);
+			}
+
+			return result;
+		},
+
+		onChangeSource: function(listener) {
+			this._source.onChangeSource(listener);
+		},
+
+		setHeight: function(heightKey, height) {
+			if (height === this._defaultHeight) {
+				delete this._heightMap[heightKey];
+				return;
+			}
+			this._heightMap[heightKey] = height;
+
+			// TODO: 列入れ替えもあるのでもっと良い名前を考える
+			this.dispatchEvent({
+				type: 'changeCellSize'
+			});
+		},
+
+		setWidth: function(widthKey, width) {
+			if (width === this._defaultWidth) {
+				delete this._widthMap[widthKey];
+				return;
+			}
+			this._widthMap[widthKey] = width;
+			this.dispatchEvent({
+				type: 'changeCellSize'
+			});
+		},
+
+		selectData: function(selectKey) {
+			this._selector.select(selectKey);
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		unselectData: function(selectKey) {
+			this._selector.unselect(selectKey);
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		unselectAllData: function() {
+			this._selector.unselectAll();
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		isSelected: function(selectKey) {
+			return this._selector.isSelected(selectKey);
+		},
+
+		getSelectedDataIds: function() {
+			return this._selector.getSelectedKeys();
+		},
+
+		getRows: function() {
+			return $.extend(true, [], this._rows);
+		},
+
+		setRows: function(rows) {
+			this._rows = rows;
+			this.dispatchEvent({
+				type: 'changeCellSize'
+			});
+		},
+
+		editData: function(dataId, propertyName, value) {
+			var objectModified = this._modified[dataId];
+			if (objectModified == null) {
+				objectModified = {};
+				this._modified[dataId] = objectModified;
+			}
+
+			objectModified[propertyName] = value;
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getModified: function() {
+			return $.extend(true, {}, this._modified);
+		},
+
+		clearModified: function() {
+			this._modified = {};
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		}
+
+	});
+
+
+	var createGridHorizontalDataConverter = function(params) {
+		return new GridHorizontalDataConverter(params);
+	};
+
+
+	h5.u.obj.expose('h5.ui.components.datagrid', {
+
+		/**
+		 * @memberOf h5.ui.components.datagrid
+		 */
+		createGridHorizontalDataConverter: createGridHorizontalDataConverter
+
+	});
+
+})(jQuery);
+
+
 // ---- GridLayout ---- //
 
 (function($) {
@@ -783,6 +1289,10 @@
 
 			for (var i = 0; i < rowSize; i += 1) {
 				var row = gridData.cells[i];
+				if (row == null || row[0] == null) {
+					continue;
+				}
+
 				var height = row[0].height;
 
 				html += '<tr style="height:' + height + 'px;">';
@@ -1008,20 +1518,38 @@
 				var rootHeight = $root.height();
 				var rootWidth = $root.width();
 
-				var columnsWidth = this._converter.getColumnsWidth();
+				var renderHeight = 0;
 				var renderWidth = 0;
 
-				$.each(columnsWidth, function(i, width) {
-					renderWidth += width;
-				});
+				if (this._converter.getColumnsWidth != null) {
+					var columnsWidth = this._converter.getColumnsWidth();
+					$.each(columnsWidth, function(i, width) {
+						renderWidth += width;
+					});
 
-				var renderHeight = this._converter.getTotalRows() * this._converter.getDefaultRowHeight();
+					renderHeight = this._converter.getTotalRows() * this._converter.getDefaultRowHeight();
 
-				if (typeof this._headerColumns === 'number') {
-					this._headerWidth = 1;
+					if (typeof this._headerColumns === 'number') {
+						this._headerWidth = 1;
 
-					for (var i = 0; i < this._headerColumns; i++) {
-						this._headerWidth += columnsWidth[i];
+						for (var i = 0; i < this._headerColumns; i++) {
+							this._headerWidth += columnsWidth[i];
+						}
+					}
+				} else {
+					var rowsHeight = this._converter.getRowsHeight();
+					$.each(rowsHeight, function(i, height) {
+						renderHeight += height;
+					});
+
+					renderWidth = this._converter.getTotalColumns() * this._converter.getDefaultColumnWidth();
+
+					if (typeof this._headerRows === 'number') {
+						this._headerHeight = 1;
+
+						for (var i = 0; i < this._headerRows; i++) {
+							this._headerHeight += rowsHeight[i];
+						}
 					}
 				}
 
@@ -1324,13 +1852,19 @@
 				totalColumns -= this._headerColumns;
 			}
 
+
+			var i;
+
 			if (this._knownRowsHeight != null) {
 				rowsHeight = this._knownRowsHeight;
 			} else {
-				// TODO: 行高をカスタマイズする場合の処理をどうするか
-				rowsHeight = [];
-				for (var i = 0; i < totalRows; i++) {
-					rowsHeight.push(defaultRowHeight);
+				if (this._converter.getRowsHeight != null) {
+					rowsHeight = this._converter.getRowsHeight();
+				} else {
+					rowsHeight = [];
+					for (i = 0; i < totalRows; i++) {
+						rowsHeight.push(defaultRowHeight);
+					}
 				}
 			}
 
@@ -1344,7 +1878,14 @@
 			if (this._knownColumnsWidth != null) {
 				columnsWidth = this._knownColumnsWidth;
 			} else {
-				columnsWidth = this._converter.getColumnsWidth();
+				if (this._converter.getColumnsWidth != null) {
+					columnsWidth = this._converter.getColumnsWidth();
+				} else {
+					columnsWidth = [];
+					for (i = 0; i < totalColumns; i++) {
+						columnsWidth.push(defaultColumnWidth);
+					}
+				}
 			}
 			if (typeof this._headerColumns === 'number') {
 				columnsWidth = columnsWidth.slice(this._headerColumns);
@@ -1361,7 +1902,6 @@
 
 			this._horizontalBarController.setScrollPosition(hScrollInfo.scrollPosition);
 			this._horizontalBarController.setScrollSize(hScrollInfo.scrollSize);
-
 
 			var vIndex = vScrollInfo.index;
 			var hIndex = hScrollInfo.index;
@@ -1389,7 +1929,16 @@
 				this._mainBoxController.setVerticalPosition(vScrollInfo.offset);
 				this._headerColumnsController.setVerticalPosition(vScrollInfo.offset);
 			}
+			if (totalRows < this._rowEnd) {
+				this._rowEnd = totalRows;
+			}
 
+			if (totalColumns < hLen) {
+				this._columnStart = 0;
+				this._columnEnd = totalColumns;
+				this._mainBoxController.setHorizontalPosition(0);
+				this._headerRowsController.setHorizontalPosition(0);
+			}
 			if (hScrollInfo.isEnd) {
 				this._columnStart = hIndex - hLen;
 				this._columnEnd = hIndex;
@@ -2066,46 +2615,46 @@
 		}
 
 		// columns のチェック
-		if (params.columns == null) {
-			this.throwError(msgHeader + 'columns は必ず指定してください');
-		}
-		if (!$.isArray(params.columns)) {
-			msg = 'columns は Array 型である必要があります; columns = {0}';
-			this.throwError(msgHeader + msg, params.columns);
-		}
-
-
-		var columnPropertyNames = {};
-
-		for (var i = 0, len = params.columns.length; i < len; i++) {
-			var column = params.columns[i];
-			if (typeof column !== 'object') {
-				msg = 'columns の要素は object 型である必要があります; columns[{0}] = {1}';
-				this.throwError(msgHeader + msg, i, column);
-			}
-
-			// columns[i].propertyName のチェック
-			if (column.propertyName == null) {
-				msg = 'columns の要素は propertyName を持つ必要があります; columns[{0}] = {1}';
-				this.throwError(msgHeader + msg, i, column);
-			}
-			if (typeof column.propertyName !== 'string') {
-				msg = 'columns の要素の propertyName は string 型である必要があります; columns[{0}].propertyName = {1}';
-				this.throwError(msgHeader + msg, i, column.propertyName);
-			}
-
-			if (columnPropertyNames[column.propertyName]) {
-				msg = 'columns の要素の propertyName はそれぞれ一意である必要があります; 重複のある propertyName = {0}';
-				this.throwError(msgHeader + msg, column.propertyName);
-			}
-			columnPropertyNames[column.propertyName] = true;
-
-			// columns[i].formatter のチェック
-			if (column.formatter != null && !$.isFunction(column.formatter)) {
-				msg = 'columns の要素の formatter は function 型である必要があります; columns[{0}].formatter = {1}';
-				this.throwError(msgHeader + msg, i, column.formatter);
-			}
-		}
+//		if (params.columns == null) {
+//			this.throwError(msgHeader + 'columns は必ず指定してください');
+//		}
+//		if (!$.isArray(params.columns)) {
+//			msg = 'columns は Array 型である必要があります; columns = {0}';
+//			this.throwError(msgHeader + msg, params.columns);
+//		}
+//
+//
+//		var columnPropertyNames = {};
+//
+//		for (var i = 0, len = params.columns.length; i < len; i++) {
+//			var column = params.columns[i];
+//			if (typeof column !== 'object') {
+//				msg = 'columns の要素は object 型である必要があります; columns[{0}] = {1}';
+//				this.throwError(msgHeader + msg, i, column);
+//			}
+//
+//			// columns[i].propertyName のチェック
+//			if (column.propertyName == null) {
+//				msg = 'columns の要素は propertyName を持つ必要があります; columns[{0}] = {1}';
+//				this.throwError(msgHeader + msg, i, column);
+//			}
+//			if (typeof column.propertyName !== 'string') {
+//				msg = 'columns の要素の propertyName は string 型である必要があります; columns[{0}].propertyName = {1}';
+//				this.throwError(msgHeader + msg, i, column.propertyName);
+//			}
+//
+//			if (columnPropertyNames[column.propertyName]) {
+//				msg = 'columns の要素の propertyName はそれぞれ一意である必要があります; 重複のある propertyName = {0}';
+//				this.throwError(msgHeader + msg, column.propertyName);
+//			}
+//			columnPropertyNames[column.propertyName] = true;
+//
+//			// columns[i].formatter のチェック
+//			if (column.formatter != null && !$.isFunction(column.formatter)) {
+//				msg = 'columns の要素の formatter は function 型である必要があります; columns[{0}].formatter = {1}';
+//				this.throwError(msgHeader + msg, i, column.formatter);
+//			}
+//		}
 
 
 		// -- 共通なオプショナルなパラメータ -- //
@@ -3783,5 +4332,300 @@
 	};
 
 	h5.core.expose(scrollGridController);
+
+})(jQuery);
+
+
+
+//---- HorizontalScrollGridController ---- //
+
+(function($) {
+	'use strict';
+
+	var COMMON_DEFAULT_INIT_PARAMS = h5.ui.components.datagrid.init.COMMON_DEFAULT_INIT_PARAMS;
+
+	var horizontalScrollGridController = {
+
+		// --- Setting --- //
+
+		/**
+		 * @memberOf h5.ui.components.datagrid.HorizontalScrollGridController
+		 */
+		__name: 'h5.ui.components.datagrid.HorizontalScrollGridController',
+
+
+		// --- Property --- //
+
+		_params: null,
+
+		_sortable: null,
+
+		_dataSource: null,
+
+		_converter: null,
+
+		_gridLayoutController: h5.ui.components.datagrid.GridLayoutController,
+
+
+		// --- Private Method --- //
+
+		_makeGridParams: function(params) {
+			return $.extend(true, COMMON_DEFAULT_INIT_PARAMS, {
+				headerRows: 0,
+				defaultRowHeight: 100
+			}, params);
+		},
+
+
+		_validateInitParams: function(params) {
+
+			// 共通のチェック
+			h5.ui.components.datagrid.init.validateCommonInitParams(params);
+
+			var msgHeader = '初期パラメータが不正です: ';
+			var msg;
+
+			// rows の追加パラメータチェック
+			for (var i = 0, len = params.rows.length; i < len; i++) {
+				var row = params.rows[i];
+
+				// rows[i].height のチェック
+				if (row.height != null) {
+
+					if (typeof row.height !== 'number') {
+						msg = 'rows の要素の height は number 型である必要があります; rows[{0}].height = {1}';
+						this.throwError(msgHeader + msg, i, row.height);
+					}
+					if (row.height !== Math.floor(row.height)) {
+						msg = 'rows の要素の height は整数である必要があります; rows[{0}].height = {1}';
+						this.throwError(msgHeader + msg, i, row.height);
+					}
+					if (row.height <= 0) {
+						msg = 'rows の要素の height は正の数である必要があります; rows[{0}].height = {1}';
+						this.throwError(msgHeader + msg, i, row.height);
+					}
+				}
+			}
+
+
+			// columnWidth
+			if (params.columnWidth == null) {
+				msg = 'columnWidth は必ず指定してください';
+				this.throwError(msgHeader + msg, params.columnWidth);
+			}
+			if (typeof params.columnWidth !== 'number') {
+				msg = 'columnWidth は number 型である必要があります; columnWidth = {0}';
+				this.throwError(msgHeader + msg, params.columnWidth);
+			}
+			if (params.columnWidth !== Math.floor(params.columnWidth)) {
+				msg = 'columnWidth は整数である必要があります; columnWidth = {0}';
+				this.throwError(msgHeader + msg, params.columnWidth);
+			}
+			if (params.columnWidth <= 0) {
+				msg = 'columnWidth は正の数である必要があります; columnWidth = {0}';
+				this.throwError(msgHeader + msg, params.columnWidth);
+			}
+
+			// headerRows のチェック
+			if (typeof params.headerRows !== 'number') {
+				msg = 'headerRows は number 型である必要があります; headerRows = {0}';
+				this.throwError(msgHeader + msg, params.headerRows);
+			}
+			if (params.headerRows !== Math.floor(params.headerRows)) {
+				msg = 'headerRows は整数である必要があります; headerRows = {0}';
+				this.throwError(msgHeader + msg, params.headerRows);
+			}
+			if (params.headerRows < 0) {
+				msg = 'headerRows は非負の数である必要があります; headerRows = {0}';
+				this.throwError(msgHeader + msg, params.headerRows);
+			}
+
+		},
+
+		_initializeChildControllers: function() {
+			var params = this._params;
+
+			if (params.url != null) {
+				this._dataSource = h5.ui.components.virtualScroll.data.createLazyLoadDataSource(params.url,
+						params.ajaxSettings, params.requestData);
+			} else {
+				this._dataSource = h5.ui.components.virtualScroll.data.createLocalDataSource(params.data);
+			}
+
+			var idKey = params.idKey;
+			var columnWidth = params.columnWidth;
+			var defaultRowHeight = params.defaultRowHeight;
+
+			var selector = h5.ui.components.datagrid.createSingleSelector();
+
+			var headerRows = params.headerRows;
+			var headerColumns = 1;
+			var headerTopLeftCellsHtml = null;
+			var headerHeight = 1;
+			var headerWidth = params.columnWidth + 1;
+
+			var rows = [];
+			var formatters = {};
+			var rowsOption = {};
+
+			this._sortable = {};
+
+			for (var i = 0, len = params.rows.length; i < len; i++) {
+				var row = params.rows[i];
+				rows.push(row.propertyName);
+
+				if (row.formatter != null) {
+					var formatter = h5.ui.components.datagrid.init.wrapScrollFormatter(row.formatter);
+					formatters[row.propertyName] = formatter;
+				}
+				var option = {};
+
+				if (row.height != null) {
+					option.height = row.height;
+				}
+
+				if (row.header != null) {
+					option.header = row.header;
+				}
+
+				rowsOption[row.propertyName] = option;
+
+				// height 計算
+				var height = (row.height != null) ? row.height : params.defaultRowHeight;
+
+				if (i < headerRows) {
+					headerHeight += height;
+				}
+			}
+
+			this._converter = h5.ui.components.datagrid.createGridHorizontalDataConverter({
+				dataSource: this._dataSource,
+				idKey: idKey,
+				rows: rows,
+				defaultRowHeight: defaultRowHeight,
+				defaultColumnWidth: columnWidth,
+				selector: selector,
+				rowsOption: rowsOption
+			});
+
+			var defaultFormatter = h5.ui.components.datagrid.init.wrapScrollFormatter(params.defaultFormatter);
+
+			var vStrategy;
+			if (params.verticalScrollStrategy === 'pixel') {
+				vStrategy = h5.ui.components.virtualScroll.createPixelBaseScrollStrategy();
+			} else {
+				vStrategy = h5.ui.components.virtualScroll.createIndexBaseScrollStrategy();
+			}
+
+			var hStrategy;
+			if (params.horizontalScrollStrategy === 'pixel') {
+				hStrategy = h5.ui.components.virtualScroll.createPixelBaseScrollStrategy();
+			} else {
+				hStrategy = h5.ui.components.virtualScroll.createIndexBaseScrollStrategy();
+			}
+
+			var that = this;
+
+			return this.readyPromise.then(function() {
+				return that._gridLayoutController.readyPromise;
+			}).then(function() {
+
+				var promise = that._gridLayoutController.init({
+					defaultFormatter: defaultFormatter,
+					formatters: formatters,
+					converter: that._converter,
+					verticalScrollStrategy: vStrategy,
+					horizontalScrollStrategy: hStrategy,
+					headerRows: headerRows,
+					headerColumns: headerColumns,
+					headerTopLeftCellsHtml: headerTopLeftCellsHtml,
+					headerHeight: headerHeight,
+					headerWidth: headerWidth
+				});
+
+				that._dataSource.changeSearchOptions({});
+
+				return promise;
+			});
+		},
+
+
+		// --- Life Cycle Method --- //
+
+		__ready: function() {
+			return this._gridLayoutController.readyPromise;
+		},
+
+
+		__dispose: function() {
+			$(this.rootElement).remove();
+		},
+
+
+		// --- Event Handler --- //
+
+
+		// --- Public Method --- //
+
+		init: function(initParams) {
+			var that = this;
+
+			return this.initPromise.then(function() {
+
+				// デフォルト値のセット + HTML の解釈
+				var params = that._makeGridParams(initParams);
+
+				// パラメータチェック
+				that._validateInitParams(params);
+
+				// パラメータのセット
+				that._params = params;
+
+				// 子コントローラの初期化
+				return that._initializeChildControllers();
+			});
+		},
+
+		/**
+		 * リクエストデータを変更する
+		 *
+		 * @param {object} requestData リクエストデータ
+		 */
+		changeRequestData: function(requestData) {
+			if (this._params.url == null) {
+				var msg = '初期化パラメータに url を設定していない場合はこのメソッドは利用できません';
+				this.throwError(msg);
+			}
+
+			this._dataSource.setCustomRequestData(requestData);
+		},
+
+
+		resize: function() {
+			this._gridLayoutController.resize();
+		},
+
+		getRows: function() {
+			return this._converter.getRows();
+		},
+
+		setRows: function(rows) {
+			this._converter.setRows(rows);
+		},
+
+		editData: function(dataId, propertyName, value) {
+			this._converter.editData(dataId, propertyName, value);
+		},
+
+		getModified: function() {
+			return this._converter.getModified();
+		},
+
+		clearModified: function() {
+			this._converter.clearModified();
+		}
+	};
+
+	h5.core.expose(horizontalScrollGridController);
 
 })(jQuery);
