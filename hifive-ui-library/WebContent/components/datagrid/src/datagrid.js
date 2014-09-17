@@ -261,6 +261,7 @@
 		this._heightMap = {};
 		this._widthMap = {};
 		this._sortable = {};
+		this._modified = {};
 
 		for (var i = 0, len = params.columns.length; i < len; i++) {
 			this._columns.push({
@@ -314,6 +315,8 @@
 		_defaultColumnWidth: null,
 
 		_columnsHeader: null,
+
+		_modified: null,
 
 
 
@@ -488,6 +491,14 @@
 					var propertyName = this._columns[j].key;
 					var isSortableColumn = this._sortable[propertyName];
 
+					var modified = false;
+					var value = this._cellToValue(rowId, columnId, data);
+
+					if (this._modified[dataId] != null && this._modified[dataId][propertyName] != null) {
+						modified = true;
+						value = this._modified[dataId][propertyName];
+					}
+
 					var cellData = {
 						dataId: dataId,
 						rowId: rowId,
@@ -503,10 +514,11 @@
 						height: height,
 						width: width,
 
+						isModified: modified,
 						isHeaderRow: false,
 						isSortableColumn: isSortableColumn,
 
-						value: this._cellToValue(rowId, columnId, data),
+						value: value,
 						rowData: data
 					};
 
@@ -688,6 +700,31 @@
 			this.dispatchEvent({
 				type: 'changeCellSize'
 			});
+		},
+
+		editData: function(dataId, propertyName, value) {
+			var objectModified = this._modified[dataId];
+			if (objectModified == null) {
+				objectModified = {};
+				this._modified[dataId] = objectModified;
+			}
+
+			objectModified[propertyName] = value;
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getModified: function() {
+			return $.extend(true, {}, this._modified);
+		},
+
+		clearModified: function() {
+			this._modified = {};
+			this.dispatchEvent({
+				type: 'changeData'
+			});
 		}
 
 	});
@@ -778,6 +815,7 @@
 					html += 'data-h5-dyn-grid-width-key="' + cell.widthKey + '" ';
 					html += 'data-h5-dyn-grid-is-header-row="' + cell.isHeaderRow + '" ';
 					html += 'data-h5-dyn-grid-is-sortable-column="' + cell.isSortableColumn + '" ';
+					html += 'data-h5-dyn-grid-is-modified-cell="' + cell.isModified + '" ';
 					html += 'data-h5-dyn-grid-sort-order="' + cell.sortOrder + '" ';
 
 					// TODO: cellData から td の属性 data-h5-dyn-grid-custom-xxx を追加する仕組み
@@ -3729,6 +3767,18 @@
 
 		setColumns: function(columns) {
 			this._converter.setColumns(columns);
+		},
+
+		editData: function(dataId, propertyName, value) {
+			this._converter.editData(dataId, propertyName, value);
+		},
+
+		getModified: function() {
+			return this._converter.getModified();
+		},
+
+		clearModified: function() {
+			this._converter.clearModified();
 		}
 	};
 
