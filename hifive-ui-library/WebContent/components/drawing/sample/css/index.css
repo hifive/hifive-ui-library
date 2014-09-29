@@ -1,0 +1,250 @@
+@charset 'utf-8';
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+html,body {
+	margin: 0
+}
+
+h1 {
+	margin: 0
+}
+
+.border1 {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+/** カンバスの設定 **/
+.h5drawing-canvas-wrapper {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+/** ポップアップ **/
+.popupContents {
+	padding: 10px;
+}
+
+.popupBtn-wrapper {
+	padding-top: 10px;
+	padding-right: 20px;
+	height: 26px;
+	text-align: right;
+}
+
+.popupBtn-wrapper>* {
+	cursor: pointer;
+	display: inline-block;
+	padding: 5px;
+	width: 80px;
+	text-align: center;
+	padding: 5px;
+}
+
+/** 背景画像設定ポップアップ **/
+.background-popup .background-color-palette {
+	width: 238px;
+	height: 102px;
+	margin-bottom: 10px;
+	background-color: #fff;
+}
+
+.background-popup .background-color-selected-wrapper {
+	width: 80px;
+	height: 20px;
+	display: inline-block;
+	background-color: #fff;
+}
+
+.background-popup .background-color-selected {
+	width: 100%;
+	height: 100%;
+}
+
+.background-popup .background-color-slidebar {
+	margin: 5px 40px 0px 0px;
+}
+
+/** ツールバー設定 **/
+.drawing-toolbar .icon48 {
+	width: 48px;
+	height: 48px;
+}
+
+.drawing-toolbar .clear-both {
+	clear: both;
+}
+
+.load-data-list {
+	width: 150px;
+}
+/** メニュー **/
+.drawing-toolbar .menu-wrapper {
+	position: relative;
+	overflow: visible;
+}
+
+.drawing-toolbar .menu-list {
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.drawing-toolbar .menu-list>* {
+	padding: 10px;
+	border-top: 1px solid #fff;
+	cursor: pointer;
+}
+
+.drawing-toolbar .menu-list>.disabled {
+	color: rgba(0, 0, 0, 0.7);
+	cursor: not-allowed;
+}
+
+.display-none {
+	display: none!important;
+}
+
+.drawing-toolbar .disabled {
+	opacity: 0.3;
+}
+
+.toolbar-operation>* {
+	display: inline-block;
+}
+
+.toolbar-operation .disabled {
+	background-color: #ccc;
+	opacity: 0.2;
+}
+
+.drawing-toolbar {
+	padding: 10px 0;
+}
+
+.toolbar-operation,.toolbar-drawing-tool,.color-pallete {
+	display: inline-block;
+	float: left;
+}
+
+.toolbar-drawing-tool {
+	margin-left: 20px;
+}
+
+.toolbar-drawing-tool .toolbar-icon {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
+
+.selected-color-wrapper.selected .selected-color {
+	border: 2px solid #f8e;
+}
+
+.drawing-toolbar .border1.selected {
+	border-color: #f8e;
+}
+
+.color-pallete {
+	width: 476px;
+	padding-top: 10px;
+	clear: both;
+}
+
+.pallete-color {
+	float: left;
+	height: 32px;
+	width: 32px;
+	margin: 1px;
+}
+
+.selected-color-wrapper {
+	position: relative;
+}
+
+.selected-color {
+	float: left;
+	margin: 1px;
+	width: 64px;
+	height: 64px;
+	width: 64px;
+	overflow: visible;
+}
+
+.stamp-list {
+	position: absolute;
+	padding: 4px;
+	background-color: #fff;
+}
+
+.stamp-img {
+	display: inline-block;
+	border: 2px solid #fff;
+}
+
+.stamp-img.dragging {
+	display: block;
+	z-index: 101;
+}
+
+/* 透明度設定スライドバー */
+.opacity-slidebar-wrapper {
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.9);
+	height: 170px;
+	width: 64px;
+	text-align: center;
+}
+
+.slidebar-label {
+	display: block;
+	text-align: center;
+}
+
+.opacity-slidebar {
+	position: relative;
+	top: 15px;
+	height: 130px;
+	display: inline-block;
+}
+
+/* 線の幅スライドバー */
+.stroke-width-slider-wrapper {
+	width: 200px;
+	display: inline-block;
+	margin: 20px;
+}
+
+.stroke-width-slider-wrapper .slider-label {
+	display: inline-block;
+	padding-bottom: 10px;
+}
+
+.stroke-width-slider-wrapper .slider-value {
+	padding-left: 7px;
+}
+
+.load-select-wrapper {
+	position: relative;
+	top: -20px;
+}
+
+.toolbar-file-operation>* {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
