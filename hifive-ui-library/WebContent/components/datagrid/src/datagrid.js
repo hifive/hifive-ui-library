@@ -669,6 +669,18 @@
 			});
 		},
 
+		selectMultiData: function(allData) {
+			for (var i =0, len = allData.length; i < len; i++) {
+				var data = allData[i];
+				var selectKey = this._cellToSelectKey(null, null, data);
+				this._selector.select(selectKey);
+			}
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
 		unselectData: function(selectKey) {
 			this._selector.unselect(selectKey);
 			this.dispatchEvent({
@@ -3522,6 +3534,16 @@
 		},
 
 		/**
+		 * 全ての行を選択します。
+		 */
+		selectAllData: function() {
+			var length = this._dataSource.getTotalLength();
+			var allData = this._dataSource.sliceCachedData(0, length);
+
+			this._converter.selectMultiData(allData);
+		},
+
+		/**
 		 * 行の選択を解除します。
 		 *
 		 * @param {*} dataId 選択を解除したい行の dataId
@@ -4171,6 +4193,16 @@
 			}
 
 			this._converter.selectData(dataId);
+		},
+
+		/**
+		 * 全ての行を選択します。
+		 */
+		selectAllData: function() {
+			var length = this._dataSource.getTotalLength();
+			var allData = this._dataSource.sliceCachedData(0, length);
+
+			this._converter.selectMultiData(allData);
 		},
 
 		/**
