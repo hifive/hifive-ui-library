@@ -2792,7 +2792,7 @@
 		// --- Private Method --- //
 
 		_makeGridParams: function(params) {
-			return $.extend(true, COMPLEX_HEADER_DEFAULT_INIT_PARAMS, COMMON_DEFAULT_INIT_PARAMS,
+			return $.extend(true, {}, COMPLEX_HEADER_DEFAULT_INIT_PARAMS, COMMON_DEFAULT_INIT_PARAMS,
 					params, this._htmlHeaders);
 		},
 
@@ -3075,7 +3075,7 @@
 		// --- Private Method --- //
 
 		_makeGridParams: function(params) {
-			return $.extend(true, COMMON_DEFAULT_INIT_PARAMS, {
+			return $.extend(true, {}, COMMON_DEFAULT_INIT_PARAMS, {
 				enableMultiRowSelect: true,
 				headerColumns: 0,
 				gridHeight: 'auto',
@@ -3760,7 +3760,7 @@
 		// --- Private Method --- //
 
 		_makeGridParams: function(params) {
-			return $.extend(true, COMMON_DEFAULT_INIT_PARAMS, {
+			return $.extend(true, {}, COMMON_DEFAULT_INIT_PARAMS, {
 				enableMultiRowSelect: true,
 				headerColumns: 0,
 				gridWidth: 'auto',
@@ -4402,7 +4402,7 @@
 		// --- Private Method --- //
 
 		_makeGridParams: function(params) {
-			return $.extend(true, COMMON_DEFAULT_INIT_PARAMS, {
+			return $.extend(true, {}, COMMON_DEFAULT_INIT_PARAMS, {
 				headerRows: 0,
 				defaultRowHeight: 100
 			}, params);
