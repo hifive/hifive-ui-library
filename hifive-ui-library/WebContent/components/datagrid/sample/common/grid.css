@@ -1,0 +1,105 @@
+/*  共通  */
+
+body{
+	padding: 10px;
+	background-color: white;
+}
+
+.grid-content{
+	overflow-y: hidden;
+	margin: 10px;
+}
+
+.grid-init-code{
+	min-width : 910px;
+}
+
+#grid {
+	margin: 0 auto;
+}
+
+#grid .table {
+	margin-bottom: 0;
+}
+
+#grid td {
+	border: solid 1px #888;
+}
+
+#grid td.grid-selected {
+	background-color: #1E90FF;
+	color: white;
+}
+
+#grid td input[type="checkbox"] {
+	vertical-align: middle;
+}
+
+#grid div.grid-cell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+/* 氏名、電話番号、メールアドレス */
+#grid div.grid-main-box td[data-h5-dyn-grid-property-name="name"] div.grid-cell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+#grid div.grid-main-box td[data-h5-dyn-grid-property-name="mail"] div.grid-cell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+#grid div.grid-main-box td[data-h5-dyn-grid-property-name="tel"] div.grid-cell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+#grid .grid-main-box td[data-grid-property-name="tryoType"] div.grid-cell {
+	margin-left: 5px;
+	text-align: right;
+	padding-right: 5px;
+}
+
+#grid .grid-main-box td[data-grid-property-name="kokyakuKozaNo"] div.grid-cell {
+	margin-left: 5px;
+	text-align: left;
+	padding-left: 10px;
+}
+
+#grid td.grid-header {
+	background-color: rgb(89, 87, 87);
+	border-bottom-style: double;
+	color : whitesmoke;
+}
+
+/*  page-grid  */
+#pager {
+	/*position: relative;*/
+	width: 850px;
+	margin: 0 auto;
+}
+
+#prevPage {
+	/*position: absolute;*/
+	top: 0;
+	left: 0;
+}
+
+#nextPage {
+	/*position: absolute;*/
+	top: 0;
+	right: 0;
+}
+
+#pager input[type="text"] {
+	width: 40px;
+}
+
+#pager a.disabled-link {
+	visibility: hidden;
+}
