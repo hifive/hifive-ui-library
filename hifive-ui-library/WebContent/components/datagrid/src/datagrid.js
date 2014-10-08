@@ -3637,6 +3637,7 @@
 
 			if (propertyName == null) {
 
+				this._gridLayoutController.beginLoad();
 				this._dataSource.changeSearchOptions({});
 
 			} else {
@@ -3655,6 +3656,9 @@
 					this.throwError(msg, propertyName);
 				}
 
+
+				this._gridLayoutController.beginLoad();
+
 				var order = isDesc ? 'desc' : 'asc';
 				this._dataSource.changeSearchOptions({
 					sort: [{
@@ -3663,8 +3667,6 @@
 					}]
 				});
 			}
-
-			this._gridLayoutController.beginLoad();
 		},
 
 		/**
@@ -4258,6 +4260,7 @@
 
 			if (propertyName == null) {
 
+				this._gridLayoutController.beginLoad();
 				this._dataSource.changeSearchOptions({});
 
 			} else {
@@ -4276,6 +4279,8 @@
 					this.throwError(msg, propertyName);
 				}
 
+				this._gridLayoutController.beginLoad();
+
 				var order = isDesc ? 'desc' : 'asc';
 				this._dataSource.changeSearchOptions({
 					sort: [{
@@ -4284,8 +4289,6 @@
 					}]
 				});
 			}
-
-			this._gridLayoutController.beginLoad();
 		},
 
 		/**
