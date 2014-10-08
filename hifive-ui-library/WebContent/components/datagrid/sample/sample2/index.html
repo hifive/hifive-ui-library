@@ -1,35 +1,52 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>PagingGrid のサンプル</title>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ページンググリッド</title>
 
-		<link rel="stylesheet" type="text/css" href="./sample2.css">
+<!-- CSS ---------->
+<link href="http://www.htmlhifive.com/ja/res/lib/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
+<link href="http://www.htmlhifive.com/ja/archives/current/h5.css" rel="stylesheet" >
+<link href="../common/grid.css" rel="stylesheet">
 
-		<script type="text/javascript" src="../../../../res/lib/jquery/jquery-1.9.1.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/ejs-h5mod.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/h5.dev.js"></script>
+<!-- JS ---------->
+<!--[if lt IE 9]>
+<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-1.js"></script>
+<![endif]-->
+<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-2.js"></script>
 
-		<script type="text/javascript" src="../../../virtualScroll/src/data-source.js"></script>
-		<script type="text/javascript" src="../../../virtualScroll/src/virtual-scroll.js"></script>
-		<script type="text/javascript" src="../../src/datagrid.js"></script>
+<script src="http://www.htmlhifive.com/ja/res/lib/bootstrap3/js/bootstrap.min.js"></script>
+<script src="http://www.htmlhifive.com/ja/archives/current/ejs-h5mod.js"></script>
+<script src="http://www.htmlhifive.com/ja/archives/current/h5.dev.js"></script>
 
-		<script type="text/javascript" src="./sample2.js"></script>
-	</head>
-	<body>
-		<h2>PagingGrid のサンプル</h2>
-		<div id="grid"></div>
-		<div id="pager">
-			<a href="#" id="prevPage">前の 20件</a>
-			<div id="pageInfo">
-				<input id="currentPage" type="text"> / <span id="totalPages">xx</span>ページ
+<!-- grid必要ライブラリ -->
+<script src="../../../virtualScroll/src/data-source.js"></script>
+<script src="../../../virtualScroll/src/virtual-scroll.js"></script>
+<script src="../../src/datagrid.js"></script>
+
+<script src="../common/fake-server.js"></script>
+<script src="paging-grid-controller.js"></script>
+</head>
+
+<body>
+	<div class="container" style="width:860px;">
+		<div class="row">
+			<div id="grid-content" class="col">
+				<a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span id="selectedDataIds"></span>
+				<div id="grid"></div>
 			</div>
-			<a href="#" id="nextPage">次の 20件</a>
+			<div id="pager" class="row">
+				<div class="col form-inline text-center">
+					<img id="firstPage" src="img/first.png">&nbsp;
+					<img id="prevPage" src="img/prev.png">
+					&nbsp;<input id="currentPage" type="text"> / <span id="totalPages">xx</span>ページ&nbsp;
+					<img id="nextPage" src="img/next.png">&nbsp;
+					<img id="lastPage" src="img/last.png">
+				</div>
+			</div>
 		</div>
-		<br>
-		<div style="text-align: center;">
-			<input id="unselectAll" type="button" value="選択の全解除">
-			選択中のデータ: <span id="selectedDataIds"></span>
-		</div>
-	</body>
+	</div>
+</body>
 </html>

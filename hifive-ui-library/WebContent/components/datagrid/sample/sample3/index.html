@@ -1,28 +1,43 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>ScrollGrid のサンプル</title>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スクロールグリッド</title>
 
-		<link rel="stylesheet" type="text/css" href="./sample3.css">
+<!-- CSS ---------->
+<link href="http://www.htmlhifive.com/ja/res/lib/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
+<link href="http://www.htmlhifive.com/ja/archives/current/h5.css" rel="stylesheet" >
+<link href="../common/grid.css" rel="stylesheet">
 
-		<script type="text/javascript" src="../../../../res/lib/jquery/jquery-1.9.1.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/ejs-h5mod.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/h5.dev.js"></script>
+<!-- JS ---------->
+<!--[if lt IE 9]>
+<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-1.js"></script>
+<![endif]-->
+<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-2.js"></script>
 
-		<script type="text/javascript" src="../../../virtualScroll/src/data-source.js"></script>
-		<script type="text/javascript" src="../../../virtualScroll/src/virtual-scroll.js"></script>
-		<script type="text/javascript" src="../../src/datagrid.js"></script>
+<script src="http://www.htmlhifive.com/ja/res/lib/bootstrap3/js/bootstrap.min.js"></script>
+<script src="http://www.htmlhifive.com/ja/archives/current/ejs-h5mod.js"></script>
+<script src="http://www.htmlhifive.com/ja/archives/current/h5.dev.js"></script>
 
-		<script type="text/javascript" src="./sample3.js"></script>
-	</head>
-	<body>
-		<h2>ScrollGrid のサンプル</h2>
-		<div id="grid"></div>
-		<br>
-		<div style="text-align: center;">
-			<input id="unselectAll" type="button" value="選択の全解除">
-			選択中のデータ: <span id="selectedDataIds"></span>
+<!-- grid必要ライブラリ -->
+<script src="../../../virtualScroll/src/data-source.js"></script>
+<script src="../../../virtualScroll/src/virtual-scroll.js"></script>
+<script src="../../src/datagrid.js"></script>
+
+<script src="../common/fake-server.js"></script>
+<script src="scroll-grid-controller.js"></script>
+</head>
+
+<body>
+	<div class="container" style="width:817px;">
+		<div class="row">
+			<div class="col">
+				<p><a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span id="selectedDataIds"></span></p>
+				<div id="grid"></div>
+			</div>
 		</div>
-	</body>
+	</div>
+</body>
 </html>
