@@ -43,7 +43,7 @@
 		_gridController: h5.ui.components.datagrid.PagingGridController,
 
 		_gridLogic: bert.fw.grid.sample.GridLogic,
-		
+
 		// --- プライベートなメソッド --- //
 
 		_updateSelectDataIds: function() {
@@ -86,7 +86,8 @@
 							html += '>';
 							return html;
 						},
-						sortable: false
+						sortable: false,
+						markable: false
 					}, {
 						propertyName: 'id',
 						header: '社員ID',
@@ -129,11 +130,11 @@
 		},
 
 		'#grid renderGrid' :function(){
-			
+
 			//bootstrapのtableストライプ
 			this.$find('.grid-header-columns table').addClass('table table-striped');
 			this.$find('.grid-main-box table').addClass('table table-striped');
-			
+
 			var selectedDataIds = this._gridController.getSelectedDataIds();
 			if(selectedDataIds.length > 0){
 				//選択データがある場合はチェックON状態にする
@@ -177,15 +178,15 @@
 
 		'#nextPage click': function(context, $el) {
 			context.event.preventDefault();
-			
+
 			var currentPage = this._gridController.getCurrentPage();
 			var totalPage = this._gridController.getTotalPages();
 			if((currentPage + 1)<= totalPage){
 				this._gridController.movePage(currentPage + 1);
 			}
-			
+
 		},
-		
+
 		'#lastPage click': function(context, $el) {
 			context.event.preventDefault();
 
@@ -199,7 +200,7 @@
 			var currentPage = this._gridController.getCurrentPage();
 			this._gridController.movePage(currentPage - 1);
 		},
-		
+
 		'#firstPage click': function(context, $el) {
 			context.event.preventDefault();
 			this._gridController.movePage(1);
@@ -237,7 +238,7 @@
 			this.$find('#totalPages').text(totalPages);
 			this.$find('#currentPage').val(currentPage);
 		},
-		
+
 		'#showSelectedDataIds click' : function(context, $el){
 			var selectedDataIds = this._gridController.getSelectedDataIds();
 			alert(selectedDataIds.length +'件選択しています\n'+selectedDataIds);

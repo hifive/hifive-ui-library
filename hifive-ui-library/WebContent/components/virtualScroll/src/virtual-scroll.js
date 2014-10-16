@@ -43,12 +43,14 @@
 			top: -100
 		}).appendTo($body);
 
-		$('<div></div>').css({
-			height: FIRST_WIDTH + 1,
-			width: 1
+		var $inner = $('<div></div>');
+		$inner.css({
+			height: FIRST_WIDTH + 10,
+			width: FIRST_WIDTH,
+			overflow: 'scroll'
 		}).appendTo($outer);
 
-		var extWidth = $outer[0].clientWidth;
+		var extWidth = $inner[0].clientWidth;
 		scrollBarWidth = FIRST_WIDTH - extWidth;
 
 		$outer.remove();

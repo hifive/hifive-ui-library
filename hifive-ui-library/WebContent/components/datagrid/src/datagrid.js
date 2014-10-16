@@ -261,7 +261,14 @@
 		this._heightMap = {};
 		this._widthMap = {};
 		this._sortable = {};
+		this._markable = {};
 		this._modified = {};
+		this._markedRange = {
+			rowStart: 0,
+			rowEnd: 0,
+			columnStart: 0,
+			columnEnd: 0
+		};
 
 		for (var i = 0, len = params.columns.length; i < len; i++) {
 			this._columns.push({
@@ -280,6 +287,7 @@
 					that._columnsHeader[key] = option.header;
 				}
 				that._sortable[key] = !!option.sortable;
+				that._markable[key] = !!option.markable;
 			});
 		}
 
@@ -310,6 +318,8 @@
 
 		_sortable: null,
 
+		_markable: null,
+
 		_defaultRowHeight: null,
 
 		_defaultColumnWidth: null,
@@ -317,6 +327,8 @@
 		_columnsHeader: null,
 
 		_modified: null,
+
+		_markedRange: null,
 
 
 
@@ -423,6 +435,8 @@
 					isSortableColumn: isSortableColumn,
 					sortOrder: sortOrder,
 
+					isMarkableCell: false,
+
 					rowData: null,
 					value: header
 				};
@@ -443,6 +457,8 @@
 			var i = 0;
 			var rowId = rowStart;
 			var len = dataArray.length;
+
+			var markedRange = this._markedRange;
 
 			if (this._columnsHeader != null) {
 				if (rowStart === 0 && 0 < rowEnd) {
@@ -466,6 +482,8 @@
 				if (this._heightMap.hasOwnProperty(heightKey)) {
 					height = this._heightMap[heightKey];
 				}
+
+				var isMarkedRow = markedRange.rowStart <= rowId && rowId < markedRange.rowEnd;
 
 				rangeHeight += height;
 
@@ -491,6 +509,13 @@
 					var propertyName = this._columns[j].key;
 					var isSortableColumn = this._sortable[propertyName];
 
+					var isMarkableCell = this._markable[propertyName];
+
+					var marked = false;
+					if (isMarkedRow && markedRange.columnStart <= columnId && columnId < markedRange.columnEnd) {
+						marked = true;
+					}
+
 					var modified = false;
 					var value = this._cellToValue(rowId, columnId, data);
 
@@ -511,12 +536,14 @@
 						widthKey: widthKey,
 
 						selected: selected,
+						marked: marked,
 						height: height,
 						width: width,
 
 						isModified: modified,
 						isHeaderRow: false,
 						isSortableColumn: isSortableColumn,
+						isMarkableCell: isMarkableCell,
 
 						value: value,
 						rowData: data
@@ -737,6 +764,41 @@
 			this.dispatchEvent({
 				type: 'changeData'
 			});
+		},
+
+		markRange: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var _rowStart = rowStart;
+			var _rowEnd = rowEnd;
+			var _columnStart = columnStart;
+			var _columnEnd = columnEnd;
+
+			if (this.getTotalRows() < _rowEnd) {
+				_rowEnd = this.getTotalRows();
+			}
+			if (this.getTotalColumns() < _columnEnd) {
+				_columnEnd = this.getTotalColumns();
+			}
+			if (_rowEnd < _rowStart) {
+				_rowStart = _rowEnd;
+			}
+			if (_columnEnd < _columnStart) {
+				_columnStart = _columnEnd;
+			}
+
+			this._markedRange = {
+				rowStart: _rowStart,
+				rowEnd: _rowEnd,
+				columnStart: _columnStart,
+				columnEnd: _columnEnd
+			};
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getMarkedRange: function() {
+			return $.extend({}, this._markedRange);
 		}
 
 	});
@@ -797,6 +859,7 @@
 					that._rowsHeader[key] = option.header;
 				}
 				that._sortable[key] = !!option.sortable;
+				taht._markable[key] = !!option.markable;
 			});
 		}
 
@@ -1277,6 +1340,7 @@
 	var HEADER_ROWS_CLASS = 'grid-header-rows';
 	var HEADER_COLUMNS_CLASS = 'grid-header-columns';
 	var MAIN_BOX_CLASS = 'grid-main-box';
+	var COPY_TARGET_CLASS = 'grid-copy-target';
 
 	var RENDER_WAIT_TIME = 100;
 	var KEYDOWN_WAIT_TIME = 100;
@@ -1321,6 +1385,9 @@
 					if (cell.selected) {
 						html += 'grid-selected ';
 					}
+					if (cell.marked) {
+						html += 'grid-marked ';
+					}
 					if (cell.isHeaderRow) {
 						html += 'grid-header ';
 					}
@@ -1337,6 +1404,7 @@
 					html += 'data-h5-dyn-grid-width-key="' + cell.widthKey + '" ';
 					html += 'data-h5-dyn-grid-is-header-row="' + cell.isHeaderRow + '" ';
 					html += 'data-h5-dyn-grid-is-sortable-column="' + cell.isSortableColumn + '" ';
+					html += 'data-h5-dyn-grid-is-markable-cell="' + cell.isMarkableCell + '" ';
 					html += 'data-h5-dyn-grid-is-modified-cell="' + cell.isModified + '" ';
 					html += 'data-h5-dyn-grid-sort-order="' + cell.sortOrder + '" ';
 
@@ -1418,26 +1486,54 @@
 		_setRendererDeferred: null,
 
 
-		_isHover: false,
-
 		_renderPromise: null,
 
 		_renderWaitTimerId: null,
 
 		_ignoreKeydown: false,
 
-		_nextKeydown: null,
-
 
 		// --- Private Method --- //
 
-		_preventDefaultKeydownEvent: function(keycode, event) {
+		_getCopyText: function() {
+			var range = this._converter.getMarkedRange();
+			var copyData = this._converter.sliceCachedData2D(range.rowStart, range.rowEnd, range.columnStart, range.columnEnd);
+
+			var copyText = $.map(copyData.cells, function(row) {
+				return $.map(row, function(cell) {
+					if (cell.value == null) {
+						return '';
+					}
+					return String(cell.value);
+				}).join('\t');
+			}).join('\n');
+			return copyText;
+		},
+
+		_preventDefaultKeydownEvent: function(event) {
+			var keycode = event.which;
 			if (37 <= keycode && keycode <= 40) {
 				event.preventDefault();
 			}
 		},
 
-		_triggerKeydownEvent: function(keycode) {
+		_triggerKeydownEvent: function(event) {
+			var keycode = event.which;
+			var isCtrl = false;
+			if (event.ctrlKey) {
+				isCtrl = true;
+			}
+
+			if (isCtrl && keycode === 67) {
+				var $textArea = this.$find('.' + COPY_TARGET_CLASS).find('textarea');
+				$textArea.val(this._getCopyText());
+				$textArea.select();
+				setTimeout(function() {
+					$textArea.select();
+				}, 0);
+				return;
+			}
+
 			if (keycode === 37) { // arrow-left
 
 				this.trigger('h5scroll', {
@@ -1675,6 +1771,7 @@
 				columnStart: columnStart,
 				columnEnd: columnEnd
 			});
+			$(this.rootElement).focus();
 		},
 
 		_renderHeader: function(rowStart, rowEnd, columnStart, columnEnd) {
@@ -1978,9 +2075,13 @@
 				rootPosition = 'relative';
 			}
 
+			if ($root.attr('tabindex') == null) {
+				$root.attr('tabindex', -1);
+			}
 			$root.css({
 				position: rootPosition,
-				overflow: 'hidden'
+				overflow: 'hidden',
+				outline: 'none'
 			});
 
 
@@ -2039,6 +2140,20 @@
 			}).appendTo(this.rootElement);
 			this._horizontalBarController = h5.core.controller($horizontalBar,
 					h5.ui.components.virtualScroll.HorizontalScrollBarController);
+
+			var offset = $root.offset();
+			var $copyTarget = $('<div></div>').addClass(COPY_TARGET_CLASS).css({
+				position: 'fixed',
+				top: -offset.top - 1000,
+				left: -offset.left - 1000
+			}).appendTo($root);
+
+			var $copyTextArea = $('<textarea></textarea>').css({
+				width: '1px',
+				height: '1px',
+				overflow: 'hidden',
+				opacity: 0
+			}).appendTo($copyTarget);
 
 
 			this._refreshBoxPosition();
@@ -2110,32 +2225,16 @@
 			});
 		},
 
-		'{rootElement} mouseenter': function() {
-			this._isHover = true;
-		},
-
-		'{rootElement} mouseleave': function() {
-			this._isHover = false;
-		},
-
-		'{document} keydown': function(context) {
-
-			// IE8 では is(':hover') できないので mouseenter/mouseleave でフラグをセット
-			if (!this._isHover) {
-				return;
-			}
-
+		'{rootElement} keydown': function(context) {
 			var event = context.event;
-			var keycode = event.which;
 
-			this._preventDefaultKeydownEvent(keycode, context.event);
+			this._preventDefaultKeydownEvent(event);
 
 			if (this._ignoreKeydown) {
-				this._nextKeydown = keycode;
 				return;
 			}
 
-			this._triggerKeydownEvent(keycode);
+			this._triggerKeydownEvent(event);
 
 			var that = this;
 
@@ -2144,6 +2243,19 @@
 				that._ignoreKeydown = false;
 
 			}, KEYDOWN_WAIT_TIME);
+		},
+
+		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackstart': function(context, $el) {
+			var rowId = $el.data('h5DynGridRowId');
+			var columnId = $el.data('h5DynGridColumnId');
+
+			this._converter.markRange(rowId, rowId + 1, columnId, columnId + 1);
+		},
+
+		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackmove': function(context, $el) {
+		},
+
+		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackend': function(context, $el) {
 		},
 
 
@@ -3334,6 +3446,12 @@
 				this._sortable[column.propertyName] = sortable;
 				option.sortable = sortable;
 
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
+
 				columnsOption[column.propertyName] = option;
 
 				// width 計算
@@ -4001,6 +4119,12 @@
 				var sortable = !!column.sortable;
 				this._sortable[column.propertyName] = sortable;
 				option.sortable = sortable;
+
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
 
 				columnsOption[column.propertyName] = option;
 
