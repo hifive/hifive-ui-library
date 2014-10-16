@@ -156,7 +156,7 @@
 			address += 'abcdefghijklmnopqrstuvwxyz'.charAt(Math.random() * 25);
 		}
 		address += random(10);
-		address += '@nssol.co.jp';
+		address += '@dummy.htmlhifive.com';
 		return address;
 	}
 

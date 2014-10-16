@@ -120,7 +120,7 @@
 					{
 						propertyName: 'mail',
 						header: 'メールアドレス',
-						width: 200,
+						width: 250,
 						sortable: true
 					}
 					]
