@@ -843,7 +843,15 @@
 		this._heightMap = {};
 		this._widthMap = {};
 		this._sortable = {};
+		this._markable = {};
 		this._modified = {};
+
+		this._markedRange = {
+			rowStart: 0,
+			rowEnd: 0,
+			columnStart: 0,
+			columnEnd: 0
+		};
 
 		for (var i = 0, len = params.rows.length; i < len; i++) {
 			this._rows.push({
@@ -862,7 +870,7 @@
 					that._rowsHeader[key] = option.header;
 				}
 				that._sortable[key] = !!option.sortable;
-				taht._markable[key] = !!option.markable;
+				that._markable[key] = !!option.markable;
 			});
 		}
 
@@ -893,6 +901,8 @@
 
 		_sortable: null,
 
+		_markable: null,
+
 		_defaultRowHeight: null,
 
 		_defaultColumnWidth: null,
@@ -900,6 +910,8 @@
 		_rowsHeader: null,
 
 		_modified: null,
+
+		_markedRange: null,
 
 
 
@@ -964,6 +976,9 @@
 				});
 			}
 
+			var markedRange = this._markedRange;
+			var isMarkedColumn = markedRange.columnStart <= 0 && 0 < markedRange.columnEnd;
+
 			var column = [];
 			for (var i = rowStart; i < rowEnd; i += 1) {
 				var key = this._rows[i].key;
@@ -987,6 +1002,11 @@
 					sortOrder = sorts[key];
 				}
 
+				var marked = false;
+				if (isMarkedColumn && markedRange.rowStart <= rowId && rowId < markedRange.rowEnd) {
+					marked = true;
+				}
+
 				var cellData = {
 					dataId: null,
 					rowId: rowId,
@@ -1005,6 +1025,9 @@
 					isHeaderRow: true,
 					isSortableColumn: isSortableColumn,
 					sortOrder: sortOrder,
+
+					isMarkableCell: false,
+					marked: marked,
 
 					columnData: null,
 					value: header
@@ -1057,6 +1080,9 @@
 
 				rangeWidth += width;
 
+				var markedRange = this._markedRange;
+				var isMarkedColumn = markedRange.columnStart <= columnId && columnId < markedRange.columnEnd;
+
 				for (var j = rowStart; j < rowEnd; j += 1) {
 					var rowId = j;
 
@@ -1076,6 +1102,13 @@
 
 					var propertyName = this._rows[j].key;
 					var isSortableColumn = this._sortable[propertyName];
+
+					var isMarkableCell = this._markable[propertyName];
+
+					var marked = false;
+					if (isMarkedColumn && markedRange.rowStart <= rowId && rowId < markedRange.rowEnd) {
+						marked = true;
+					}
 
 					var modified = false;
 					var value = this._cellToValue(rowId, columnId, data);
@@ -1097,12 +1130,14 @@
 						widthKey: widthKey,
 
 						selected: selected,
+						marked: marked,
 						height: height,
 						width: width,
 
 						isModified: modified,
 						isHeaderRow: false,
 						isSortableColumn: isSortableColumn,
+						isMarkableCell: isMarkableCell,
 
 						value: value,
 						rowData: data
@@ -1309,6 +1344,41 @@
 			this.dispatchEvent({
 				type: 'changeData'
 			});
+		},
+
+		markRange: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var _rowStart = rowStart;
+			var _rowEnd = rowEnd;
+			var _columnStart = columnStart;
+			var _columnEnd = columnEnd;
+
+			if (this.getTotalRows() < _rowEnd) {
+				_rowEnd = this.getTotalRows();
+			}
+			if (this.getTotalColumns() < _columnEnd) {
+				_columnEnd = this.getTotalColumns();
+			}
+			if (_rowEnd < _rowStart) {
+				_rowStart = _rowEnd;
+			}
+			if (_columnEnd < _columnStart) {
+				_columnStart = _columnEnd;
+			}
+
+			this._markedRange = {
+				rowStart: _rowStart,
+				rowEnd: _rowEnd,
+				columnStart: _columnStart,
+				columnEnd: _columnEnd
+			};
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getMarkedRange: function() {
+			return $.extend({}, this._markedRange);
 		}
 
 	});
@@ -1768,6 +1838,7 @@
 		_endRender: function(rowStart, rowEnd, columnStart, columnEnd) {
 			this._mainBoxController.endLoad();
 			this._headerColumnsController.endLoad();
+			this._headerRowsController.endLoad();
 			this.trigger('renderGrid', {
 				rowStart: rowStart,
 				rowEnd: rowEnd,
@@ -1908,7 +1979,11 @@
 			}
 
 			this._mainBoxController.beginLoad();
-			this._headerColumnsController.beginLoad();
+			if (this._converter.getColumns != null) {
+				this._headerColumnsController.beginLoad();
+			} else {
+				this._headerRowsController.beginLoad();
+			}
 			this.trigger('loadDataBegin');
 
 			this._renderWaitTimerId = setTimeout(function() {
@@ -2120,6 +2195,10 @@
 				if (headerColumnsLoadingDiv != null) {
 					$(headerColumnsLoadingDiv).text('');
 				}
+				var headerRowsLoadingDiv = this._headerRowsController.getLoadingDiv();
+				if (headerRowsLoadingDiv != null) {
+					$(headerRowsLoadingDiv).text('');
+				}
 			}));
 
 
@@ -2248,7 +2327,7 @@
 			}, KEYDOWN_WAIT_TIME);
 		},
 
-		'td mousedown': function(context, $el) {
+		'td h5trackstart': function(context, $el) {
 			if (!$el.data('h5DynGridIsMarkableCell')) {
 				return;
 			}
