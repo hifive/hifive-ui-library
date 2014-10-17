@@ -2148,7 +2148,7 @@
 				left: -offset.left - 1000
 			}).appendTo($root);
 
-			var $copyTextArea = $('<textarea></textarea>').css({
+			$('<textarea></textarea>').css({
 				width: '1px',
 				height: '1px',
 				overflow: 'hidden',
@@ -2245,18 +2245,18 @@
 			}, KEYDOWN_WAIT_TIME);
 		},
 
-		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackstart': function(context, $el) {
+		'td mousedown': function(context, $el) {
+			if (!$el.data('h5DynGridIsMarkableCell')) {
+				return;
+			}
 			var rowId = $el.data('h5DynGridRowId');
 			var columnId = $el.data('h5DynGridColumnId');
 
 			this._converter.markRange(rowId, rowId + 1, columnId, columnId + 1);
 		},
 
-		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackmove': function(context, $el) {
-		},
+		// TODO 範囲選択実装
 
-		'td[data-h5-dyn-grid-is-markable-cell="true"] h5trackend': function(context, $el) {
-		},
 
 
 		// --- Public Method --- //
@@ -2482,7 +2482,7 @@
 			}).show();
 		},
 
-		'{rootElement} h5trackmove': function(context) {
+		'.resizable-bar h5trackmove': function(context) {
 			var $resizeMarker = $(this.rootElement).children('.' + RESIZE_MARKER_CLASS);
 
 			var pageX = context.event.pageX;
@@ -2502,7 +2502,7 @@
 			});
 		},
 
-		'{rootElement} h5trackend': function(context) {
+		'.resizable-bar h5trackend': function(context) {
 			var $resizeMarker = $(this.rootElement).children('.' + RESIZE_MARKER_CLASS);
 			$resizeMarker.hide();
 
@@ -2693,14 +2693,23 @@
 	var wrapScrollFormatter = function(formatterFunction) {
 		return function(cellData) {
 			var scrollBarWidth = h5.ui.components.virtualScroll.getScrollBarWidth();
+			var requireScrollInner = h5.ui.components.virtualScroll.isRequireOverflowScrollInner();
+
 			var scrollHeight = cellData.height + scrollBarWidth;
 			var scrollWidth = cellData.width + scrollBarWidth;
 
-			var html = '<div style="overflow: scroll;';
+			var html = '<div style="';
+			if (!requireScrollInner) {
+				html += ' overflow: scroll;';
+			}
 			html += ' width: ' + scrollWidth + 'px;';
 			html += ' height: ' + scrollHeight + 'px;';
 			html += '">';
-			html += '<div class="grid-cell">';
+			html += '<div class="grid-cell" style="';
+			if (requireScrollInner) {
+				html += ' overflow: scroll;';
+			}
+			html += '">';
 			html += formatterFunction(cellData);
 			html += '</div>';
 			html += '</div>';
@@ -3884,6 +3893,7 @@
 				enableMultiRowSelect: true,
 				headerColumns: 0,
 				gridWidth: 'auto',
+				gridHeight: 'auto',
 
 				enableChangeColumnWidthUI: true,
 				minColumnWidth: 20,
@@ -3971,25 +3981,23 @@
 			}
 
 			// gridHeight のチェック
-			if (params.gridHeight == null) {
-				msg = 'gridHeight は必ず指定してください';
-				this.throwError(msgHeader + msg);
-			}
-			if (typeof params.gridHeight !== 'number') {
-				msg = 'gridHeight は  number 型である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
-			}
-			if (params.gridHeight !== Math.floor(params.gridHeight)) {
-				msg = 'gridHeight は整数である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
-			}
-			if (params.gridHeight <= 0) {
-				msg = 'gridHeight は正の数である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
+			if (params.gridHeight !== 'auto' && params.gridHeight !== 'css') {
+				if (typeof params.gridHeight !== 'number') {
+					msg = 'gridHeight は  number 型である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
+				if (params.gridHeight !== Math.floor(params.gridHeight)) {
+					msg = 'gridHeight は整数である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
+				if (params.gridHeight <= 0) {
+					msg = 'gridHeight は正の数である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
 			}
 
 			// gridWidth のチェック
-			if (params.gridWidth !== 'auto') {
+			if (params.gridWidth !== 'auto' && params.gridWidth !== 'css') {
 				if (typeof params.gridWidth !== 'number') {
 					msg = 'gridWidth は \'auto\' または number 型である必要があります; gridWidth = {0}';
 					this.throwError(msgHeader + msg, params.gridWidth);
@@ -4188,8 +4196,12 @@
 			}).then(function() {
 
 				var $root = $(that.rootElement);
-				$root.css('height', gridHeight);
-				$root.css('width', gridWidth);
+				if (params.gridHeight !== 'css') {
+					$root.css('height', gridHeight);
+				}
+				if (params.gridWidth !== 'css') {
+					$root.css('width', gridWidth);
+				}
 
 				var promise = that._gridLayoutController.init({
 					defaultFormatter: defaultFormatter,
@@ -4361,7 +4373,7 @@
 				this.throwError('dataId を指定してください');
 			}
 
-			return this._converter.isSelectedData(dataId);
+			return this._converter.isSelected(dataId);
 		},
 
 		/**
