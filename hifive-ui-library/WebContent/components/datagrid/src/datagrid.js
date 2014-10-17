@@ -274,6 +274,9 @@
 			this._columns.push({
 				key: params.columns[i]
 			});
+			if (params.columnsOption == null) {
+				this._markable[params.columns[i]] = true;
+			}
 		}
 
 		var that = this;
@@ -2970,6 +2973,7 @@
 
 			var columns = [];
 			var formatters = {};
+			var options = {};
 			for (var i = 0, len = params.columns.length; i < len; i++) {
 				var column = params.columns[i];
 				columns.push(column.propertyName);
@@ -2978,6 +2982,16 @@
 					var formatter = h5.ui.components.datagrid.init.wrapScrollFormatter(column.formatter);
 					formatters[column.propertyName] = formatter;
 				}
+
+				var option = {};
+
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
+
+				options[column.propertyName] = option;
 			}
 
 			this._converter = h5.ui.components.datagrid.createGridDataConverter({
