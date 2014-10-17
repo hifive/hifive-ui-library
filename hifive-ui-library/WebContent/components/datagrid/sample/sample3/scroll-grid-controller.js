@@ -86,7 +86,8 @@
 							html += '>';
 							return html;
 						},
-						sortable: false
+						sortable: false,
+						markable: false
 					}, {
 						propertyName: 'id',
 						header: '社員ID',

@@ -30,6 +30,7 @@
 
 	// ネイティブなスクロールバーの幅を計算
 	var scrollBarWidth = 17;
+	var requireOverflowScrollInner = false;
 	$(function() {
 		var $body = $('body');
 
@@ -43,12 +44,18 @@
 			top: -100
 		}).appendTo($body);
 
-		$('<div></div>').css({
-			height: FIRST_WIDTH + 1,
-			width: 1
+		if ($outer[0].clientWidth === FIRST_WIDTH) {
+			requireOverflowScrollInner = true;
+		}
+
+		var $inner = $('<div></div>');
+		$inner.css({
+			height: FIRST_WIDTH + 10,
+			width: FIRST_WIDTH,
+			overflow: 'scroll'
 		}).appendTo($outer);
 
-		var extWidth = $outer[0].clientWidth;
+		var extWidth = $inner[0].clientWidth;
 		scrollBarWidth = FIRST_WIDTH - extWidth;
 
 		$outer.remove();
@@ -444,6 +451,10 @@
 	h5.u.obj.expose('h5.ui.components.virtualScroll', {
 		getScrollBarWidth: function() {
 			return scrollBarWidth;
+		},
+
+		isRequireOverflowScrollInner: function() {
+			return requireOverflowScrollInner;
 		}
 	});
 

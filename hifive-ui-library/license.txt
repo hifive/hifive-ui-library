@@ -76,6 +76,7 @@ Files:
 WebContent/components/drawing/res/img/stamp/check.png
 WebContent/components/drawing/res/img/stamp/close.png
 WebContent/components/drawing/res/img/stamp/home.png
+WebContent/components/drawing/res/img/toolicon/delete.png
 WebContent/components/drawing/res/img/toolicon/export.png
 WebContent/components/drawing/res/img/toolicon/pen.png
 WebContent/components/drawing/res/img/toolicon/redo.png
@@ -84,6 +85,7 @@ WebContent/components/drawing/res/img/toolicon/save.png
 WebContent/components/drawing/res/img/toolicon/select.png
 WebContent/components/drawing/res/img/toolicon/stamp.png
 WebContent/components/drawing/res/img/toolicon/undo.png
+WebContent/components/drawing/res/img/toolicon/up.png
 
 Typeicons by Stephen Hutchings
 URL: http://typicons.com/

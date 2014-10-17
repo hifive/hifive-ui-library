@@ -31,6 +31,10 @@ body{
 	color: white;
 }
 
+#grid td.grid-marked {
+	background-color: #B2E0FF;
+}
+
 #grid td input[type="checkbox"] {
 	vertical-align: middle;
 }

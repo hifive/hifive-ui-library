@@ -261,12 +261,22 @@
 		this._heightMap = {};
 		this._widthMap = {};
 		this._sortable = {};
+		this._markable = {};
 		this._modified = {};
+		this._markedRange = {
+			rowStart: 0,
+			rowEnd: 0,
+			columnStart: 0,
+			columnEnd: 0
+		};
 
 		for (var i = 0, len = params.columns.length; i < len; i++) {
 			this._columns.push({
 				key: params.columns[i]
 			});
+			if (params.columnsOption == null) {
+				this._markable[params.columns[i]] = true;
+			}
 		}
 
 		var that = this;
@@ -280,6 +290,7 @@
 					that._columnsHeader[key] = option.header;
 				}
 				that._sortable[key] = !!option.sortable;
+				that._markable[key] = !!option.markable;
 			});
 		}
 
@@ -310,6 +321,8 @@
 
 		_sortable: null,
 
+		_markable: null,
+
 		_defaultRowHeight: null,
 
 		_defaultColumnWidth: null,
@@ -317,6 +330,8 @@
 		_columnsHeader: null,
 
 		_modified: null,
+
+		_markedRange: null,
 
 
 
@@ -423,6 +438,8 @@
 					isSortableColumn: isSortableColumn,
 					sortOrder: sortOrder,
 
+					isMarkableCell: false,
+
 					rowData: null,
 					value: header
 				};
@@ -443,6 +460,8 @@
 			var i = 0;
 			var rowId = rowStart;
 			var len = dataArray.length;
+
+			var markedRange = this._markedRange;
 
 			if (this._columnsHeader != null) {
 				if (rowStart === 0 && 0 < rowEnd) {
@@ -466,6 +485,8 @@
 				if (this._heightMap.hasOwnProperty(heightKey)) {
 					height = this._heightMap[heightKey];
 				}
+
+				var isMarkedRow = markedRange.rowStart <= rowId && rowId < markedRange.rowEnd;
 
 				rangeHeight += height;
 
@@ -491,6 +512,13 @@
 					var propertyName = this._columns[j].key;
 					var isSortableColumn = this._sortable[propertyName];
 
+					var isMarkableCell = this._markable[propertyName];
+
+					var marked = false;
+					if (isMarkedRow && markedRange.columnStart <= columnId && columnId < markedRange.columnEnd) {
+						marked = true;
+					}
+
 					var modified = false;
 					var value = this._cellToValue(rowId, columnId, data);
 
@@ -511,12 +539,14 @@
 						widthKey: widthKey,
 
 						selected: selected,
+						marked: marked,
 						height: height,
 						width: width,
 
 						isModified: modified,
 						isHeaderRow: false,
 						isSortableColumn: isSortableColumn,
+						isMarkableCell: isMarkableCell,
 
 						value: value,
 						rowData: data
@@ -737,6 +767,41 @@
 			this.dispatchEvent({
 				type: 'changeData'
 			});
+		},
+
+		markRange: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var _rowStart = rowStart;
+			var _rowEnd = rowEnd;
+			var _columnStart = columnStart;
+			var _columnEnd = columnEnd;
+
+			if (this.getTotalRows() < _rowEnd) {
+				_rowEnd = this.getTotalRows();
+			}
+			if (this.getTotalColumns() < _columnEnd) {
+				_columnEnd = this.getTotalColumns();
+			}
+			if (_rowEnd < _rowStart) {
+				_rowStart = _rowEnd;
+			}
+			if (_columnEnd < _columnStart) {
+				_columnStart = _columnEnd;
+			}
+
+			this._markedRange = {
+				rowStart: _rowStart,
+				rowEnd: _rowEnd,
+				columnStart: _columnStart,
+				columnEnd: _columnEnd
+			};
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getMarkedRange: function() {
+			return $.extend({}, this._markedRange);
 		}
 
 	});
@@ -778,7 +843,15 @@
 		this._heightMap = {};
 		this._widthMap = {};
 		this._sortable = {};
+		this._markable = {};
 		this._modified = {};
+
+		this._markedRange = {
+			rowStart: 0,
+			rowEnd: 0,
+			columnStart: 0,
+			columnEnd: 0
+		};
 
 		for (var i = 0, len = params.rows.length; i < len; i++) {
 			this._rows.push({
@@ -797,6 +870,7 @@
 					that._rowsHeader[key] = option.header;
 				}
 				that._sortable[key] = !!option.sortable;
+				that._markable[key] = !!option.markable;
 			});
 		}
 
@@ -827,6 +901,8 @@
 
 		_sortable: null,
 
+		_markable: null,
+
 		_defaultRowHeight: null,
 
 		_defaultColumnWidth: null,
@@ -834,6 +910,8 @@
 		_rowsHeader: null,
 
 		_modified: null,
+
+		_markedRange: null,
 
 
 
@@ -898,6 +976,9 @@
 				});
 			}
 
+			var markedRange = this._markedRange;
+			var isMarkedColumn = markedRange.columnStart <= 0 && 0 < markedRange.columnEnd;
+
 			var column = [];
 			for (var i = rowStart; i < rowEnd; i += 1) {
 				var key = this._rows[i].key;
@@ -921,6 +1002,11 @@
 					sortOrder = sorts[key];
 				}
 
+				var marked = false;
+				if (isMarkedColumn && markedRange.rowStart <= rowId && rowId < markedRange.rowEnd) {
+					marked = true;
+				}
+
 				var cellData = {
 					dataId: null,
 					rowId: rowId,
@@ -939,6 +1025,9 @@
 					isHeaderRow: true,
 					isSortableColumn: isSortableColumn,
 					sortOrder: sortOrder,
+
+					isMarkableCell: false,
+					marked: marked,
 
 					columnData: null,
 					value: header
@@ -991,6 +1080,9 @@
 
 				rangeWidth += width;
 
+				var markedRange = this._markedRange;
+				var isMarkedColumn = markedRange.columnStart <= columnId && columnId < markedRange.columnEnd;
+
 				for (var j = rowStart; j < rowEnd; j += 1) {
 					var rowId = j;
 
@@ -1010,6 +1102,13 @@
 
 					var propertyName = this._rows[j].key;
 					var isSortableColumn = this._sortable[propertyName];
+
+					var isMarkableCell = this._markable[propertyName];
+
+					var marked = false;
+					if (isMarkedColumn && markedRange.rowStart <= rowId && rowId < markedRange.rowEnd) {
+						marked = true;
+					}
 
 					var modified = false;
 					var value = this._cellToValue(rowId, columnId, data);
@@ -1031,12 +1130,14 @@
 						widthKey: widthKey,
 
 						selected: selected,
+						marked: marked,
 						height: height,
 						width: width,
 
 						isModified: modified,
 						isHeaderRow: false,
 						isSortableColumn: isSortableColumn,
+						isMarkableCell: isMarkableCell,
 
 						value: value,
 						rowData: data
@@ -1243,6 +1344,41 @@
 			this.dispatchEvent({
 				type: 'changeData'
 			});
+		},
+
+		markRange: function(rowStart, rowEnd, columnStart, columnEnd) {
+			var _rowStart = rowStart;
+			var _rowEnd = rowEnd;
+			var _columnStart = columnStart;
+			var _columnEnd = columnEnd;
+
+			if (this.getTotalRows() < _rowEnd) {
+				_rowEnd = this.getTotalRows();
+			}
+			if (this.getTotalColumns() < _columnEnd) {
+				_columnEnd = this.getTotalColumns();
+			}
+			if (_rowEnd < _rowStart) {
+				_rowStart = _rowEnd;
+			}
+			if (_columnEnd < _columnStart) {
+				_columnStart = _columnEnd;
+			}
+
+			this._markedRange = {
+				rowStart: _rowStart,
+				rowEnd: _rowEnd,
+				columnStart: _columnStart,
+				columnEnd: _columnEnd
+			};
+
+			this.dispatchEvent({
+				type: 'changeData'
+			});
+		},
+
+		getMarkedRange: function() {
+			return $.extend({}, this._markedRange);
 		}
 
 	});
@@ -1277,6 +1413,7 @@
 	var HEADER_ROWS_CLASS = 'grid-header-rows';
 	var HEADER_COLUMNS_CLASS = 'grid-header-columns';
 	var MAIN_BOX_CLASS = 'grid-main-box';
+	var COPY_TARGET_CLASS = 'grid-copy-target';
 
 	var RENDER_WAIT_TIME = 100;
 	var KEYDOWN_WAIT_TIME = 100;
@@ -1321,6 +1458,9 @@
 					if (cell.selected) {
 						html += 'grid-selected ';
 					}
+					if (cell.marked) {
+						html += 'grid-marked ';
+					}
 					if (cell.isHeaderRow) {
 						html += 'grid-header ';
 					}
@@ -1337,6 +1477,7 @@
 					html += 'data-h5-dyn-grid-width-key="' + cell.widthKey + '" ';
 					html += 'data-h5-dyn-grid-is-header-row="' + cell.isHeaderRow + '" ';
 					html += 'data-h5-dyn-grid-is-sortable-column="' + cell.isSortableColumn + '" ';
+					html += 'data-h5-dyn-grid-is-markable-cell="' + cell.isMarkableCell + '" ';
 					html += 'data-h5-dyn-grid-is-modified-cell="' + cell.isModified + '" ';
 					html += 'data-h5-dyn-grid-sort-order="' + cell.sortOrder + '" ';
 
@@ -1418,26 +1559,54 @@
 		_setRendererDeferred: null,
 
 
-		_isHover: false,
-
 		_renderPromise: null,
 
 		_renderWaitTimerId: null,
 
 		_ignoreKeydown: false,
 
-		_nextKeydown: null,
-
 
 		// --- Private Method --- //
 
-		_preventDefaultKeydownEvent: function(keycode, event) {
+		_getCopyText: function() {
+			var range = this._converter.getMarkedRange();
+			var copyData = this._converter.sliceCachedData2D(range.rowStart, range.rowEnd, range.columnStart, range.columnEnd);
+
+			var copyText = $.map(copyData.cells, function(row) {
+				return $.map(row, function(cell) {
+					if (cell.value == null) {
+						return '';
+					}
+					return String(cell.value);
+				}).join('\t');
+			}).join('\n');
+			return copyText;
+		},
+
+		_preventDefaultKeydownEvent: function(event) {
+			var keycode = event.which;
 			if (37 <= keycode && keycode <= 40) {
 				event.preventDefault();
 			}
 		},
 
-		_triggerKeydownEvent: function(keycode) {
+		_triggerKeydownEvent: function(event) {
+			var keycode = event.which;
+			var isCtrl = false;
+			if (event.ctrlKey) {
+				isCtrl = true;
+			}
+
+			if (isCtrl && keycode === 67) {
+				var $textArea = this.$find('.' + COPY_TARGET_CLASS).find('textarea');
+				$textArea.val(this._getCopyText());
+				$textArea.select();
+				setTimeout(function() {
+					$textArea.select();
+				}, 0);
+				return;
+			}
+
 			if (keycode === 37) { // arrow-left
 
 				this.trigger('h5scroll', {
@@ -1669,12 +1838,14 @@
 		_endRender: function(rowStart, rowEnd, columnStart, columnEnd) {
 			this._mainBoxController.endLoad();
 			this._headerColumnsController.endLoad();
+			this._headerRowsController.endLoad();
 			this.trigger('renderGrid', {
 				rowStart: rowStart,
 				rowEnd: rowEnd,
 				columnStart: columnStart,
 				columnEnd: columnEnd
 			});
+			$(this.rootElement).focus();
 		},
 
 		_renderHeader: function(rowStart, rowEnd, columnStart, columnEnd) {
@@ -1808,7 +1979,11 @@
 			}
 
 			this._mainBoxController.beginLoad();
-			this._headerColumnsController.beginLoad();
+			if (this._converter.getColumns != null) {
+				this._headerColumnsController.beginLoad();
+			} else {
+				this._headerRowsController.beginLoad();
+			}
 			this.trigger('loadDataBegin');
 
 			this._renderWaitTimerId = setTimeout(function() {
@@ -1978,9 +2153,13 @@
 				rootPosition = 'relative';
 			}
 
+			if ($root.attr('tabindex') == null) {
+				$root.attr('tabindex', -1);
+			}
 			$root.css({
 				position: rootPosition,
-				overflow: 'hidden'
+				overflow: 'hidden',
+				outline: 'none'
 			});
 
 
@@ -2016,6 +2195,10 @@
 				if (headerColumnsLoadingDiv != null) {
 					$(headerColumnsLoadingDiv).text('');
 				}
+				var headerRowsLoadingDiv = this._headerRowsController.getLoadingDiv();
+				if (headerRowsLoadingDiv != null) {
+					$(headerRowsLoadingDiv).text('');
+				}
 			}));
 
 
@@ -2039,6 +2222,20 @@
 			}).appendTo(this.rootElement);
 			this._horizontalBarController = h5.core.controller($horizontalBar,
 					h5.ui.components.virtualScroll.HorizontalScrollBarController);
+
+			var offset = $root.offset();
+			var $copyTarget = $('<div></div>').addClass(COPY_TARGET_CLASS).css({
+				position: 'fixed',
+				top: -offset.top - 1000,
+				left: -offset.left - 1000
+			}).appendTo($root);
+
+			$('<textarea></textarea>').css({
+				width: '1px',
+				height: '1px',
+				overflow: 'hidden',
+				opacity: 0
+			}).appendTo($copyTarget);
 
 
 			this._refreshBoxPosition();
@@ -2110,32 +2307,16 @@
 			});
 		},
 
-		'{rootElement} mouseenter': function() {
-			this._isHover = true;
-		},
-
-		'{rootElement} mouseleave': function() {
-			this._isHover = false;
-		},
-
-		'{document} keydown': function(context) {
-
-			// IE8 では is(':hover') できないので mouseenter/mouseleave でフラグをセット
-			if (!this._isHover) {
-				return;
-			}
-
+		'{rootElement} keydown': function(context) {
 			var event = context.event;
-			var keycode = event.which;
 
-			this._preventDefaultKeydownEvent(keycode, context.event);
+			this._preventDefaultKeydownEvent(event);
 
 			if (this._ignoreKeydown) {
-				this._nextKeydown = keycode;
 				return;
 			}
 
-			this._triggerKeydownEvent(keycode);
+			this._triggerKeydownEvent(event);
 
 			var that = this;
 
@@ -2145,6 +2326,22 @@
 
 			}, KEYDOWN_WAIT_TIME);
 		},
+
+		'td mousedown': function(context, $el) {
+			if (!$el.data('h5DynGridIsMarkableCell')) {
+				return;
+			}
+			var rowId = $el.data('h5DynGridRowId');
+			var columnId = $el.data('h5DynGridColumnId');
+
+			this._converter.markRange(rowId, rowId + 1, columnId, columnId + 1);
+			setTimeout(this.own(function() {
+				$(this.rootElement).focus();
+			}), 0);
+		},
+
+		// TODO 範囲選択実装
+
 
 
 		// --- Public Method --- //
@@ -2370,7 +2567,7 @@
 			}).show();
 		},
 
-		'{rootElement} h5trackmove': function(context) {
+		'.resizable-bar h5trackmove': function(context) {
 			var $resizeMarker = $(this.rootElement).children('.' + RESIZE_MARKER_CLASS);
 
 			var pageX = context.event.pageX;
@@ -2390,7 +2587,7 @@
 			});
 		},
 
-		'{rootElement} h5trackend': function(context) {
+		'.resizable-bar h5trackend': function(context) {
 			var $resizeMarker = $(this.rootElement).children('.' + RESIZE_MARKER_CLASS);
 			$resizeMarker.hide();
 
@@ -2581,14 +2778,23 @@
 	var wrapScrollFormatter = function(formatterFunction) {
 		return function(cellData) {
 			var scrollBarWidth = h5.ui.components.virtualScroll.getScrollBarWidth();
+			var requireScrollInner = h5.ui.components.virtualScroll.isRequireOverflowScrollInner();
+
 			var scrollHeight = cellData.height + scrollBarWidth;
 			var scrollWidth = cellData.width + scrollBarWidth;
 
-			var html = '<div style="overflow: scroll;';
+			var html = '<div style="';
+			if (!requireScrollInner) {
+				html += ' overflow: scroll;';
+			}
 			html += ' width: ' + scrollWidth + 'px;';
 			html += ' height: ' + scrollHeight + 'px;';
 			html += '">';
-			html += '<div class="grid-cell">';
+			html += '<div class="grid-cell" style="';
+			if (requireScrollInner) {
+				html += ' overflow: scroll;';
+			}
+			html += '">';
 			html += formatterFunction(cellData);
 			html += '</div>';
 			html += '</div>';
@@ -2849,6 +3055,7 @@
 
 			var columns = [];
 			var formatters = {};
+			var options = {};
 			for (var i = 0, len = params.columns.length; i < len; i++) {
 				var column = params.columns[i];
 				columns.push(column.propertyName);
@@ -2857,6 +3064,16 @@
 					var formatter = h5.ui.components.datagrid.init.wrapScrollFormatter(column.formatter);
 					formatters[column.propertyName] = formatter;
 				}
+
+				var option = {};
+
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
+
+				options[column.propertyName] = option;
 			}
 
 			this._converter = h5.ui.components.datagrid.createGridDataConverter({
@@ -3334,6 +3551,12 @@
 				this._sortable[column.propertyName] = sortable;
 				option.sortable = sortable;
 
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
+
 				columnsOption[column.propertyName] = option;
 
 				// width 計算
@@ -3610,6 +3833,7 @@
 			}
 
 			this._gridLayoutController.beginLoad();
+			this._converter.markRange(0, 0, 0, 0);
 			this._pagingSource.movePage(pageNumber);
 		},
 
@@ -3766,6 +3990,7 @@
 				enableMultiRowSelect: true,
 				headerColumns: 0,
 				gridWidth: 'auto',
+				gridHeight: 'auto',
 
 				enableChangeColumnWidthUI: true,
 				minColumnWidth: 20,
@@ -3853,25 +4078,23 @@
 			}
 
 			// gridHeight のチェック
-			if (params.gridHeight == null) {
-				msg = 'gridHeight は必ず指定してください';
-				this.throwError(msgHeader + msg);
-			}
-			if (typeof params.gridHeight !== 'number') {
-				msg = 'gridHeight は  number 型である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
-			}
-			if (params.gridHeight !== Math.floor(params.gridHeight)) {
-				msg = 'gridHeight は整数である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
-			}
-			if (params.gridHeight <= 0) {
-				msg = 'gridHeight は正の数である必要があります; gridHeight = {0}';
-				this.throwError(msgHeader + msg, params.gridHeight);
+			if (params.gridHeight !== 'auto' && params.gridHeight !== 'css') {
+				if (typeof params.gridHeight !== 'number') {
+					msg = 'gridHeight は  number 型である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
+				if (params.gridHeight !== Math.floor(params.gridHeight)) {
+					msg = 'gridHeight は整数である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
+				if (params.gridHeight <= 0) {
+					msg = 'gridHeight は正の数である必要があります; gridHeight = {0}';
+					this.throwError(msgHeader + msg, params.gridHeight);
+				}
 			}
 
 			// gridWidth のチェック
-			if (params.gridWidth !== 'auto') {
+			if (params.gridWidth !== 'auto' && params.gridWidth !== 'css') {
 				if (typeof params.gridWidth !== 'number') {
 					msg = 'gridWidth は \'auto\' または number 型である必要があります; gridWidth = {0}';
 					this.throwError(msgHeader + msg, params.gridWidth);
@@ -4002,6 +4225,12 @@
 				this._sortable[column.propertyName] = sortable;
 				option.sortable = sortable;
 
+				var markable = !!column.markable;
+				if (column.markable == null) {
+					markable = true;
+				}
+				option.markable = markable;
+
 				columnsOption[column.propertyName] = option;
 
 				// width 計算
@@ -4064,8 +4293,12 @@
 			}).then(function() {
 
 				var $root = $(that.rootElement);
-				$root.css('height', gridHeight);
-				$root.css('width', gridWidth);
+				if (params.gridHeight !== 'css') {
+					$root.css('height', gridHeight);
+				}
+				if (params.gridWidth !== 'css') {
+					$root.css('width', gridWidth);
+				}
 
 				var promise = that._gridLayoutController.init({
 					defaultFormatter: defaultFormatter,
@@ -4237,7 +4470,7 @@
 				this.throwError('dataId を指定してください');
 			}
 
-			return this._converter.isSelectedData(dataId);
+			return this._converter.isSelected(dataId);
 		},
 
 		/**
