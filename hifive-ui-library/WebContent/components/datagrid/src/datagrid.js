@@ -2327,7 +2327,7 @@
 			}, KEYDOWN_WAIT_TIME);
 		},
 
-		'td h5trackstart': function(context, $el) {
+		'td mousedown': function(context, $el) {
 			if (!$el.data('h5DynGridIsMarkableCell')) {
 				return;
 			}
@@ -2335,6 +2335,9 @@
 			var columnId = $el.data('h5DynGridColumnId');
 
 			this._converter.markRange(rowId, rowId + 1, columnId, columnId + 1);
+			setTimeout(this.own(function() {
+				$(this.rootElement).focus();
+			}), 0);
 		},
 
 		// TODO 範囲選択実装
@@ -3830,6 +3833,7 @@
 			}
 
 			this._gridLayoutController.beginLoad();
+			this._converter.markRange(0, 0, 0, 0);
 			this._pagingSource.movePage(pageNumber);
 		},
 
