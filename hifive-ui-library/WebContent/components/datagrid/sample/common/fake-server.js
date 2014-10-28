@@ -4,7 +4,7 @@
 	 * トークン更新の有無を指定するリクエストヘッダーのキー
 	 */
 	var KEY_UPDATE_TOKEN = 'X-BERT-UPDATE-TOKEN';
-	h5.u.obj.expose('bert.fw', {
+	h5.u.obj.expose('datagrid.sample', {
 		/**
 		 * リクエストヘッダにトークンを更新しないフラグをセットして通信を行う
 		 *
@@ -30,6 +30,7 @@
 	});
 })(jQuery);
 
+//---- Fake Server ---- //
 (function($) {
 
 	//ランダム数生成
@@ -107,7 +108,7 @@
 	//名前取得
 	var getName = function(){
 		return nameMst[random(nameMstLength)];
-	}
+	};
 
 	//配属マスタ
 	var placeMst= ['東京', '大阪', '名古屋', '福岡'];
@@ -116,7 +117,7 @@
 	//配属取得
 	var getPlace = function(){
 		return placeMst[random(placeMstLength)];
-	}
+	};
 
 	//部署マスタ
 	var positionMst=['第一事業部', '第二事業部', '営業部', '総務部', '人事部', '広報部', '経理部', '企画部', '技術部', '開発部', '研究部'];
@@ -125,7 +126,7 @@
 	//部署取得
 	var getPosition = function(){
 		return positionMst[random(positionMstLength)];
-	}
+	};
 
 	var TEL_AREA_CODE=['090', '080'];
 	//電話番号取得
@@ -143,9 +144,9 @@
 			telNo += '0123456789'.charAt(Math.random() * 10);
 		}
 		return telNo;
-	}
+	};
 
-	//メールアドレス
+	//メールアドレス取得
 	var getMailAddress = function(){
 		var address = '';
 		for(var i = 0; i < 4; i++){
@@ -158,33 +159,19 @@
 		address += random(10);
 		address += '@dummy.htmlhifive.com';
 		return address;
-	}
+	};
 
 	var data = [];
+	//サンプルデータ作成
 	for (var i = 1; i <= 10000; i++) {
-		var now = new Date();
-		var time = now.getTime() + random(100) * 1000 * 60 * 60 * 24;
-		var date = new Date(time);
-
-		var year = String(date.getFullYear());
-		var month = String(date.getMonth() + 1);
-		var day = String(date.getDate());
-
-		month = '0' + month;
-		month = month.substring(month.length - 2);
-
-		day = '0' + day;
-		day = day.substring(day.length - 2);
-
-		var ymd = year + '/' + month + '/' + day;
-
 		var record = {
 			id: 'J' + ("00000"+i).slice(-5).toString(),
 			name: getName(),
 			place : getPlace(),
 			position : getPosition(),
 			tel: getTelNo(),
-			mail : getMailAddress()
+			mail : getMailAddress(),
+			note : ''
 		};
 
 		data.push(record);
@@ -233,7 +220,7 @@
 		});
 	};
 
-
+	//結果作成処理
 	var createResult = function(option) {
 
 		sort(option);
@@ -250,9 +237,10 @@
 	};
 
 
-	var originAjax = bert.fw.ajax;
+	var originAjax = datagrid.sample.ajax;
 
-	bert.fw.ajax = function(url, option) {
+	//特定のURLでリクエストがきた場合のみサンプルデータを返す
+	h5.ajax = function(url, option) {
 		if (url !== '/api/sample3') {
 			return originAjax(url, option);
 		}

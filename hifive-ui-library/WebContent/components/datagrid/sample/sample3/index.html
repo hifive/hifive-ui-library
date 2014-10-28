@@ -7,26 +7,24 @@
 <title>スクロールグリッド</title>
 
 <!-- CSS ---------->
-<link href="http://www.htmlhifive.com/ja/res/lib/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
-<link href="http://www.htmlhifive.com/ja/archives/current/h5.css" rel="stylesheet" >
+<link href="../../../../res/lib/bootstrap2/css/bootstrap.css" rel="stylesheet">
+<link href="../../../../res/lib/hifive/h5.css" rel="stylesheet" >
 <link href="../common/grid.css" rel="stylesheet">
 
 <!-- JS ---------->
-<!--[if lt IE 9]>
-<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-1.js"></script>
-<![endif]-->
-<script src="http://www.htmlhifive.com/ja/res/lib/jquery/jquery-2.js"></script>
-
-<script src="http://www.htmlhifive.com/ja/res/lib/bootstrap3/js/bootstrap.min.js"></script>
-<script src="http://www.htmlhifive.com/ja/archives/current/ejs-h5mod.js"></script>
-<script src="http://www.htmlhifive.com/ja/archives/current/h5.dev.js"></script>
+<script src="../../../../res/lib/jquery/jquery.js"></script>
+<script src="../../../../res/lib/bootstrap2/js/bootstrap.min.js"></script>
+<script src="../../../../res/lib/hifive/ejs-h5mod.js"></script>
+<script src="../../../../res/lib/hifive/h5.dev.js"></script>
 
 <!-- grid必要ライブラリ -->
 <script src="../../../virtualScroll/src/data-source.js"></script>
 <script src="../../../virtualScroll/src/virtual-scroll.js"></script>
 <script src="../../src/datagrid.js"></script>
 
+
 <script src="../common/fake-server.js"></script>
+<script src="../common/grid-logic.js"></script>
 <script src="scroll-grid-controller.js"></script>
 </head>
 
@@ -35,7 +33,12 @@
 		<div class="row">
 			<div class="col">
 				<p><a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span id="selectedDataIds"></span></p>
+
+				<!-- グリッド表示 -->
 				<div id="grid"></div>
+
+				<!-- 列移動矢印 -->
+				<span class="glyphicon icon-arrow-down trackend-sign disp-hidden"></span>
 			</div>
 		</div>
 	</div>

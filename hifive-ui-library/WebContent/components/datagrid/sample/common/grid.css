@@ -1,5 +1,4 @@
-/*  共通  */
-
+/*---------- 共通 ----------*/
 body{
 	padding: 10px;
 	background-color: white;
@@ -14,6 +13,7 @@ body{
 	min-width : 910px;
 }
 
+/*---------- グリッド共通 ----------*/
 #grid {
 	margin: 0 auto;
 }
@@ -44,7 +44,13 @@ body{
 	white-space: nowrap;
 }
 
-/* 氏名、電話番号、メールアドレス */
+#grid td.grid-header {
+	background-color: rgb(89, 87, 87);
+	border-bottom-style: double;
+	color : whitesmoke;
+}
+
+/*---------- 氏名、電話番号、メールアドレス ----------*/
 #grid div.grid-main-box td[data-h5-dyn-grid-property-name="name"] div.grid-cell {
 	margin-left: 5px;
 	text-align: left;
@@ -63,39 +69,41 @@ body{
 	white-space: nowrap;
 }
 
-#grid .grid-main-box td[data-grid-property-name="tryoType"] div.grid-cell {
-	margin-left: 5px;
-	text-align: right;
-	padding-right: 5px;
+/*---------- 列移対象列 ----------*/
+#grid .grid-main-box .grid-cell-frame.tracking-column {
+	background-color: rgb(224, 219, 219);
 }
 
-#grid .grid-main-box td[data-grid-property-name="kokyakuKozaNo"] div.grid-cell {
-	margin-left: 5px;
-	text-align: left;
-	padding-left: 10px;
+ /*---------- 列移動時に表示する矢印 ----------*/
+.glyphicon {
+	line-height: 24px;
+	padding: 0px 3px;
 }
 
-#grid td.grid-header {
-	background-color: rgb(89, 87, 87);
-	border-bottom-style: double;
-	color : whitesmoke;
+.trackend-sign {
+	position: absolute; /* trackmoveで入れ替え先を表す矢印のクラス */
 }
 
-/*  page-grid  */
+.disp-hidden {
+	display: none !important;
+}
+
+.glyphicon:before,.glyphicon:after {
+	display: block !important;
+}
+
+/*----------  ページ切り替えボタン（pagingGrid） ---------- */
 #pager {
-	/*position: relative;*/
 	width: 850px;
-	margin: 0 auto;
+	text-align: center;
 }
 
 #prevPage {
-	/*position: absolute;*/
 	top: 0;
 	left: 0;
 }
 
 #nextPage {
-	/*position: absolute;*/
 	top: 0;
 	right: 0;
 }

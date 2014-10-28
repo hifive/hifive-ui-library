@@ -1,28 +1,5 @@
 /*global h5, bert*/
 
-// ---- Logic ---- //
-(function($) {
-	var DATA_URL = '/api/sample3';
-
-	var gridSampleLogic = {
-		__name: 'bert.fw.grid.sample.GridLogic',
-
-		loadData: function() {
-			var def = this.deferred();
-			bert.fw.ajax(DATA_URL, {
-				dataType: 'json',
-				data : '',
-			}).done(function(data){
-				def.resolve(data.list);
-			});
-			return def.promise();
-		}
-	};
-
-	h5.core.expose(gridSampleLogic);
-
-})(jQuery);
-
 // ---- Controller ---- //
 (function($) {
 
@@ -42,7 +19,7 @@
 
 		_gridController: h5.ui.components.datagrid.PagingGridController,
 
-		_gridLogic: bert.fw.grid.sample.GridLogic,
+		_gridLogic: datagrid.sample.GridLogic,
 
 		// --- プライベートなメソッド --- //
 
