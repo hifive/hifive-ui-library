@@ -75,21 +75,8 @@ body{
 }
 
  /*---------- 列移動時に表示する矢印 ----------*/
-.glyphicon {
-	line-height: 24px;
-	padding: 0px 3px;
-}
-
-.trackend-sign {
-	position: absolute; /* trackmoveで入れ替え先を表す矢印のクラス */
-}
-
-.disp-hidden {
-	display: none !important;
-}
-
-.glyphicon:before,.glyphicon:after {
-	display: block !important;
+.column-insert-icon {
+	border-color: black;
 }
 
 /*----------  ページ切り替えボタン（pagingGrid） ---------- */
