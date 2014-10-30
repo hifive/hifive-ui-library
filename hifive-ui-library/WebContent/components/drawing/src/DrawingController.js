@@ -967,7 +967,7 @@
 			configurable: false,
 			enumerable: true,
 			get: function() {
-				return this._getStyle('stroke-opacity');
+				return this._getStyle('strokeOpacity');
 			},
 			set: function(val) {
 				// 再描画
@@ -990,7 +990,7 @@
 			configurable: false,
 			enumerable: true,
 			get: function() {
-				return this._getStyle('stroke-width');
+				return this._getStyle('strokeWidth');
 			},
 			set: function(val) {
 				// 再描画
@@ -1063,7 +1063,7 @@
 			configurable: false,
 			enumerable: true,
 			get: function() {
-				return this._getStyle('fill-opacity');
+				return this._getStyle('fillOpacity');
 			},
 			set: function(val) {
 				var opacity = parseFloat(val);
