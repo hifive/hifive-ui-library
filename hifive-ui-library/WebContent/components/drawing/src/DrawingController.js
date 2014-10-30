@@ -932,9 +932,13 @@
 		 * <p>
 		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
 		 * </p>
+		 * <p>
+		 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
+		 * </p>
 		 *
+		 * @name strokeColor
 		 * @memberOf StrokeDRShape
-		 * @type {String} 色指定文字列
+		 * @type {String}
 		 */
 		Object.defineProperty(strokeProto, 'strokeColor', {
 			configurable: false,
@@ -950,13 +954,14 @@
 			}
 		});
 		/**
-		 * ストロークの透明度
+		 * ストロークの透明度(0～1)
 		 * <p>
 		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
 		 * </p>
 		 *
+		 * @name strokeOpacity
 		 * @memberOf StrokeDRShape
-		 * @type {Number} 透明度(0～1)
+		 * @type {Number}
 		 */
 		Object.defineProperty(strokeProto, 'strokeOpacity', {
 			configurable: false,
@@ -977,8 +982,9 @@
 		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
 		 * </p>
 		 *
+		 * @name strokeWidth
 		 * @memberOf StrokeDRShape
-		 * @type {Integer} ストロークの幅
+		 * @type {Integer}
 		 */
 		Object.defineProperty(strokeProto, 'strokeWidth', {
 			configurable: false,
@@ -1020,11 +1026,15 @@
 		/**
 		 * 塗りつぶしの色
 		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます。
+		 * </p>
+		 * <p>
+		 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
 		 * </p>
 		 *
+		 * @name fillColor
 		 * @memberOf FillDRShape
-		 * @type {String} 色指定文字列
+		 * @type {String}
 		 */
 		Object.defineProperty(fillProto, 'fillColor', {
 			configurable: false,
@@ -1040,13 +1050,14 @@
 			}
 		});
 		/**
-		 * 塗りつぶしの透明度
+		 * 塗りつぶしの透明度(0～1)
 		 * <p>
 		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
 		 * </p>
 		 *
+		 * @name fillOpacity
 		 * @memberOf FillDRShape
-		 * @type {Number} 透明度(0～1)
+		 * @type {Number}
 		 */
 		Object.defineProperty(fillProto, 'fillOpacity', {
 			configurable: false,

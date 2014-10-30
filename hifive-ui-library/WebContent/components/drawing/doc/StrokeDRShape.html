@@ -25,8 +25,7 @@
 
 <div id="container">
     <nav>
-    	<div></div>
-        <h3>Classes</h3><ul><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.DrawingController.html">h5.ui.components.drawing.controller.DrawingController</a></li><li><a href="h5.ui.components.drawing.controller.DrawingOperationController.html">h5.ui.components.drawing.controller.DrawingOperationController</a></li></ul><h3>Mixins</h3><ul><li><a href="FillDRShape.html">FillDRShape</a></li><li><a href="StrokeDRShape.html">StrokeDRShape</a></li></ul>
+          <h3>Classes</h3><ul><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.DrawingController.html">h5.ui.components.drawing.controller.DrawingController</a></li><li><a href="h5.ui.components.drawing.controller.DrawingOperationController.html">h5.ui.components.drawing.controller.DrawingOperationController</a></li></ul><h3>Mixins</h3><ul><li><a href="FillDRShape.html">FillDRShape</a></li><li><a href="StrokeDRShape.html">StrokeDRShape</a></li></ul>
     </nav>
 
     <div id="main">
@@ -64,7 +63,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingController.js, line 919</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 915</li></ul></dd>
 	
 	-->
 
@@ -93,7 +92,101 @@
 
                 <dl>
 <dt>
-    <h4 class="name" id="configurable"><span class="type-signature">&lt;static> </span>configurable<span class="type-signature"> :{Integer} ストロークの幅</span></h4>
+    <h4 class="name" id="strokeColor"><span class="type-signature">&lt;static> </span>strokeColor<span class="type-signature"> :String</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        ストロークの色<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p><p>CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 917</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="strokeOpacity"><span class="type-signature">&lt;static> </span>strokeOpacity<span class="type-signature"> :Number</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        ストロークの透明度(0～1)<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 956</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="strokeWidth"><span class="type-signature">&lt;static> </span>strokeWidth<span class="type-signature"> :Integer</span></h4>
     
     
 </dt>
@@ -124,101 +217,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingController.js, line 988</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="configurable"><span class="type-signature">&lt;static> </span>configurable<span class="type-signature"> :{Number} 透明度(0～1)</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <p class="description">
-        ストロークの透明度<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
-    </p>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingController.js, line 966</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="configurable"><span class="type-signature">&lt;static> </span>configurable<span class="type-signature"> :{String} 色指定文字列</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <p class="description">
-        ストロークの色<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
-    </p>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingController.js, line 944</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 979</li></ul></dd>
 	
 	-->
 
@@ -251,7 +250,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Sep 05 2014 17:51:34 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Oct 30 2014 10:31:14 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
