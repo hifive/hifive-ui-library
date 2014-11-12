@@ -26,7 +26,7 @@
 		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		_urlList: ['page1.html', 'page2.html', 'page3.html'],
+		_urlList: [],
 
 		/**
 		 * 現在スクリーンに表示中のコンテンツURLのインデックス
@@ -50,24 +50,45 @@
 		_isTracking: false,
 
 		/**
+		 * スクリーン要素
+		 *
 		 * @memberOf app.controller.NavigationController
 		 */
-		__ready: function() {
+		_$screen: null,
+
+		/**
+		 * 縦スクロールのナビゲーションかどうか
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
+		_isVertical: false,
+
+		/**
+		 * 初期設定
+		 *
+		 * @memberOf app.controller.NavigationController
+		 */
+		__ready: function(context) {
+			this._$screen = context.args.$screen;
 			this._$trackArea = this.$find('.screentrack');
-			var urlList = [];
+			var urlList = this._urlList;
 			// urlListにDOMに記述されているURLを保存する。
 			// urlが記述されていない箇所についてはundefinedになるので、ロードはされなくなる。
-			this.$find('.h5screenContent').each(function(index) {
+			this._$screen.find('.h5screenContent').each(function(index) {
 				urlList.push($(this).data('sample-url'));
 			});
-			this._urlList = urlList;
 			// URLリストの最初のページをロード
-			this.trigger('loadPage', {
-				url: this._urlList[this._urlIndex]
-			});
+			if (this._urlList[this._urlIndex]) {
+				this.trigger('loadPage', {
+					url: this._urlList[this._urlIndex]
+				});
+			}
+			this._isVertical = context.args.isVertical;
 		},
 
 		/**
+		 * 前へボタンクリック
+		 *
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
@@ -81,6 +102,8 @@
 		},
 
 		/**
+		 * 次へボタンクリック
+		 *
 		 * @memberOf app.controller.NavigationController
 		 * @param context
 		 */
@@ -105,8 +128,9 @@
 				return;
 			}
 			this._isTracking = true;
+			var isVertical = this._isVertical;
 			this.trigger('screenTrackstart', {
-				trackSize: this.$find('.screentrack').width()
+				trackSize: this.$find('.screentrack')[isVertical ? 'height' : 'width']()
 			});
 			this._totalSlideAmount = 0;
 		},
@@ -121,15 +145,10 @@
 			if (!this._isTracking) {
 				return;
 			}
-			var offsetX = context.event.offsetX;
-			// トラック可能領域を制限
-			if (offsetX < 0 || this.$find('.screentrack').width() < offsetX) {
-				return;
-			}
-			var dx = context.event.dx;
-			this._totalSlideAmount += dx;
+			var dist = context.event[this._isVertical ? 'dy' : 'dx'];
+			this._totalSlideAmount += dist;
 			this.trigger('screenTrackmove', {
-				dx: dx
+				dist: dist
 			});
 		},
 

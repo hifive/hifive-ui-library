@@ -1,358 +1,318 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>ComplexHeaderGrid のサンプル</title>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ヘッダが複雑なグリッド</title>
 
-		<link rel="stylesheet" type="text/css" href="./sample1.css">
+<!-- CSS ---------->
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+<link href="complex-header-grid.css" rel="stylesheet">
 
-		<script type="text/javascript" src="../../../../res/lib/jquery/jquery-1.9.1.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/ejs-h5mod.js"></script>
-		<script type="text/javascript" src="../../../../res/lib/hifive/h5.dev.js"></script>
+<!-- JS ---------->
+<!--[if lt IE 9]>
+<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
 
-		<script type="text/javascript" src="../../../virtual-scroll/src/data-source.js"></script>
-		<script type="text/javascript" src="../../../virtual-scroll/src/virtual-scroll.js"></script>
-		<script type="text/javascript" src="../../src/datagrid.js"></script>
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
 
-		<script type="text/javascript" src="./sample1.js"></script>
-	</head>
-	<body>
-		<h2>ComplexHeaderGrid のサンプル</h2>
-		<div id="grid">
-			<div class="grid-header-top-left-cells">
-				<div class="dummy-cell" style="width: 349px; height: 49.5px;"></div>
-			</div>
-			<div class="grid-header-rows">
-				<table class="header-rows" style="width: 1401px;">
-					<tr style="height: 0; visibility: hidden;">
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
-					</tr>
-					<tr style="height: 25px;">
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年04月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年05月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年06月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年07月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年08月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年09月</td>
-						<td class="hide"></td>
-						<td colspan="2" style="text-align: center;" class="none-border-bottom">合計</td>
-						<td class="hide"></td>
-					</tr>
-					<tr style="height: 25px;">
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-						<td class="hide-border-top"></td>
-						<td style="text-align: center">詳細</td>
-					</tr>
-				</table>
-			</div>
+<!-- grid必要ライブラリ -->
+<script src="../../../virtualScroll/src/data-source.js"></script>
+<script src="../../../virtualScroll/src/virtual-scroll.js"></script>
+<script src="../../src/datagrid.js"></script>
 
-			<div class="grid-header-columns">
-				<table
-					style="table-layout: fixed; width: 351px; margin: 0;">
-					<tr style="height: 0; visibility: hidden;">
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 39px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 79px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 69px;"></td>
-						<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 159px;"></td>
-					</tr>
-					<tr>
-						<td rowspan="36" class="hide-border-bottom" style="text-align: center; width: 18px;">
-					  	タ<br><br>
-					  	イ<br><br>
-					  	プ<br><br>
-					  	別<br><br>
-					  	集<br><br>
-					  	計<br><br>
-						</td>
-						<td rowspan="8" class="hide-border-bottom"
-							style="vertical-align: top;">タイプA</td>
-						<td colspan="2" class="none-border-bottom">詳細</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-top hide-border-bottom"></td>
-						<td>A-1</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-bottom"></td>
-						<td>A-2</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-bottom"></td>
-						<td>A-3</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td></td>
-						<td>A-4</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">XXX</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">YYY</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">ZZZ</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3" style="text-align: center;">
-							合計
-						</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td rowspan="6" class="hide-border-bottom"
-							style="vertical-align: top;">
-							タイプB
-						</td>
-						<td colspan="2" class="none-border-bottom">詳細</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-top hide-border-bottom"></td>
-						<td>B-1</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td></td>
-						<td>B-2</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">XXX</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">YYY</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">ZZZ</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3" style="text-align: center;">合計</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td rowspan="7" class="hide-border-bottom"
-							style="vertical-align: top;">タイプC</td>
-						<td colspan="2" class="none-border-bottom">詳細</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-top hide-border-bottom"></td>
-						<td>C-1</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-bottom"></td>
-						<td>C-2</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td></td>
-						<td>C-3</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">XXX</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">YYY</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">ZZZ</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3" style="text-align: center;">合計</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td rowspan="7" class="hide-border-bottom"
-							style="vertical-align: top;">タイプD</td>
-						<td colspan="2" class="none-border-bottom">詳細</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-top hide-border-bottom"></td>
-						<td>D-1</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-bottom"></td>
-						<td>D-2</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide-border-bottom"></td>
-						<td>D-3</td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td></td>
-						<td>D-4<td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">XXX</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">YYY</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3" style="text-align: center;">合計</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3">タイプE</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td rowspan="2" class="hide-border-bottom" style="vertical-align: top;">
-							タイプF
-						</td>
-						<td colspan="2">F-1</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">F-2</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td colspan="3" style="text-align: center;">合計</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td colspan="4" style="text-align: center;">
-							合計
-						</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td rowspan="3" colspan="2" class="hide-border-bottom" style="vertical-align: top;">
-							その他
-						</td>
-						<td class="hide"></td>
-						<td colspan="2">その他1</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">その他2</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td colspan="2">その他3</td>
-						<td class="hide"></td>
-					</tr>
-					<tr>
-						<td colspan="4" style="text-align: center;">合計</td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-						<td class="hide"></td>
-					</tr>
-				</table>
+<script src="complex-header-grid-controller.js"></script>
+</head>
+
+<body>
+	<div class="container">
+		<div class="row">
+			<div id="grid-content" class="col">
+				<div id="grid">
+					<div class="grid-header-top-left-cells">
+						<div class="dummy-cell" style="width: 349px; height: 60px;"></div>
+					</div>
+					<div class="grid-header-rows">
+						<table class="header-rows" style="width: 1401px;">
+							<tr style="height: 0; visibility: hidden;">
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 99px;"></td>
+							</tr>
+							<tr style="height: 25px;">
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年04月</td>
+								<!--<td class="hide"></td>-->
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年05月</td>
+								<!--<td class="hide"></td>-->
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年06月</td>
+								<!--<td class="hide"></td>-->
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年07月</td>
+								<!--<td class="hide"></td>-->
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年08月</td>
+								<!--<td class="hide"></td>-->
+								<td colspan="2" style="text-align: center;" class="none-border-bottom">20XX年09月</td>
+								<!--<td class="hide"></td>-->
+							</tr>
+							<tr style="height: 25px;">
+								<td class="hide-border-top"></td>
+								<td style="text-align: center;">詳細</td>
+								<td class="hide-border-top"></td>
+								<td style="text-align: center">詳細</td>
+								<td class="hide-border-top"></td>
+								<td style="text-align: center">詳細</td>
+								<td class="hide-border-top"></td>
+								<td style="text-align: center">詳細</td>
+								<td class="hide-border-top"></td>
+								<td style="text-align: center">詳細</td>
+								<td class="hide-border-top"></td>
+								<td style="text-align: center">詳細</td>
+						</table>
+					</div>
+
+					<div class="grid-header-columns">
+						<table
+							style="table-layout: fixed; width: 351px; margin: 0;">
+							<tr style="height: 0; visibility: hidden;">
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 39px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 79px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 69px;"></td>
+								<td style="padding: 0; border-top-style: none; border-bottom-style: none; width: 159px;"></td>
+							</tr>
+							<tr>
+								<td rowspan="27" class="hide-border-bottom" style="text-align: center; width: 18px; background-color: #585959; color : white;">
+							  	タ<br><br>
+							  	イ<br><br>
+							  	プ<br><br>
+							  	別<br><br>
+							  	集<br><br>
+							  	計
+								</td>
+								<td rowspan="9" class="hide-border-bottom"
+									style="vertical-align: top; background: #848383; color : white;">タイプA</td>
+								<td colspan="2" class="none-border-bottom">詳細</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>A-1</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-bottom"></td>
+								<td>A-2</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-bottom"></td>
+								<td>A-3</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-bottom"></td>
+								<td>A-4</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td></td>
+								<td>A-5</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">XXX</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">YYY</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">ZZZ</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td style="background: #848383; border-bottom-color: darkgray;"></td>
+								<td colspan="3" style="text-align: center; background: #848383; color : white;">
+									合計
+								</td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td rowspan="8" class="hide-border-bottom"
+									style="vertical-align: top; background: #848383; color : white;">タイプB
+								</td>
+								<td colspan="2" class="none-border-bottom">詳細</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>B-1</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>B-2</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>B-3</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td></td>
+								<td>B-4</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">XXX</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">YYY</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">ZZZ</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td style="background: #848383; border-bottom-color: darkgray;"></td>
+								<td colspan="3" style="text-align: center; background: #848383; color : white;">
+									合計
+								</td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td rowspan="7" class="hide-border-bottom"
+									style="vertical-align: top; background: #848383; color : white;">タイプC
+								</td>
+								<td colspan="2" class="none-border-bottom">詳細</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>C-1</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide-border-top hide-border-bottom"></td>
+								<td>C-2</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td></td>
+								<td>C-3</td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">XXX</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">YYY</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">ZZZ</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td colspan="3" style="text-align: center; background: #848383; color : white;">
+									合計
+								</td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide-border-right" style="background-color: #585959;"></td>
+								<td colspan="3" class="hide-border-left" style="text-align: center; background-color: #585959; color : white;">
+									合計
+								</td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td rowspan="3" colspan="2" class="hide-border-bottom" style="vertical-align: top; background-color: #585959; color : white; ">
+									その他
+								</td>
+								<td class="hide"></td>
+								<td colspan="2">その他1</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">その他2</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td colspan="2">その他3</td>
+								<td class="hide"></td>
+							</tr>
+							<tr>
+								<td class="hide-border-right" style="background-color: #585959; color : white; "></td>
+								<td colspan="3" style="text-align: center; background-color: #585959; color : white;">合計</td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+								<td class="hide"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
 			</div>
 		</div>
-	</body>
+	</div>
+</body>
 </html>
