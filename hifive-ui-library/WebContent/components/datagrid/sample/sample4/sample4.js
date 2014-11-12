@@ -50,7 +50,9 @@
 			col4: random(1000),
 			col5: random(10000),
 			col6: random(100),
-			col7: random(100)
+			col7: random(100),
+			col8: random(100),
+			col9: random(100)
 		};
 
 		data.push(record);
@@ -119,7 +121,7 @@
 	var originAjax = h5.ajax;
 
 	h5.ajax = function(url, option) {
-		if (url !== '/api/sample3') {
+		if (url !== '/api/sample4') {
 			return originAjax(url, option);
 		}
 
@@ -139,11 +141,11 @@
 // ---- Controller ---- //
 (function($) {
 
-	var gridSample3Controller = {
+	var gridSample4Controller = {
 
 		// --- コントローラの設定 --- //
 
-		__name: 'h5.ui.components.datagrid.sample3.GridSample3Controller',
+		__name: 'h5.ui.components.datagrid.sample4.GridSample4Controller',
 
 		__meta: {
 			_gridController: {
@@ -154,94 +156,59 @@
 
 		// --- プロパティ --- //
 
-		_gridController: h5.ui.components.datagrid.ScrollGridController,
-
-
-		// --- プライベートなメソッド --- //
-
-		_updateSelectDataIds: function() {
-			var selectedDataIds = this._gridController.getSelectedDataIds();
-			this.$find('#selectedDataIds').text(selectedDataIds);
-		},
+		_gridController: h5.ui.components.datagrid.HorizontalScrollGridController,
 
 
 		// --- ライフサイクル関連メソッド --- //
 
 		__ready: function() {
 			this._gridController.init({
-				url: '/api/sample3',
+				url: '/api/sample4',
 				idKey: 'id',
-				rowHeight: 25,
-				gridHeight: 601,
-				headerColumns: 2,
-				verticalScrollStrategy: 'index',
-				columns: [{
-					propertyName: '_selectCheckBox',
-					header: '選択',
-					width: 40,
-					formatter: function(cellData) {
-						if (cellData.isHeaderRow) {
-							return cellData.value;
-						}
-						var dataId = cellData.dataId;
-						var checked = cellData.selected ? 'checked' : '';
-						var html = '<input type="checkbox"';
-						html += ' data-grid-sample-data-id="' + dataId + '"';
-						html += ' ' + checked;
-						html += '>';
-						return html;
-					},
-					sortable: false
-				}, {
+				columnWidth: 150,
+				headerRows: 2,
+				verticalScrollStrategy: 'pixel',
+				horizontalScrollStrategy: 'pixel',
+				rows: [{
 					propertyName: 'date',
 					header: '日付',
-					width: 100,
-					sortable: true
+					height: 25
 				}, {
 					propertyName: 'col1',
 					header: '列1',
-					width: 60,
-					sortable: false
+					height: 25
 				}, {
 					propertyName: 'col2',
 					header: '列2',
-					width: 140,
-					sortable: true
+					height: 25
 				}, {
 					propertyName: 'col3',
 					header: '列3',
-					width: 120,
-					sortable: false
+					height: 25
 				}, {
 					propertyName: 'col4',
 					header: '列4',
-					width: 120,
-					sortable: true
+					height: 25
 				}, {
 					propertyName: 'col5',
 					header: '列5',
-					width: 100,
-					sortable: true
+					height: 25
 				}, {
 					propertyName: 'col6',
 					header: '列6',
-					width: 100,
-					sortable: true
+					height: 300
 				}, {
 					propertyName: 'col7',
 					header: '列7',
-					width: 100,
-					sortable: true
+					height: 25
 				}, {
 					propertyName: 'col8',
 					header: '列8',
-					width: 100,
-					sortable: false
+					height: 25
 				}, {
 					propertyName: 'col9',
 					header: '列9',
-					width: 140,
-					sortable: false
+					height: 25
 				}]
 			});
 		},
@@ -249,41 +216,13 @@
 
 		// --- イベントハンドラメソッド --- //
 
-		// 選択
-		'input[type="checkbox"] change': function(context, $el) {
-			var isSelected = $el.prop('checked');
-
-			// data による取得は数値変換できる場合はしてしまうので文字列に直す
-			var dataId = String($el.data('gridSampleDataId'));
-
-			if (isSelected) {
-				this._gridController.selectData(dataId);
-			} else {
-				this._gridController.unselectData(dataId);
-			}
-
-			this._updateSelectDataIds();
-		},
-
-		// 選択全解除
-		'#unselectAll click': function() {
-			this._gridController.unselectAllData();
-			this._updateSelectDataIds();
-		},
-
-		// rowId から元データの取得
-		'td[data-h5-dyn-grid-is-header-row="false"] click': function(context, $el) {
-			var rowId = $el.data('h5DynGridRowId');
-			var data = this._gridController.getCachedData(rowId);
-		}
-
 	};
 
-	h5.core.expose(gridSample3Controller);
+	h5.core.expose(gridSample4Controller);
 
 })(jQuery);
 
 // ---- Init ---- //
 $(function() {
-	h5.core.controller('body', h5.ui.components.datagrid.sample3.GridSample3Controller);
+	h5.core.controller('body', h5.ui.components.datagrid.sample4.GridSample4Controller);
 });

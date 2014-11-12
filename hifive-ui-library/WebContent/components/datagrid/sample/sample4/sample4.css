@@ -20,6 +20,8 @@
 
 #grid {
 	margin: 0 auto;
+	width: 1000px;
+	height: 600px;
 }
 
 #grid td {
@@ -43,36 +45,5 @@
 #grid .grid-main-box td[data-h5-dyn-grid-property-name="col6"] div.grid-cell {
 	text-align: right;
 	padding-right: 5px;
-}
-
-
-#pager {
-	position: relative;
-	width: 1000px;
-	margin: 0 auto;
-}
-
-#prevPage {
-	position: absolute;
-	top: 0;
-	left: 0;
-}
-
-#nextPage {
-	position: absolute;
-	top: 0;
-	right: 0;
-}
-
-#pageInfo {
-	text-align: center;
-}
-
-#pager input[type="text"] {
-	width: 20px;
-}
-
-#pager a.disabled-link {
-	visibility: hidden;
 }
 
