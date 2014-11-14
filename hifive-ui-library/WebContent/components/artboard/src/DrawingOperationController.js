@@ -592,6 +592,10 @@
 				moved: false
 			};
 			this._selectTrackstart(context);
+			// トラックスタート時に図形が新しく選択されたら、図形の移動のトラックに切り替える
+			if (this._trackingData.selectedWhenTrackstart) {
+				this._trackstartSelectedShape(event, this.$find('.selection-rectangle'));
+			}
 		},
 
 		/**
@@ -601,10 +605,13 @@
 		 * @param context
 		 */
 		'{rootElement} h5trackmove': function(context) {
+			context.event.preventDefault();
 			if (this._mode !== this.MODE_SELECT) {
 				return;
 			}
-			if (this._trackingData.canceled) {
+			if (this._trackingData.selectedWhenTrackstart) {
+				// トラックスタート時に図形が新しく選択されたら、図形の移動のトラック
+				this._trackmoveSelectedShape(event, this.$find('.selection-rectangle'));
 				return;
 			}
 			this._selectTrackmove(context);
@@ -620,10 +627,35 @@
 			if (this._mode !== this.MODE_SELECT) {
 				return;
 			}
-			if (this._trackingData.canceled) {
+			if (this._trackingData.selectedWhenTrackstart) {
+				// トラックスタート時に図形が新しく選択されたら、図形の移動のトラック
+				this._trackendSelectedShape(event, this.$find('.selection-rectangle'));
 				return;
 			}
 			this._selectTrackend(context);
+		},
+
+		'{this._layers} mousemove': function(context) {
+			if (this._mode !== this.MODE_SELECT) {
+				return;
+			}
+			// カーソルの箇所に図形がどうかあるかを判定
+			// 図形があればマウスカーソルをall-scrollにする
+			var event = context.event;
+			var layersOffset = $(this._layers).offset();
+			var x = event.pageX - layersOffset.left;
+			var y = event.pageY - layersOffset.top;
+			// x,yの位置にあるshapeを取得
+			var isHit = false;
+			var shapes = this.drawingController.getAllShapes();
+			for (var i = 0, l = shapes.length; i < l; i++) {
+				if (shapes[i].isHitAt(x, y)) {
+					isHit = true;
+					break;
+				}
+			}
+			// カーソルの設定
+			$(this._layers).css('cursor', isHit ? 'all-scroll' : '');
 		},
 
 		//--------------------------------------------------------------
@@ -1002,12 +1034,23 @@
 		 * 選択された図形の操作
 		 */
 		'.selection-rectangle h5trackstart': function(context, $el) {
-			context.event.stopPropagation();
+			this._trackstartSelectedShape(context.event, $el);
+		},
+
+		'.selection-rectangle h5trackmove': function(context, $el) {
+			this._trackmoveSelectedShape(context.event, $el);
+		},
+
+		'.selection-rectangle h5trackend': function(context, $el) {
+			this._trackendSelectedShape(context.event, $el);
+		},
+
+		_trackstartSelectedShape: function(event, $el) {
+			event.stopPropagation();
 			var selectedShapes = this.selectionLogic.getSelected();
 			if (selectedShapes.length === 0) {
 				return;
 			}
-			var event = context.event;
 
 			// ドラッグセッションの開始
 			var sessions = [];
@@ -1037,12 +1080,15 @@
 					$selectionRectangles: $selectionRectangles
 				},
 				sessions: sessions,
-				moved: false
+				moved: false,
+				// 選択してすぐにトラックするモードになったかどうか
+				selectedWhenTrackstart: this._trackingData
+						&& this._trackingData.selectedWhenTrackstart
 			};
 		},
-		'.selection-rectangle h5trackmove': function(context, $el) {
-			context.event.stopPropagation();
-			var event = context.event;
+
+		_trackmoveSelectedShape: function(event, $el) {
+			event.stopPropagation();
 			var trackingData = this._trackingData;
 			var start = trackingData.start;
 			var tx = event.pageX - start.pageX;
@@ -1065,8 +1111,9 @@
 				sessions[i].move(tx, ty);
 			}
 		},
-		'.selection-rectangle h5trackend': function(context, $el) {
-			context.event.stopPropagation();
+
+		_trackendSelectedShape: function(event, $el) {
+			event.stopPropagation();
 			var trackingData = this._trackingData;
 			if (!trackingData.moved) {
 				// 動いていないなら何もしない
@@ -1195,7 +1242,7 @@
 			if (selectedShapes.length) {
 				// shapeがある場所の操作なら、その場所の一番前の要素を選択して終了
 				this.select(selectedShapes[selectedShapes.length - 1]);
-				this._trackingData.canceled = true;
+				this._trackingData.selectedWhenTrackstart = true;
 				return;
 			}
 			// shapeが無い場所からの選択操作なら、ドラッグして選択させるようにする
