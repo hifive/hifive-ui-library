@@ -116,16 +116,16 @@
 		_menuController: toolMenuController,
 
 		/**
-		 * DrawingController.
+		 * ツールバーコントローラが操作するArtbordController
 		 * <p>
-		 * ToolbarControllerの子コントローラとしてではなく、すでにバインド済みのインスタンスを設定する(親コントローラが設定している)。
-		 * スタンプの配置時にはツールバー上の操作で直接DrawingControllerのメソッドを呼んでスタンプを配置する。
+		 * すでにバインド済みのArtboadControllerのインスタンスを設定する(親コントローラが設定している)。
+		 * スタンプの配置、Controllerのメソッドを呼んでスタンプを配置する。
 		 * </p>
 		 *
 		 * @memberOf sample.ToolbarController
 		 * @type {h5.ui.components.drawing.controller.DrawingController}
 		 */
-		drawingCtrl: null,
+		targetArtboard: null,
 
 		/**
 		 * スタンプリスト要素
@@ -253,7 +253,7 @@
 			context.event.preventDefault();
 			this.hideOptionView();
 			this.trigger('unselect-all');
-			this.drawingCtrl.undo();
+			this.targetArtboard.undo();
 		},
 
 		/**
@@ -266,7 +266,7 @@
 			context.event.preventDefault();
 			this.hideOptionView();
 			this.trigger('unselect-all');
-			this.drawingCtrl.redo();
+			this.targetArtboard.redo();
 		},
 
 		/**
@@ -449,30 +449,26 @@
 
 		'.stamp-list .stamp-img h5trackend': function(context) {
 			var event = context.event;
-			var drawingCtrl = this.drawingCtrl;
+			var targetArtboard = this.targetArtboard;
 			var $stamp = this._$draggingStamp;
 			var height = $stamp[0].height;
 			var width = $stamp[0].width;
-			var offset = $(drawingCtrl.rootElement).offset();
+			var offset = $(targetArtboard.rootElement).offset();
 			var x = event.pageX - width / 2 - offset.left;
 			var y = event.pageY - height / 2 - offset.top;
 
-			var $drawingRoot = $(drawingCtrl.rootElement);
-			if (x + width < 0 || y + height < 0 || x > $drawingRoot.innerWidth()
-					|| y > $drawingRoot.innerHeight()) {
-				// 範囲外なら何もしない
-				return;
+			var $drawingRoot = $(targetArtboard.rootElement);
+			if (0 < x + width && 0 < y + height && x < $drawingRoot.innerWidth()
+					&& y < $drawingRoot.innerHeight()) {
+				// 範囲内なら描画
+				targetArtboard.drawImage({
+					id: $stamp.data(DATA_DRAWING_IMAGE_ID),
+					x: x,
+					y: y,
+					width: width,
+					height: height
+				});
 			}
-
-			drawingCtrl.drawImage({
-				id: $stamp.data(DATA_DRAWING_IMAGE_ID),
-				x: x,
-				y: y,
-				width: width,
-				height: height
-			});
-
-			$stamp.removeClass('dragging');
 			$stamp.remove();
 			this._$draggingStamp = null;
 		},
@@ -487,28 +483,36 @@
 		 * @param context
 		 */
 		'{.background-popup .set-background} h5trackstart': function(context, $el) {
+			var targetArtboard = this.targetArtboard;
 			var $parent = $el.parents('.background-popup');
-			var element, fillMode;
-			var val = $parent.find('.background-image-list').val();
-			if (val !== 'none') {
-				element = this.$find('.drawing-image.background')[parseInt(val)];
-				fillMode = $parent.find('.background-fillmode-list').val();
+			var imageListVal = $parent.find('.background-image-list').val();
+			var backgroundData = null;
+			if (imageListVal !== 'none') {
+				var element = this.$find('.drawing-image.background')[parseInt(imageListVal)];
+				var fillMode = $parent.find('.background-fillmode-list').val();
+
+				backgroundData = {
+					id: $(element).data(DATA_DRAWING_IMAGE_ID),
+					fillMode: fillMode
+				};
+				if (fillMode === 'none-center') {
+					// 中央配置
+					var w = element.naturalWidth;
+					var h = element.naturalHeight;
+					var $artboardRoot = $(targetArtboard.rootElement);
+					backgroundData.x = ($artboardRoot.innerWidth() - w) / 2;
+					backgroundData.y = ($artboardRoot.innerHeight() - h) / 2;
+					backgroundData.fillMode = 'none';
+				}
 			}
-			var color, opacity;
+			var rgbaColor = null;
 			if ($parent.find('.background-color-list').val() !== 'none') {
-				color = $parent.find('.background-color-selected').css('background-color');
-				opacity = $parent.find('.background-color-selected').css('opacity');
-			} else {
-				color = 'rgb(255,255,255)';
-				opacity = 1;
+				var color = $parent.find('.background-color-selected').css('background-color');
+				var opacity = $parent.find('.background-color-selected').css('opacity');
+				rgbaColor = sample.util.rgbToRgba(color, opacity);
 			}
 
-			this.trigger('set-background', {
-				element: element,
-				fillMode: fillMode,
-				color: color,
-				opacity: opacity
-			});
+			targetArtboard.setBackground(rgbaColor, backgroundData);
 		},
 
 		/**

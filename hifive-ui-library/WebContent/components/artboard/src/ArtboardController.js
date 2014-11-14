@@ -194,47 +194,73 @@
 })();
 
 //----------------------------------------------------------------------------
-// ui.components.drawing.controller.DrawingOperationController
+// ui.components.drawing.controller.ArtboardController
 //----------------------------------------------------------------------------
 (function() {
 	//------------------------------------------------------------
 	// Const
 	//------------------------------------------------------------
+	// ArtboardControllerが上げるイベント名
+
+	/** undoができるようになった時に上がるイベント名 */
+	var EVENT_ENABLE_UNDO = 'enable-undo';
+
+	/** redoができるようになった時に上がるイベント名 */
+	var EVENT_ENABLE_REDO = 'enable-redo';
+
+	/** undoができなくなった時に上がるイベント名 */
+	var EVENT_DISABLE_UNDO = 'disable-undo';
+
+	/** redoが出来なくなったときに上がるイベント名 */
+	var EVENT_DISABLE_REDO = 'disable-redo';
+
+	/** 描画操作を開始した時に上がるイベント名 */
+	var EVENT_DRAWSTART = 'drawstart';
+
+	/** 描画操作を終了した時に上がるイベント名 */
+	var EVENT_DRAWEND = 'drawend';
+
+	/** 図形を選択した時に上がるイベント名 */
+	var EVENT_SELECT_SHAPE = 'select-shape';
+
+	/** 図形の選択を解除した時に上がるイベント名 */
+	var EVENT_UNSELECT_SHAPE = 'unselect-shape';
+
 
 	//------------------------------------------------------------
 	// Body
 	//------------------------------------------------------------
 	/**
-	 * DrawingControllerを使って描画を行うコントローラ
+	 * DrawingLogicを使って描画を行うコントローラ
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.controller.DrawingOperationController
+	 * @name h5.ui.components.drawing.controller.ArtboardController
 	 */
 	var controller = {
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
-		__name: 'h5.ui.components.drawing.controller.DrawingOperationController',
+		__name: 'h5.ui.components.drawing.controller.ArtboardController',
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
-		 * @type h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @type h5.ui.components.drawing.logic.DrawingLogic
 		 */
-		drawingController: h5.ui.components.drawing.controller.DrawingController,
+		drawingLogic: h5.ui.components.drawing.logic.DrawingLogic,
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @type h5.ui.components.SelectionLogic
 		 */
 		selectionLogic: h5.ui.components.SelectionLogic,
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		__meta: {
-			drawingController: {
+			drawingLogic: {
 				rootElement: null
 			}
 		},
@@ -242,7 +268,7 @@
 		/**
 		 * 描画モード(定数)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		MODE_DISABLE: 0,
@@ -257,7 +283,7 @@
 		/**
 		 * canvas要素(__initで設定)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_canvas: null,
@@ -265,7 +291,7 @@
 		/**
 		 * 描画レイヤ要素
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_layers: null,
@@ -273,7 +299,7 @@
 		/**
 		 * トラック操作中に保持するデータ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_trackingData: null,
@@ -281,7 +307,7 @@
 		/**
 		 * トラックして範囲選択するときに表示する要素(__initで設定)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_$selectionScopeRectangle: null,
@@ -295,7 +321,7 @@
 		 * デフォルト#000
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeColor: '#000',
@@ -306,7 +332,7 @@
 		 * デフォルト#fff
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_fillColor: '#fff',
@@ -317,7 +343,7 @@
 		 * デフォルト5
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeWidth: 5,
@@ -325,7 +351,7 @@
 		/**
 		 * 線のopacity
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeOpacity: '1',
@@ -333,7 +359,7 @@
 		/**
 		 * 塗りつぶしのopacity
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_fillOpacity: '1',
@@ -344,7 +370,7 @@
 		 * デフォルト'none'
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeFill: 'none',
@@ -355,7 +381,7 @@
 		 * 'miter','round','bevel'のいずれか。(デフォルト'round')
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeLinejoin: 'round',
@@ -366,7 +392,7 @@
 		 * 'butt','round','square'のいずれか。(デフォルト'round')
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_strokeLinecap: 'round',
@@ -374,7 +400,7 @@
 		/**
 		 * 多角形の継ぎ目に利用される形状(デフォルト'miter')
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		_polygonLinejoin: 'miter',
@@ -382,7 +408,7 @@
 		/**
 		 * 描画モードの設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param mode
 		 */
 		setMode: function(mode) {
@@ -399,7 +425,7 @@
 		/**
 		 * 線の色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param color
 		 */
 		setStrokeColor: function(color) {
@@ -409,7 +435,7 @@
 		/**
 		 * 塗りつぶしの色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param color
 		 */
 		setFillColor: function(color) {
@@ -419,7 +445,7 @@
 		/**
 		 * 線のopacity設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param opacity
 		 */
 		setStrokeOpacity: function(opacity) {
@@ -428,7 +454,7 @@
 		/**
 		 * 塗りつぶしのopacity設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param opacity
 		 */
 		setFillOpacity: function(opacity) {
@@ -438,7 +464,7 @@
 		/**
 		 * 線の太さ設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param lineWidth
 		 */
 		setStrokeWidth: function(lineWidth) {
@@ -456,7 +482,7 @@
 		/**
 		 * ストロークされる際の継ぎ目に利用される形状(bevel,round,miterの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param strokeLinejoin
 		 */
 		setStrokeLinejoin: function(strokeLinejoin) {
@@ -466,7 +492,7 @@
 		/**
 		 * ストロークの両端に利用される形状(butt, round, squareの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param strokeLinecap
 		 */
 		setStrokeLinecap: function(strokeLinecap) {
@@ -476,7 +502,7 @@
 		/**
 		 * 多角形の継ぎ目に利用される形状(bevel,round,miterの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param polygonLinejoin
 		 */
 		setPolygonLinejoin: function(polygonLinejoin) {
@@ -484,25 +510,48 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 */
 		__init: function() {
 			// canvas要素を取得
 			this._canvas = this.$find('canvas')[0];
 			// レイヤ領域を取得
-			this._layers = this.$find('.h5drawing-layers')[0];
-			// drawingControllerのルートエレメントはレイヤ領域
-			this.drawingController.rootElement = this._layers;
+			var $layers = this.$find('.h5drawing-layers');
+			this._layers = $layers[0];
 			// 選択ドラッグ中に表示する要素を作成
 			this._$selectionScopeRectangle = $('<div class="selection-scope-rectangle"></div>');
 			$(this.rootElement).append(this._$selectionScopeRectangle);
+
+			// drawingLogicのセットアップ
+			var svgLayer = $layers.find('.svg-layer')[0];
+			var backgroundLayer = $layers.find('.background-layer')[0];
+			this.drawingLogic.init(svgLayer, backgroundLayer);
+
+			// スクロールされないようにタッチのあるブラウザでtouchmoveのpreventDefaultを設定
+			// (SVG要素にはtouch-action:noneが効かないため、preventDefault()で制御する)
+			if (document.ontouchstart !== undefined) {
+				$(svgLayer).addClass('touchmove-cancel');
+				this.on('{.touchmove-cancel}', 'touchmove', function(context) {
+					context.event.preventDefault();
+				});
+			}
+			// CommandManagerにイベントをバインドする
+			// undo/redoが可能/不可能になった時にルートエレメントからイベントをあげる
+			var commandManager = this.drawingLogic.getCommandManager();
+			var events = [EVENT_ENABLE_UNDO, EVENT_ENABLE_REDO, EVENT_DISABLE_UNDO,
+					EVENT_DISABLE_REDO];
+			for (var i = 0, l = events.length; i < l; i++) {
+				this.on(commandManager, events[i], function(context) {
+					this.trigger(context.event.type);
+				});
+			}
 		},
 
 		/**
 		 * canvasをクリア
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		clearCanvas: function() {
 			var ctx = this._canvas.getContext('2d');
@@ -520,7 +569,7 @@
 		 * canvasにイベントが来るのは描画モードの場合のみ
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackstart': function(context) {
@@ -537,14 +586,14 @@
 				},
 				moved: false
 			};
-			this.trigger('drawstart');
+			this.trigger(EVENT_DRAWSTART);
 			var startFunctionName = '_' + this._mode + 'DrawStart';
 			this[startFunctionName] && this[startFunctionName](context);
 		},
 		/**
 		 * canvas要素のトラックイベント
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackmove': function(context) {
@@ -557,7 +606,7 @@
 		/**
 		 * canvas要素のトラックイベント
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackend': function(context) {
@@ -565,14 +614,14 @@
 			event.stopPropagation();
 			var endFunctionName = '_' + this._mode + 'DrawEnd';
 			this[endFunctionName] && this[endFunctionName](context);
-			this.trigger('drawend');
+			this.trigger(EVENT_DRAWEND);
 			this._trackingData = null;
 		},
 
 		/**
 		 * 選択モード(canvasが無い)時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackstart': function(context) {
@@ -601,7 +650,7 @@
 		/**
 		 * 選択モード時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackmove': function(context) {
@@ -620,7 +669,7 @@
 		/**
 		 * 選択モード時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackend': function(context) {
@@ -647,9 +696,9 @@
 			var y = event.pageY - layersOffset.top;
 			// x,yの位置にあるshapeを取得
 			var isHit = false;
-			var shapes = this.drawingController.getAllShapes();
+			var shapes = this.getAllShapes();
 			for (var i = 0, l = shapes.length; i < l; i++) {
-				if (shapes[i].isHitAt(x, y)) {
+				if (shapes[i].hitTest(x, y)) {
 					isHit = true;
 					break;
 				}
@@ -659,12 +708,307 @@
 		},
 
 		//--------------------------------------------------------------
-		// ペン描画
+		// DrawingLogicの操作
+		//--------------------------------------------------------------
+		//
+		/**
+		 * 描画されている図形からセーブデータを作成します
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @returns {DrawingSaveData}
+		 */
+		save: function() {
+			return this.drawingLogic.save();
+		},
+
+		/**
+		 * セーブデータををロードして描画します
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {DrawingSaveData}
+		 */
+		load: function(artboardSaveData) {
+			this.drawingLogic.load(artboardSaveData);
+		},
+
+		/**
+		 * 操作の取り消し
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		undo: function() {
+			this.drawingLogic.undo();
+		},
+
+		/**
+		 * 操作のやり直し
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		redo: function() {
+			this.drawingLogic.redo();
+		},
+
+		/**
+		 * 描画に使用する画像のマップオブジェクトを取得
+		 * <p>
+		 * ArtboadControllerが持つ<a
+		 * href="h5.ui.components.drawing.logic.DrawingLogic.html">DrawingLogic</a>インスタンスの<a
+		 * href="h5.ui.components.drawing.logic.DrawingLogic.html#imageSourceMap">imageSourceMap</a>を返します。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		getImageSourceMap: function() {
+			return this.drawingLogic.imageSourceMap;
+		},
+
+		/**
+		 * アップデートセッションの開始
+		 * <p>
+		 * このメソッドを呼ぶと、次に<a href="#endUpdate">endUpdate()</a>を呼ぶまで、undoデータは作られません。
+		 * </p>
+		 * <p>
+		 * 描画や既存の図形の変更などの操作を複数回行った結果を１つのundoデータにしたい場合はこのメソッドを使用してください
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		beginUpdate: function() {
+			this.drawingLogic.beginUpdate();
+		},
+
+		/**
+		 * アップデートセッションの終了
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		endUpdate: function() {
+			this.drawingLogic.endUpdate();
+		},
+
+		/**
+		 * 描画されている図形を画像データにして返します
+		 * <p>
+		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
+		 * @param {Object} [processParameter]
+		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
+		 */
+		getImage: function(returnType, processParameter) {
+			return this.drawingLogic.getImage(returnType, processParameter);
+		},
+
+		/**
+		 * 管理下にある図形を全て取得します
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
+		 * @returns {DRShape[]}
+		 */
+		getAllShapes: function(exceptAlone) {
+			return this.drawingLogic.getAllShapes(exceptAlone);
+		},
+
+		/**
+		 * 渡された図形のIDを返します
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {DRShape} shape
+		 * @returns {String}
+		 */
+		getShapeID: function(shape) {
+			return this.drawingLogic.getShapeID(shape);
+		},
+
+		//--------------------------------------------------------------
+		// 図形の描画関数
+		//--------------------------------------------------------------
+		/**
+		 * 矩形を描画する
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {Integer} x 左上のx座標
+		 * @param {Integer} y 左上のy座標
+		 * @param {Integer} width 正方形の幅
+		 * @param {Integer} height 正方形の高さ
+		 * @param {Boolean} isFill 塗りつぶすかどうか
+		 * @returns {DRRect}
+		 */
+		drawRect: function(x, y, width, height, isFill) {
+			return this.drawingLogic.drawRect(x, y, width, height, {
+				stroke: this._strokeColor,
+				strokeOpacity: this._strokeOpacity,
+				strokeWidth: this._strokeWidth,
+				fill: isFill ? this._fillColor : 'none',
+				fillOpacity: isFill ? this._fillOpacity : '1',
+				polygonLinejoin: this._polygonLinejoin
+			});
+		},
+
+		/**
+		 * 楕円を描画する
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {Integer} cx 楕円の中心位置のx座標
+		 * @param {Integer} cy 楕円の中心位置のy座標
+		 * @param {Integer} rx 楕円の水平方向の半径
+		 * @param {Integer} ry 楕円の垂直方向の半径
+		 * @param {Boolean} isFill 塗りつぶすかどうか
+		 * @returns {DREllipse}
+		 */
+		drawEllipse: function(cx, cy, rx, ry, isFill) {
+			return this.drawingLogic.drawEllipse(cx, cy, rx, ry, {
+				stroke: this._strokeColor,
+				strokeOpacity: this._strokeOpacity,
+				strokeWidth: this._strokeWidth,
+				fill: isFill ? this._fillColor : 'none',
+				fillOpacity: isFill ? this._fillOpacity : '1'
+			});
+		},
+
+		/**
+		 * パスを描画する
+		 * <p>
+		 * SVGのpath要素のd属性の記述方法でパスを指定します
+		 * </p>
+		 *
+		 * <pre class="sh_javascript">
+		 * // 例：(100px,200px)の位置から(x,y)方向に(10px,20px)移動し、その後その場所から(-10px,-10px)移動するようなデータの場合
+		 * 'M 100 200 l 10 20 -10 -10'
+		 * </pre>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {String} pathData
+		 * @returns {DRPath}
+		 */
+		drawPath: function(pathData) {
+			return this.drawingLogic.drawPath({
+				pathData: pathData,
+				style: {
+					stroke: this._strokeColor,
+					strokeOpacity: this._strokeOpacity,
+					strokeWidth: this._strokeWidth,
+					fill: this._strokeFill,
+					fillOpacity: this._strokefillOpacity,
+					strokeLinejoin: this._strokeLinejoin,
+					strokeLinecap: this._strokeLinecap
+				}
+			});
+		},
+
+		/**
+		 * 画像の配置
+		 * <p>
+		 * クローンしてdivレイヤに配置します
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {Object} data
+		 *
+		 * <pre class="sh_javascript">
+		 * {
+		 * 	x: x座標,
+		 * 	y: y座標,
+		 * 	width: 幅,
+		 * 	height: 高さ,
+		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
+		 * }
+		 * </pre>
+		 *
+		 * @returns {DRImage}
+		 */
+		drawImage: function(data) {
+			return this.drawingLogic.drawImage(data);
+		},
+
+		/**
+		 * 背景色と背景画像の設定
+		 * <p>
+		 * 背景色と背景画像の設定を行います。
+		 * </p>
+		 * <p>
+		 * 背景色と背景画像を同じアップデートセッションで設定します。個別に設定する場合は<a href="#setBackgroundColor">setBackgroundColor</a>と<a
+		 * href="#setBackgroundImage">setBackgroundImage</a>を使用してください
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {String} color 指定無しの場合は背景色は変更しません
+		 * @param {Object} backgroundImageData 指定無しの場合は背景画像は変更しません
+		 */
+		setBackground: function(color, backgroundImageData) {
+			if (!color && !backgroundImageData) {
+				return;
+			}
+			this.drawingLogic.beginUpdate();
+			if (color) {
+				this.setBackgroundColor(color);
+			}
+			if (backgroundImageData) {
+				this.setBackgroundImage(backgroundImageData);
+			}
+			this.endUpdate();
+		},
+
+		/**
+		 * 背景色の設定
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {String} color 色
+		 */
+		setBackgroundColor: function(color) {
+			this.drawingLogic.setBackgroundColor(color);
+		},
+
+		/**
+		 * 背景画像の設定
+		 * <p>
+		 * 画像IDまたはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
+		 * </p>
+		 * <p>
+		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
+		 * </p>
+		 * <ul>
+		 * <li>none : 左上を原点として画像のサイズを変更せずに描画
+		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
+		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
+		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
+		 * </ul>
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {Object} data
+		 *
+		 * <pre>
+		 * {
+		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
+		 * 	fillMode: 画像の配置モード('none'|'contain'|'cover'|'stretch') 指定のない場合は'none'で描画します,
+		 * 	x: 背景画像の開始位置のx座標(fillModeがnoneの場合のみ有効。デフォルト:0),
+		 * 	y: 背景画像の開始位置のy座標(fillModeがnoneの場合のみ有効。デフォルト:0)
+		 * }
+		 * </pre>
+		 */
+		setBackgroundImage: function(data) {
+			this.drawingLogic.setBackgroundImage(data);
+		},
+
+
+		//------------------------------------------------------------------------
+		//
+		// 描画操作
+		//
+		//------------------------------------------------------------------------
+		//--------------------------------------------------------------
+		// ペン描画操作
 		//--------------------------------------------------------------
 		/**
 		 * ペン描画開始
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -676,7 +1020,7 @@
 		/**
 		 * ペン描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -707,7 +1051,7 @@
 		/**
 		 * ペン描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -717,18 +1061,7 @@
 				return;
 			}
 			// 確定
-			this.drawingController.drawPath({
-				pathData: this._trackingData.d,
-				style: {
-					stroke: this._strokeColor,
-					strokeOpacity: this._strokeOpacity,
-					strokeWidth: this._strokeWidth,
-					fill: this._strokeFill,
-					fillOpacity: this._strokefillOpacity,
-					strokeLinejoin: this._strokeLinejoin,
-					strokeLinecap: this._strokeLinecap
-				}
-			});
+			this.drawPath(this._trackingData.d);
 			// カンバスのクリア
 			// (ちらつき防止のためtimeoutで削除)
 			setTimeout(this.own(function() {
@@ -741,12 +1074,12 @@
 		},
 
 		//--------------------------------------------------------------
-		// ライン描画
+		// ライン描画操作
 		//--------------------------------------------------------------
 		/**
 		 * ライン描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -775,7 +1108,7 @@
 		/**
 		 * ライン描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -793,16 +1126,8 @@
 			var endY = event.offsetY;
 
 			// 確定
-			this.drawingController.drawPath({
-				pathData: h5.u.str.format('M {0} {1} l {2} {3}', startX, startY, endX - startX,
-						endY - startY),
-				style: {
-					stroke: this._strokeColor,
-					strokeOpacity: this._strokeOpacity,
-					strokeWidth: this._strokeWidth,
-					strokeLinecap: this._strokeLinecap
-				}
-			});
+			this.drawPath(h5.u.str.format('M {0} {1} l {2} {3}', startX, startY, endX - startX,
+					endY - startY));
 			// カンバスのクリア
 			// (ちらつき防止のためtimeoutで削除)
 			setTimeout(this.own(function() {
@@ -815,12 +1140,12 @@
 		},
 
 		//--------------------------------------------------------------
-		// 矩形描画
+		// 矩形描画操作
 		//--------------------------------------------------------------
 		/**
 		 * 矩形描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -854,7 +1179,7 @@
 		/**
 		 * 矩形描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -886,14 +1211,7 @@
 			}
 
 			// 確定
-			this.drawingController.drawRect(startX, startY, width, height, {
-				stroke: this._strokeColor,
-				strokeOpacity: this._strokeOpacity,
-				strokeWidth: this._strokeWidth,
-				fill: isFill ? this._fillColor : 'none',
-				fillOpacity: isFill ? this._fillOpacity : '1',
-				polygonLinejoin: this._polygonLinejoin
-			});
+			this.drawRect(startX, startY, width, height, isFill);
 
 			// カンバスのクリア
 			// (ちらつき防止のためtimeoutで削除)
@@ -907,7 +1225,7 @@
 		},
 
 		//--------------------------------------------------------------
-		// 矩形描画(塗りつぶしあり)
+		// 矩形描画操作(塗りつぶしあり)
 		//--------------------------------------------------------------
 		_fillrectDrawMove: function(context) {
 			this._rectDrawMove(context, true);
@@ -917,10 +1235,10 @@
 		},
 
 		//--------------------------------------------------------------
-		// 円描画
+		// 楕円描画操作
 		//--------------------------------------------------------------
 		/**
-		 * 円描画移動
+		 * 楕円描画移動
 		 *
 		 * @param context
 		 * @param isFill 塗りつぶすかどうか
@@ -970,7 +1288,7 @@
 		},
 
 		/**
-		 * 円描画終了
+		 * 楕円描画終了
 		 *
 		 * @param context
 		 * @param isFill 塗りつぶすかどうか
@@ -995,13 +1313,7 @@
 				// 半径0なら何もしない
 				return;
 			}
-			this.drawingController.drawEllipse(cx, cy, rx, ry, {
-				stroke: this._strokeColor,
-				strokeOpacity: this._strokeOpacity,
-				strokeWidth: this._strokeWidth,
-				fill: isFill ? this._fillColor : 'none',
-				fillOpacity: isFill ? this._fillOpacity : '1'
-			});
+			this.drawEllipse(cx, cy, rx, ry, isFill);
 
 			// カンバスのクリア
 			// (ちらつき防止のためtimeoutで削除)
@@ -1015,7 +1327,7 @@
 		},
 
 		//--------------------------------------------------------------
-		// 円描画(塗りつぶしあり)
+		// 楕円描画操作(塗りつぶしあり)
 		//--------------------------------------------------------------
 		_fillcircleDrawMove: function(context) {
 			this._circleDrawMove(context, true);
@@ -1057,7 +1369,7 @@
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
 				var shape = selectedShapes[i];
 				sessions.push(shape.beginDrag());
-				var id = this.drawingController.getShapeID(shape);
+				var id = this.getShapeID(shape);
 			}
 
 			// ドラッグ開始時の選択範囲表示要素の位置
@@ -1122,18 +1434,18 @@
 			var sessions = trackingData.sessions;
 			// 図形の位置を確定
 			// アップデートセッション内で行う
-			this.drawingController.beginUpdate();
+			this.beginUpdate();
 			for (var i = 0, l = sessions.length; i < l; i++) {
 				sessions[i].end();
 			}
-			this.drawingController.endUpdate();
+			this.endUpdate();
 			this._trackingData = null;
 		},
 
 		/**
 		 * 図形の選択
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param {Shape|Shape[]} shapes
 		 * @param {Boolean} isExclusive trueの場合は既に選択状態の図形について選択状態を解除する
 		 */
@@ -1150,14 +1462,14 @@
 			}
 			// 選択された図形のリストをイベントであげる
 			if (selected.length) {
-				this.trigger('select-shape', selected);
+				this.trigger(EVENT_SELECT_SHAPE, selected);
 			}
 		},
 
 		/**
 		 * 図形の選択状態を解除
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @param {Shape|Shape[]} shapes
 		 */
 		unselect: function(shapes) {
@@ -1168,21 +1480,21 @@
 				this._removeSelectionRectangle(shape);
 			}
 			if (unselected.length) {
-				this.trigger('unselect-shape', unselected);
+				this.trigger(EVENT_UNSELECT_SHAPE, unselected);
 			}
 		},
 
 		/**
 		 * 全ての描画されている図形を選択状態にする
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		selectAll: function() {
-			var shapes = this.drawingController.getAllShapes();
+			var shapes = this.getAllShapes();
 			var appendedShapes = [];
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
-				if (shape.isAppending()) {
+				if (!shape.isAlone()) {
 					appendedShapes.push(shape);
 				}
 			}
@@ -1192,7 +1504,7 @@
 		/**
 		 * 全ての選択状態である図形について選択状態を解除
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		unselectAll: function(Shapes) {
 			var selectionLogic = this.selectionLogic;
@@ -1201,14 +1513,14 @@
 				this._removeSelectionRectangle(unselected[i]);
 			}
 			if (unselected.length) {
-				this.trigger('unselect-shape', unselected);
+				this.trigger(EVENT_UNSELECT_SHAPE, unselected);
 			}
 		},
 
 		/**
 		 * 選択されている図形リストを取得
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @returns {Shapes[]}
 		 */
 		getSelectedShapes: function() {
@@ -1217,7 +1529,7 @@
 		/**
 		 * セレクトモード時の選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1231,11 +1543,11 @@
 			var x = trackingData.start.x;
 			var y = trackingData.start.y;
 			// x,yの位置にあるshapeを取得
-			var shapes = this.drawingController.getAllShapes();
+			var shapes = this.getAllShapes();
 			var selectedShapes = [];
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
-				if (shape.isHitAt(x, y)) {
+				if (shape.hitTest(x, y)) {
 					selectedShapes.push(shape);
 				}
 			}
@@ -1270,7 +1582,7 @@
 		/**
 		 * セレクトモード時のドラッグ選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1310,7 +1622,7 @@
 		/**
 		 * セレクトモード時のドラッグ選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1325,7 +1637,7 @@
 			var y = rect.y;
 			var w = rect.w;
 			var h = rect.h;
-			var shapes = this.drawingController.getAllShapes();
+			var shapes = this.getAllShapes();
 			var containedShapes = [];
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
@@ -1339,24 +1651,24 @@
 		/**
 		 * 指定された図形について、選択範囲表示を削除する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param shape
 		 */
 		_removeSelectionRectangle: function(shape) {
-			var id = this.drawingController.getShapeID(shape);
+			var id = this.getShapeID(shape);
 			$('.selection-rectangle[data-target-shape-id=' + id + ']').remove();
 		},
 
 		/**
 		 * 指定された図形について、選択範囲表示を表示する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingOperationController
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @private
 		 * @param shape
 		 */
 		_addSelectionRectangle: function(shape) {
-			var id = this.drawingController.getShapeID(shape);
+			var id = this.getShapeID(shape);
 			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="'
 					+ id + '"></div>');
 			$(this.rootElement).append($selectionRectangle);

@@ -277,7 +277,7 @@
 		 * @param {Command} after execute時に追加で実行するコマンド(undoの場合は先に追加したコマンドが実行されます)
 		 * @returns {Command} 自分自身を返す
 		 */
-		margeCommand: function(after) {
+		mergeCommand: function(after) {
 			switch (this._type) {
 			case 'style':
 				// スタイルの場合は一つのコマンドにする
@@ -362,12 +362,12 @@
 				}
 				if (isSame) {
 					for (var i = 0; i < length; i++) {
-						lastCommand[i].margeCommand(command[i]);
+						lastCommand[i].mergeCommand(command[i]);
 					}
 					return;
 				}
 			} else if (isStyleChangeCommandForSameElement(lastCommand, command)) {
-				lastCommand.margeCommand(command);
+				lastCommand.mergeCommand(command);
 				return;
 			}
 			// 最後尾に追加
@@ -772,13 +772,13 @@
 		},
 
 		/**
-		 * 図形がレイヤ上に描画されているかどうかを返します
+		 * レイヤ上に描画されていない図形ならisAloneはtrue、そうでないならfalseを返します
 		 *
 		 * @memberOf DRShape
 		 * @returns {Boolean}
 		 */
-		isAppending: function() {
-			return !!this._element.parentNode;
+		isAlone: function() {
+			return !this._element.parentNode;
 		},
 
 		/**
@@ -792,8 +792,8 @@
 		 * @param y
 		 * @returns {Boolean}
 		 */
-		isHitAt: function(x, y) {
-			if (!this.isAppending()) {
+		hitTest: function(x, y) {
+			if (this.isAlone()) {
 				return false;
 			}
 			var box = this.getBBox();
@@ -804,7 +804,7 @@
 		},
 
 		/**
-		 * 図形が指定された矩形(x,y,w,h)に含まれるかどうかを返します
+		 * 図形が指定された矩形(x,y,w,h)に含まれるかどうかを返します(交わるだけではなく完全に含まれるかどうかを判定します)
 		 * <p>
 		 * 指定された矩形に含まれない場合、または描画されていない図形ならfalseを返します
 		 * </p>
@@ -817,7 +817,7 @@
 		 * @returns {Boolean}
 		 */
 		isInRect: function(x, y, w, h) {
-			if (!this.isAppending()) {
+			if (this.isAlone()) {
 				return false;
 			}
 			var box = this.getBBox();
@@ -836,7 +836,10 @@
 		 * @param {Integer} y y座標位置
 		 * @interface
 		 */
-		moveTo: null,
+		moveTo: function() {
+			// 子クラスでの実装が必須
+			throw new Error('moveToを使用する場合、子クラスでの実装が必須です');
+		},
 
 		/**
 		 * 図形の移動を相対座標指定で行います
@@ -847,7 +850,10 @@
 		 * @param {Integer} y y座標位置
 		 * @interface
 		 */
-		moveBy: null,
+		moveBy: function() {
+			// 子クラスでの実装が必須
+			throw new Error('moveToを使用する場合、子クラスでの実装が必須です');
+		},
 
 		/**
 		 * エレメントのスタイルをコマンドを作って設定
@@ -910,12 +916,12 @@
 	 * @param {Object} strokeProto
 	 * @returns {Object} 渡されたオブジェクトにストロークを持つ図形のプロパティを追加して返す
 	 */
-	function mixinStrokeDRShape(strokeProto) {
+	function mixinDRStrokeShape(strokeProto) {
 		// JSDocのみ
 		/**
 		 * ストロークを持つ図形についてのプロパティ定義
 		 * <p>
-		 * 以下のクラスがStrokeDRShapeのプロパティを持ちます(プロトタイプにmixinしています)
+		 * 以下のクラスがDRStrokeShapeのプロパティを持ちます(プロトタイプにmixinしています)
 		 * </p>
 		 * <ul>
 		 * <li><a href="Path.html">Path</a>
@@ -924,7 +930,7 @@
 		 * </ul>
 		 *
 		 * @mixin
-		 * @name StrokeDRShape
+		 * @name DRStrokeShape
 		 */
 
 		/**
@@ -937,7 +943,7 @@
 		 * </p>
 		 *
 		 * @name strokeColor
-		 * @memberOf StrokeDRShape
+		 * @memberOf DRStrokeShape
 		 * @type {String}
 		 */
 		Object.defineProperty(strokeProto, 'strokeColor', {
@@ -960,7 +966,7 @@
 		 * </p>
 		 *
 		 * @name strokeOpacity
-		 * @memberOf StrokeDRShape
+		 * @memberOf DRStrokeShape
 		 * @type {Number}
 		 */
 		Object.defineProperty(strokeProto, 'strokeOpacity', {
@@ -983,7 +989,7 @@
 		 * </p>
 		 *
 		 * @name strokeWidth
-		 * @memberOf StrokeDRShape
+		 * @memberOf DRStrokeShape
 		 * @type {Integer}
 		 */
 		Object.defineProperty(strokeProto, 'strokeWidth', {
@@ -1009,11 +1015,11 @@
 	 * @param {Object} fillProto
 	 * @returns {Object} 渡されたオブジェクトに塗りつぶし図形のプロパティを追加して返す
 	 */
-	function mixinFillDRShape(fillProto) {
+	function mixinDRFillShape(fillProto) {
 		/**
 		 * 塗りつぶしを持つ図形についてのプロパティ定義
 		 * <p>
-		 * 以下のクラスがFillDRShapeのプロパティを持ちます(プロトタイプにmixinしています)
+		 * 以下のクラスがDRFillShapeのプロパティを持ちます(プロトタイプにmixinしています)
 		 * </p>
 		 * <ul>
 		 * <li><a href="Rect.html">Rect</a>
@@ -1021,7 +1027,7 @@
 		 * </ul>
 		 *
 		 * @mixin
-		 * @name FillDRShape
+		 * @name DRFillShape
 		 */
 		/**
 		 * 塗りつぶしの色
@@ -1033,7 +1039,7 @@
 		 * </p>
 		 *
 		 * @name fillColor
-		 * @memberOf FillDRShape
+		 * @memberOf DRFillShape
 		 * @type {String}
 		 */
 		Object.defineProperty(fillProto, 'fillColor', {
@@ -1056,7 +1062,7 @@
 		 * </p>
 		 *
 		 * @name fillOpacity
-		 * @memberOf FillDRShape
+		 * @memberOf DRFillShape
 		 * @type {Number}
 		 */
 		Object.defineProperty(fillProto, 'fillOpacity', {
@@ -1083,7 +1089,7 @@
 	 * @class
 	 * @name DRPath
 	 * @extends DRShape
-	 * @mixes StrokeDRShape
+	 * @mixes DRStrokeShape
 	 * @param element
 	 * @param commandManager
 	 */
@@ -1094,7 +1100,7 @@
 	}
 	DRPath.prototype = Object.create(DRShape.prototype);
 	DRPath.constructor = DRPath;
-	$.extend(mixinStrokeDRShape(DRPath.prototype), {
+	$.extend(mixinDRStrokeShape(DRPath.prototype), {
 		/**
 		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
 		 *
@@ -1159,8 +1165,8 @@
 	 * @class
 	 * @name DRRect
 	 * @extends DRShape
-	 * @mixes StrokeDRShape
-	 * @mixes FillDRShape
+	 * @mixes DRStrokeShape
+	 * @mixes DRFillShape
 	 * @param element
 	 * @param commandManager
 	 */
@@ -1171,7 +1177,7 @@
 	}
 	DRRect.prototype = Object.create(DRShape.prototype);
 	DRRect.constructor = DRRect;
-	$.extend(mixinFillDRShape(mixinStrokeDRShape(DRRect.prototype)), {
+	$.extend(mixinDRFillShape(mixinDRStrokeShape(DRRect.prototype)), {
 		/**
 		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
 		 *
@@ -1209,8 +1215,8 @@
 	 * @class
 	 * @name DREllipse
 	 * @extends DRShape
-	 * @mixes StrokeDRShape
-	 * @mixes FillDRShape
+	 * @mixes DRStrokeShape
+	 * @mixes DRFillShape
 	 * @param element
 	 * @param commandManager
 	 */
@@ -1221,7 +1227,7 @@
 	}
 	DREllipse.prototype = Object.create(DRShape.prototype);
 	DREllipse.constructor = DREllipse;
-	$.extend(mixinFillDRShape(mixinStrokeDRShape(DREllipse.prototype)), {
+	$.extend(mixinDRFillShape(mixinDRStrokeShape(DREllipse.prototype)), {
 		/**
 		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
 		 *
@@ -1418,17 +1424,17 @@
 	// Controller
 	//------------------------------------------------------------
 	/**
-	 * 図形の描画を行うコントローラ
+	 * 図形の描画を行うロジック
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.controller.DrawingController
+	 * @name h5.ui.components.drawing.logic.DrawingLogic
 	 */
-	var drawingController = {
+	var drawingLogic = {
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
-		__name: 'h5.ui.components.drawing.controller.DrawingController',
+		__name: 'h5.ui.components.drawing.logic.DrawingLogic',
 
 		/**
 		 * 画像IDと画像パスのマップ
@@ -1437,15 +1443,15 @@
 		 * 画像IDを使って画像を指定する場合はこのオブジェクトに直接登録してください。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @type {Object}
 		 */
-		imageSourceMap: {},
+		imageSourceMap: null,
 
 		/**
 		 * svgレイヤー要素
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
 		_svgLayer: null,
@@ -1453,7 +1459,7 @@
 		/**
 		 * 背景画像レイヤー要素
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
 		_backgroundLayer: null,
@@ -1461,24 +1467,24 @@
 		/**
 		 * コマンドマネージャ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
 		_commandManager: null,
 
 
 		/**
-		 * このコントローラで作成した図形(Shape)と図形IDのマップ
+		 * このロジックで作成した図形(Shape)と図形IDのマップ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
 		_shapeMap: {},
 
 		/**
-		 * このコントローラで作成した図形(Shape)のID管理用シーケンス
+		 * このロジックで作成した図形(Shape)のID管理用シーケンス
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
 		_shapeIdSequence: h5.core.data.createSequence(),
@@ -1486,39 +1492,35 @@
 		/**
 		 * 初期化処理
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
+		 * @param {DOM} svg svg要素
+		 * @param {DOM} bg 背景レイヤ用のDOM要素
+		 * @param {CommandManager} [commandManager] コマンドマネージャ。省略した場合は新規作成する
 		 */
-		__init: function(context) {
+		init: function(svg, bg, commandManager) {
 			// svg要素とcanvas要素を取得
-			this._svgLayer = this.$find('.svg-layer')[0];
-			this._backgroundLayer = this.$find('.background-layer')[0];
+			this._svgLayer = svg;
+			this._backgroundLayer = bg;
 
 			// バインド時にコマンドマネージャが渡されたら渡されたものを使用する
-			var commandManager = context.args && context.args.commandManager;
 			this._commandManager = commandManager || new CommandManager();
 
-			if (document.ontouchstart !== undefined) {
-				// スクロールされないようにタッチのあるブラウザでtouchmoveのpreventDefaultを設定
-				// (SVG要素にはtouch-action:noneが効かないため、preventDefault()で制御する)
-				$(this._svgLayer).addClass('touchmove-cancel');
-				this.on('{.touchmove-cancel}', 'touchmove', function(context) {
-					context.event.preventDefault();
-				});
-			}
-			// undo/redoが可能/不可能になった時にルートエレメントからイベントをあげる
-			var events = ['enable-undo', 'enable-redo', 'disable-undo', 'disable-redo'];
-			for (var i = 0, l = events.length; i < l; i++) {
-				this.on(this._commandManager, events[i], function(context) {
-					this.trigger(context.event.type);
-				});
-			}
+			// imageSourceMapの設定
+			this.imageSourceMap = {};
+		},
+
+		/**
+		 * ロジックが使用しているコマンドマネージャを返します
+		 */
+		getCommandManager: function() {
+			return this._commandManager;
 		},
 
 		/**
 		 * 直前の操作を取り消します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		undo: function() {
 			this._commandManager.undo();
@@ -1527,7 +1529,7 @@
 		/**
 		 * 直前に取り消した操作を再実行します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		redo: function() {
 			this._commandManager.redo();
@@ -1539,7 +1541,7 @@
 		/**
 		 * タグ名と属性値から要素を作成(必要なクラスを追加する)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 * @param tagName
 		 * @param data
@@ -1564,7 +1566,7 @@
 		/**
 		 * DOM要素をクローンして要素を作成(必要なクラスを追加する)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 * @param element
 		 */
@@ -1582,7 +1584,7 @@
 		/**
 		 * パス(フリーハンド、直線、多角形)描画
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -1598,7 +1600,7 @@
 		 * }
 		 * </pre>
 		 *
-		 * @returns {Path}
+		 * @returns {DRPath}
 		 */
 		drawPath: function(data) {
 			var attr = {
@@ -1621,13 +1623,13 @@
 		/**
 		 * 長方形描画
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅
 		 * @param {Integer} height 正方形の高さ
 		 * @param {Object} style スタイル指定オブジェクト
-		 * @returns {Rect}
+		 * @returns {DRRect}
 		 */
 		drawRect: function(x, y, width, height, style) {
 			var attr = {
@@ -1652,12 +1654,12 @@
 		/**
 		 * 正方形描画
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅(=正方形の高さ)
 		 * @param {Object} style スタイル指定オブジェクト
-		 * @returns {Rect}
+		 * @returns {DRRect}
 		 */
 		drawSquare: function(x, y, width, style) {
 			// 幅と高さが同じである長方形(Rect)として描画する
@@ -1667,13 +1669,13 @@
 		/**
 		 * 楕円描画
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Integer} cx 楕円の中心位置のx座標
 		 * @param {Integer} cy 楕円の中心位置のy座標
 		 * @param {Integer} rx 楕円の水平方向の半径
 		 * @param {Integer} ry 楕円の垂直方向の半径
 		 * @param {Object} style スタイル指定オブジェクト
-		 * @returns {Ellipse}
+		 * @returns {DREllipse}
 		 */
 		drawEllipse: function(cx, cy, rx, ry, style) {
 			var attr = {
@@ -1697,12 +1699,12 @@
 		/**
 		 * 真円描画
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Integer} cx 円の中心位置のx座標
 		 * @param {Integer} cy 円の中心位置のy座標
 		 * @param {Integer} r 円の半径
 		 * @param {Object} style スタイル指定オブジェクト
-		 * @returns {Ellipse}
+		 * @returns {DREllipse}
 		 */
 		drawCircle: function(cx, cy, r, style) {
 			// rx,ryが同じである楕円(Ellipse)として描画する
@@ -1715,19 +1717,21 @@
 		 * クローンしてdivレイヤに配置します
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
 		 * {
 		 * 	x: x座標,
 		 * 	y: y座標,
+		 * 	width: 幅,
+		 * 	height: 高さ,
 		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
 		 * }
 		 * </pre>
 		 *
-		 * @returns {Image}
+		 * @returns {DRImage}
 		 */
 		drawImage: function(data) {
 			var attr = {
@@ -1764,18 +1768,18 @@
 		},
 
 		/**
-		 * コントローラ管理下にある図形(Shape)を全て取得
+		 * ロジック管理下にある図形(Shape)を全て取得
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
-		 * @param {Boolean} isAppendingOnly trueの場合描画されている図形のみ
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
 		 * @returns {DRShape[]}
 		 */
-		getAllShapes: function(isAppendingOnly) {
+		getAllShapes: function(exceptAlone) {
 			var shapes = [];
 			var shapeMap = this._shapeMap;
 			for ( var id in shapeMap) {
 				var shape = shapeMap[id];
-				if (isAppendingOnly && !shape.isAppending()) {
+				if (exceptAlone && shape.isAlone()) {
 					continue;
 				}
 				shapes.push(shape);
@@ -1784,9 +1788,9 @@
 		},
 
 		/**
-		 * 渡された図形のIDを返す。(コントローラ管理下にある図形のみ)
+		 * 渡された図形のIDを返す。(ロジック管理下にある図形のみ)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {DRShape} shape
 		 * @returns {String}
 		 */
@@ -1801,11 +1805,11 @@
 		},
 
 		/**
-		 * 図形(Shape)をこのコントローラの管理下に置く
+		 * 図形(Shape)をこのロジックの管理下に置く
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
-		 * @param Shape
+		 * @param {DRShape} shape
 		 */
 		_registShape: function(shape) {
 			// Mapに登録
@@ -1833,7 +1837,7 @@
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -1898,7 +1902,7 @@
 				}
 			}
 			if (id) {
-				$element.data('drawing-image-id', id);
+				$element.data(DATA_DRAWING_IMAGE_ID, id);
 			}
 			var command = new Command('custom', {
 				execute: function() {
@@ -1919,7 +1923,7 @@
 		/**
 		 * 背景色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {String} color 色
 		 */
 		setBackgroundColor: function(color) {
@@ -1951,7 +1955,7 @@
 		/**
 		 * 背景画像をクリアします
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		clearBackgroundImage: function() {
 			var bgElement = this._backgroundLayer.children[0];
@@ -1975,7 +1979,7 @@
 		/**
 		 * 現在設定されている背景情報を取得します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 * @returns {Object}
 		 *
@@ -1997,7 +2001,7 @@
 			}
 			var ret = {};
 			ret.fillMode = $bgElement.data('fillmode');
-			var id = $bgElement.data('drawing-image-id');
+			var id = $bgElement.data(DATA_DRAWING_IMAGE_ID);
 			if (id) {
 				ret.id = id;
 			} else {
@@ -2021,7 +2025,7 @@
 		 * コマンドマネージャのアップデートセッションを開始すると、セッションが終了するまでに追加されたコマンドを一つのコマンド郡として扱います
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		beginUpdate: function() {
 			this._commandManager.beginUpdate();
@@ -2033,7 +2037,7 @@
 		 * コマンドマネージャのアップデートセッション中に追加されたコマンド郡を一つのコマンドとして扱い、コマンドマネージャに登録します。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		endUpdate: function() {
 			this._commandManager.endUpdate();
@@ -2045,7 +2049,7 @@
 		/**
 		 * 描画されている図形からセーブデータを作成します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @returns {DrawingSaveData}
 		 */
 		save: function() {
@@ -2062,11 +2066,11 @@
 		/**
 		 * セーブデータををロードして描画します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {DrawingSaveData}
 		 */
-		load: function(drawingSaveData) {
-			var saveData = drawingSaveData.saveData;
+		load: function(artboardSaveData) {
+			var saveData = artboardSaveData.saveData;
 			// クリア
 			$(this._svgLayer).children().remove();
 			this._shapeMap = {};
@@ -2145,7 +2149,7 @@
 		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.DrawingController
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} [processParameter]
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
@@ -2363,5 +2367,5 @@
 	//------------------------------------------------------------
 	// expose
 	//------------------------------------------------------------
-	h5.core.expose(drawingController);
+	h5.core.expose(drawingLogic);
 })();
