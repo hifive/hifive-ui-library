@@ -516,22 +516,23 @@
 		__init: function() {
 			// canvas要素を取得
 			this._canvas = this.$find('canvas')[0];
-			// レイヤ領域を取得
-			var $layers = this.$find('.h5drawing-layers');
-			this._layers = $layers[0];
+
 			// 選択ドラッグ中に表示する要素を作成
 			this._$selectionScopeRectangle = $('<div class="selection-scope-rectangle"></div>');
 			$(this.rootElement).append(this._$selectionScopeRectangle);
 
 			// drawingLogicのセットアップ
-			var svgLayer = $layers.find('.svg-layer')[0];
-			var backgroundLayer = $layers.find('.background-layer')[0];
-			this.drawingLogic.init(svgLayer, backgroundLayer);
+			// レイヤ領域を取得
+			var $layers = this.$find('.h5drawing-layers');
+			this._layers = $layers[0];
+			var svgLayerElement = $layers.find('.svg-layer')[0];
+			var backgroundLayerElement = $layers.find('.background-layer')[0];
+			this.drawingLogic.init(svgLayerElement, backgroundLayerElement);
 
 			// スクロールされないようにタッチのあるブラウザでtouchmoveのpreventDefaultを設定
 			// (SVG要素にはtouch-action:noneが効かないため、preventDefault()で制御する)
 			if (document.ontouchstart !== undefined) {
-				$(svgLayer).addClass('touchmove-cancel');
+				$(svgLayerElement).addClass('touchmove-cancel');
 				this.on('{.touchmove-cancel}', 'touchmove', function(context) {
 					context.event.preventDefault();
 				});
@@ -941,15 +942,14 @@
 		 * @param {Object} backgroundImageData 指定無しの場合は背景画像は変更しません
 		 */
 		setBackground: function(color, backgroundImageData) {
-			if (!color && !backgroundImageData) {
-				return;
-			}
 			this.drawingLogic.beginUpdate();
-			if (color) {
+			if (color !== null) {
 				this.setBackgroundColor(color);
 			}
 			if (backgroundImageData) {
 				this.setBackgroundImage(backgroundImageData);
+			} else {
+				this.clearBackgroundImage();
 			}
 			this.endUpdate();
 		},
@@ -962,6 +962,15 @@
 		 */
 		setBackgroundColor: function(color) {
 			this.drawingLogic.setBackgroundColor(color);
+		},
+
+		/**
+		 * 背景画像をクリアします
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 */
+		clearBackgroundImage: function() {
+			this.drawingLogic.clearBackgroundImage();
 		},
 
 		/**
@@ -996,6 +1005,25 @@
 			this.drawingLogic.setBackgroundImage(data);
 		},
 
+		/**
+		 * 図形の追加
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {DRShape} shape
+		 */
+		append: function(shape) {
+			this.drawingLogic.append(shape);
+		},
+
+		/**
+		 * 図形の削除
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {DRShape} shape
+		 */
+		remove: function(shape) {
+			this.drawingLogic.remove(shape);
+		},
 
 		//------------------------------------------------------------------------
 		//
@@ -1672,13 +1700,13 @@
 			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="'
 					+ id + '"></div>');
 			$(this.rootElement).append($selectionRectangle);
-			var bBox = shape.getBBox();
+			var bounds = shape.getBounds();
 			$selectionRectangle.css({
 				display: 'block',
-				left: bBox.x,
-				top: bBox.y,
-				width: bBox.width,
-				height: bBox.height
+				left: bounds.x,
+				top: bounds.y,
+				width: bounds.width,
+				height: bounds.height
 			});
 		}
 	};

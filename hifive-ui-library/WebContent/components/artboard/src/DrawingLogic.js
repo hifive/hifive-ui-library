@@ -5,6 +5,8 @@
 	//------------------------------------------------------------
 	// Variables
 	//------------------------------------------------------------
+	var DATA_BOUNDS_OBJECT = 'bounds-object';
+
 	/**
 	 * BBoxの取得にデータ属性を使用するかどうか
 	 * <p>
@@ -17,36 +19,53 @@
 	// Functions
 	//------------------------------------------------------------
 	/**
-	 * BBoxが正しく取得できないブラウザ用に、データ属性にBBox情報を持たせる
+	 * BBoxが正しく取得できないブラウザ用に、データ属性に位置とサイズを格納したオブジェクトを持たせる
 	 *
 	 * @param {DOM|jQuery} element
-	 * @param {Object} bBox
+	 * @param {Object} bounds x,y,widht,heightを持つオブジェクト
 	 */
-	function setBBoxData(element, bBox) {
-		$(element).data('bBox', bBox);
+	function setBoundsData(element, bounds) {
+		$(element).data(DATA_BOUNDS_OBJECT, bounds);
 	}
 
 	/**
-	 * BBoxを取得して返す
+	 * SVGに描画された要素の位置とサイズ(x,y,height,width)を取得して返す
 	 *
 	 * @private
 	 * @param element
-	 * @returns {SVGRect|Object} BBox
+	 * @returns {Object} 以下のようなオブジェクトを返します
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	x: svg要素内のx座標位置,
+	 * 	y: svg要素内でのy座標位置,
+	 * 	height: 要素を包含する矩形の高さ,
+	 * 	width: 要素を包含する矩形の幅
+	 * }
+	 * </pre>
 	 */
-	function getBBox(element) {
+	function getBounds(element) {
+		var bBox = {};
 		// TODO Firefoxの場合、pathで20pxのマージンが取られることがある
 		if (!useDataForGetBBox || element.tagName.toLowerCase() !== 'path') {
 			// path要素の場合はiOS6でもBBoxが正しく取得できるので、getBBox()の結果を返す
-			return element.getBBox();
+			bBox = element.getBBox();
+		} else {
+			// データ属性の値を返す。なければgetBox()の結果を返す
+			bBox = $(element).data(DATA_BOUNDS_OBJECT) || element.getBBox();
 		}
-		// データ属性の値を返す。なければgetBBox()の結果を返す
-		return $(element).data('bBox') || element.getBBox();
+		return {
+			x: bBox.x,
+			y: bBox.y,
+			width: bBox.width,
+			height: bBox.height
+		};
 	}
 
 	h5.u.obj.expose('h5.ui.component.drawing', {
 		useDataForGetBBox: useDataForGetBBox,
-		setBBoxData: setBBoxData,
-		getBBox: getBBox
+		setBoundsData: setBoundsData,
+		getBounds: getBounds
 	});
 })();
 
@@ -64,8 +83,8 @@
 	// Cache
 	//------------------------------------------------------------
 	var useDataForGetBBox = h5.ui.component.drawing.useDataForGetBBox;
-	var setBBoxData = h5.ui.component.drawing.setBBoxData;
-	var getBBox = h5.ui.component.drawing.getBBox;
+	var setBoundsData = h5.ui.component.drawing.setBoundsData;
+	var getBounds = h5.ui.component.drawing.getBounds;
 
 	//------------------------------------------------------------
 	// Body
@@ -175,8 +194,8 @@
 
 				// pathのBBoxが自動更新されないブラウザについて、自分で計算してelementに持たせる
 				if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
-					var bBox = getBBox(element);
-					this._beforeBBox = bBox;
+					var bBox = getBounds(element);
+					this._beforeBounds = bBox;
 					var beforeD = beforeAttr.d;
 					var afterD = element.getAttribute('d');
 					var beforeXY = beforeD.match(/M -?\d* -?\d*/)[0].split(' ').slice(1);
@@ -185,7 +204,7 @@
 					var dy = parseInt(afterXY[1]) - parseInt(beforeXY[1]);
 					bBox.x += dx;
 					bBox.y += dy;
-					setBBoxData(element, bBox);
+					setBoundsData(element, bBox);
 				}
 			}
 
@@ -244,7 +263,7 @@
 					}
 				}
 				if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
-					setBBoxData(element, this._beforeBBox);
+					setBoundsData(element, this._beforeBounds);
 				}
 			}
 			return this;
@@ -525,6 +544,183 @@
 	});
 })();
 
+(function() {
+	//------------------------------------------------------------
+	// Const
+	//------------------------------------------------------------
+	/**
+	 * SVGの名前空間
+	 */
+	var XLINKNS = 'http://www.w3.org/1999/xlink';
+
+	//------------------------------------------------------------
+	// Logic
+	//------------------------------------------------------------
+	/**
+	 * canvasの画像変換を行うロジック
+	 *
+	 * @class
+	 * @name h5.ui.components.drawing.CanvasConvertLogic
+	 */
+	var canvasConvertLogic = {
+		__name: 'h5.ui.components.drawing.logic.CanvasConvertLogic',
+
+		/**
+		 * svg要素の中身をcanvasに描画します。
+		 * <p>
+		 * このメソッドはプロミスを返します。画像(image要素)が使用されている場合は非同期になる場合があります。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.CanvasConvertLogic
+		 * @param {SVG} svgElement svg要素
+		 * @param {Canvas} canvas canvas要素
+		 */
+		drawSVGToCanvas: function(svgElement, canvas) {
+			var ctx = canvas.getContext('2d');
+			// h5.async.loopを使って非同期処理がある場合に待機してから次のループを実行するようにしている
+			var elements = $(svgElement).children().toArray();
+			var promise = h5.async.loop(elements, function(index, element) {
+				switch (element.tagName.toLowerCase()) {
+				case 'path':
+					var pathData = element.getAttribute('d');
+					var stroke = element.getAttribute('stroke');
+					var style = element.style;
+					// strokeの設定
+					ctx.save();
+					ctx.strokeStyle = style.stroke;
+					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.lineJoin = style.strokeLinejoin;
+					ctx.lineCap = style.strokeLinecap;
+					ctx.globalAlpha = style.strokeOpacity;
+
+					// 描画
+					ctx.beginPath();
+					// 'M x1 y1 l x2 y2 x3 y3 ...' という記述であることを前提にしている
+					// IEの場合、d属性の値を取得すると、'M x1 y1 l x2 y2 l x3 y3 l...'となっているため
+					// 各ブラウザ共通になるようにMとlを最初に取り除く
+					var pathDataArray = pathData.replace(/M |l /g, '').split(' ');
+					var firstX = parseInt(pathDataArray[0]);
+					var firstY = parseInt(pathDataArray[1]);
+					ctx.moveTo(firstX, firstY);
+					var preX = firstX;
+					var preY = firstY;
+					// x,yのデータを同時に取り出すので２つずつカウント
+					for (var index = 2, l = pathDataArray.length; index < l; index += 2) {
+						var x = preX + parseInt(pathDataArray[index]);
+						var y = preY + parseInt(pathDataArray[index + 1]);
+						ctx.lineTo(x, y);
+						preX = x;
+						preY = y;
+					}
+					ctx.stroke();
+					ctx.closePath();
+					ctx.restore();
+					break;
+				case 'rect':
+					var x = parseInt(element.getAttribute('x'));
+					var y = parseInt(element.getAttribute('y'));
+					var w = parseInt(element.getAttribute('width'));
+					var h = parseInt(element.getAttribute('height'));
+					var style = element.style;
+
+					// fillの設定
+					var fill = style.fill;
+					var isFill = fill && fill !== 'none';
+					if (isFill) {
+						ctx.save();
+						ctx.fillStyle = style.fill;
+						ctx.globalAlpha = style.fillOpacity;
+						var fillMargin = parseInt(style.strokeWidth) / 2;
+						// fillRectで描画
+						ctx.fillRect(x, y, w + fillMargin / 8 - 1, h + fillMargin / 8 - 1);
+						ctx.restore();
+					}
+
+					// strokeの設定
+					ctx.save();
+					ctx.strokeStyle = style.stroke;
+					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.lineJoin = style.strokeLinejoin;
+					ctx.globalAlpha = style.strokeOpacity;
+					// strokeRectで描画
+					ctx.strokeRect(x, y, w, h);
+					ctx.restore();
+					break;
+				case 'ellipse':
+					var cx = element.getAttribute('cx');
+					var cy = element.getAttribute('cy');
+					var rx = element.getAttribute('rx');
+					var ry = element.getAttribute('ry');
+					var style = element.style;
+
+					var sx = rx > ry ? rx / ry : 1;
+					var sy = rx > ry ? 1 : ry / rx;
+					ctx.save();
+					ctx.translate(cx, cy);
+					ctx.scale(sx, sy);
+
+					// fillの設定
+					var fill = style.fill;
+					var isFill = fill && fill !== 'none';
+					ctx.beginPath();
+					if (isFill) {
+						ctx.fillStyle = fill;
+						ctx.globalAlpha = style.fillOpacity;
+						ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
+						ctx.fill();
+					}
+
+					// strokeの設定
+					ctx.strokeStyle = style.stroke;
+					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.globalAlpha = style.strokeOpacity;
+
+					ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
+					ctx.scale(1 / sx, 1 / sy);
+					ctx.translate(-cx, -cy);
+					ctx.globalAlpha = this._strokeOpacity;
+					ctx.stroke();
+					ctx.closePath();
+					ctx.restore();
+					break;
+				case 'image':
+					var x = parseInt(element.getAttribute('x'));
+					var y = parseInt(element.getAttribute('y'));
+					var w = parseInt(element.getAttribute('width'));
+					var h = parseInt(element.getAttribute('height'));
+					var src = element.getAttributeNS(XLINKNS, 'href');
+					var tmpImg = document.createElement('img');
+					var imgDfd = h5.async.deferred();
+					tmpImg.onload = (function(_imgDfd, _x, _y, _w, _h) {
+						return function() {
+							ctx.drawImage(this, _x, _y, _w, _h);
+							_imgDfd.resolve();
+						};
+					})(imgDfd, x, y, w, h);
+					tmpImg.src = src;
+					// 画像の場合は非同期になる
+					return imgDfd.promise();
+				}
+			});
+			return promise;
+		},
+		/**
+		 * canvasに描画されている図形を画像データにして返します
+		 * <p>
+		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @param {String} returnType imgage/png, image/jpeg, image/svg+xml のいずれか
+		 * @param {Object} processParameter 0.0～1.0の範囲で品質レベルを指定
+		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
+		 */
+		toDataURL: function(canvas, returnType, encoderOptions) {
+			return canvas.toDataURL(returnType, encoderOptions);
+		}
+	};
+	h5.core.expose(canvasConvertLogic);
+})();
 
 (function() {
 	//------------------------------------------------------------
@@ -540,6 +736,7 @@
 	 * 描画した図形のIDを保持するデータ属性名
 	 */
 	var DATA_SHAPE_ID = 'shape-id';
+	var DATA_ELEMENT_TYPE = 'element-type';
 	/**
 	 * 画像IDを保持するデータ属性名
 	 */
@@ -553,7 +750,7 @@
 	//------------------------------------------------------------
 	var Command = h5.ui.components.drawing.Command;
 	var CommandManager = h5.ui.components.drawing.CommandManager;
-	var getBBox = h5.ui.component.drawing.getBBox;
+	var getBounds = h5.ui.component.drawing.getBounds;
 
 	//------------------------------------------------------------
 	// Body
@@ -587,7 +784,7 @@
 
 			// 復元に必要な属性を取得
 			var type = shape.type;
-			attr['data-element-type'] = $(element).data('element-type');
+			attr['data-' + DATA_ELEMENT_TYPE] = $(element).data(DATA_ELEMENT_TYPE);
 			switch (type) {
 			case 'path':
 				attr.d = element.getAttribute('d');
@@ -711,35 +908,7 @@
 		_init: function(element, commandManager) {
 			this._commandManager = commandManager;
 			this._element = element;
-		},
-
-		/**
-		 * 図形を追加
-		 *
-		 * @memberOf DRShape
-		 * @param layer {DOM|jQuery} 追加先レイヤ
-		 */
-		append: function(layer) {
-			// コマンドを作成して実行
-			var element = this.getElement();
-			element.setAttribute('data-element-type', this.type);
-			var command = new Command('append', {
-				layer: layer,
-				element: this.getElement()
-			});
-			this._commandManager.append(command.execute());
-		},
-
-		/**
-		 * 図形を削除
-		 *
-		 * @memberOf DRShape
-		 */
-		remove: function() {
-			var command = new Command('remove', {
-				element: this.getElement()
-			});
-			this._commandManager.append(command.execute());
+			element.setAttribute('data-' + DATA_ELEMENT_TYPE, this.type);
 		},
 
 		/**
@@ -762,13 +931,13 @@
 		},
 
 		/**
-		 * 図形のBBoxを取得
+		 * 図形の位置とサイズを取得
 		 *
 		 * @memberOf DRShape
-		 * @returns {SVGRect|Object} BBoxが正しく取得できないブラウザについてはSVGRectと同一IFのObjectを作って返す
+		 * @returns {Object} x,y,width,heightを持つオブジェクト
 		 */
-		getBBox: function() {
-			return getBBox(this.getElement());
+		getBounds: function() {
+			return getBounds(this.getElement());
 		},
 
 		/**
@@ -796,7 +965,7 @@
 			if (this.isAlone()) {
 				return false;
 			}
-			var box = this.getBBox();
+			var box = this.getBounds();
 			if (box.x < x && x < box.x + box.width && box.y < y && y < box.y + box.height) {
 				return true;
 			}
@@ -820,7 +989,7 @@
 			if (this.isAlone()) {
 				return false;
 			}
-			var box = this.getBBox();
+			var box = this.getBounds();
 			if (x < box.x && box.x + box.width < x + w && y < box.y && box.y + box.height < y + h) {
 				return true;
 			}
@@ -1421,7 +1590,7 @@
 	});
 
 	//------------------------------------------------------------
-	// Controller
+	// Logic
 	//------------------------------------------------------------
 	/**
 	 * 図形の描画を行うロジック
@@ -1449,15 +1618,23 @@
 		imageSourceMap: null,
 
 		/**
-		 * svgレイヤー要素
+		 * canvasの画像変換を行うロジック
 		 *
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
 		 */
-		_svgLayer: null,
+		_canvasConvertLogic: h5.ui.components.drawing.logic.CanvasConvertLogic,
 
 		/**
-		 * 背景画像レイヤー要素
+		 * 図形描画領域のレイヤー
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @private
+		 */
+		_shapeLayer: null,
+
+		/**
+		 * 背景画像レイヤー
 		 *
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
@@ -1494,14 +1671,14 @@
 		 *
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
-		 * @param {DOM} svg svg要素
-		 * @param {DOM} bg 背景レイヤ用のDOM要素
+		 * @param {DOM} drawingElement 描画領域レイヤ要素
+		 * @param {DOM} backgroundElement 背景レイヤ要素
 		 * @param {CommandManager} [commandManager] コマンドマネージャ。省略した場合は新規作成する
 		 */
-		init: function(svg, bg, commandManager) {
+		init: function(drawingElement, backgroundElement, commandManager) {
 			// svg要素とcanvas要素を取得
-			this._svgLayer = svg;
-			this._backgroundLayer = bg;
+			this._shapeLayer = drawingElement;
+			this._backgroundLayer = backgroundElement;
 
 			// バインド時にコマンドマネージャが渡されたら渡されたものを使用する
 			this._commandManager = commandManager || new CommandManager();
@@ -1578,8 +1755,39 @@
 		//---------------------------------------------------------------
 		// 描画オブジェクトの操作
 		//---------------------------------------------------------------
+		/**
+		 * 図形を追加
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @param layer {DOM|jQuery} 追加先レイヤ
+		 */
+		append: function(shape) {
+			// コマンドを作成して実行
+			var element = shape.getElement();
+			var command = new Command('append', {
+				layer: this._shapeLayer,
+				element: element
+			});
+			this._registShape(shape);
+			this._commandManager.append(command.execute());
+		},
+
+		/**
+		 * 図形を削除
+		 *
+		 * @memberOf ShapeLayer
+		 * @param {DRShape} shape
+		 */
+		remove: function(shape) {
+			var command = new Command('remove', {
+				layer: this._shapeLayer,
+				element: shape.getElement()
+			});
+			this._commandManager.append(command.execute());
+		},
+
 		//----------------------------
-		// 描画メソッド
+		// 各図形の描画メソッド
 		//----------------------------
 		/**
 		 * パス(フリーハンド、直線、多角形)描画
@@ -1615,8 +1823,7 @@
 			// Shapeの作成
 			var shape = new DRPath(elem, this._commandManager);
 			// 図形の登録と追加
-			this._registShape(shape);
-			shape.append(this._svgLayer);
+			this.append(shape);
 			return shape;
 		},
 
@@ -1646,8 +1853,7 @@
 			// Shapeの作成
 			var shape = new DRRect(elem, this._commandManager);
 			// 図形の登録と追加
-			this._registShape(shape);
-			shape.append(this._svgLayer);
+			this.append(shape);
 			return shape;
 		},
 
@@ -1691,8 +1897,7 @@
 			// Shapeの作成
 			var shape = new DREllipse(elem, this._commandManager);
 			// 図形の登録と追加
-			this._registShape(shape);
-			shape.append(this._svgLayer);
+			this.append(shape);
 			return shape;
 		},
 
@@ -1761,9 +1966,8 @@
 
 			// Shapeの作成
 			var shape = new DRImage(elem, this._commandManager);
-			// 図形の登録と追加
-			this._registShape(shape);
-			shape.append(this._svgLayer);
+			// 図形の追加
+			this.append(shape);
 			return shape;
 		},
 
@@ -2056,7 +2260,7 @@
 			// 描画されている図形要素を取得
 			var shapes = [];
 			var shapeMap = this._shapeMap;
-			$(this._svgLayer).children().each(function() {
+			$(this._shapeLayer).children().each(function() {
 				shapes.push(shapeMap[$(this).data(DATA_SHAPE_ID)]);
 			});
 			// 図形と背景のセーブデータを作って返す
@@ -2072,7 +2276,7 @@
 		load: function(artboardSaveData) {
 			var saveData = artboardSaveData.saveData;
 			// クリア
-			$(this._svgLayer).children().remove();
+			$(this._shapeLayer).children().remove();
 			this._shapeMap = {};
 			var commandManager = this._commandManager;
 
@@ -2113,7 +2317,7 @@
 				});
 				// エレメントからShapeの作成
 				var shape = null;
-				switch ($(element).data('element-type')) {
+				switch ($(element).data(DATA_ELEMENT_TYPE)) {
 				case 'path':
 					shape = new DRPath(element, commandManager);
 					break;
@@ -2136,8 +2340,7 @@
 					continue;
 				}
 				// 図形の登録と追加
-				this._registShape(shape);
-				shape.append(this._svgLayer);
+				this.append(shape);
 			}
 			// コマンドマネージャのクリア
 			commandManager.clearAll();
@@ -2155,7 +2358,8 @@
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
-			var svg = this._svgLayer;
+			returnType = returnType || 'image/png';
+			var svg = this._shapeLayer;
 			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
@@ -2226,140 +2430,13 @@
 				backgroundDfd.resolve();
 			}
 
-			// h5.async.loopを使って非同期処理がある場合に待機してから次のループを実行するようにしている
-			// h5.async.loopに渡す関数の定義
-			var shapeLoopFunction = this.own(function(index, element) {
-				// レイヤ上にある要素からshapeを取得
-				switch ($(element).data('element-type')) {
-				case 'path':
-					var pathData = element.getAttribute('d');
-					var stroke = element.getAttribute('stroke');
-					var style = element.style;
-					// strokeの設定
-					ctx.save();
-					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
-					ctx.lineJoin = style.strokeLinejoin;
-					ctx.lineCap = style.strokeLinecap;
-					ctx.globalAlpha = style.strokeOpacity;
-
-					// 描画
-					ctx.beginPath();
-					// 'M x1 y1 l x2 y2 x3 y3 ...' という記述であることを前提にしている
-					// IEの場合、d属性の値を取得すると、'M x1 y1 l x2 y2 l x3 y3 l...'となっているため
-					// 各ブラウザ共通になるようにMとlを最初に取り除く
-					var pathDataArray = pathData.replace(/M |l /g, '').split(' ');
-					var firstX = parseInt(pathDataArray[0]);
-					var firstY = parseInt(pathDataArray[1]);
-					ctx.moveTo(firstX, firstY);
-					var preX = firstX;
-					var preY = firstY;
-					// x,yのデータを同時に取り出すので２つずつカウント
-					for (var index = 2, l = pathDataArray.length; index < l; index += 2) {
-						var x = preX + parseInt(pathDataArray[index]);
-						var y = preY + parseInt(pathDataArray[index + 1]);
-						ctx.lineTo(x, y);
-						preX = x;
-						preY = y;
-					}
-					ctx.stroke();
-					ctx.closePath();
-					ctx.restore();
-					break;
-				case 'rect':
-					var x = parseInt(element.getAttribute('x'));
-					var y = parseInt(element.getAttribute('y'));
-					var w = parseInt(element.getAttribute('width'));
-					var h = parseInt(element.getAttribute('height'));
-					var style = element.style;
-
-					// fillの設定
-					var fill = style.fill;
-					var isFill = fill && fill !== 'none';
-					if (isFill) {
-						ctx.save();
-						ctx.fillStyle = style.fill;
-						ctx.globalAlpha = style.fillOpacity;
-						var fillMargin = parseInt(style.strokeWidth) / 2;
-						// fillRectで描画
-						ctx.fillRect(x, y, w + fillMargin / 8 - 1, h + fillMargin / 8 - 1);
-						ctx.restore();
-					}
-
-					// strokeの設定
-					ctx.save();
-					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
-					ctx.lineJoin = style.strokeLinejoin;
-					ctx.globalAlpha = style.strokeOpacity;
-					// strokeRectで描画
-					ctx.strokeRect(x, y, w, h);
-					ctx.restore();
-					break;
-				case 'ellipse':
-					var cx = element.getAttribute('cx');
-					var cy = element.getAttribute('cy');
-					var rx = element.getAttribute('rx');
-					var ry = element.getAttribute('ry');
-					var style = element.style;
-
-					var sx = rx > ry ? rx / ry : 1;
-					var sy = rx > ry ? 1 : ry / rx;
-					ctx.save();
-					ctx.translate(cx, cy);
-					ctx.scale(sx, sy);
-
-					// fillの設定
-					var fill = style.fill;
-					var isFill = fill && fill !== 'none';
-					ctx.beginPath();
-					if (isFill) {
-						ctx.fillStyle = fill;
-						ctx.globalAlpha = style.fillOpacity;
-						ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
-						ctx.fill();
-					}
-
-					// strokeの設定
-					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
-					ctx.globalAlpha = style.strokeOpacity;
-
-					ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
-					ctx.scale(1 / sx, 1 / sy);
-					ctx.translate(-cx, -cy);
-					ctx.globalAlpha = this._strokeOpacity;
-					ctx.stroke();
-					ctx.closePath();
-					ctx.restore();
-					break;
-				case 'image':
-					var x = parseInt(element.getAttribute('x'));
-					var y = parseInt(element.getAttribute('y'));
-					var w = parseInt(element.getAttribute('width'));
-					var h = parseInt(element.getAttribute('height'));
-					var src = element.getAttributeNS(XLINKNS, 'href');
-					var tmpImg = document.createElement('img');
-					var imgDfd = h5.async.deferred();
-					tmpImg.onload = (function(_imgDfd, _x, _y, _w, _h) {
-						return function() {
-							ctx.drawImage(this, _x, _y, _w, _h);
-							_imgDfd.resolve();
-						};
-					})(imgDfd, x, y, w, h);
-					tmpImg.src = src;
-					return imgDfd.promise();
-				}
-			});
-			// 背景描画が終わったら各図形についてカンバスに描画
-			backgroundDfd.promise().done(
-					this.own(function() {
-						h5.async.loop($(this._svgLayer).children().toArray(), shapeLoopFunction)
-								.done(function() {
-									// カンバスを画像化
-									dfd.resolve(canvas.toDataURL('imgage/jpeg', 0.1));
-								});
-					}));
+			// 背景描画が終わったら図形をカンバスに描画
+			backgroundDfd.promise().then(this.own(function() {
+				return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas);
+			})).then(this.own(function() {
+				// カンバスを画像化
+				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+			}));
 			return dfd.promise();
 		}
 	};

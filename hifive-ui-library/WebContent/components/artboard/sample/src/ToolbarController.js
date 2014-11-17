@@ -505,7 +505,7 @@
 					backgroundData.fillMode = 'none';
 				}
 			}
-			var rgbaColor = null;
+			var rgbaColor = '';
 			if ($parent.find('.background-color-list').val() !== 'none') {
 				var color = $parent.find('.background-color-selected').css('background-color');
 				var opacity = $parent.find('.background-color-selected').css('opacity');

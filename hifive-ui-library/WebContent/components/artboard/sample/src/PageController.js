@@ -331,7 +331,7 @@
 			}
 			artboadCtrl.beginUpdate();
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
-				selectedShapes[i].remove();
+				artboadCtrl.remove(selectedShapes[i]);
 			}
 			artboadCtrl.unselectAll();
 			artboadCtrl.endUpdate();
@@ -397,7 +397,7 @@
 			// アップデートセッション内で削除(undo/redoで実行される操作を一つにまとめるため)
 			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
-				shapes[i].remove();
+				artboadCtrl.remove(shapes[i]);
 			}
 			artboadCtrl.endUpdate();
 			artboadCtrl.unselectAll();
