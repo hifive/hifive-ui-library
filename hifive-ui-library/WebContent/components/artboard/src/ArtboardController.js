@@ -198,34 +198,33 @@
 //----------------------------------------------------------------------------
 (function() {
 	//------------------------------------------------------------
-	// Const
+	// Cache
 	//------------------------------------------------------------
-	// ArtboardControllerが上げるイベント名
-
+	// CommandManagerが上げるイベント名
 	/** undoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_UNDO = 'enable-undo';
+	var EVENT_ENABLE_UNDO = h5.ui.components.drawing.consts.EVENT_ENABLE_UNDO;
 
 	/** redoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_REDO = 'enable-redo';
+	var EVENT_ENABLE_REDO = h5.ui.components.drawing.consts.EVENT_ENABLE_REDO;
 
 	/** undoができなくなった時に上がるイベント名 */
-	var EVENT_DISABLE_UNDO = 'disable-undo';
+	var EVENT_DISABLE_UNDO = h5.ui.components.drawing.consts.EVENT_DISABLE_UNDO;
 
 	/** redoが出来なくなったときに上がるイベント名 */
-	var EVENT_DISABLE_REDO = 'disable-redo';
+	var EVENT_DISABLE_REDO = h5.ui.components.drawing.consts.EVENT_DISABLE_REDO;
 
+	// ArtboardControllerが上げるイベント名
 	/** 描画操作を開始した時に上がるイベント名 */
-	var EVENT_DRAWSTART = 'drawstart';
+	var EVENT_DRAWSTART = h5.ui.components.drawing.consts.EVENT_DRAWSTART;
 
 	/** 描画操作を終了した時に上がるイベント名 */
-	var EVENT_DRAWEND = 'drawend';
+	var EVENT_DRAWEND = h5.ui.components.drawing.consts.EVENT_DRAWEND;
 
 	/** 図形を選択した時に上がるイベント名 */
-	var EVENT_SELECT_SHAPE = 'select-shape';
+	var EVENT_SELECT_SHAPE = h5.ui.components.drawing.consts.EVENT_SELECT_SHAPE;
 
 	/** 図形の選択を解除した時に上がるイベント名 */
-	var EVENT_UNSELECT_SHAPE = 'unselect-shape';
-
+	var EVENT_UNSELECT_SHAPE = h5.ui.components.drawing.consts.EVENT_UNSELECT_SHAPE;
 
 	//------------------------------------------------------------
 	// Body

@@ -1,10 +1,73 @@
+//--------------------------------------------------------
+// 共通定数定義
+//--------------------------------------------------------
+(function() {
+	/** undoができるようになった時に上がるイベント名 */
+	var EVENT_ENABLE_UNDO = 'enable-undo';
+
+	/** redoができるようになった時に上がるイベント名 */
+	var EVENT_ENABLE_REDO = 'enable-redo';
+
+	/** undoができなくなった時に上がるイベント名 */
+	var EVENT_DISABLE_UNDO = 'disable-undo';
+
+	/** redoが出来なくなったときに上がるイベント名 */
+	var EVENT_DISABLE_REDO = 'disable-redo';
+
+	/** 描画操作を開始した時に上がるイベント名 */
+	var EVENT_DRAWSTART = 'drawstart';
+
+	/** 描画操作を終了した時に上がるイベント名 */
+	var EVENT_DRAWEND = 'drawend';
+
+	/** 図形を選択した時に上がるイベント名 */
+	var EVENT_SELECT_SHAPE = 'select-shape';
+
+	/** 図形の選択を解除した時に上がるイベント名 */
+	var EVENT_UNSELECT_SHAPE = 'unselect-shape';
+
+	/**
+	 * SVGの名前空間
+	 */
+	var XLINKNS = 'http://www.w3.org/1999/xlink';
+	var XMLNS = 'http://www.w3.org/2000/svg';
+
+	// メッセージ
+	/** ドキュメントツリー上にない要素で作成したRemoveCommandを実行した時のエラーメッセージ */
+	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = 'removeはレイヤに追加されている要素のみ実行できます';
+
+	/** アップデートセッション中に使用不可のメソッドを呼び出した時のエラーメッセージ */
+	var ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION = 'アップデートセッション中に{0}メソッドを実行することはできません';
+
+
+	h5.u.obj.expose('h5.ui.components.drawing', {
+		consts: {
+			EVENT_ENABLE_UNDO: EVENT_ENABLE_UNDO,
+			EVENT_ENABLE_REDO: EVENT_ENABLE_REDO,
+			EVENT_DISABLE_UNDO: EVENT_DISABLE_UNDO,
+			EVENT_DISABLE_REDO: EVENT_DISABLE_REDO,
+			EVENT_DRAWSTART: EVENT_DRAWSTART,
+			EVENT_DRAWEND: EVENT_DRAWEND,
+			EVENT_SELECT_SHAPE: EVENT_SELECT_SHAPE,
+			EVENT_UNSELECT_SHAPE: EVENT_UNSELECT_SHAPE,
+			XMLNS: XMLNS,
+			XLINKNS: XLINKNS
+		},
+		message: {
+			ERR_MSG_CANNOT_REMOVE_NOT_APPENDED: ERR_MSG_CANNOT_REMOVE_NOT_APPENDED,
+			ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION: ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION
+		}
+	});
+})();
+
 //-------------------------------------------------
-// 共通
+// 共通関数
 //-------------------------------------------------
 (function() {
 	//------------------------------------------------------------
 	// Variables
 	//------------------------------------------------------------
+	/** 要素に、要素の位置とサイズを持たせるときのデータ属性名 */
 	var DATA_BOUNDS_OBJECT = 'bounds-object';
 
 	/**
@@ -16,8 +79,11 @@
 	var useDataForGetBBox = h5.env.ua.isiOS && h5.env.ua.browserVersion <= 6;
 
 	//------------------------------------------------------------
-	// Functions
+	// Body
 	//------------------------------------------------------------
+	//--------------------------
+	// Functions
+	//--------------------------
 	/**
 	 * BBoxが正しく取得できないブラウザ用に、データ属性に位置とサイズを格納したオブジェクトを持たせる
 	 *
@@ -62,7 +128,7 @@
 		};
 	}
 
-	h5.u.obj.expose('h5.ui.component.drawing', {
+	h5.u.obj.expose('h5.ui.components.drawing', {
 		useDataForGetBBox: useDataForGetBBox,
 		setBoundsData: setBoundsData,
 		getBounds: getBounds
@@ -74,17 +140,13 @@
 //-------------------------------------------------
 (function() {
 	//------------------------------------------------------------
-	// Const
-	//------------------------------------------------------------
-	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = 'removeはレイヤに追加されている要素のみ実行できます';
-	var ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION = 'アップデートセッション中に{0}メソッドを実行することはできません';
-
-	//------------------------------------------------------------
 	// Cache
 	//------------------------------------------------------------
-	var useDataForGetBBox = h5.ui.component.drawing.useDataForGetBBox;
-	var setBoundsData = h5.ui.component.drawing.setBoundsData;
-	var getBounds = h5.ui.component.drawing.getBounds;
+	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = h5.ui.components.drawing.message.ERR_MSG_CANNOT_REMOVE_NOT_APPENDED;
+	var ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION = h5.ui.components.drawing.message.ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION;
+	var useDataForGetBBox = h5.ui.components.drawing.useDataForGetBBox;
+	var setBoundsData = h5.ui.components.drawing.setBoundsData;
+	var getBounds = h5.ui.components.drawing.getBounds;
 
 	//------------------------------------------------------------
 	// Body
@@ -94,38 +156,19 @@
 	 *
 	 * @class
 	 * @param {String} type
-	 * @param {Object} data
+	 * @param {Object} commandData コマンドデータオブジェクト。Commandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	execute: executeメソッドを呼んだ時に実行する関数
+	 * 	undo: undoメソッドを呼んだ時に実行する関数
+	 * }
+	 * </pre>
 	 */
-	function Command(type, data) {
-		this._type = type;
-		this._data = data;
-		this._undoData = {};
-		this._state = this.NOT_EXECUTED;
+	function Command(commandData) {
+		this._data = commandData;
 	}
 	$.extend(Command.prototype, {
-		/**
-		 * コマンドの実行状態定数。未実行。
-		 *
-		 * @memberOf Command
-		 */
-		STATE_NOT_EXECUTED: 'not executed',
-		/**
-		 * コマンドの実行状態定数。未実行。
-		 *
-		 * @memberOf Command
-		 */
-		STATE_EXECUTED: 'executed',
-
-		/**
-		 * コマンドの実行状態を返す
-		 *
-		 * @memberOf Command
-		 * @returns {String} コマンドの実行状態
-		 */
-		getState: function() {
-			return this._state;
-		},
-
 		/**
 		 * コマンドの実行
 		 *
@@ -133,88 +176,8 @@
 		 * @returns {Command} 自分自身を返す
 		 */
 		execute: function() {
-			if (this.getState() === this.STATE_EXECUTED) {
-				return this;
-			}
-			switch (this._type) {
-			case 'custom':
-				this._data.execute();
-				break;
-			case 'append':
-				this._data.layer.appendChild(this._data.element);
-				break;
-			case 'remove':
-				var parent = this._data.element.parentNode;
-				if (!parent) {
-					throw new Error(ERR_MSG_CANNOT_REMOVE_NOT_APPENDED);
-				}
-				this._undoData.parent = parent;
-				parent.removeChild(this._data.element);
-				break;
-			case 'style':
-				var before = {};
-				var element = this._data.element;
-				for ( var p in this._data.style) {
-					// camelCaseにして、jQueryを使わずにスタイルを適用する
-					// (jQueryを使った場合にopacityの値に'px'が足されてしまい、Firefoxだと値が反映されない)
-					var camel = $.camelCase(p);
-					before[camel] = element.style[camel];
-					element.style[camel] = this._data.style[p];
-				}
-				this._undoData.beforeStyle = before;
-				break;
-			case 'attr':
-				var attr = this._data.attr;
-				var attrNS = this._data.attrNS;
-				var element = this._data.element;
-				var beforeAttr, beforeAttrNS;
-				if (attr) {
-					beforeAttr = {};
-					for ( var p in attr) {
-						beforeAttr[p] = element.getAttribute(p);
-						element.setAttribute(p, attr[p]);
-					}
-				}
-				if (attrNS) {
-					beforeAttrNS = [];
-					for (var i = 0, l = attrNS.length; i < l; i++) {
-						var at = attrNS[i];
-						beforeAttrNS.push({
-							ns: at.ns,
-							name: at.name,
-							value: element.getAttributeNS(at.ns, at.name)
-						});
-						element.setAttributeNS(at.ns, at.name, at.value);
-					}
-				}
-				this._beforeAttr = {
-					attr: beforeAttr,
-					attrNS: beforeAttrNS
-				};
-
-				// pathのBBoxが自動更新されないブラウザについて、自分で計算してelementに持たせる
-				if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
-					var bBox = getBounds(element);
-					this._beforeBounds = bBox;
-					var beforeD = beforeAttr.d;
-					var afterD = element.getAttribute('d');
-					var beforeXY = beforeD.match(/M -?\d* -?\d*/)[0].split(' ').slice(1);
-					var afterXY = afterD.match(/M -?\d* -?\d*/)[0].split(' ').slice(1);
-					var dx = parseInt(afterXY[0]) - parseInt(beforeXY[0]);
-					var dy = parseInt(afterXY[1]) - parseInt(beforeXY[1]);
-					bBox.x += dx;
-					bBox.y += dy;
-					setBoundsData(element, bBox);
-				}
-			}
-
-			if (this._additionalCommand) {
-				var additionals = this._additionalCommand;
-				for (var i = 0, l = additionals.length; i < l; i++) {
-					additionals[i].execute();
-				}
-			}
-
+			this._data.execute();
+			this._executeAdditionalCommands();
 			return this;
 		},
 
@@ -225,68 +188,9 @@
 		 * @returns {Command} 自分自身を返す
 		 */
 		undo: function() {
-			if (this._additionalCommand) {
-				var additionals = this._additionalCommand;
-				for (var i = additionals.length - 1; i >= 0; i--) {
-					additionals[i].undo();
-				}
-			}
-			if (this.getState() === this.STATE_NOT_EXECUTED) {
-				return this;
-			}
-			switch (this._type) {
-			case 'custom':
-				this._data.undo();
-				break;
-			case 'append':
-				this._data.layer.removeChild(this._data.element);
-				break;
-			case 'remove':
-				this._undoData.parent.appendChild(this._data.element);
-				break;
-			case 'style':
-				$(this._data.element).css(this._undoData.beforeStyle);
-				break;
-			case 'attr':
-				var attr = this._beforeAttr.attr;
-				var attrNS = this._beforeAttr.attrNS;
-				var element = this._data.element;
-				if (attr) {
-					for ( var p in attr) {
-						element.setAttribute(p, attr[p]);
-					}
-				}
-				if (attrNS) {
-					for (var i = 0, l = attrNS.length; i < l; i++) {
-						var at = attrNS[i];
-						element.setAttributeNS(at.ns, at.name, at.value);
-					}
-				}
-				if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
-					setBoundsData(element, this._beforeBounds);
-				}
-			}
+			this._undoAdditionalCommands();
+			this._data.undo();
 			return this;
-		},
-
-		/**
-		 * コマンドのタイプを取得
-		 *
-		 * @memberOf Command
-		 * @returns {String}
-		 */
-		getType: function() {
-			return this._type;
-		},
-
-		/**
-		 * コマンドのターゲットになっているエレメントを取得
-		 *
-		 * @memberOf Command
-		 * @returns {DOM}
-		 */
-		getElement: function() {
-			return this._data.element;
 		},
 
 		/**
@@ -297,21 +201,284 @@
 		 * @returns {Command} 自分自身を返す
 		 */
 		mergeCommand: function(after) {
-			switch (this._type) {
-			case 'style':
-				// スタイルの場合は一つのコマンドにする
-				// 同一の要素に対するスタイル変更のコマンドのマージ
-				if (this._undoData.beforeStyle && after._undoData.beforeStyle
-						&& this.getElement() === after.getElement()) {
-					this._undoData.beforeStyle = $.extend({}, after._undoData.beforeStyle,
-							this._undoData.beforeStyle);
-					$.extend(this._data.style, after._data.style);
+			// 追加で実行するコマンドとして登録する
+			this._additionalCommand = this._additionalCommand || [];
+			this._additionalCommand.push(after);
+			return this;
+		},
+
+		/**
+		 * コンストラクタで指定したコマンドデータオブジェクトを返します
+		 *
+		 * @memberOf Command
+		 * @returns {Object} コマンドデータオブジェクト
+		 */
+		getCommandData: function() {
+			return this._data;
+		},
+
+		/**
+		 * 追加で実行するコマンドとして登録されたコマンドを実行する
+		 *
+		 * @private
+		 * @memberOf Command
+		 */
+		_executeAdditionalCommands: function() {
+			if (this._additionalCommand) {
+				var additionals = this._additionalCommand;
+				for (var i = 0, l = additionals.length; i < l; i++) {
+					additionals[i].execute();
 				}
-				break;
-			default:
-				// それ以外の場合は、追加で実行するコマンドとして登録する
-				this._additionalCommand = this._additionalCommand || [];
-				this._additionalCommand.push(after);
+			}
+		},
+
+		/**
+		 * 追加で実行するコマンドとして登録されたコマンドの取り消しを行う
+		 *
+		 * @private
+		 * @memberOf Command
+		 */
+		_undoAdditionalCommands: function() {
+			if (this._additionalCommand) {
+				var additionals = this._additionalCommand;
+				for (var i = additionals.length - 1; i >= 0; i--) {
+					additionals[i].undo();
+				}
+			}
+		}
+	});
+
+	/**
+	 * 要素の追加を行うコマンド
+	 *
+	 * @class
+	 * @extend Command
+	 * @param {Object} commandData コマンドデータオブジェクト。AppendCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	element: 追加する要素
+	 * 	layer: 追加先の要素
+	 * }
+	 * </pre>
+	 */
+	function AppendCommand(commandData) {
+		this._data = commandData;
+	}
+	$.extend(AppendCommand.prototype, Command.prototype, {
+		/**
+		 * @see Command#execute
+		 */
+		execute: function() {
+			this._data.layer.appendChild(this._data.element);
+			this._executeAdditionalCommands();
+			return this;
+		},
+
+		/**
+		 * @see Command#undo
+		 */
+		undo: function() {
+			this._undoAdditionalCommands();
+			this._data.layer.removeChild(this._data.element);
+			return this;
+		}
+	});
+
+	/**
+	 * 要素の削除を行うコマンド
+	 *
+	 * @class
+	 * @extend Command
+	 * @param {Object} commandData コマンドデータオブジェクト。RemoveCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	element: 削除する要素
+	 * }
+	 * </pre>
+	 */
+	function RemoveCommand(commandData) {
+		this._data = commandData;
+		this._undoData = {};
+	}
+	$.extend(RemoveCommand.prototype, Command.prototype, {
+		/**
+		 * @see Command#execute
+		 */
+		execute: function() {
+			var parent = this._data.element.parentNode;
+			if (!parent) {
+				throw new Error(ERR_MSG_CANNOT_REMOVE_NOT_APPENDED);
+			}
+			this._undoData.parent = parent;
+			parent.removeChild(this._data.element);
+			this._executeAdditionalCommands();
+			return this;
+		},
+		/**
+		 * @see Command#undo
+		 */
+		undo: function() {
+			this._undoAdditionalCommands();
+			this._undoData.parent.appendChild(this._data.element);
+			return this;
+		}
+	});
+
+	/**
+	 * スタイルの変更を行うコマンド
+	 *
+	 * @class
+	 * @extend Command
+	 * @param {Object} commandData コマンドデータオブジェクト。StyleCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	element: スタイルを適用する要素,
+	 * 	style: 適用するスタイルオブジェクト
+	 * }
+	 * </pre>
+	 */
+	function StyleCommand(data) {
+		this._data = data;
+		this._undoData = {};
+	}
+	$.extend(StyleCommand.prototype, Command.prototype, {
+		/**
+		 * @see Command#execute
+		 */
+		execute: function() {
+			var before = {};
+			var element = this._data.element;
+			for ( var p in this._data.style) {
+				// camelCaseにして、jQueryを使わずにスタイルを適用する
+				// (jQueryを使った場合にopacityの値に'px'が足されてしまい、Firefoxだと値が反映されない)
+				var camel = $.camelCase(p);
+				before[camel] = element.style[camel];
+				element.style[camel] = this._data.style[p];
+			}
+			this._undoData.beforeStyle = before;
+			this._executeAdditionalCommands();
+			return this;
+		},
+
+		/**
+		 * @see Command#undo
+		 */
+		undo: function() {
+			this._undoAdditionalCommands();
+			$(this._data.element).css(this._undoData.beforeStyle);
+			return this;
+		},
+
+		/**
+		 * @see Command#mergeCommand
+		 */
+		mergeCommand: function(after) {
+			// スタイルの場合は一つのコマンドにする
+			// 同一の要素に対するスタイル変更のコマンドのマージ
+			if (this._undoData.beforeStyle && after._undoData.beforeStyle
+					&& this._data.element === after.getCommandData().element) {
+				this._undoData.beforeStyle = $.extend({}, after._undoData.beforeStyle,
+						this._undoData.beforeStyle);
+				$.extend(this._data.style, after._data.style);
+			}
+			return this;
+		}
+	});
+
+	/**
+	 * 属性値の変更を行うコマンド
+	 *
+	 * @class
+	 * @extend Command
+	 * @param {Object} commandData コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	element: 属性値を適用する要素,
+	 * 	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),
+	 * 	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれの値を持つオブジェクト)の配列
+	 * }
+	 * </pre>
+	 */
+	function AttrCommand(data) {
+		this._data = data;
+		this._undoData = {};
+	}
+	$.extend(AttrCommand.prototype, Command.prototype, {
+		/**
+		 * @see Command#execute
+		 */
+		execute: function() {
+			var attr = this._data.attr;
+			var attrNS = this._data.attrNS;
+			var element = this._data.element;
+			var beforeAttr, beforeAttrNS;
+			if (attr) {
+				beforeAttr = {};
+				for ( var p in attr) {
+					beforeAttr[p] = element.getAttribute(p);
+					element.setAttribute(p, attr[p]);
+				}
+			}
+			if (attrNS) {
+				beforeAttrNS = [];
+				for (var i = 0, l = attrNS.length; i < l; i++) {
+					var at = attrNS[i];
+					beforeAttrNS.push({
+						ns: at.ns,
+						name: at.name,
+						value: element.getAttributeNS(at.ns, at.name)
+					});
+					element.setAttributeNS(at.ns, at.name, at.value);
+				}
+			}
+			this._beforeAttr = {
+				attr: beforeAttr,
+				attrNS: beforeAttrNS
+			};
+
+			// pathのBBoxが自動更新されないブラウザについて、自分で計算してelementに持たせる
+			if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
+				var bBox = getBounds(element);
+				this._beforeBounds = bBox;
+				var beforeD = beforeAttr.d;
+				var afterD = element.getAttribute('d');
+				var beforeXY = beforeD.match(/M -?\d* -?\d*/)[0].split(' ').slice(1);
+				var afterXY = afterD.match(/M -?\d* -?\d*/)[0].split(' ').slice(1);
+				var dx = parseInt(afterXY[0]) - parseInt(beforeXY[0]);
+				var dy = parseInt(afterXY[1]) - parseInt(beforeXY[1]);
+				bBox.x += dx;
+				bBox.y += dy;
+				setBoundsData(element, bBox);
+			}
+			this._executeAdditionalCommands();
+			return this;
+		},
+
+		/**
+		 * @see Command#undo
+		 */
+		undo: function() {
+			this._undoAdditionalCommands();
+			var attr = this._beforeAttr.attr;
+			var attrNS = this._beforeAttr.attrNS;
+			var element = this._data.element;
+			if (attr) {
+				for ( var p in attr) {
+					element.setAttribute(p, attr[p]);
+				}
+			}
+			if (attrNS) {
+				for (var i = 0, l = attrNS.length; i < l; i++) {
+					var at = attrNS[i];
+					element.setAttributeNS(at.ns, at.name, at.value);
+				}
+			}
+			if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
+				setBoundsData(element, this._beforeBounds);
 			}
 			return this;
 		}
@@ -365,8 +532,8 @@
 			var lastCommand = history[index - 1];
 			// 同じ要素のスタイル変更が連続で続いた場合はマージする
 			function isStyleChangeCommandForSameElement(c1, c2) {
-				return c1 && c2 && c1._type === 'style' && c1._type === c2._type
-						&& c1.getElement() === c2.getElement();
+				return c1 instanceof StyleCommand && c2 instanceof StyleCommand
+						&& c1.getCommandData().element === c2.getCommandData().element;
 			}
 			// 配列の場合
 			if ($.isArray(lastCommand) && $.isArray(command)
@@ -540,6 +707,10 @@
 
 	h5.u.obj.expose('h5.ui.components.drawing', {
 		Command: Command,
+		AppendCommand: AppendCommand,
+		RemoveCommand: RemoveCommand,
+		StyleCommand: StyleCommand,
+		AttrCommand: AttrCommand,
 		CommandManager: CommandManager
 	});
 })();
@@ -551,7 +722,7 @@
 	/**
 	 * SVGの名前空間
 	 */
-	var XLINKNS = 'http://www.w3.org/1999/xlink';
+	var XLINKNS = h5.ui.components.drawing.consts.XLINKNS;
 
 	//------------------------------------------------------------
 	// Logic
@@ -726,11 +897,6 @@
 	//------------------------------------------------------------
 	// Const
 	//------------------------------------------------------------
-	/**
-	 * SVGの名前空間
-	 */
-	var XMLNS = 'http://www.w3.org/2000/svg';
-	var XLINKNS = 'http://www.w3.org/1999/xlink';
 
 	/**
 	 * 描画した図形のIDを保持するデータ属性名
@@ -748,9 +914,15 @@
 	//------------------------------------------------------------
 	// Cache
 	//------------------------------------------------------------
+	var XMLNS = h5.ui.components.drawing.consts.XMLNS;
+	var XLINKNS = h5.ui.components.drawing.consts.XLINKNS;
 	var Command = h5.ui.components.drawing.Command;
+	var AppendCommand = h5.ui.components.drawing.AppendCommand;
+	var RemoveCommand = h5.ui.components.drawing.RemoveCommand;
+	var StyleCommand = h5.ui.components.drawing.StyleCommand;
+	var AttrCommand = h5.ui.components.drawing.AttrCommand;
 	var CommandManager = h5.ui.components.drawing.CommandManager;
-	var getBounds = h5.ui.component.drawing.getBounds;
+	var getBounds = h5.ui.components.drawing.getBounds;
 
 	//------------------------------------------------------------
 	// Body
@@ -1033,7 +1205,7 @@
 		 */
 		_setStyle: function(style) {
 			var element = this._element;
-			var command = new Command('style', {
+			var command = new StyleCommand({
 				element: element,
 				style: style
 			});
@@ -1060,7 +1232,7 @@
 		 * @param attrNS
 		 */
 		_setAttr: function(attr, attrNS) {
-			var command = new Command('attr', {
+			var command = new AttrCommand({
 				element: element,
 				attr: attr,
 				attrNS: attrNS
@@ -1287,7 +1459,7 @@
 				tmpAry[2] = position.y;
 				d = tmpAry.join(' ') + d.slice(startStr.length);
 			}
-			var command = new Command('attr', {
+			var command = new AttrCommand({
 				element: element,
 				attr: {
 					d: d
@@ -1354,7 +1526,7 @@
 		 * @override
 		 */
 		moveTo: function(position) {
-			var command = new Command('attr', {
+			var command = new AttrCommand({
 				element: this.getElement(),
 				attr: position
 			});
@@ -1404,7 +1576,7 @@
 		 * @override
 		 */
 		moveTo: function(position) {
-			var command = new Command('attr', {
+			var command = new AttrCommand({
 				element: this.getElement(),
 				attr: {
 					cx: position.x,
@@ -1455,7 +1627,7 @@
 		 * @override
 		 */
 		moveTo: function(position) {
-			var command = new Command('attr', {
+			var command = new AttrCommand({
 				element: this.getElement(),
 				attr: {
 					x: position.x,
@@ -1764,7 +1936,7 @@
 		append: function(shape) {
 			// コマンドを作成して実行
 			var element = shape.getElement();
-			var command = new Command('append', {
+			var command = new AppendCommand({
 				layer: this._shapeLayer,
 				element: element
 			});
@@ -1779,7 +1951,7 @@
 		 * @param {DRShape} shape
 		 */
 		remove: function(shape) {
-			var command = new Command('remove', {
+			var command = new RemoveCommand({
 				layer: this._shapeLayer,
 				element: shape.getElement()
 			});
@@ -2108,7 +2280,7 @@
 			if (id) {
 				$element.data(DATA_DRAWING_IMAGE_ID, id);
 			}
-			var command = new Command('custom', {
+			var command = new Command({
 				execute: function() {
 					$(this._layer).append(this._element);
 					$(this._preBgElement).remove();
@@ -2139,7 +2311,7 @@
 				// 同じなら何もしない
 				return;
 			}
-			var command = new Command('custom', {
+			var command = new Command({
 				execute: function() {
 					var $layer = $(this._layer);
 					this._preColor = $layer.css('background-color');
@@ -2167,7 +2339,7 @@
 				// 背景画像が無ければ何もしない
 				return;
 			}
-			var command = new Command('custom', {
+			var command = new Command({
 				execute: function() {
 					$(this._preBgElement).remove();
 				},
