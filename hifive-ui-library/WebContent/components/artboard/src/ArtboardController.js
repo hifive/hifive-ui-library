@@ -288,6 +288,14 @@
 		_canvas: null,
 
 		/**
+		 * canvas要素のcontext(__initで設定)
+		 *
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @private
+		 */
+		_canvasContext: null,
+
+		/**
 		 * 描画レイヤ要素
 		 *
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
@@ -515,6 +523,7 @@
 		__init: function() {
 			// canvas要素を取得
 			this._canvas = this.$find('canvas')[0];
+			this._canvasContext = this._canvas.getContext('2d');
 
 			// 選択ドラッグ中に表示する要素を作成
 			this._$selectionScopeRectangle = $('<div class="selection-scope-rectangle"></div>');
@@ -554,7 +563,7 @@
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		clearCanvas: function() {
-			var ctx = this._canvas.getContext('2d');
+			var ctx = this._canvasContext;
 			var w = this._canvas.getAttribute('width');
 			var h = this._canvas.getAttribute('height');
 			ctx.clearRect(0, 0, w, h);
@@ -696,7 +705,7 @@
 			var y = event.pageY - layersOffset.top;
 			// x,yの位置にあるshapeを取得
 			var isHit = false;
-			var shapes = this.getAllShapes();
+			var shapes = this.getAllShapes(true);
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				if (shapes[i].hitTest(x, y)) {
 					isHit = true;
@@ -1059,7 +1068,7 @@
 			var y = event.pageY - layersOffset.top;
 			var dx = event.dx;
 			var dy = event.dy;
-			var ctx = this._canvas.getContext('2d');
+			var ctx = this._canvasContext;
 			ctx.globalAlpha = this._strokeOpacity;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.lineWidth = this._strokeWidth;
@@ -1119,7 +1128,7 @@
 			var x = event.pageX - layersOffset.left;
 			var y = event.pageY - layersOffset.top;
 			var start = this._trackingData.start;
-			var ctx = this._canvas.getContext('2d');
+			var ctx = this._canvasContext;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.globalAlpha = this._strokeOpacity;
 			ctx.lineWidth = this._strokeWidth;
@@ -1186,7 +1195,7 @@
 			var y = event.pageY - layersOffset.top;
 			var startX = this._trackingData.start.x;
 			var startY = this._trackingData.start.y;
-			var ctx = this._canvas.getContext('2d');
+			var ctx = this._canvasContext;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.lineWidth = this._strokeWidth;
 			ctx.lineJoin = this._polygonLinejoin;
@@ -1291,7 +1300,7 @@
 				// 半径0なら何もしない
 				return;
 			}
-			var ctx = this._canvas.getContext('2d');
+			var ctx = this._canvasContext;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.lineWidth = this._strokeWidth;
 			var sx = rx > ry ? rx / ry : 1;
@@ -1517,15 +1526,7 @@
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		selectAll: function() {
-			var shapes = this.getAllShapes();
-			var appendedShapes = [];
-			for (var i = 0, l = shapes.length; i < l; i++) {
-				var shape = shapes[i];
-				if (!shape.isAlone()) {
-					appendedShapes.push(shape);
-				}
-			}
-			this.select(appendedShapes);
+			this.select(this.getAllShapes(true));
 		},
 
 		/**
@@ -1570,7 +1571,7 @@
 			var x = trackingData.start.x;
 			var y = trackingData.start.y;
 			// x,yの位置にあるshapeを取得
-			var shapes = this.getAllShapes();
+			var shapes = this.getAllShapes(true);
 			var selectedShapes = [];
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
@@ -1664,7 +1665,7 @@
 			var y = rect.y;
 			var w = rect.w;
 			var h = rect.h;
-			var shapes = this.getAllShapes();
+			var shapes = this.getAllShapes(true);
 			var containedShapes = [];
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
