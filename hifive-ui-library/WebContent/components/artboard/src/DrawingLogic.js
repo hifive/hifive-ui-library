@@ -1628,7 +1628,10 @@
 			var styleDeclaration = getStyleDeclaration(element);
 			var data = getDataAttr(element);
 			var attr = {
-				d: element.getAttribute('d')
+				x: element.getAttribute('x'),
+				y: element.getAttribute('y'),
+				width: element.getAttribute('width'),
+				height: element.getAttribute('height')
 			};
 			return {
 				type: this.type,
