@@ -901,12 +901,12 @@
 	/**
 	 * 描画した図形のIDを保持するデータ属性名
 	 */
-	var DATA_SHAPE_ID = 'shape-id';
-	var DATA_ELEMENT_TYPE = 'element-type';
+	var DATA_SHAPE_ID = 'shapeId';
+	var DATA_ELEMENT_TYPE = 'elementType';
 	/**
 	 * 画像IDを保持するデータ属性名
 	 */
-	var DATA_DRAWING_IMAGE_ID = 'drawing-image-id';
+	var DATA_DRAWING_IMAGE_ID = 'drawingImageId';
 
 	// エラーメッセージ
 	var ERR_MSG_DRAGSESSION_DISABLED = '終了したDragSessionのメソッドは呼べません';
@@ -925,6 +925,65 @@
 	var getBounds = h5.ui.components.drawing.getBounds;
 
 	//------------------------------------------------------------
+	// Functions
+	//------------------------------------------------------------
+	/**
+	 * 要素のスタイル定義を取得
+	 *
+	 * @private
+	 * @param {DOM} element
+	 * @returns {Object}
+	 */
+	function getStyleDeclaration(element) {
+		var style = element.style;
+		var styleDeclaration = {};
+		// 値の記述してあるスタイルを取得
+		for (var j = 0, len = style.length; j < len; j++) {
+			var p = style[j];
+			styleDeclaration[p] = style.getPropertyValue(p);
+		}
+		return styleDeclaration;
+	}
+
+	/**
+	 * 要素のデータ属性を取得
+	 *
+	 * @private
+	 * @param {DOM} element
+	 * @returns {Object}
+	 */
+	function getDataAttr(element) {
+		return $(element).data();
+	}
+
+	//--------------------------------------------
+	// エレメントからCommandの作成
+	//--------------------------------------------
+	/**
+	 * タグ名と属性値から要素を作成(必要なクラスを追加する)
+	 *
+	 * @private
+	 * @param tagName
+	 * @param data
+	 * @returns 作成した要素
+	 */
+	function createSvgDrawingElement(tagName, data) {
+		var elem = document.createElementNS(XMLNS, tagName);
+		$(elem).attr(data.attr);
+		if (data.attrNS) {
+			var attrNS = data.attrNS;
+			for (var i = 0, l = attrNS.length; i < l; i++) {
+				var attr = attrNS[i];
+				elem.setAttributeNS(attr.ns, attr.name, attr.value);
+			}
+		}
+		if (data.style) {
+			$(elem).css(data.style);
+		}
+		return elem;
+	}
+
+	//------------------------------------------------------------
 	// Body
 	//------------------------------------------------------------
 	/**
@@ -938,66 +997,7 @@
 	function DrawingSaveData(shapes, backgroundData) {
 		var sirializableShapes = [];
 		for (var i = 0, l = shapes.length; i < l; i++) {
-			var shape = shapes[i];
-			var element = shape.getElement();
-			var styleDeclaration = element.style;
-
-			var shapeStyle = {};
-			// 値の記述してあるスタイルを取得
-			for (var j = 0, len = styleDeclaration.length; j < len; j++) {
-				var p = styleDeclaration[j];
-				shapeStyle[p] = styleDeclaration.getPropertyValue(p);
-			}
-			var attr = {};
-			var shapeData = {
-				attr: attr,
-				style: shapeStyle
-			};
-
-			// 復元に必要な属性を取得
-			var type = shape.type;
-			attr['data-' + DATA_ELEMENT_TYPE] = $(element).data(DATA_ELEMENT_TYPE);
-			switch (type) {
-			case 'path':
-				attr.d = element.getAttribute('d');
-				break;
-			case 'ellipse':
-				attr.cx = element.getAttribute('cx');
-				attr.cy = element.getAttribute('cy');
-				attr.rx = element.getAttribute('rx');
-				attr.ry = element.getAttribute('ry');
-				break;
-			case 'image':
-				var id = $(element).attr(DATA_DRAWING_IMAGE_ID);
-				if (id) {
-					// idが指定されている場合はソースパスは保存せずに、idだけ保存する
-					shapeData.data = {
-						DATA_DRAWING_IMAGE_ID: id
-					};
-				} else {
-					shapeData.attrNS = shapeData.attrNS || [];
-					shapeData.attrNS.push({
-						ns: XLINKNS,
-						name: 'href',
-						value: element.getAttributeNS(XLINKNS, 'href')
-					});
-				}
-				attr.x = element.getAttribute('x');
-				attr.y = element.getAttribute('y');
-				attr.width = element.getAttribute('width');
-				attr.height = element.getAttribute('height');
-				break;
-			case 'rect':
-				attr.x = element.getAttribute('x');
-				attr.y = element.getAttribute('y');
-				attr.width = element.getAttribute('width');
-				attr.height = element.getAttribute('height');
-				break;
-			}
-			sirializableShapes.push({
-				type: type,
-				data: shapeData
-			});
+			sirializableShapes.push(shapes[i].serialize());
 		}
 		/**
 		 * セーブされたデータ
@@ -1029,7 +1029,7 @@
 		this.saveData = {
 			version: this.version,
 			shapes: sirializableShapes,
-			background: backgroundData
+			background: $.extend({}, backgroundData)
 		};
 	}
 	DrawingSaveData.prototype = Object.create({
@@ -1070,6 +1070,41 @@
 	function DRShape() {
 	// 抽象クラスのため何もしない
 	}
+	/**
+	 * シリアライズされたオブジェクトからDRShapeクラス(の子クラス)を生成して返す
+	 *
+	 * @memberOf DRShape
+	 * @static
+	 * @function
+	 * @param {Object} shapeData
+	 * @returns {DRShape}
+	 */
+	DRShape.deserialize = function(shapeData, commandManager) {
+		var type = shapeData.type;
+		// エレメントの作成
+		var element = createSvgDrawingElement(type, {
+			attr: shapeData.attr,
+			attrNS: shapeData.attrNS,
+			style: shapeData.style
+		});
+		$(element).data(shapeData.data);
+		switch (type) {
+		case 'path':
+			shape = new DRPath(element, commandManager);
+			break;
+		case 'rect':
+			shape = new DRRect(element, commandManager);
+			break;
+		case 'ellipse':
+			shape = new DREllipse(element, commandManager);
+			break;
+		case 'image':
+			shape = new DRImage(element, commandManager);
+			break;
+		}
+		return shape;
+	};
+
 	$.extend(DRShape.prototype, {
 		/**
 		 * 初期化処理
@@ -1080,7 +1115,7 @@
 		_init: function(element, commandManager) {
 			this._commandManager = commandManager;
 			this._element = element;
-			element.setAttribute('data-' + DATA_ELEMENT_TYPE, this.type);
+			$(element).data(DATA_ELEMENT_TYPE, this.type);
 		},
 
 		/**
@@ -1194,6 +1229,18 @@
 		moveBy: function() {
 			// 子クラスでの実装が必須
 			throw new Error('moveToを使用する場合、子クラスでの実装が必須です');
+		},
+
+		/**
+		 * 図形をシリアライズ可能なオブジェクトに変換します
+		 *
+		 * @memberOf DRShape
+		 * @function
+		 * @interface
+		 */
+		serialize: function() {
+			// 子クラスでの実装が必須
+			throw new Error('serializeを使用する場合、子クラスでの実装が必須です');
 		},
 
 		/**
@@ -1491,6 +1538,27 @@
 		},
 
 		/**
+		 * シリアライズ可能なオブジェクトを生成
+		 *
+		 * @memberOf DRPath
+		 * @returns {Object}
+		 */
+		serialize: function() {
+			var element = this.getElement();
+			var styleDeclaration = getStyleDeclaration(element);
+			var data = getDataAttr(element);
+			var attr = {};
+			// 復元に必要な属性を取得
+			attr.d = element.getAttribute('d');
+			return {
+				type: this.type,
+				attr: attr,
+				style: styleDeclaration,
+				data: data
+			};
+		},
+
+		/**
 		 * パスのd属性の先頭座標(Mで始まる座標指定)を取得する正規表現
 		 *
 		 * @memberOf DRPath
@@ -1547,6 +1615,27 @@
 				x: x,
 				y: y
 			});
+		},
+
+		/**
+		 * シリアライズ可能なオブジェクトを生成
+		 *
+		 * @memberOf DRRect
+		 * @returns {Object}
+		 */
+		serialize: function() {
+			var element = this.getElement();
+			var styleDeclaration = getStyleDeclaration(element);
+			var data = getDataAttr(element);
+			var attr = {
+				d: element.getAttribute('d')
+			};
+			return {
+				type: this.type,
+				attr: attr,
+				style: styleDeclaration,
+				data: data
+			};
 		}
 	});
 
@@ -1600,6 +1689,30 @@
 				x: cx,
 				y: cy
 			});
+		},
+
+		/**
+		 * シリアライズ可能なオブジェクトを生成
+		 *
+		 * @memberOf DREllipse
+		 * @returns {Object}
+		 */
+		serialize: function() {
+			var element = this.getElement();
+			var styleDeclaration = getStyleDeclaration(element);
+			var data = getDataAttr(element);
+			var attr = {
+				cx: element.getAttribute('cx'),
+				cy: element.getAttribute('cy'),
+				rx: element.getAttribute('rx'),
+				ry: element.getAttribute('ry')
+			};
+			return {
+				type: this.type,
+				attr: attr,
+				style: styleDeclaration,
+				data: data
+			};
 		}
 	});
 
@@ -1651,6 +1764,41 @@
 				x: x,
 				y: y
 			});
+		},
+
+		/**
+		 * シリアライズ可能なオブジェクトを生成
+		 *
+		 * @memberOf DRImage
+		 * @returns {Object}
+		 */
+		serialize: function() {
+			var element = this.getElement();
+			var styleDeclaration = getStyleDeclaration(element);
+			var data = getDataAttr(element);
+			var shapeData = {
+				type: this.type,
+				style: styleDeclaration
+			};
+			// 画像パスは名前空間属性
+			var attrNS = [{
+				ns: XLINKNS,
+				name: 'href',
+				value: element.getAttributeNS(XLINKNS, 'href')
+			}];
+			var attr = {
+				x: element.getAttribute('x'),
+				y: element.getAttribute('y'),
+				width: element.getAttribute('width'),
+				height: element.getAttribute('height')
+			};
+			return {
+				type: this.type,
+				style: styleDeclaration,
+				attr: attr,
+				attrNS: attrNS,
+				data: data
+			};
 		}
 	});
 	//---------------------- 図形クラスの定義ここまで ----------------------
@@ -1884,46 +2032,6 @@
 			this._commandManager.redo();
 		},
 
-		//--------------------------------------------
-		// エレメントからCommandの作成
-		//--------------------------------------------
-		/**
-		 * タグ名と属性値から要素を作成(必要なクラスを追加する)
-		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
-		 * @private
-		 * @param tagName
-		 * @param data
-		 * @returns 作成した要素
-		 */
-		_createSvgDrawingElement: function(tagName, data) {
-			var elem = document.createElementNS(XMLNS, tagName);
-			$(elem).attr(data.attr);
-			if (data.attrNS) {
-				var attrNS = data.attrNS;
-				for (var i = 0, l = attrNS.length; i < l; i++) {
-					var attr = attrNS[i];
-					elem.setAttributeNS(attr.ns, attr.name, attr.value);
-				}
-			}
-			if (data.style) {
-				$(elem).css(data.style);
-			}
-			return elem;
-		},
-
-		/**
-		 * DOM要素をクローンして要素を作成(必要なクラスを追加する)
-		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
-		 * @private
-		 * @param element
-		 */
-		_createDrawingElement: function(element) {
-			var clone = $(element).clone()[0];
-			return clone;
-		},
-
 		//---------------------------------------------------------------
 		// 描画オブジェクトの操作
 		//---------------------------------------------------------------
@@ -1987,7 +2095,7 @@
 				d: data.pathData
 			};
 			var style = data.style;
-			var elem = this._createSvgDrawingElement('path', {
+			var elem = createSvgDrawingElement('path', {
 				attr: attr,
 				style: style
 			});
@@ -2017,7 +2125,7 @@
 				width: width,
 				height: height
 			};
-			var elem = this._createSvgDrawingElement('rect', {
+			var elem = createSvgDrawingElement('rect', {
 				attr: attr,
 				style: style
 			});
@@ -2062,7 +2170,7 @@
 				rx: rx,
 				ry: ry
 			};
-			var elem = this._createSvgDrawingElement('ellipse', {
+			var elem = createSvgDrawingElement('ellipse', {
 				attr: attr,
 				style: style
 			});
@@ -2117,12 +2225,8 @@
 				height: data.height,
 				width: data.width
 			};
-			var src = data.src;
-			if (data.id) {
-				var id = data.id;
-				attr['data-' + DATA_DRAWING_IMAGE_ID] = id;
-				src = this.imageSourceMap[id];
-			}
+			var src = data.id ? this.imageSourceMap[data.id] : data.src;
+
 			var attrNS = [{
 				ns: XLINKNS,
 				name: 'href',
@@ -2130,11 +2234,12 @@
 			}];
 
 			var style = data.style;
-			var elem = this._createSvgDrawingElement('image', {
+			var elem = createSvgDrawingElement('image', {
 				attr: attr,
 				attrNS: attrNS,
 				style: style
 			});
+			$(elem).data(DATA_DRAWING_IMAGE_ID, data.id);
 
 			// Shapeの作成
 			var shape = new DRImage(elem, this._commandManager);
@@ -2259,7 +2364,7 @@
 			}
 			// fillModeとidと画像パスを要素に持たせておく
 			$element.data('fillmode', fillMode);
-			$element.data('image-src', src);
+			$element.data(DATA_DRAWING_IMAGE_ID, src);
 			if (fillMode === 'none') {
 				$element.css({
 					left: x || 0,
@@ -2381,7 +2486,7 @@
 			if (id) {
 				ret.id = id;
 			} else {
-				ret.src = $bgElement.data('image-src');
+				ret.src = $bgElement.data(DATA_DRAWING_IMAGE_ID);
 			}
 			ret.color = $layer.css('background-color');
 			if (ret.fillMode === 'none') {
@@ -2430,11 +2535,7 @@
 		 */
 		save: function() {
 			// 描画されている図形要素を取得
-			var shapes = [];
-			var shapeMap = this._shapeMap;
-			$(this._shapeLayer).children().each(function() {
-				shapes.push(shapeMap[$(this).data(DATA_SHAPE_ID)]);
-			});
+			var shapes = this.getAllShapes(true);
 			// 図形と背景のセーブデータを作って返す
 			return new DrawingSaveData(shapes, this._getCurrentBackgroundData());
 		},
@@ -2445,8 +2546,8 @@
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @param {DrawingSaveData}
 		 */
-		load: function(artboardSaveData) {
-			var saveData = artboardSaveData.saveData;
+		load: function(drawingSaveData) {
+			var saveData = drawingSaveData.saveData;
 			// クリア
 			$(this._shapeLayer).children().remove();
 			this._shapeMap = {};
@@ -2478,42 +2579,21 @@
 			// Shapeの復元
 			var shapesData = saveData.shapes;
 			for (var i = 0, l = shapesData.length; i < l; i++) {
-				var shapeData = shapesData[i];
-				var data = shapeData.data;
-				var type = shapeData.type;
-				// エレメントの作成
-				var element = this._createSvgDrawingElement(type, {
-					attr: data.attr,
-					attrNS: data.attrNS,
-					style: data.style
-				});
-				// エレメントからShapeの作成
-				var shape = null;
-				switch ($(element).data(DATA_ELEMENT_TYPE)) {
-				case 'path':
-					shape = new DRPath(element, commandManager);
-					break;
-				case 'rect':
-					shape = new DRRect(element, commandManager);
-					break;
-				case 'ellipse':
-					shape = new DREllipse(element, commandManager);
-					break;
-				case 'image':
-					// idが設定されていた場合は、idを元に画像を設定
-					var id = data.data && data.data[DATA_DRAWING_IMAGE_ID];
-					if (id) {
-						element.setAttributeNS(XLINKNS, 'href', this.imageSourceMap[id]);
-					}
-					shape = new DRImage(element, commandManager);
-					break;
-				}
-				if (!shape) {
-					continue;
-				}
 				// 図形の登録と追加
-				this.append(shape);
+				this.append(DRShape.deserialize(shapesData[i], this._commandManager));
 			}
+
+			// image要素について、idから画像パスを復元する
+			var $image = $(this._shapeLayer).find('image');
+			var imageSourceMap = this.imageSourceMap;
+			$image.each(function() {
+				var $this = $(this);
+				var id = $this.data(DATA_DRAWING_IMAGE_ID);
+				if (id) {
+					this.setAttributeNS(XLINKNS, 'href', imageSourceMap[id]);
+				}
+			});
+
 			// コマンドマネージャのクリア
 			commandManager.clearAll();
 		},
