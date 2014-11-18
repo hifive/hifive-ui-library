@@ -1321,76 +1321,80 @@
 		 * @name DRStrokeShape
 		 */
 
-		/**
-		 * ストロークの色
-		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
-		 * </p>
-		 * <p>
-		 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
-		 * </p>
-		 *
-		 * @name strokeColor
-		 * @memberOf DRStrokeShape
-		 * @type {String}
-		 */
-		Object.defineProperty(strokeProto, 'strokeColor', {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._getStyle('stroke');
+		Object.defineProperties(strokeProto, {
+			/**
+			 * ストロークの色
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 * <p>
+			 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
+			 * </p>
+			 *
+			 * @name strokeColor
+			 * @memberOf DRStrokeShape
+			 * @type {String}
+			 */
+			strokeColor: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this._getStyle('stroke');
+				},
+				set: function(val) {
+					// 再描画
+					this._setStyle({
+						'stroke': val
+					});
+				}
 			},
-			set: function(val) {
-				// 再描画
-				this._setStyle({
-					'stroke': val
-				});
-			}
-		});
-		/**
-		 * ストロークの透明度(0～1)
-		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
-		 * </p>
-		 *
-		 * @name strokeOpacity
-		 * @memberOf DRStrokeShape
-		 * @type {Number}
-		 */
-		Object.defineProperty(strokeProto, 'strokeOpacity', {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._getStyle('strokeOpacity');
+
+			/**
+			 * ストロークの透明度(0～1)
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name strokeOpacity
+			 * @memberOf DRStrokeShape
+			 * @type {Number}
+			 */
+			strokeOpacity: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this._getStyle('strokeOpacity');
+				},
+				set: function(val) {
+					// 再描画
+					this._setStyle({
+						'stroke-opacity': val
+					});
+				}
 			},
-			set: function(val) {
-				// 再描画
-				this._setStyle({
-					'stroke-opacity': val
-				});
-			}
-		});
-		/**
-		 * ストロークの幅
-		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
-		 * </p>
-		 *
-		 * @name strokeWidth
-		 * @memberOf DRStrokeShape
-		 * @type {Integer}
-		 */
-		Object.defineProperty(strokeProto, 'strokeWidth', {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._getStyle('strokeWidth');
-			},
-			set: function(val) {
-				// 再描画
-				this._setStyle({
-					'stroke-width': val
-				});
+
+			/**
+			 * ストロークの幅
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name strokeWidth
+			 * @memberOf DRStrokeShape
+			 * @type {Integer}
+			 */
+			strokeWidth: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this._getStyle('strokeWidth');
+				},
+				set: function(val) {
+					// 再描画
+					this._setStyle({
+						'stroke-width': val
+					});
+				}
 			}
 		});
 		return strokeProto;
@@ -1417,55 +1421,57 @@
 		 * @mixin
 		 * @name DRFillShape
 		 */
-		/**
-		 * 塗りつぶしの色
-		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます。
-		 * </p>
-		 * <p>
-		 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
-		 * </p>
-		 *
-		 * @name fillColor
-		 * @memberOf DRFillShape
-		 * @type {String}
-		 */
-		Object.defineProperty(fillProto, 'fillColor', {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._getStyle('fill');
+		Object.defineProperties(fillProto, {
+			/**
+			 * 塗りつぶしの色
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます。
+			 * </p>
+			 * <p>
+			 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
+			 * </p>
+			 *
+			 * @name fillColor
+			 * @memberOf DRFillShape
+			 * @type {String}
+			 */
+			fillColor: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this._getStyle('fill');
+				},
+				set: function(val) {
+					// 再描画
+					this._setStyle({
+						'fill': val
+					});
+				}
 			},
-			set: function(val) {
-				// 再描画
-				this._setStyle({
-					'fill': val
-				});
-			}
-		});
-		/**
-		 * 塗りつぶしの透明度(0～1)
-		 * <p>
-		 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
-		 * </p>
-		 *
-		 * @name fillOpacity
-		 * @memberOf DRFillShape
-		 * @type {Number}
-		 */
-		Object.defineProperty(fillProto, 'fillOpacity', {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._getStyle('fillOpacity');
-			},
-			set: function(val) {
-				var opacity = parseFloat(val);
-				this._fillOpacity = opacity;
-				// 再描画
-				this._setStyle({
-					'fill-opacity': opacity
-				});
+			/**
+			 * 塗りつぶしの透明度(0～1)
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name fillOpacity
+			 * @memberOf DRFillShape
+			 * @type {Number}
+			 */
+			fillOpacity: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this._getStyle('fillOpacity');
+				},
+				set: function(val) {
+					var opacity = parseFloat(val);
+					this._fillOpacity = opacity;
+					// 再描画
+					this._setStyle({
+						'fill-opacity': opacity
+					});
+				}
 			}
 		});
 		return fillProto;
