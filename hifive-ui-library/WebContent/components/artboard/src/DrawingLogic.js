@@ -1077,6 +1077,7 @@
 	 * @static
 	 * @function
 	 * @param {Object} shapeData
+	 * @param {CommandManager} commandManager
 	 * @returns {DRShape}
 	 */
 	DRShape.deserialize = function(shapeData, commandManager) {
