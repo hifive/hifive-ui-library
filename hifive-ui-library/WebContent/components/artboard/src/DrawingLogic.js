@@ -26,6 +26,9 @@
 	/** 図形の選択を解除した時に上がるイベント名 */
 	var EVENT_UNSELECT_SHAPE = 'unselect-shape';
 
+	/** imageSourceMapと対応付けるために要素に持たせるデータ属性名 */
+	var DATA_IMAGE_SOURCE_ID = 'h5-artboad-image-id';
+
 	/**
 	 * SVGの名前空間
 	 */
@@ -35,10 +38,6 @@
 	// メッセージ
 	/** ドキュメントツリー上にない要素で作成したRemoveCommandを実行した時のエラーメッセージ */
 	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = 'removeはレイヤに追加されている要素のみ実行できます';
-
-	/** アップデートセッション中に使用不可のメソッドを呼び出した時のエラーメッセージ */
-	var ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION = 'アップデートセッション中に{0}メソッドを実行することはできません';
-
 
 	h5.u.obj.expose('h5.ui.components.drawing', {
 		consts: {
@@ -51,11 +50,11 @@
 			EVENT_SELECT_SHAPE: EVENT_SELECT_SHAPE,
 			EVENT_UNSELECT_SHAPE: EVENT_UNSELECT_SHAPE,
 			XMLNS: XMLNS,
-			XLINKNS: XLINKNS
+			XLINKNS: XLINKNS,
+			DATA_IMAGE_SOURCE_ID: DATA_IMAGE_SOURCE_ID
 		},
 		message: {
-			ERR_MSG_CANNOT_REMOVE_NOT_APPENDED: ERR_MSG_CANNOT_REMOVE_NOT_APPENDED,
-			ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION: ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION
+			ERR_MSG_CANNOT_REMOVE_NOT_APPENDED: ERR_MSG_CANNOT_REMOVE_NOT_APPENDED
 		}
 	});
 })();
@@ -143,7 +142,6 @@
 	// Cache
 	//------------------------------------------------------------
 	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = h5.ui.components.drawing.message.ERR_MSG_CANNOT_REMOVE_NOT_APPENDED;
-	var ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION = h5.ui.components.drawing.message.ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION;
 	var useDataForGetBBox = h5.ui.components.drawing.useDataForGetBBox;
 	var setBoundsData = h5.ui.components.drawing.setBoundsData;
 	var getBounds = h5.ui.components.drawing.getBounds;
@@ -155,18 +153,10 @@
 	 * コマンド
 	 *
 	 * @class
-	 * @param {String} type
-	 * @param {Object} commandData コマンドデータオブジェクト。Commandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
-	 *
-	 * <pre class="sh_javascript">
-	 * {
-	 * 	execute: executeメソッドを呼んだ時に実行する関数
-	 * 	undo: undoメソッドを呼んだ時に実行する関数
-	 * }
-	 * </pre>
+	 * @abstruct
 	 */
-	function Command(commandData) {
-		this._data = commandData;
+	function Command() {
+	// 空コンストラクタ
 	}
 	$.extend(Command.prototype, {
 		/**
@@ -176,8 +166,11 @@
 		 * @returns {Command} 自分自身を返す
 		 */
 		execute: function() {
-			this._data.execute();
-			this._executeAdditionalCommands();
+			if (this._isExecuted) {
+				return this;
+			}
+			this._execute();
+			this._isExecuted = true;
 			return this;
 		},
 
@@ -188,22 +181,11 @@
 		 * @returns {Command} 自分自身を返す
 		 */
 		undo: function() {
-			this._undoAdditionalCommands();
-			this._data.undo();
-			return this;
-		},
-
-		/**
-		 * 他のコマンドとのマージを行い一つのコマンドにする
-		 *
-		 * @memberOf Command
-		 * @param {Command} after execute時に追加で実行するコマンド(undoの場合は先に追加したコマンドが実行されます)
-		 * @returns {Command} 自分自身を返す
-		 */
-		mergeCommand: function(after) {
-			// 追加で実行するコマンドとして登録する
-			this._additionalCommand = this._additionalCommand || [];
-			this._additionalCommand.push(after);
+			if (!this._isExecuted) {
+				return this;
+			}
+			this._undo();
+			this._isExecuted = false;
 			return this;
 		},
 
@@ -218,35 +200,54 @@
 		},
 
 		/**
-		 * 追加で実行するコマンドとして登録されたコマンドを実行する
+		 * コマンド同士をマージする
+		 * <p>
+		 * 戻り値としてマージ可能かどうかを返します。
+		 * </p>
 		 *
-		 * @private
 		 * @memberOf Command
+		 * @param {Command} マージ対象のコマンド
+		 * @returns {boolean} マージできたかどうか
 		 */
-		_executeAdditionalCommands: function() {
-			if (this._additionalCommand) {
-				var additionals = this._additionalCommand;
-				for (var i = 0, l = additionals.length; i < l; i++) {
-					additionals[i].execute();
-				}
-			}
-		},
-
-		/**
-		 * 追加で実行するコマンドとして登録されたコマンドの取り消しを行う
-		 *
-		 * @private
-		 * @memberOf Command
-		 */
-		_undoAdditionalCommands: function() {
-			if (this._additionalCommand) {
-				var additionals = this._additionalCommand;
-				for (var i = additionals.length - 1; i >= 0; i--) {
-					additionals[i].undo();
-				}
-			}
+		mergeCommand: function(after) {
+			// マージ処理の実装はそれぞれの子クラスで実装します
+			// マージをサポートしないCommandの子クラスは実装の必要ありません
+			return false;
 		}
 	});
+
+	/**
+	 * ユーザ定義コマンド
+	 *
+	 * @class
+	 * @param {Object} commandData コマンドデータオブジェクト。CustomCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
+	 *
+	 * <pre class="sh_javascript">
+	 * {
+	 * 	execute: executeメソッドを呼んだ時に実行する関数。必須。
+	 * 	undo: undoメソッドを呼んだ時に実行する関数。必須。
+	 * 	margeCommand: 引数に渡されたCommandとマージする関数。指定しない場合はマージせずにfalseを返す。
+	 * }
+	 * </pre>
+	 *
+	 * @abstruct
+	 */
+	function CustomCommand(commandData) {
+		this._data = commandData;
+		this._execute = function() {
+			commandData.execute.call(commandData);
+		};
+		this._undo = function() {
+			commandData.undo.call(commandData);
+		};
+		if (commandData.margeCustomCommand) {
+			// ユーザ定義があれば上書き
+			this.margeCustomCommand = function() {
+				commandData.margeCustomCommand.call(commandData);
+			};
+		}
+	}
+	$.extend(CustomCommand.prototype, Command.prototype);
 
 	/**
 	 * 要素の追加を行うコマンド
@@ -267,21 +268,19 @@
 	}
 	$.extend(AppendCommand.prototype, Command.prototype, {
 		/**
+		 * @private
 		 * @see Command#execute
 		 */
-		execute: function() {
+		_execute: function() {
 			this._data.layer.appendChild(this._data.element);
-			this._executeAdditionalCommands();
-			return this;
 		},
 
 		/**
+		 * @private
 		 * @see Command#undo
 		 */
-		undo: function() {
-			this._undoAdditionalCommands();
+		_undo: function() {
 			this._data.layer.removeChild(this._data.element);
-			return this;
 		}
 	});
 
@@ -304,25 +303,24 @@
 	}
 	$.extend(RemoveCommand.prototype, Command.prototype, {
 		/**
+		 * @private
 		 * @see Command#execute
 		 */
-		execute: function() {
+		_execute: function() {
 			var parent = this._data.element.parentNode;
 			if (!parent) {
 				throw new Error(ERR_MSG_CANNOT_REMOVE_NOT_APPENDED);
 			}
 			this._undoData.parent = parent;
 			parent.removeChild(this._data.element);
-			this._executeAdditionalCommands();
-			return this;
 		},
+
 		/**
+		 * @private
 		 * @see Command#undo
 		 */
-		undo: function() {
-			this._undoAdditionalCommands();
+		_undo: function() {
 			this._undoData.parent.appendChild(this._data.element);
-			return this;
 		}
 	});
 
@@ -346,9 +344,10 @@
 	}
 	$.extend(StyleCommand.prototype, Command.prototype, {
 		/**
+		 * @private
 		 * @see Command#execute
 		 */
-		execute: function() {
+		_execute: function() {
 			var before = {};
 			var element = this._data.element;
 			for ( var p in this._data.style) {
@@ -359,33 +358,37 @@
 				element.style[camel] = this._data.style[p];
 			}
 			this._undoData.beforeStyle = before;
-			this._executeAdditionalCommands();
-			return this;
 		},
 
 		/**
+		 * @private
 		 * @see Command#undo
 		 */
-		undo: function() {
-			this._undoAdditionalCommands();
+		_undo: function() {
 			$(this._data.element).css(this._undoData.beforeStyle);
-			return this;
-		},
-
-		/**
-		 * @see Command#mergeCommand
-		 */
-		mergeCommand: function(after) {
-			// スタイルの場合は一つのコマンドにする
-			// 同一の要素に対するスタイル変更のコマンドのマージ
-			if (this._undoData.beforeStyle && after._undoData.beforeStyle
-					&& this._data.element === after.getCommandData().element) {
-				this._undoData.beforeStyle = $.extend({}, after._undoData.beforeStyle,
-						this._undoData.beforeStyle);
-				$.extend(this._data.style, after._data.style);
-			}
-			return this;
 		}
+	//		,
+	//		/**
+	//		 * 同一要素のスタイル変更コマンドについてマージします
+	//		 * <p>
+	//		 * 同一要素が対象でない場合はマージできません。falseを返します。
+	//		 * </p>
+	//		 *
+	//		 * @see Command#mergeCommand
+	//		 */
+	//		mergeCommand: function(after) {
+	//			// スタイルの場合は一つのコマンドにする
+	//			// 同一の要素に対するスタイル変更のコマンドのマージ
+	//			if (after instanceof StyleCommand && this._undoData.beforeStyle
+	//					&& after._undoData.beforeStyle
+	//					&& this._data.element === after.getCommandData().element) {
+	//				this._undoData.beforeStyle = $.extend({}, after._undoData.beforeStyle,
+	//						this._undoData.beforeStyle);
+	//				$.extend(this._data.style, after._data.style);
+	//				return true;
+	//			}
+	//			return false;
+	//		}
 	});
 
 	/**
@@ -409,9 +412,10 @@
 	}
 	$.extend(AttrCommand.prototype, Command.prototype, {
 		/**
+		 * @private
 		 * @see Command#execute
 		 */
-		execute: function() {
+		_execute: function() {
 			var attr = this._data.attr;
 			var attrNS = this._data.attrNS;
 			var element = this._data.element;
@@ -454,15 +458,13 @@
 				bBox.y += dy;
 				setBoundsData(element, bBox);
 			}
-			this._executeAdditionalCommands();
-			return this;
 		},
 
 		/**
+		 * @private
 		 * @see Command#undo
 		 */
-		undo: function() {
-			this._undoAdditionalCommands();
+		_undo: function() {
 			var attr = this._beforeAttr.attr;
 			var attrNS = this._beforeAttr.attrNS;
 			var element = this._data.element;
@@ -480,7 +482,75 @@
 			if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
 				setBoundsData(element, this._beforeBounds);
 			}
-			return this;
+		}
+	});
+
+	/**
+	 * 複数のCommandを一つのコマンドとして扱うコマンド
+	 *
+	 * @class
+	 * @extends{Command}
+	 * @param {Command[]} [commands=[]] Commandの配列
+	 */
+	function SequenceCommand(commands) {
+		this._commands = commands || [];
+	}
+	$.extend(SequenceCommand.prototype, Command.prototype, {
+		/**
+		 * @private
+		 * @see Command#execute
+		 */
+		_execute: function() {
+			for (var i = 0, l = this._commands.length; i < l; i++) {
+				this._commands[i].execute();
+			}
+		},
+
+		/**
+		 * @private
+		 * @see Command#undo
+		 */
+		_undo: function() {
+			for (var i = this._commands.length - 1; i >= 0; i--) {
+				this._commands[i].undo();
+			}
+		},
+
+		/**
+		 * コマンドの追加
+		 *
+		 * @memberOf SequenceCommand
+		 * @param {Command}
+		 */
+		push: function(command) {
+			this._commands.push(command);
+		},
+
+		/**
+		 * 内部コマンドの取得
+		 *
+		 * @memberOf SequenceCommand
+		 * @returns {Commands[]}
+		 */
+		getInnerCommands: function() {
+			return this._commands;
+		},
+
+		/**
+		 * 引数にSequenceCommandが渡された場合にコマンドをマージします
+		 *
+		 * @see Command#mergeCommand
+		 */
+		mergeCommand: function(after) {
+			if (after instanceof SequenceCommand) {
+				Array.prototype.push.apply(this._commands, after._commands);
+				return true;
+			}
+			if (after instanceof Command) {
+				this.push(after);
+				return true;
+			}
+			return false;
 		}
 	});
 
@@ -494,8 +564,6 @@
 		// 空コンストラクタ
 		this._index = 0;
 		this._history = [];
-		this._isInUpdate = false;
-		this._updateCommands = [];
 	}
 	h5.mixin.eventDispatcher.mix(CommandManager.prototype);
 	$.extend(CommandManager.prototype, {
@@ -506,19 +574,9 @@
 		 * </p>
 		 *
 		 * @memberOf CommandManager
-		 * @param {Command|Command[]} command
+		 * @param {Command} command
 		 */
 		append: function(command) {
-			// アップデートセッション中ならコマンドを覚えておく
-			if (this._isInUpdate) {
-				if ($.isArray(command)) {
-					// 配列なら分解してpush
-					Array.prototype.push.apply(this._updateCommands, command);
-				} else {
-					this._updateCommands.push(command);
-				}
-				return;
-			}
 			var history = this._history;
 			var index = this._index;
 			if (index !== history.length) {
@@ -528,33 +586,6 @@
 				this.dispatchEvent({
 					type: 'disable-redo'
 				});
-			}
-			var lastCommand = history[index - 1];
-			// 同じ要素のスタイル変更が連続で続いた場合はマージする
-			function isStyleChangeCommandForSameElement(c1, c2) {
-				return c1 instanceof StyleCommand && c2 instanceof StyleCommand
-						&& c1.getCommandData().element === c2.getCommandData().element;
-			}
-			// 配列の場合
-			if ($.isArray(lastCommand) && $.isArray(command)
-					&& lastCommand.length === command.length) {
-				var isSame = true;
-				var length = command.length;
-				for (var i = 0; i < length; i++) {
-					if (!isStyleChangeCommandForSameElement(lastCommand[i], command[i])) {
-						isSame = false;
-						break;
-					}
-				}
-				if (isSame) {
-					for (var i = 0; i < length; i++) {
-						lastCommand[i].mergeCommand(command[i]);
-					}
-					return;
-				}
-			} else if (isStyleChangeCommandForSameElement(lastCommand, command)) {
-				lastCommand.mergeCommand(command);
-				return;
 			}
 			// 最後尾に追加
 			history.push(command);
@@ -574,10 +605,6 @@
 		 * @memberOf CommandManager
 		 */
 		undo: function() {
-			if (this._isInUpdate) {
-				throw Error(h5.u.str.format(ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION, 'undo'));
-				return;
-			}
 			var history = this._history;
 			var index = this._index;
 			var command = history[index - 1];
@@ -613,10 +640,6 @@
 		 * @memberOf CommandManager
 		 */
 		redo: function() {
-			if (this._isInUpdate) {
-				throw Error(h5.u.str.format(ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION, 'redo'));
-				return;
-			}
 			var history = this._history;
 			var index = this._index;
 			var command = history[index];
@@ -652,10 +675,6 @@
 		 * @memberOf CommandManager
 		 */
 		clearAll: function() {
-			if (this._isInUpdate) {
-				throw Error(h5.u.str.format(ERR_MSG_CANNOT_EXECUTE_IN_UPDATE_SESSION, 'clearAll'));
-				return;
-			}
 			var index = this._index;
 			var historyLength = this._history.length;
 			this._history.splice(0, 0);
@@ -672,45 +691,17 @@
 					type: 'disable-redo'
 				});
 			}
-		},
-
-		/**
-		 * アップデートセッションの開始
-		 * <p>
-		 * アップデートセッション中に登録されたコマンドは一つのコマンド郡として扱われるようになります。
-		 * </p>
-		 *
-		 * @memberOf CommandManager
-		 */
-		beginUpdate: function() {
-			if (this._isInUpdate) {
-				return;
-			}
-			this._isInUpdate = true;
-			this._updateCommands = [];
-		},
-
-		/**
-		 * アップデートセッションの終了
-		 *
-		 * @memberOf CommandManager
-		 */
-		endUpdate: function() {
-			this._isInUpdate = false;
-			var commands = this._updateCommands;
-			this._updateCommands = null;
-			if (commands.length) {
-				this.append(commands);
-			}
 		}
 	});
 
 	h5.u.obj.expose('h5.ui.components.drawing', {
 		Command: Command,
+		CustomCommand: CustomCommand,
 		AppendCommand: AppendCommand,
 		RemoveCommand: RemoveCommand,
 		StyleCommand: StyleCommand,
 		AttrCommand: AttrCommand,
+		SequenceCommand: SequenceCommand,
 		CommandManager: CommandManager
 	});
 })();
@@ -903,10 +894,6 @@
 	 */
 	var DATA_SHAPE_ID = 'shapeId';
 	var DATA_ELEMENT_TYPE = 'elementType';
-	/**
-	 * 画像IDを保持するデータ属性名
-	 */
-	var DATA_DRAWING_IMAGE_ID = 'drawingImageId';
 
 	// エラーメッセージ
 	var ERR_MSG_DRAGSESSION_DISABLED = '終了したDragSessionのメソッドは呼べません';
@@ -917,12 +904,15 @@
 	var XMLNS = h5.ui.components.drawing.consts.XMLNS;
 	var XLINKNS = h5.ui.components.drawing.consts.XLINKNS;
 	var Command = h5.ui.components.drawing.Command;
+	var CustomCommand = h5.ui.components.drawing.CustomCommand;
 	var AppendCommand = h5.ui.components.drawing.AppendCommand;
 	var RemoveCommand = h5.ui.components.drawing.RemoveCommand;
 	var StyleCommand = h5.ui.components.drawing.StyleCommand;
 	var AttrCommand = h5.ui.components.drawing.AttrCommand;
-	var CommandManager = h5.ui.components.drawing.CommandManager;
+	//	var SequenceCommand = h5.ui.components.drawing.SequenceCommand;
+	//	var CommandManager = h5.ui.components.drawing.CommandManager;
 	var getBounds = h5.ui.components.drawing.getBounds;
+	var DATA_IMAGE_SOURCE_ID = h5.ui.components.drawing.consts.DATA_IMAGE_SOURCE_ID;
 
 	//------------------------------------------------------------
 	// Functions
@@ -1077,10 +1067,10 @@
 	 * @static
 	 * @function
 	 * @param {Object} shapeData
-	 * @param {CommandManager} commandManager
+	 * @param {CommandTransactionLogic} artboadCommandManager
 	 * @returns {DRShape}
 	 */
-	DRShape.deserialize = function(shapeData, commandManager) {
+	DRShape.deserialize = function(shapeData, artboadCommandManager) {
 		var type = shapeData.type;
 		// エレメントの作成
 		var element = createSvgDrawingElement(type, {
@@ -1091,16 +1081,16 @@
 		$(element).data(shapeData.data);
 		switch (type) {
 		case 'path':
-			shape = new DRPath(element, commandManager);
+			shape = new DRPath(element, artboadCommandManager);
 			break;
 		case 'rect':
-			shape = new DRRect(element, commandManager);
+			shape = new DRRect(element, artboadCommandManager);
 			break;
 		case 'ellipse':
-			shape = new DREllipse(element, commandManager);
+			shape = new DREllipse(element, artboadCommandManager);
 			break;
 		case 'image':
-			shape = new DRImage(element, commandManager);
+			shape = new DRImage(element, artboadCommandManager);
 			break;
 		}
 		return shape;
@@ -1113,8 +1103,8 @@
 		 * @memberOf DRShape
 		 * @private
 		 */
-		_init: function(element, commandManager) {
-			this._commandManager = commandManager;
+		_init: function(element, artboadCommandManager) {
+			this.artboadCommandManager = artboadCommandManager;
 			this._element = element;
 			$(element).data(DATA_ELEMENT_TYPE, this.type);
 		},
@@ -1135,7 +1125,7 @@
 		 * @returns {DragSession}
 		 */
 		beginDrag: function() {
-			return new DragSession(this, this._commandManager);
+			return new DragSession(this, this.artboadCommandManager);
 		},
 
 		/**
@@ -1250,6 +1240,7 @@
 		 * @memberOf DRShape
 		 * @private
 		 * @param style
+		 * @returns {Command}
 		 */
 		_setStyle: function(style) {
 			var element = this._element;
@@ -1257,7 +1248,8 @@
 				element: element,
 				style: style
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
+			return command;
 		},
 
 		/**
@@ -1278,6 +1270,7 @@
 		 * @private
 		 * @param attr
 		 * @param attrNS
+		 * @returns {Command}
 		 */
 		_setAttr: function(attr, attrNS) {
 			var command = new AttrCommand({
@@ -1285,7 +1278,8 @@
 				attr: attr,
 				attrNS: attrNS
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
+			return command;
 		}
 
 	// JSDocのみ。定義は各インスタンスのdefinePropertyで行っています
@@ -1486,12 +1480,12 @@
 	 * @extends DRShape
 	 * @mixes DRStrokeShape
 	 * @param element
-	 * @param commandManager
+	 * @param artboadCommandManager
 	 */
-	function DRPath(element, commandManager) {
+	function DRPath(element, artboadCommandManager) {
 		// typeの設定
 		setShapeInstanceType(this, 'path');
-		this._init(element, commandManager);
+		this._init(element, artboadCommandManager);
 	}
 	DRPath.prototype = Object.create(DRShape.prototype);
 	DRPath.constructor = DRPath;
@@ -1518,8 +1512,11 @@
 				attr: {
 					d: d
 				}
-			});
-			this._commandManager.append(command.execute());
+			}).execute();
+			if (this.artboadCommandManager) {
+				this.artboadCommandManager.appendCommand(command);
+			}
+			return command;
 		},
 
 		/**
@@ -1584,12 +1581,12 @@
 	 * @mixes DRStrokeShape
 	 * @mixes DRFillShape
 	 * @param element
-	 * @param commandManager
+	 * @param artboadCommandManager
 	 */
-	function DRRect(element, commandManager) {
+	function DRRect(element, artboadCommandManager) {
 		// typeの設定
 		setShapeInstanceType(this, 'rect');
-		this._init(element, commandManager);
+		this._init(element, artboadCommandManager);
 	}
 	DRRect.prototype = Object.create(DRShape.prototype);
 	DRRect.constructor = DRRect;
@@ -1604,8 +1601,11 @@
 			var command = new AttrCommand({
 				element: this.getElement(),
 				attr: position
-			});
-			this._commandManager.append(command.execute());
+			}).execute();
+			if (this.artboadCommandManager) {
+				this.artboadCommandManager.appendCommand(command);
+			}
+			return command;
 		},
 
 		/**
@@ -1618,7 +1618,7 @@
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
 			var y = parseInt(element.getAttribute('y')) + position.y;
-			this.moveTo({
+			return this.moveTo({
 				x: x,
 				y: y
 			});
@@ -1658,12 +1658,12 @@
 	 * @mixes DRStrokeShape
 	 * @mixes DRFillShape
 	 * @param element
-	 * @param commandManager
+	 * @param artboadCommandManager
 	 */
-	function DREllipse(element, commandManager) {
+	function DREllipse(element, artboadCommandManager) {
 		// typeの設定
 		setShapeInstanceType(this, 'ellipse');
-		this._init(element, commandManager);
+		this._init(element, artboadCommandManager);
 	}
 	DREllipse.prototype = Object.create(DRShape.prototype);
 	DREllipse.constructor = DREllipse;
@@ -1681,8 +1681,11 @@
 					cx: position.x,
 					cy: position.y
 				}
-			});
-			this._commandManager.append(command.execute());
+			}).execute();
+			if (this.artboadCommandManager) {
+				this.artboadCommandManager.appendCommand(command);
+			}
+			return command;
 		},
 
 		/**
@@ -1695,7 +1698,7 @@
 			var element = this.getElement();
 			var cx = parseInt(element.getAttribute('cx')) + position.x;
 			var cy = parseInt(element.getAttribute('cy')) + position.y;
-			this.moveTo({
+			return this.moveTo({
 				x: cx,
 				y: cy
 			});
@@ -1733,12 +1736,12 @@
 	 * @name DRImage
 	 * @extends DRShape
 	 * @param element
-	 * @param commandManager
+	 * @param artboadCommandManager
 	 */
-	function DRImage(element, commandManager) {
+	function DRImage(element, artboadCommandManager) {
 		// typeの設定
 		setShapeInstanceType(this, 'image');
-		this._init(element, commandManager);
+		this._init(element, artboadCommandManager);
 	}
 	DRImage.prototype = Object.create(DRShape.prototype);
 	DRImage.constructor = DRImage;
@@ -1756,8 +1759,11 @@
 					x: position.x,
 					y: position.y
 				}
-			});
-			this._commandManager.append(command.execute());
+			}).execute();
+			if (this.artboadCommandManager) {
+				this.artboadCommandManager.appendCommand(command);
+			}
+			return command;
 		},
 
 		/**
@@ -1770,7 +1776,7 @@
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
 			var y = parseInt(element.getAttribute('y')) + position.y;
-			this.moveTo({
+			return this.moveTo({
 				x: x,
 				y: y
 			});
@@ -1945,7 +1951,7 @@
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @type {Object}
 		 */
-		imageSourceMap: null,
+		imageSourceMap: {},
 
 		/**
 		 * canvasの画像変換を行うロジック
@@ -1972,13 +1978,13 @@
 		_backgroundLayer: null,
 
 		/**
-		 * コマンドマネージャ
+		 * コマンド管理ロジックインスタンス
 		 *
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
+		 * @type h5.ui.components.drawing.logic.CommandTransactionLogic
 		 */
-		_commandManager: null,
-
+		artboadCommandManager: null,
 
 		/**
 		 * このロジックで作成した図形(Shape)と図形IDのマップ
@@ -2001,27 +2007,15 @@
 		 *
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 * @private
-		 * @param {DOM} drawingElement 描画領域レイヤ要素
-		 * @param {DOM} backgroundElement 背景レイヤ要素
-		 * @param {CommandManager} [commandManager] コマンドマネージャ。省略した場合は新規作成する
+		 * @param {DOM} drawingElement 図形描画領域レイヤ要素
+		 * @param {DOM} backgroundElement 背景領域レイヤ要素
+		 * @param {ArtboadCommandLogic} [artboadCommandManager] アートボードコマンドマネージャ
 		 */
-		init: function(drawingElement, backgroundElement, commandManager) {
+		init: function(drawingElement, backgroundElement, artboadCommandManager) {
 			// svg要素とcanvas要素を取得
 			this._shapeLayer = drawingElement;
 			this._backgroundLayer = backgroundElement;
-
-			// バインド時にコマンドマネージャが渡されたら渡されたものを使用する
-			this._commandManager = commandManager || new CommandManager();
-
-			// imageSourceMapの設定
-			this.imageSourceMap = {};
-		},
-
-		/**
-		 * ロジックが使用しているコマンドマネージャを返します
-		 */
-		getCommandManager: function() {
-			return this._commandManager;
+			this.artboadCommandManager = artboadCommandManager;
 		},
 
 		/**
@@ -2030,7 +2024,7 @@
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		undo: function() {
-			this._commandManager.undo();
+			this.artboadCommandManager.undo();
 		},
 
 		/**
@@ -2039,7 +2033,7 @@
 		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		redo: function() {
-			this._commandManager.redo();
+			this.artboadCommandManager.redo();
 		},
 
 		//---------------------------------------------------------------
@@ -2059,7 +2053,7 @@
 				element: element
 			});
 			this._registShape(shape);
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
 		},
 
 		/**
@@ -2073,7 +2067,7 @@
 				layer: this._shapeLayer,
 				element: shape.getElement()
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
 		},
 
 		//----------------------------
@@ -2111,7 +2105,7 @@
 			});
 
 			// Shapeの作成
-			var shape = new DRPath(elem, this._commandManager);
+			var shape = new DRPath(elem, this.artboadCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2141,7 +2135,7 @@
 			});
 
 			// Shapeの作成
-			var shape = new DRRect(elem, this._commandManager);
+			var shape = new DRRect(elem, this.artboadCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2185,7 +2179,7 @@
 				style: style
 			});
 			// Shapeの作成
-			var shape = new DREllipse(elem, this._commandManager);
+			var shape = new DREllipse(elem, this.artboadCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2249,10 +2243,10 @@
 				attrNS: attrNS,
 				style: style
 			});
-			$(elem).data(DATA_DRAWING_IMAGE_ID, data.id);
+			$(elem).data(DATA_IMAGE_SOURCE_ID, data.id);
 
 			// Shapeの作成
-			var shape = new DRImage(elem, this._commandManager);
+			var shape = new DRImage(elem, this.artboadCommandManager);
 			// 図形の追加
 			this.append(shape);
 			return shape;
@@ -2308,7 +2302,6 @@
 			$(shape.getElement()).data(DATA_SHAPE_ID, id);
 			this._shapeMap[id] = shape;
 		},
-
 
 		//--------------------------------------------------------------
 		// 背景画像
@@ -2374,7 +2367,7 @@
 			}
 			// fillModeとidと画像パスを要素に持たせておく
 			$element.data('fillmode', fillMode);
-			$element.data(DATA_DRAWING_IMAGE_ID, src);
+			$element.data(DATA_IMAGE_SOURCE_ID, src);
 			if (fillMode === 'none') {
 				$element.css({
 					left: x || 0,
@@ -2393,9 +2386,9 @@
 				}
 			}
 			if (id) {
-				$element.data(DATA_DRAWING_IMAGE_ID, id);
+				$element.data(DATA_IMAGE_SOURCE_ID, id);
 			}
-			var command = new Command({
+			var command = new CustomCommand({
 				execute: function() {
 					$(this._layer).append(this._element);
 					$(this._preBgElement).remove();
@@ -2408,7 +2401,7 @@
 				_element: $element[0],
 				_preBgElement: $layer.children()[0]
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
 		},
 
 		/**
@@ -2426,7 +2419,7 @@
 				// 同じなら何もしない
 				return;
 			}
-			var command = new Command({
+			var command = new CustomCommand({
 				execute: function() {
 					var $layer = $(this._layer);
 					this._preColor = $layer.css('background-color');
@@ -2440,7 +2433,7 @@
 				_color: color,
 				_preColor: null
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
 		},
 
 		/**
@@ -2464,7 +2457,7 @@
 				_layer: this._backgroundLayer,
 				_preBgElement: bgElement
 			});
-			this._commandManager.append(command.execute());
+			this.artboadCommandManager.appendCommand(command);
 		},
 
 		/**
@@ -2492,11 +2485,11 @@
 			}
 			var ret = {};
 			ret.fillMode = $bgElement.data('fillmode');
-			var id = $bgElement.data(DATA_DRAWING_IMAGE_ID);
+			var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			if (id) {
 				ret.id = id;
 			} else {
-				ret.src = $bgElement.data(DATA_DRAWING_IMAGE_ID);
+				ret.src = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			}
 			ret.color = $layer.css('background-color');
 			if (ret.fillMode === 'none') {
@@ -2505,33 +2498,6 @@
 				ret.y = Math.round(parseFloat($bgElement.css('top')));
 			}
 			return ret;
-		},
-
-		//--------------------------------------------------------------
-		// コマンドマネージャのupdateセッション
-		//--------------------------------------------------------------
-		/**
-		 * コマンドマネージャのアップデートセッションを開始する
-		 * <p>
-		 * コマンドマネージャのアップデートセッションを開始すると、セッションが終了するまでに追加されたコマンドを一つのコマンド郡として扱います
-		 * </p>
-		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
-		 */
-		beginUpdate: function() {
-			this._commandManager.beginUpdate();
-		},
-
-		/**
-		 * コマンドマネージャのアップデートセッションを終了する
-		 * <p>
-		 * コマンドマネージャのアップデートセッション中に追加されたコマンド郡を一つのコマンドとして扱い、コマンドマネージャに登録します。
-		 * </p>
-		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
-		 */
-		endUpdate: function() {
-			this._commandManager.endUpdate();
 		},
 
 		//--------------------------------------------------------------
@@ -2561,7 +2527,6 @@
 			// クリア
 			$(this._shapeLayer).children().remove();
 			this._shapeMap = {};
-			var commandManager = this._commandManager;
 
 			// 背景の復元
 			var background = saveData.background;
@@ -2590,7 +2555,7 @@
 			var shapesData = saveData.shapes;
 			for (var i = 0, l = shapesData.length; i < l; i++) {
 				// 図形の登録と追加
-				this.append(DRShape.deserialize(shapesData[i], this._commandManager));
+				this.append(DRShape.deserialize(shapesData[i], this.artboadCommandManager));
 			}
 
 			// image要素について、idから画像パスを復元する
@@ -2598,14 +2563,14 @@
 			var imageSourceMap = this.imageSourceMap;
 			$image.each(function() {
 				var $this = $(this);
-				var id = $this.data(DATA_DRAWING_IMAGE_ID);
+				var id = $this.data(DATA_IMAGE_SOURCE_ID);
 				if (id) {
 					this.setAttributeNS(XLINKNS, 'href', imageSourceMap[id]);
 				}
 			});
 
 			// コマンドマネージャのクリア
-			commandManager.clearAll();
+			this.artboadCommandManager.clearAll();
 		},
 
 		/**
@@ -2696,9 +2661,9 @@
 			backgroundDfd.promise().then(this.own(function() {
 				return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas);
 			})).then(this.own(function() {
-				// カンバスを画像化
-				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
-			}));
+						// カンバスを画像化
+						dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+					}));
 			return dfd.promise();
 		}
 	};

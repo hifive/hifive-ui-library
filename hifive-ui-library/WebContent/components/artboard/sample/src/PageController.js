@@ -137,7 +137,7 @@
 		__ready: function() {
 			// 画像にIDを振り、ソースファイルとの対応付けを行う
 			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
-			var srcMap = this._artboardController.getImageSourceMap();
+			var srcMap = this._artboardController.imageSourceMap;
 			var seq = h5.core.data.createSequence();
 			this.$find('.drawing-image').each(function() {
 				var id = seq.next();
@@ -221,14 +221,12 @@
 			if (!shapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (shape.strokeColor !== undefined) {
 					shape.strokeColor = val;
 				}
 			}
-			artboadCtrl.endUpdate();
 		},
 
 		'{this._$toolbar} stroke-opacity-change': function(context) {
@@ -242,14 +240,12 @@
 			if (!shapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (shape.strokeOpacity !== undefined) {
 					shape.strokeOpacity = val;
 				}
 			}
-			artboadCtrl.endUpdate();
 		},
 
 		'{this._$toolbar} fill-change': function(context) {
@@ -263,14 +259,12 @@
 			if (!shapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (shape.fillColor !== undefined) {
 					shape.fillColor = val;
 				}
 			}
-			artboadCtrl.endUpdate();
 		},
 
 		'{this._$toolbar} fill-opacity-change': function(context) {
@@ -284,14 +278,12 @@
 			if (!shapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (shape.fillOpacity !== undefined) {
 					shape.fillOpacity = val;
 				}
 			}
-			artboadCtrl.endUpdate();
 		},
 
 		'{this._$toolbar} stroke-width-change': function(context) {
@@ -305,14 +297,12 @@
 			if (!shapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (shape.strokeWidth !== undefined) {
 					shape.strokeWidth = val;
 				}
 			}
-			artboadCtrl.endUpdate();
 		},
 
 		/**
@@ -329,12 +319,10 @@
 			if (!selectedShapes.length) {
 				return;
 			}
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
 				artboadCtrl.remove(selectedShapes[i]);
 			}
 			artboadCtrl.unselectAll();
-			artboadCtrl.endUpdate();
 		},
 
 		/**
@@ -395,11 +383,9 @@
 				return;
 			}
 			// アップデートセッション内で削除(undo/redoで実行される操作を一つにまとめるため)
-			artboadCtrl.beginUpdate();
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				artboadCtrl.remove(shapes[i]);
 			}
-			artboadCtrl.endUpdate();
 			artboadCtrl.unselectAll();
 		},
 

@@ -400,7 +400,7 @@
 		//--------------------------------------------------------
 		'.stroke-width-slider-wrapper slide': function(context, $el) {
 			var $target = $(context.event.target);
-			var val = parseInt($target.val());
+			var val = parseInt($target.val() + 'px');
 			$el.find('.slider-value').text(val);
 			this.trigger('stroke-width-change', val);
 		},
@@ -512,6 +512,7 @@
 				rgbaColor = sample.util.rgbToRgba(color, opacity);
 			}
 
+			this.trigger('unselect-all');
 			targetArtboard.setBackground(rgbaColor, backgroundData);
 		},
 
@@ -670,8 +671,9 @@
 		setStrokeWidth: function(width) {
 			var $strokeWidth = this.$find('.stroke-width-slidebar');
 			var $strokeWidthLabel = $strokeWidth.parent().find('.slider-value');
+			width = parseInt(width);
 			$strokeWidth.val(width);
-			$strokeWidthLabel.text(width);
+			$strokeWidthLabel.text(width + 'px');
 		},
 
 		disableStrokeColor: function() {
@@ -704,6 +706,7 @@
 			this.$find('.selected-color-wrapper.fill').removeClass('disabled').addClass('selected');
 			this.$find('.selected-color-wrapper.stroke').removeClass('selected');
 		},
+
 		enableStrokeWidth: function() {
 			this.$find('.stroke-width-slider-wrapper').removeClass('disabled');
 			this.$find('.stroke-width-slidebar').removeAttr('disabled');

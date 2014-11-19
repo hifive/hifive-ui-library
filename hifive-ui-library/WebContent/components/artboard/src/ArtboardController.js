@@ -194,7 +194,197 @@
 })();
 
 //----------------------------------------------------------------------------
-// ui.components.drawing.controller.ArtboardController
+// h5.ui.components.drawing.logic.ArtboadCommandLogic
+//----------------------------------------------------------------------------
+(function() {
+	/**
+	 * ArtboadCommandLogic
+	 * <p>
+	 * ArtboadCommandLogicは<a
+	 * href="h5.ui.components.drawing.logic.ArtboadCommandLogic.html">DrawingLogic</a>によって生成されたコマンドのトランザクション管理を行います。
+	 * </p>
+	 *
+	 * @class
+	 * @name h5.ui.components.drawing.logic.ArtboadCommandLogic
+	 */
+	var artboadCommandLogic = {
+		/**
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @type String
+		 */
+		__name: 'h5.ui.components.drawing.logic.ArtboadCommandLogic',
+
+		/**
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @type CommandManager
+		 */
+		_commandManager: null,
+
+		/**
+		 * transactionIdとコマンドのマップ
+		 *
+		 * @private
+		 */
+		_transactionMap: {},
+
+		/**
+		 * appendCommandを使ってcommandManagerに追加した最後のコマンド
+		 *
+		 * @private
+		 */
+		_lastAppendedCommand: null,
+
+
+		/**
+		 * transactionIdを生成するシーケンス
+		 *
+		 * @private
+		 */
+		_transactionIdSeq: h5.core.data.createSequence(),
+
+		/**
+		 * 初期化
+		 *
+		 * @param {CommandManager}
+		 */
+		init: function(commandManager) {
+			// CommandManagerの設定
+			this._commandManager = commandManager;
+		},
+
+		/**
+		 * コマンドを実行して登録する
+		 * <p>
+		 * noExecuteがtrueの場合はコマンドを実行せずに登録します。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @param {Command} command コマンド
+		 * @param {Integer} transactionId トランザクションID
+		 * @param {boolean} noExecute 実行しない場合はtrueを指定
+		 */
+		appendCommand: function(command, transactionId, noExecute) {
+			if (!noExecute) {
+				command.execute();
+			}
+			transactionId = transactionId || this._updateTransactionId;
+			if (transactionId) {
+				// transactionの指定がある場合、Command配列に追加する
+				var commands = this._transactionMap[transactionId].push(command);
+				return;
+			}
+			this._commandManager.append(command);
+			this._lastAppendedCommand = command;
+		},
+
+		/**
+		 * アップデートセッションを開始します
+		 * <p>
+		 * アップデートセッショントランザクションを作成し、アップデートセッション中は、
+		 * appendCommandでtransactionIdを指定しないでコマンドが追加されたとき、アップデートセッショントランザクションに登録されます。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 */
+		beginUpdate: function() {
+			if (this._updateTransactionId) {
+				return this._updateTransactionId;
+			}
+			var transactionId = this.createTransaction();
+			this._updateTransactionId = transactionId;
+		},
+
+		/**
+		 * アップデートセッションを終了します
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @param {boolean} noExecute 実行しない場合はtrueを指定
+		 */
+		endUpdate: function() {
+			if (!this._updateTransactionId) {
+				return;
+			}
+			var transactionId = this._updateTransactionId;
+			this._updateTransactionId = null;
+			// コミット
+			this.commitTransaction(transactionId);
+		},
+
+		/**
+		 * トランザクションを生成し、トランザクションIDを返します
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @returns {Integer} トランザクションID
+		 */
+		createTransaction: function() {
+			var transactionId = this._transactionIdSeq.next();
+			this._transactionMap[transactionId] = [];
+			return transactionId;
+		},
+
+		/**
+		 * トランザクションのコミット
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @param transactionId トランザクションID
+		 * @param {boolean} noExecute 実行しない場合はtrueを指定
+		 */
+		commitTransaction: function(transactionId, noExecute) {
+			var commands = this._transactionMap[transactionId];
+			if (!commands.length) {
+				return;
+			}
+			var command = commands.length === 1 ? commands[0]
+					: new h5.ui.components.drawing.SequenceCommand(commands);
+			delete this._transactionMap[transactionId];
+			this.appendCommand(command, null, noExecute);
+		},
+
+		/**
+		 * トランザクションの中断
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @param transactionId
+		 */
+		abortTransaction: function(transactionId) {
+			var sequenceCommand = this._transactionMap[transactionId];
+			delete this._transactionMap[transactionId];
+			new h5.ui.components.drawing.SequenceCommand(sequenceCommand).undo();
+		},
+
+		/**
+		 * 取り消し
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 */
+		undo: function() {
+			this._commandManager.undo();
+		},
+
+		/**
+		 * やり直し
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 */
+		redo: function() {
+			this._commandManager.redo();
+		},
+
+		/**
+		 * 履歴をすべて削除
+		 *
+		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 */
+		clearAll: function() {
+			this.abortTransaction();
+			this._commandManager.clearAll();
+		}
+	};
+	h5.core.expose(artboadCommandLogic);
+})();
+
+//----------------------------------------------------------------------------
+// h5.ui.components.drawing.controller.ArtboardController
 //----------------------------------------------------------------------------
 (function() {
 	//------------------------------------------------------------
@@ -244,25 +434,25 @@
 
 		/**
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @type h5.ui.components.drawing.ArtboadCommandLogic
+		 */
+		selectionLogic: h5.ui.components.SelectionLogic,
+
+		/**
+		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 * @type h5.ui.components.drawing.logic.DrawingLogic
 		 */
 		drawingLogic: h5.ui.components.drawing.logic.DrawingLogic,
 
 		/**
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
-		 * @type h5.ui.components.SelectionLogic
 		 */
-		selectionLogic: h5.ui.components.SelectionLogic,
+		artboadCommandLogic: h5.ui.components.drawing.logic.ArtboadCommandLogic,
 
 		/**
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
-		 * @private
 		 */
-		__meta: {
-			drawingLogic: {
-				rootElement: null
-			}
-		},
+		imageSourceMap: {},
 
 		/**
 		 * 描画モード(定数)
@@ -535,7 +725,13 @@
 			this._layers = $layers[0];
 			var svgLayerElement = $layers.find('.svg-layer')[0];
 			var backgroundLayerElement = $layers.find('.background-layer')[0];
-			this.drawingLogic.init(svgLayerElement, backgroundLayerElement);
+
+			// ロジックの初期化
+			var commandManager = new h5.ui.components.drawing.CommandManager();
+			this.artboadCommandLogic.init(commandManager);
+			this.drawingLogic.init(svgLayerElement, backgroundLayerElement,
+					this.artboadCommandLogic);
+			this.drawingLogic.imageSourceMap = this.imageSourceMap;
 
 			// スクロールされないようにタッチのあるブラウザでtouchmoveのpreventDefaultを設定
 			// (SVG要素にはtouch-action:noneが効かないため、preventDefault()で制御する)
@@ -547,7 +743,6 @@
 			}
 			// CommandManagerにイベントをバインドする
 			// undo/redoが可能/不可能になった時にルートエレメントからイベントをあげる
-			var commandManager = this.drawingLogic.getCommandManager();
 			var events = [EVENT_ENABLE_UNDO, EVENT_ENABLE_REDO, EVENT_DISABLE_UNDO,
 					EVENT_DISABLE_REDO];
 			for (var i = 0, l = events.length; i < l; i++) {
@@ -759,20 +954,6 @@
 		},
 
 		/**
-		 * 描画に使用する画像のマップオブジェクトを取得
-		 * <p>
-		 * ArtboadControllerが持つ<a
-		 * href="h5.ui.components.drawing.logic.DrawingLogic.html">DrawingLogic</a>インスタンスの<a
-		 * href="h5.ui.components.drawing.logic.DrawingLogic.html#imageSourceMap">imageSourceMap</a>を返します。
-		 * </p>
-		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
-		 */
-		getImageSourceMap: function() {
-			return this.drawingLogic.imageSourceMap;
-		},
-
-		/**
 		 * アップデートセッションの開始
 		 * <p>
 		 * このメソッドを呼ぶと、次に<a href="#endUpdate">endUpdate()</a>を呼ぶまで、undoデータは作られません。
@@ -784,16 +965,17 @@
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
 		 */
 		beginUpdate: function() {
-			this.drawingLogic.beginUpdate();
+			this.artboadCommandLogic.beginUpdate();
 		},
 
 		/**
 		 * アップデートセッションの終了
 		 *
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @param {boolean} shouldMerge 直前の同一トランザクションのコマンドとマージできる場合にマージするかどうか
 		 */
-		endUpdate: function() {
-			this.drawingLogic.endUpdate();
+		endUpdate: function(shouldMerge) {
+			this.artboadCommandLogic.endUpdate(shouldMerge);
 		},
 
 		/**
@@ -950,7 +1132,7 @@
 		 * @param {Object} backgroundImageData 指定無しの場合は背景画像は変更しません
 		 */
 		setBackground: function(color, backgroundImageData) {
-			this.drawingLogic.beginUpdate();
+			this.beginUpdate();
 			if (color !== null) {
 				this.setBackgroundColor(color);
 			}
@@ -1390,7 +1572,12 @@
 		},
 
 		'.selection-rectangle h5trackend': function(context, $el) {
+			// トラック操作による図形の移動はそれで一つのアップデートセッションを作成する
+			this.beginUpdate();
 			this._trackendSelectedShape(context.event, $el);
+			this.endUpdate();
+			// 図形選択中なので新たなアップデートセッションを開始しておく
+			this.beginUpdate();
 		},
 
 		_trackstartSelectedShape: function(event, $el) {
@@ -1469,12 +1656,9 @@
 			}
 			var sessions = trackingData.sessions;
 			// 図形の位置を確定
-			// アップデートセッション内で行う
-			this.beginUpdate();
 			for (var i = 0, l = sessions.length; i < l; i++) {
 				sessions[i].end();
 			}
-			this.endUpdate();
 			this._trackingData = null;
 		},
 
@@ -1500,6 +1684,9 @@
 			if (selected.length) {
 				this.trigger(EVENT_SELECT_SHAPE, selected);
 			}
+			// アップデートセッションを開始する
+			this.endUpdate();
+			this.beginUpdate();
 		},
 
 		/**
@@ -1518,6 +1705,8 @@
 			if (unselected.length) {
 				this.trigger(EVENT_UNSELECT_SHAPE, unselected);
 			}
+			// アップデートセッションを終了する
+			this.endUpdate();
 		},
 
 		/**
@@ -1543,6 +1732,8 @@
 			if (unselected.length) {
 				this.trigger(EVENT_UNSELECT_SHAPE, unselected);
 			}
+			// アップデートセッションを終了する
+			this.endUpdate();
 		},
 
 		/**
