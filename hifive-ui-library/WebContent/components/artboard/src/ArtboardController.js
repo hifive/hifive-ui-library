@@ -200,8 +200,7 @@
 	/**
 	 * ArtboadCommandLogic
 	 * <p>
-	 * ArtboadCommandLogicは<a
-	 * href="h5.ui.components.drawing.logic.ArtboadCommandLogic.html">DrawingLogic</a>によって生成されたコマンドのトランザクション管理を行います。
+	 * ArtboadCommandLogicは{@link h5.ui.components.drawing.logic.ArtboadCommandLogic}によって生成されたコマンドのトランザクション管理を行います。
 	 * </p>
 	 *
 	 * @class
@@ -434,7 +433,7 @@
 
 		/**
 		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
-		 * @type h5.ui.components.drawing.ArtboadCommandLogic
+		 * @type h5.ui.components.SelectionLogic
 		 */
 		selectionLogic: h5.ui.components.SelectionLogic,
 

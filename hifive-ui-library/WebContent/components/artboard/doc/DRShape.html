@@ -25,7 +25,11 @@
 
 <div id="container">
     <nav>
-          <h3>Classes</h3><ul><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.DrawingController.html">h5.ui.components.drawing.controller.DrawingController</a></li><li><a href="h5.ui.components.drawing.controller.ArtboardController.html">h5.ui.components.drawing.controller.ArtboardController</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+    	<div class="h5-searchBox">
+        	<input type="text" placeholder="Search...">
+        	<button class="clear">×</button>
+        </div>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.ArtboardController.html">h5.ui.components.drawing.controller.ArtboardController</a></li><li><a href="h5.ui.components.drawing.logic.ArtboadCommandLogic.html">h5.ui.components.drawing.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.drawing.logic.CanvasConvertLogic.html">h5.ui.components.drawing.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.drawing.logic.DrawingLogic.html">h5.ui.components.drawing.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
     </nav>
 
     <div id="main">
@@ -80,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 694</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1061</li></ul></dd>
 	
 	-->
 
@@ -151,7 +155,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 897</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1294</li></ul></dd>
 	
 	-->
 
@@ -174,104 +178,6 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="append"><span class="type-signature">&lt;static> </span>append</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        図形を追加
-    </p>
-    
-    
-    
-    
-    <h5>Parameters:</h5>
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>layer</code></td>
-            
-            
-            <td class="type">
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">{DOM|jQuery} 追加先レイヤ</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 722</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-<hr><dt>
     <h4 class="name" id="beginDrag"><span class="type-signature">&lt;static> </span>beginDrag</h4>
     
     
@@ -308,7 +214,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 760</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1135</li></ul></dd>
 	
 	-->
 
@@ -346,7 +252,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="getBBox"><span class="type-signature">&lt;static> </span>getBBox</h4>
+    <h4 class="name" id="deserialize"><span class="type-signature">&lt;static> </span>deserialize</h4>
     
     
 </dt>
@@ -354,7 +260,139 @@
     
     
     <p class="description">
-        図形のBBoxを取得
+        シリアライズされたオブジェクトからDRShapeクラス(の子クラス)を生成して返す
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>shapeData</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>artboadCommandManager</code></td>
+            
+            
+            <td class="type">
+            CommandTransactionLogic
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1081</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="DRShape.html">DRShape</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getBounds"><span class="type-signature">&lt;static> </span>getBounds</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形の位置とサイズを取得
     </p>
     
     
@@ -382,7 +420,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 770</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1145</li></ul></dd>
 	
 	-->
 
@@ -402,7 +440,7 @@
     <h5>Returns:</h5>
     
 <div class="param-desc">
-    BBoxが正しく取得できないブラウザについてはSVGRectと同一IFのObjectを作って返す
+    x,y,width,heightを持つオブジェクト
 </div>
 
 
@@ -413,8 +451,6 @@
 		Type
 	</dt>
 	<dd>
-		
-		<span class="param-type">SVGRect</span> |
 		
 		<span class="param-type">Object</span> 
 		
@@ -462,7 +498,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 750</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1125</li></ul></dd>
 	
 	-->
 
@@ -479,80 +515,6 @@
     
     
     
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="isAppending"><span class="type-signature">&lt;static> </span>isAppending</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        図形がレイヤ上に描画されているかどうかを返します
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 780</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Boolean</span> 
-		
-	</dd>
-</dl>
-
     
     
 
@@ -652,7 +614,81 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 795</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1170</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Boolean</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="isAlone"><span class="type-signature">&lt;static> </span>isAlone</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        レイヤ上に描画されていない図形ならisAloneはtrue、そうでないならfalseを返します
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1155</li></ul></dd>
 	
 	-->
 
@@ -698,7 +734,7 @@
     
     
     <p class="description">
-        図形が指定された矩形(x,y,w,h)に含まれるかどうかを返します<p>指定された矩形に含まれない場合、または描画されていない図形ならfalseを返します</p>
+        図形が指定された矩形(x,y,w,h)に含まれるかどうかを返します(交わるだけではなく完全に含まれるかどうかを判定します)<p>指定された矩形に含まれない場合、または描画されていない図形ならfalseを返します</p>
     </p>
     
     
@@ -820,7 +856,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 819</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1194</li></ul></dd>
 	
 	-->
 
@@ -952,7 +988,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 850</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1228</li></ul></dd>
 	
 	-->
 
@@ -1068,7 +1104,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 839</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1214</li></ul></dd>
 	
 	-->
 
@@ -1090,7 +1126,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="remove"><span class="type-signature">&lt;static> </span>remove</h4>
+    <h4 class="name" id="serialize"><span class="type-signature">&lt;static> </span>serialize</h4>
     
     
 </dt>
@@ -1098,7 +1134,7 @@
     
     
     <p class="description">
-        図形を削除
+        図形をシリアライズ可能なオブジェクトに変換します
     </p>
     
     
@@ -1126,7 +1162,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 738</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1240</li></ul></dd>
 	
 	-->
 
@@ -1164,7 +1200,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Oct 30 2014 10:31:14 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Nov 20 2014 10:27:31 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

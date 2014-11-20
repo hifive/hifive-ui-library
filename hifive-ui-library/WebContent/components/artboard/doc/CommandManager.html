@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: DREllipse</title>
+	<title>JSDoc: Class: CommandManager</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: DREllipse</h1>
+        <h1 class="page-title">Class: CommandManager</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DREllipse</h2>
+            <h2>CommandManager</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="DREllipse"><span class="type-signature"></span>new DREllipse</h4>
+    <h4 class="name" id="CommandManager"><span class="type-signature"></span>new CommandManager</h4>
     
     
 </dt>
@@ -56,7 +56,90 @@
     
     
     <p class="description">
-        楕円(ellipse)クラス
+        コマンドマネージャ
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 564</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+
+            </div>
+
+            
+                <h3 class="subsection-title">Extends</h3>
+
+                <ul>
+                    <li><a href="EventDispatcher.html">EventDispatcher</a></li>
+                </ul>
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="append"><span class="type-signature">&lt;static> </span>append</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドを追加<p>コマンドが配列で渡された場合は一連のコマンドを一つのコマンドとして扱います</p>
     </p>
     
     
@@ -86,29 +169,11 @@
 	
         <tr>
             
-                <td class="name"><code>element</code></td>
+                <td class="name"><code>command</code></td>
             
             
             <td class="type">
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last"></td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>artboadCommandManager</code></td>
-            
-            
-            <td class="type">
-            
+            <a href="Command.html">Command</a>
             </td>
             
             
@@ -142,98 +207,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1660</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-
-            </div>
-
-            
-                <h3 class="subsection-title">Extends</h3>
-
-                <ul>
-                    <li><a href="DRShape.html">DRShape</a></li>
-                </ul>
-            
-
-            
-                <h3 class="subsection-title">Mixes In</h3>
-
-                <ul>
-                    <li><a href="DRStrokeShape.html">DRStrokeShape</a></li>
-                
-                    <li><a href="DRFillShape.html">DRFillShape</a></li>
-                </ul>
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-                <h3 class="subsection-title">Methods</h3>
-
-                <dl><dt>
-    <h4 class="name" id="moveBy"><span class="type-signature">&lt;static> </span>moveBy</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        <a href="DRShape.html#moveBy">DRShape.moveBy</a>の実装
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1705</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 587</li></ul></dd>
 	
 	-->
 
@@ -255,7 +229,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="moveTo"><span class="type-signature">&lt;static> </span>moveTo</h4>
+    <h4 class="name" id="clearAll"><span class="type-signature">&lt;static> </span>clearAll</h4>
     
     
 </dt>
@@ -263,7 +237,7 @@
     
     
     <p class="description">
-        <a href="DRShape.html#moveTo">DRShape.moveTo</a>の実装
+        管理対象のコマンドを全て管理対象から外す
     </p>
     
     
@@ -291,7 +265,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1685</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 685</li></ul></dd>
 	
 	-->
 
@@ -313,7 +287,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="serialize"><span class="type-signature">&lt;static> </span>serialize</h4>
+    <h4 class="name" id="redo"><span class="type-signature">&lt;static> </span>redo</h4>
     
     
 </dt>
@@ -321,7 +295,7 @@
     
     
     <p class="description">
-        シリアライズ可能なオブジェクトを生成
+        一つ進む
     </p>
     
     
@@ -349,7 +323,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1721</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 650</li></ul></dd>
 	
 	-->
 
@@ -366,22 +340,64 @@
     
     
     
-    <h5>Returns:</h5>
+    
     
 
+</dd>
+<hr><dt>
+    <h4 class="name" id="undo"><span class="type-signature">&lt;static> </span>undo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        一つ戻す
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
 
+	
 
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Object</span> 
-		
-	</dd>
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 615</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
 </dl>
 
+    
+    
+    
+    
+    
+    
     
     
 

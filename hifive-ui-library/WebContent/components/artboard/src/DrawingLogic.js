@@ -152,6 +152,7 @@
 	/**
 	 * コマンド
 	 *
+	 * @name Command
 	 * @class
 	 * @abstruct
 	 */
@@ -252,6 +253,7 @@
 	/**
 	 * 要素の追加を行うコマンド
 	 *
+	 * @name AppendCommand
 	 * @class
 	 * @extend Command
 	 * @param {Object} commandData コマンドデータオブジェクト。AppendCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
@@ -287,6 +289,7 @@
 	/**
 	 * 要素の削除を行うコマンド
 	 *
+	 * @name RemoveCommand
 	 * @class
 	 * @extend Command
 	 * @param {Object} commandData コマンドデータオブジェクト。RemoveCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
@@ -327,6 +330,7 @@
 	/**
 	 * スタイルの変更を行うコマンド
 	 *
+	 * @name StyleCommand
 	 * @class
 	 * @extend Command
 	 * @param {Object} commandData コマンドデータオブジェクト。StyleCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
@@ -394,6 +398,7 @@
 	/**
 	 * 属性値の変更を行うコマンド
 	 *
+	 * @name AttrCommand
 	 * @class
 	 * @extend Command
 	 * @param {Object} commandData コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
@@ -488,6 +493,7 @@
 	/**
 	 * 複数のCommandを一つのコマンドとして扱うコマンド
 	 *
+	 * @name SequenceCommand
 	 * @class
 	 * @extends{Command}
 	 * @param {Command[]} [commands=[]] Commandの配列
@@ -539,7 +545,8 @@
 		/**
 		 * 引数にSequenceCommandが渡された場合にコマンドをマージします
 		 *
-		 * @see Command#mergeCommand
+		 * @memberOf SequenceCommand
+		 * @see {@link Command.mergeCommand}
 		 */
 		mergeCommand: function(after) {
 			if (after instanceof SequenceCommand) {
@@ -557,6 +564,7 @@
 	/**
 	 * コマンドマネージャ
 	 *
+	 * @name CommandManager
 	 * @class
 	 * @extends EventDispatcher
 	 */
@@ -722,7 +730,7 @@
 	 * canvasの画像変換を行うロジック
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.CanvasConvertLogic
+	 * @name h5.ui.components.drawing.logic.CanvasConvertLogic
 	 */
 	var canvasConvertLogic = {
 		__name: 'h5.ui.components.drawing.logic.CanvasConvertLogic',
@@ -872,7 +880,7 @@
 		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.drawing.logic.CanvasConvertLogic
 		 * @param {String} returnType imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} processParameter 0.0～1.0の範囲で品質レベルを指定
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
@@ -1307,9 +1315,9 @@
 		 * 以下のクラスがDRStrokeShapeのプロパティを持ちます(プロトタイプにmixinしています)
 		 * </p>
 		 * <ul>
-		 * <li><a href="Path.html">Path</a>
-		 * <li><a href="Rect.html">Rect</a>
-		 * <li><a href="Ellipse.html">Ellipse</a>
+		 * <li>{@link DRPath}
+		 * <li>{@link DRRect}
+		 * <li>{@link DREllipse}
 		 * </ul>
 		 *
 		 * @mixin
@@ -1409,8 +1417,8 @@
 		 * 以下のクラスがDRFillShapeのプロパティを持ちます(プロトタイプにmixinしています)
 		 * </p>
 		 * <ul>
-		 * <li><a href="Rect.html">Rect</a>
-		 * <li><a href="Ellipse.html">Ellipse</a>
+		 * <li>{@link DRRect}
+		 * <li>{@link DREllipse}
 		 * </ul>
 		 *
 		 * @mixin
@@ -1491,7 +1499,7 @@
 	DRPath.constructor = DRPath;
 	$.extend(mixinDRStrokeShape(DRPath.prototype), {
 		/**
-		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
+		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRPath
 		 * @override
@@ -1520,7 +1528,7 @@
 		},
 
 		/**
-		 * <a href="Shape.html#moveBy">Shape#moveBy</a>の実装
+		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRPath
 		 * @override
@@ -1592,7 +1600,7 @@
 	DRRect.constructor = DRRect;
 	$.extend(mixinDRFillShape(mixinDRStrokeShape(DRRect.prototype)), {
 		/**
-		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
+		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRRect
 		 * @override
@@ -1609,7 +1617,7 @@
 		},
 
 		/**
-		 * <a href="Shape.html#moveBy">Shape#moveBy</a>の実装
+		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRRect
 		 * @override
@@ -1669,7 +1677,7 @@
 	DREllipse.constructor = DREllipse;
 	$.extend(mixinDRFillShape(mixinDRStrokeShape(DREllipse.prototype)), {
 		/**
-		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
+		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DREllipse
 		 * @override
@@ -1689,7 +1697,7 @@
 		},
 
 		/**
-		 * <a href="Shape.html#moveBy">Shape#moveBy</a>の実装
+		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DREllipse
 		 * @override
@@ -1747,7 +1755,7 @@
 	DRImage.constructor = DRImage;
 	$.extend(DRImage.prototype, {
 		/**
-		 * <a href="Shape.html#moveTo">Shape#moveTo</a>の実装
+		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRImage
 		 * @override
@@ -1767,7 +1775,7 @@
 		},
 
 		/**
-		 * <a href="Shape.html#moveBy">Shape#moveBy</a>の実装
+		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRImage
 		 * @override
@@ -2661,9 +2669,9 @@
 			backgroundDfd.promise().then(this.own(function() {
 				return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas);
 			})).then(this.own(function() {
-						// カンバスを画像化
-						dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
-					}));
+				// カンバスを画像化
+				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+			}));
 			return dfd.promise();
 		}
 	};

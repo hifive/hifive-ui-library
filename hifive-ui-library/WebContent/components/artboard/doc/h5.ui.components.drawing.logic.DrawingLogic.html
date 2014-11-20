@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: DrawingController</title>
+	<title>JSDoc: Class: DrawingLogic</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -25,26 +25,30 @@
 
 <div id="container">
     <nav>
-          <h3>Classes</h3><ul><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.DrawingController.html">h5.ui.components.drawing.controller.DrawingController</a></li><li><a href="h5.ui.components.drawing.controller.ArtboardController.html">h5.ui.components.drawing.controller.ArtboardController</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+    	<div class="h5-searchBox">
+        	<input type="text" placeholder="Search...">
+        	<button class="clear">×</button>
+        </div>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.drawing.controller.ArtboardController.html">h5.ui.components.drawing.controller.ArtboardController</a></li><li><a href="h5.ui.components.drawing.logic.ArtboadCommandLogic.html">h5.ui.components.drawing.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.drawing.logic.CanvasConvertLogic.html">h5.ui.components.drawing.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.drawing.logic.DrawingLogic.html">h5.ui.components.drawing.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
     </nav>
 
     <div id="main">
 
-        <h1 class="page-title">Class: DrawingController</h1>
+        <h1 class="page-title">Class: DrawingLogic</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DrawingController</h2>
+            <h2>DrawingLogic</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="DrawingController"><span class="type-signature"></span>new DrawingController</h4>
+    <h4 class="name" id="DrawingLogic"><span class="type-signature"></span>new DrawingLogic</h4>
     
     
 </dt>
@@ -52,7 +56,7 @@
     
     
     <p class="description">
-        図形の描画を行うコントローラ
+        図形の描画を行うロジック
     </p>
     
     
@@ -80,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1420</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1939</li></ul></dd>
 	
 	-->
 
@@ -151,7 +155,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1443</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1962</li></ul></dd>
 	
 	-->
 
@@ -174,7 +178,7 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="beginUpdate"><span class="type-signature">&lt;static> </span>beginUpdate</h4>
+    <h4 class="name" id="append"><span class="type-signature">&lt;static> </span>append</h4>
     
     
 </dt>
@@ -182,13 +186,53 @@
     
     
     <p class="description">
-        コマンドマネージャのアップデートセッションを開始する<p>コマンドマネージャのアップデートセッションを開始すると、セッションが終了するまでに追加されたコマンドを一つのコマンド郡として扱います</p>
+        図形を追加
     </p>
     
     
     
     
-    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>layer</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">{DOM|jQuery} 追加先レイヤ</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
     
     <dl class="details">
     
@@ -210,7 +254,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 2026</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2056</li></ul></dd>
 	
 	-->
 
@@ -268,7 +312,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1956</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2452</li></ul></dd>
 	
 	-->
 
@@ -420,7 +464,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1707</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2206</li></ul></dd>
 	
 	-->
 
@@ -448,7 +492,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Ellipse</span> 
+		<span class="param-type"><a href="DREllipse.html">DREllipse</a></span> 
 		
 	</dd>
 </dl>
@@ -606,7 +650,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1678</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2178</li></ul></dd>
 	
 	-->
 
@@ -634,7 +678,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Ellipse</span> 
+		<span class="param-type"><a href="DREllipse.html">DREllipse</a></span> 
 		
 	</dd>
 </dl>
@@ -693,7 +737,7 @@
             
             
             
-            <td class="description last"><pre>{	x: x座標,	y: y座標,	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。}</pre></td>
+            <td class="description last"><pre>{	x: x座標,	y: y座標,	width: 幅,	height: 高さ,	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。}</pre></td>
         </tr>
 	
 	
@@ -720,7 +764,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1732</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2233</li></ul></dd>
 	
 	-->
 
@@ -748,7 +792,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Image</span> 
+		<span class="param-type"><a href="DRImage.html">DRImage</a></span> 
 		
 	</dd>
 </dl>
@@ -834,7 +878,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1603</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2105</li></ul></dd>
 	
 	-->
 
@@ -862,7 +906,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Path</span> 
+		<span class="param-type"><a href="DRPath.html">DRPath</a></span> 
 		
 	</dd>
 </dl>
@@ -1020,7 +1064,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1632</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2133</li></ul></dd>
 	
 	-->
 
@@ -1048,7 +1092,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Rect</span> 
+		<span class="param-type"><a href="DRRect.html">DRRect</a></span> 
 		
 	</dd>
 </dl>
@@ -1188,7 +1232,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1662</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2162</li></ul></dd>
 	
 	-->
 
@@ -1216,69 +1260,11 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Rect</span> 
+		<span class="param-type"><a href="DRRect.html">DRRect</a></span> 
 		
 	</dd>
 </dl>
 
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="endUpdate"><span class="type-signature">&lt;static> </span>endUpdate</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        コマンドマネージャのアップデートセッションを終了する<p>コマンドマネージャのアップデートセッション中に追加されたコマンド郡を一つのコマンドとして扱い、コマンドマネージャに登録します。</p>
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 2038</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
     
     
 
@@ -1292,7 +1278,7 @@
     
     
     <p class="description">
-        コントローラ管理下にある図形(Shape)を全て取得
+        ロジック管理下にある図形(Shape)を全て取得
     </p>
     
     
@@ -1322,7 +1308,7 @@
 	
         <tr>
             
-                <td class="name"><code>isAppendingOnly</code></td>
+                <td class="name"><code>exceptAlone</code></td>
             
             
             <td class="type">
@@ -1360,7 +1346,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1773</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2270</li></ul></dd>
 	
 	-->
 
@@ -1512,7 +1498,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 2153</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2595</li></ul></dd>
 	
 	-->
 
@@ -1562,7 +1548,7 @@
     
     
     <p class="description">
-        渡された図形のIDを返す。(コントローラ管理下にある図形のみ)
+        渡された図形のIDを返す。(ロジック管理下にある図形のみ)
     </p>
     
     
@@ -1630,7 +1616,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1793</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2290</li></ul></dd>
 	
 	-->
 
@@ -1706,7 +1692,7 @@
 	
         <tr>
             
-                <td class="name"><code>artboardSaveData</code></td>
+                <td class="name"><code>drawingSaveData</code></td>
             
             
             <td class="type">
@@ -1744,7 +1730,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 2068</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2533</li></ul></dd>
 	
 	-->
 
@@ -1802,7 +1788,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1532</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2043</li></ul></dd>
 	
 	-->
 
@@ -1860,7 +1846,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 2051</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2520</li></ul></dd>
 	
 	-->
 
@@ -1974,7 +1960,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1925</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2421</li></ul></dd>
 	
 	-->
 
@@ -2072,7 +2058,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1849</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2345</li></ul></dd>
 	
 	-->
 
@@ -2130,7 +2116,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../src/DrawingController.js, line 1523</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 2034</li></ul></dd>
 	
 	-->
 
@@ -2168,7 +2154,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Oct 30 2014 10:31:14 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Nov 20 2014 10:27:31 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

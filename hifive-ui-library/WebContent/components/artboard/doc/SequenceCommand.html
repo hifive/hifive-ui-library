@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: DREllipse</title>
+	<title>JSDoc: Class: SequenceCommand</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: DREllipse</h1>
+        <h1 class="page-title">Class: SequenceCommand</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DREllipse</h2>
+            <h2>SequenceCommand</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="DREllipse"><span class="type-signature"></span>new DREllipse</h4>
+    <h4 class="name" id="SequenceCommand"><span class="type-signature"></span>new SequenceCommand</h4>
     
     
 </dt>
@@ -56,7 +56,273 @@
     
     
     <p class="description">
-        楕円(ellipse)クラス
+        複数のCommandを一つのコマンドとして扱うコマンド
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		<th>Argument</th>
+		
+		
+		
+		<th>Default</th>
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>commands</code></td>
+            
+            
+            <td class="type">
+            <a href="Command.html">Command[]</a>
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                []
+                </td>
+            
+            
+            <td class="description last">Commandの配列</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 493</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+
+            </div>
+
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="getInnerCommands"><span class="type-signature">&lt;static> </span>getInnerCommands</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        内部コマンドの取得
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 541</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Commands[]</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="mergeCommand"><span class="type-signature">&lt;static> </span>mergeCommand</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        引数にSequenceCommandが渡された場合にコマンドをマージします
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 551</li></ul></dd>
+	
+	-->
+
+    
+
+	
+	<dt class="tag-see">See:</dt>
+	<dd class="tag-see">
+        <ul><li><a href="Command.html#mergeCommand">Command.mergeCommand</a></li></ul>
+	</dd>
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="push"><span class="type-signature">&lt;static> </span>push</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドの追加
     </p>
     
     
@@ -86,29 +352,11 @@
 	
         <tr>
             
-                <td class="name"><code>element</code></td>
+                <td class="name"><code>command</code></td>
             
             
             <td class="type">
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last"></td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>artboadCommandManager</code></td>
-            
-            
-            <td class="type">
-            
+            <a href="Command.html">Command</a>
             </td>
             
             
@@ -142,7 +390,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1660</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 531</li></ul></dd>
 	
 	-->
 
@@ -159,229 +407,6 @@
     
     
     
-    
-    
-
-</dd>
-
-            </div>
-
-            
-                <h3 class="subsection-title">Extends</h3>
-
-                <ul>
-                    <li><a href="DRShape.html">DRShape</a></li>
-                </ul>
-            
-
-            
-                <h3 class="subsection-title">Mixes In</h3>
-
-                <ul>
-                    <li><a href="DRStrokeShape.html">DRStrokeShape</a></li>
-                
-                    <li><a href="DRFillShape.html">DRFillShape</a></li>
-                </ul>
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-                <h3 class="subsection-title">Methods</h3>
-
-                <dl><dt>
-    <h4 class="name" id="moveBy"><span class="type-signature">&lt;static> </span>moveBy</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        <a href="DRShape.html#moveBy">DRShape.moveBy</a>の実装
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1705</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="moveTo"><span class="type-signature">&lt;static> </span>moveTo</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        <a href="DRShape.html#moveTo">DRShape.moveTo</a>の実装
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1685</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="serialize"><span class="type-signature">&lt;static> </span>serialize</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        シリアライズ可能なオブジェクトを生成
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../../../../hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1721</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    <h5>Returns:</h5>
-    
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Object</span> 
-		
-	</dd>
-</dl>
-
     
     
 
@@ -403,7 +428,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Nov 20 2014 10:27:30 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Nov 20 2014 10:27:31 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
