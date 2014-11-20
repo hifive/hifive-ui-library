@@ -14,7 +14,55 @@
  * limitations under the License.
  *
  */
-$(function() {
+(function() {
+	var DATA_STATE = 'state';
+	var EVENT_STATE_CHANGE = 'state-change';
+	var selectBoxController = {
+		__name: 'h5.ui.container.StateBox',
+		_currentState: null,
+		__init: function() {
+			// data-stateが指定されているもののうち、最初以外を隠す
+			var $stateBoxes = this._getAllStateBoxes();
+			this.setState($stateBoxes.data(DATA_STATE));
+
+			//FIXME ルートエレメントからこのコントローラを辿れるようにjQuery.dataを使って覚えさせておく
+			// (getControllers()を使ったDOM->Controllerの特定は子コントローラの場合にできないため)
+			$(this.rootElement).data('h5controller-statebox-instance', this);
+		},
+		setState: function(state) {
+			if (this._currentState === state) {
+				return;
+			}
+			var $target = this._getStateBoxByState(state);
+			if (!$target.length) {
+				this.log.warn('指定されたstateの要素はありません。{}', state);
+				return;
+			}
+			var $stateBoxes = this.$find('*[data-' + DATA_STATE + ']');
+			$stateBoxes.css('display', 'none');
+			$target.css('display', 'block');
+			this._currentState = state;
+			this.trigger(EVENT_STATE_CHANGE, state);
+		},
+		getContentsSize: function() {
+			var $current = this._getStateBoxByState(this._currentState);
+			// TODO outerWidth/Heightかどうかはオプション？
+			return {
+				width: $current.outerWidth(),
+				height: $current.outerHeight()
+			};
+		},
+		_getAllStateBoxes: function() {
+			return this.$find('>[data-' + DATA_STATE + ']');
+		},
+		_getStateBoxByState: function(state) {
+			return this.$find('>[data-' + DATA_STATE + '="' + state + '"]');
+		}
+	};
+	h5.core.expose(selectBoxController);
+})();
+
+(function() {
 
 	var logger = h5.log.createLogger('DivideBoxController');
 
@@ -47,6 +95,8 @@ $(function() {
 
 		_outerW_H: '',
 
+		_scrollW_H: '',
+
 		_lastPos: null,
 
 		__init: function(context) {
@@ -66,6 +116,7 @@ $(function() {
 			var l_t = this._l_t = (type == 'x') ? 'left' : 'top';
 
 			var outerW_H = this._outerW_H = w_h == 'width' ? 'outerWidth' : 'outerHeight';
+			this._scrollW_H = w_h == 'width' ? 'scrollWidth' : 'scrolleight';
 
 			if (root.hasClass('freezeSize')) {
 				root.width(root.width());
@@ -237,6 +288,78 @@ $(function() {
 			this._triggerBoxSizeChange();
 		},
 
+		minimize: function(index, opt) {
+			this.resize(index, 0, opt);
+		},
+		maximize: function(index, opt) {
+			this.resize(index, Infinity, opt);
+		},
+
+		normalize: function(index, opt) {
+			this.resize(index, null, opt);
+		},
+
+		hide: function(index, opt) {
+			opt = $.extend(opt, {
+				hideDivider: true
+			});
+			this.resize(index, 0, opt);
+		},
+
+		resize: function(index, size, opt) {
+			// TODO 右を基準、左を基準、、パーセンテージで基準位置など指定できるようにする
+			// (= 左右のdividerをどれくらい動かすかの指定)
+			var opt = opt || {};
+			var fixNext = opt.fixNext;
+
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+			var outerW_H = this._outerW_H;
+			var scrollW_H = this._triggerBoxSizeChange()
+
+			var $targetBox = this.$find('> :not(.divider)').eq(index);
+			if (size == null) {
+				// nullの場合は中身の要素を設定
+				// 中身がはみ出ている場合はscrollWidth|Heigthで取得できる
+				// 中身が小さい場合は取得できないが、StateBoxの場合は取得できる
+
+				// FIXME StateBoxが子コントローラだった場合はgetControllers()で取得できないので、data属性を使って取得
+				var stateBox = $targetBox.data('h5controller-statebox-instance');
+				if (stateBox.getContentsSize) {
+					size = stateBox.getContentsSize()[w_h];
+				} else {
+					size = $targetBox[0][this._scrollW_H]();
+				}
+			}
+
+			// 右または下側固定なら次のdivider、そうでないなら前のdividerを動かす
+			// そもそも片方にしかdividerが無い場合はfixNextに関係なくその1つのdividerを動かす
+			var $prevDivider = $targetBox.prev();
+			var $nextDivider = $targetBox.next();
+			var $divider = fixNext ? ($prevDivider.length ? $prevDivider : $nextDivider)
+					: ($nextDivider.length ? $nextDivider : $prevDivider);
+			var isNext = false;
+			if ($divider[0] === $nextDivider[0]) {
+				isNext = true;
+			}
+			var $prev = $divider.prev();
+			var $next = $divider.next();
+			var lastPos = $divider.position();
+			var prevStart = $prev.position()[l_t];
+			var nextEnd = $next.position()[l_t] + $next[outerW_H](true) - $divider[outerW_H](true);
+			var move = (isNext ? 1 : -1) * (size - $targetBox[outerW_H]());
+
+			this._move(move, $divider, prevStart, nextEnd, lastPos);
+			var dviderWH = 0;
+			if (opt.hideDivider) {
+				dviderWH = (isNext ? 1 : -1) * $divider[this._outerW_H]();
+				$divider.css('display', 'none');
+			} else {
+				$divider.css('display', 'block');
+			}
+			$divider.next().css(this._l_t, '-=' + dviderWH);
+		},
+
 		'> .divider h5trackstart': function(context) {
 			var l_t = this._l_t;
 			var w_h = this._w_h;
@@ -251,16 +374,17 @@ $(function() {
 		},
 
 		'> .divider h5trackmove': function(context) {
+			context.event.preventDefault();
 			var divider = $(context.event.currentTarget);
 			var l_t = this._l_t;
 			var move = (l_t == 'left') ? context.event.dx : context.event.dy;
 			if (move == 0)
 				return;
-			this._move(move, divider, this._prevStart, this._nextEnd, this._lastPos);
+			this._move(move, divider, this._prevStart, this._nextEnd, this._lastPos, true);
 			this._lastPos = divider.position();
 		},
 
-		_move: function(move, divider, prevStart, nextEnd, lastPos) {
+		_move: function(move, divider, prevStart, nextEnd, lastPos, isTrack) {
 			if (move == 0)
 				return;
 			var l_t = this._l_t;
@@ -271,12 +395,14 @@ $(function() {
 			//要検証。+1しないと親要素外にドラッグできてしまう。
 			if (moved <= prevStart + 1) {
 				move = prevStart - lastPos[l_t];
-				if (move <= -1)
+				if (move <= -1 && isTrack)
 					return;
 			} else if (moved >= nextEnd - 1) {
 				move = nextEnd - lastPos[l_t];
-				if (move >= 1)
+				if (move >= 1 && isTrack) {
 					return;
+					;
+				}
 			}
 
 			moved = lastPos[l_t] + move;
@@ -378,4 +504,4 @@ $(function() {
 	};
 
 	h5.core.expose(dividedBoxController);
-});
+})();
