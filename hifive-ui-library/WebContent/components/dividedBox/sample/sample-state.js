@@ -43,7 +43,7 @@
 		},
 
 		__init: function() {
-			var methods = ['normalize', 'minimize', 'maximize', 'hide'];
+			var methods = ['fitToContents', 'minimize', 'maximize', 'hide'];
 			this.$find('.box').each(
 					function() {
 						var $this = $(this);
@@ -71,10 +71,10 @@
 			};
 		},
 
-		'.normalize click': function(context, $el) {
+		'.fitToContents click': function(context, $el) {
 			var $box = $el.parent('.box');
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
-			target.targetDbCtrl.normalize(target.index);
+			target.targetDbCtrl.fitToContents(target.index);
 		},
 
 		'.minimize click': function(context, $el) {
