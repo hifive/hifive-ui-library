@@ -295,7 +295,7 @@
 			this.resize(index, Infinity, opt);
 		},
 
-		fitToContents: function(index, opt) {
+		normalize: function(index, opt) {
 			this.resize(index, null, opt);
 		},
 
