@@ -24,6 +24,8 @@
 		yellowSBController: h5.ui.container.StateBox,
 		greenSBController: h5.ui.container.StateBox,
 		purpleSBController: h5.ui.container.StateBox,
+		blueSBController: h5.ui.container.StateBox,
+		orangeSBController: h5.ui.container.StateBox,
 		__meta: {
 			db1Controller: {
 				rootElement: '._dividedBox.horizontal'
@@ -39,6 +41,12 @@
 			},
 			purpleSBController: {
 				rootElement: '.state-container.purple'
+			},
+			blueSBController: {
+				rootElement: '.state-container.blue'
+			},
+			orangeSBController: {
+				rootElement: '.state-container.orange'
 			}
 		},
 
@@ -58,7 +66,7 @@
 
 		_getTargetDvidedBoxCtrlAndIndexByBox: function($box) {
 			var $element = $box.parent('._dividedBox');
-			var index = $element.find('.box').index($box);
+			var index = $element.find('>:not(.divider)').index($box);
 			var targetDbCtrl;
 			if ($element[0] === this.db1Controller.rootElement) {
 				targetDbCtrl = this.db1Controller;
@@ -71,28 +79,39 @@
 			};
 		},
 
+		_getResizeOption: function() {
+			var resizeOrigin = this.$find('[name="resize-origin"]:checked').val();
+			return {
+				resizeOrigin: resizeOrigin
+			};
+		},
+
 		'.fitToContents click': function(context, $el) {
 			var $box = $el.parent('.box');
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
-			target.targetDbCtrl.fitToContents(target.index);
+			var opt = this._getResizeOption();
+			target.targetDbCtrl.fitToContents(target.index, opt);
 		},
 
 		'.minimize click': function(context, $el) {
 			var $box = $el.parent('.box');
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
-			target.targetDbCtrl.minimize(target.index);
+			var opt = this._getResizeOption();
+			target.targetDbCtrl.minimize(target.index, opt);
 		},
 
 		'.maximize click': function(context, $el) {
 			var $box = $el.parent('.box');
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
-			target.targetDbCtrl.maximize(target.index);
+			var opt = this._getResizeOption();
+			target.targetDbCtrl.maximize(target.index, opt);
 		},
 
 		'.hide click': function(context, $el) {
 			var $box = $el.parent('.box');
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
-			target.targetDbCtrl.hide(target.index);
+			var opt = this._getResizeOption();
+			target.targetDbCtrl.hide(target.index, opt);
 		},
 
 		'.set-state click': function(context, $el) {
@@ -100,37 +119,10 @@
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'SBController'];
 			var state = this.$find('[name="state"]').val();
 			targetController.setState(state);
-		},
-
-		//		'.set-width-or-height click': function(context, $el) {
-		//			var $ctrlGroup = $el.parents('.control-group');
-		//			var $target = this.$find('.' + $ctrlGroup.find('[name="target"]').val());
-		//			this._adjustDividedBox($target);
-		//		},
-
-		//		 state-changeイベントを拾って自動的にdividedBoxのサイズを調整
-		'.box state-change': function(context, $el) {
-			if (!this.$find('[name="auto-adjust"]').prop('checked')) {
-				return;
-			}
-			var targetDivCtrl = null;
-			var $parent = $el.parent();
-			var index = $parent.find('.box').index($el);
-			var $currentStateElemen = $el.find('[data-state="' + context.evArg + '"]');
-			if ($parent[0] === this.db1Controller.rootElement) {
-				targetDivCtrl = this.db1Controller;
-				targetDivCtrl.setWidth(index, $currentStateElemen.outerWidth());
-			} else if ($parent[0] === this.db2Controller.rootElement) {
-				targetDivCtrl = this.db2Controller;
-				targetDivCtrl.setHeight(index, $currentStateElemen.outerHeight());
-			}
-			targetDivCtrl.refresh();
 		}
 	};
 	h5.core.expose(sampleController);
 })();
 $(function() {
-	$('.sample').each(function() {
-		h5.core.controller(this, sample.sampleController);
-	});
+	h5.core.controller('.sample', sample.sampleController);
 });

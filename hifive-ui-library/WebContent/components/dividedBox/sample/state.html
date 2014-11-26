@@ -28,24 +28,65 @@ body {
 }
 
 .yellow {
-	background-color: #FFFE73;
+	background-color: #FFF280;
 }
 
 .green {
-	background-color: #51994C;
+	background-color: #B2CF3E;
 }
 
 .purple {
-	background-color: #702999;
+	background-color: #B492CC;
+}
+
+.blue {
+	background-color: #6EB7DB;
+}
+
+.orange {
+	background-color: #EDAD0B;
+}
+
+.mini-height {
+	height: 30px;
+}
+
+.middle-height {
+	height: 150px;
+}
+
+.large-height {
+	height: 270px;
+}
+
+.mini-width {
+	width: 50px;
+	height: 100%;
+}
+
+.middle-width {
+	width: 250px;
+	height: 100%;
+}
+
+.large-width {
+	width: 400px;
+	height: 100%;
+}
+
+.box {
+	box-sizing: border-box;
+	overflow: hidden;
 }
 
 .horizontal>.box {
 	height: 300px;
-	width: 300px;
+	width: 250px;
 }
 
 .vertical>.box {
-	height: 50%;
+	height: 150px;
+	width: 200px;
 }
 
 .state-container>div {
@@ -72,47 +113,60 @@ body {
 		<h3>state切替</h3>
 
 		<div class="sample">
-<!-- 			<label><input type="checkbox" name="auto-adjust" checked>state-changeイベントを拾って自動でsetWidth|setHeightする</label> -->
+			<!-- 			<label><input type="checkbox" name="auto-adjust" checked>state-changeイベントを拾って自動でsetWidth|setHeightする</label> -->
 			<div class="control-group">
-				<select name="target"><option val="yellow">yellow</option>
-					<option val="green">green</option>
-					<option val="purple">purple</option></select> <select name="state">
-					<option val="mini">mini</option>
-					<option val="middle">middle</option>
-					<option val="large">large</option>
+				<select name="target"><option value="yellow">yellow</option>
+					<option value="green">green</option>
+					<option value="purple">purple</option>
+					<option value="blue">blue</option>
+					<option value="orange">orange</option></select> <select name="state">
+					<option value="mini">mini</option>
+					<option value="middle">middle</option>
+					<option value="large">large</option>
 				</select>
 				<button class="refresh btn btn-default set-state">SelectBoxController.setState()</button>
 			</div>
-<!-- 			<div class="control-group"> -->
-<!-- 				<input type="text" name="size" size="3" value="50"></input> <select -->
-<!-- 					name="target"><option val="yellow">yellow</option> -->
-<!-- 					<option val="green">green</option> -->
-<!-- 					<option val="purple">purple</option></select> -->
-<!-- 				<button class="refresh btn btn-default set-width-or-height">DevidedBoxController.setWidth() -->
-<!-- 					| setHeight()</button> -->
-<!-- 			</div> -->
 			<div class="_dividedBox horizontal">
 				<div class="box yellow state-container">
-					<div data-state="middle" style="width: 300px; height: 100%">middle
-						state</div>
-					<div data-state="mini" style="width: 50px; height: 100%">mini
-						state</div>
-					<div data-state="large" style="width: 600px; height: 100%">large
-						state</div>
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
 				</div>
-				<div class="_dividedBox fill vertical">
+				<div class="_dividedBox fill vertical autoSize">
 					<div class="box fill green state-container">
-						<div data-state="middle" style="height: 150px">middle state</div>
-						<div data-state="mini" style="height: 30px">mini state</div>
-						<div data-state="large" style="height: 270px">large state</div>
+						<div data-state="middle" class="middle-height">middle state</div>
+						<div data-state="mini" class="mini-height">mini state</div>
+						<div data-state="large" class="large-height">large state</div>
 					</div>
 					<div class="box fill purple state-container">
-						<div data-state="middle" style="height: 150px">middle state</div>
-						<div data-state="mini" style="height: 30px">mini state</div>
-						<div data-state="large" style="height: 270px">large state</div>
+						<div data-state="middle" class="middle-height">middle state</div>
+						<div data-state="mini" class="mini-height">mini state</div>
+						<div data-state="large" class="large-height">large state</div>
 					</div>
 				</div>
+				<div class="box blue state-container">
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
+				</div>
+				<div class="box orange state-container">
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
+				</div>
 			</div>
+			<div class="control-group">
+				<h4>resizeOrigin</h4>
+				<div>
+					<label><input type="radio" name="resize-origin" value="0" checked>0.0</label>
+					<label><input type="radio" name="resize-origin" value="0.2">0.2</label>
+					<label><input type="radio" name="resize-origin" value="0.5">0.5</label>
+					<label><input type="radio" name="resize-origin" value="0.7">0.7</label>
+					<label><input type="radio" name="resize-origin" value="1">1.0</label>
+				</div>
+				<p>左右(上下)にdividerがある場合、resize時に左右(上下)のdividerが動く割合を0.0～1.0を指定します。</p>
+				<p>0.0を指定した場合(デフォルト)は左(上)のdividerを固定して右(下)のdividerの位置が変更されます。</p>
+				<p>左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。</p>
 		</div>
 	</div>
 </body>

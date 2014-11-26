@@ -292,7 +292,9 @@
 			this.resize(index, 0, opt);
 		},
 		maximize: function(index, opt) {
-			this.resize(index, Infinity, opt);
+			this.resize(index, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
+				resizeOrigin: 0.5
+			}));
 		},
 
 		fitToContents: function(index, opt) {
@@ -306,16 +308,28 @@
 			this.resize(index, 0, opt);
 		},
 
+		/**
+		 * ボックスのサイズ変更を行います
+		 *
+		 * @param {Integer} index 何番目のボックスか
+		 * @param {Integer} size リサイズするサイズ
+		 * @param {Object} opt リサイズオプション
+		 * @param {Number} [opt.resizeOrigin=0] 0.0～1.0を指定。リサイズするときの中心となる位置を割合で指定する。
+		 *            <p>
+		 *            0.0の場合は左(上)固定で、1.0の場合は右(下)を固定してリサイズする。
+		 *            </p>
+		 *            <p>
+		 *            dividerが片側にしかない場合はこのオプションは無視されます。
+		 *            </p>
+		 */
 		resize: function(index, size, opt) {
-			// TODO 右を基準、左を基準、、パーセンテージで基準位置など指定できるようにする
-			// (= 左右のdividerをどれくらい動かすかの指定)
 			var opt = opt || {};
-			var fixNext = opt.fixNext;
+			var resizeOrigin = parseFloat(opt.resizeOrigin) || 0;
 
 			var l_t = this._l_t;
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
-			var scrollW_H = this._triggerBoxSizeChange()
+			var scrollW_H = this._triggerBoxSizeChange();
 
 			var $targetBox = this.$find('> :not(.divider)').eq(index);
 			if (size == null) {
@@ -332,37 +346,39 @@
 				}
 			}
 
-			// 右または下側固定なら次のdivider、そうでないなら前のdividerを動かす
-			// そもそも片方にしかdividerが無い場合はfixNextに関係なくその1つのdividerを動かす
+			// resizeOriginに合わせて両サイドのdividerを動かす
+			// dividerがそもそも片方にしか無い場合はresizeOriginに関係なくその1つのdividerを動かす
 			var $prevDivider = $targetBox.prev();
 			var $nextDivider = $targetBox.next();
-			var $divider = fixNext ? ($prevDivider.length ? $prevDivider : $nextDivider)
-					: ($nextDivider.length ? $nextDivider : $prevDivider);
-			var isNext = false;
-			if ($divider[0] === $nextDivider[0]) {
-				isNext = true;
-			}
-			var $prev = $divider.prev();
-			var $next = $divider.next();
-			var lastPos = $divider.position();
-			var prevStart = $prev.position()[l_t];
-			var nextEnd = $next.position()[l_t] + $next[outerW_H](true) - $divider[outerW_H](true);
-			var move = (isNext ? 1 : -1) * (size - $targetBox[outerW_H]());
 
-			this._move(move, $divider, prevStart, nextEnd, lastPos);
-			var dviderWH = 0;
-			if (opt.hideDivider) {
-				dviderWH = (isNext ? 1 : -1) * $divider[this._outerW_H]();
-				$divider.css('display', 'none');
-			} else {
-				$divider.css('display', 'block');
+			var totalMove = size - $targetBox[outerW_H]();
+			if (!$prevDivider.length) {
+				resizeOrigin = 0;
+			} else if (!$nextDivider.length) {
+				resizeOrigin = 1;
 			}
-			$divider.next().css(this._l_t, '-=' + dviderWH);
+			var prevMove = -totalMove * resizeOrigin;
+			var nextMove = totalMove + prevMove;
+
+			if (prevMove) {
+				this._move(prevMove, $prevDivider);
+			}
+			if (nextMove) {
+				this._move(nextMove, $nextDivider);
+			}
+
+			//			var dviderWH = 0;
+			//			if (opt.hideDivider) {
+			//				dviderWH = (isNext ? 1 : -1) * $divider[this._outerW_H]();
+			//				$divider.css('display', 'none');
+			//			} else {
+			//				$divider.css('display', 'block');
+			//			}
+			//			$divider.next().css(this._l_t, '-=' + dviderWH);
 		},
 
 		'> .divider h5trackstart': function(context) {
 			var l_t = this._l_t;
-			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 
 			var divider = $(context.event.currentTarget);
@@ -385,12 +401,24 @@
 		},
 
 		_move: function(move, divider, prevStart, nextEnd, lastPos, isTrack) {
-			if (move == 0)
+			if (move == 0) {
 				return;
+			}
+			var $divider = $(divider);
+			if (prevStart == null) {
+				// 第3引数が未指定ならprevStart,nextEnd,lastPosはdividerから計算する
+				var l_t = this._l_t;
+				var outerW_H = this._outerW_H;
+				var $prev = $divider.prev();
+				var $next = $divider.next();
+				lastPos = $divider.position();
+				prevStart = $prev.position()[l_t];
+				nextEnd = $next.position()[l_t] + $next[outerW_H](true) - $divider[outerW_H](true);
+			}
 			var l_t = this._l_t;
 			var w_h = this._w_h;
-			var prev = divider.prev();
-			var next = divider.next();
+			var prev = $divider.prev();
+			var next = $divider.next();
 			var moved = lastPos[l_t] + move;
 			//要検証。+1しないと親要素外にドラッグできてしまう。
 			if (moved <= prevStart + 1) {
@@ -417,7 +445,7 @@
 			if (nextWH < 0)
 				nextWH = 0;
 
-			divider.css(l_t, moved);
+			$divider.css(l_t, moved);
 			next[w_h](nextWH);
 			prev[w_h](prevWH);
 			next.css(l_t, '+=' + move);
