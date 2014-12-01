@@ -7,8 +7,9 @@
 <title>スクロールグリッド</title>
 
 <!-- CSS ---------->
-<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
-<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
 <link href="../common/grid.css" rel="stylesheet">
 
 <!-- JS ---------->
@@ -35,10 +36,21 @@
 </head>
 
 <body>
-	<div class="container" style="width:817px;">
+	<div class="container" style="width: 817px;">
 		<div class="row">
 			<div class="col">
-				<p><a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span id="selectedDataIds"></span></p>
+				<form class="create-record-form" role="form">
+					<div class="control-group">
+						<label class="control-label" for="inputEmail">表示件数 <input
+							type="text" name="num-of-record" value="1000" placeholder="">
+						</label>
+						<input type="submit" class="btn btn-default apply-num-of-record" value="データ生成"></input>
+					</div>
+				</form>
+				<p>
+					<a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span
+						id="selectedDataIds"></span>
+				</p>
 
 				<!-- グリッド表示 -->
 				<div id="grid"></div>

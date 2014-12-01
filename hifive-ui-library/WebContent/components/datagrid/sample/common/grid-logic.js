@@ -20,12 +20,15 @@
 		 * @memberOf datagrid.sample.GridLogic
 		 * @param
 		 */
-		loadData: function() {
+		loadData: function(start, end) {
 			var def = this.deferred();
 			h5.ajax(DATA_URL, {
 				dataType: 'json',
-				data : '',
-			}).done(function(data){
+				data: {
+					start: start,
+					end: end
+				},
+			}).done(function(data) {
 				def.resolve(data.list);
 			});
 			return def.promise();
