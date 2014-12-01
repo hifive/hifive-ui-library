@@ -63,6 +63,8 @@
 })();
 
 (function() {
+	/** データ属性名：ボックスが隠れているかどうか */
+	var DATA_HIDDEN = 'dividedbox-boxhidden';
 
 	var logger = h5.log.createLogger('DivideBoxController');
 
@@ -174,10 +176,11 @@
 			});
 
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
-			this.$find('> .divider').each(function() {
-				var divider = $(this);
-				var prev = divider.prev();
-				var next = divider.next();
+			this.$find('> .divider').each(this.ownWithOrg(function(orgThis) {
+				var divider = $(orgThis);
+				var prev = this._getPrevBoxByDivider(divider);
+				var next = this._getNextBoxByDivider(divider);
+				;
 				//prev[w_h](prev[w_h]());
 				//next[w_h](next[w_h]());
 
@@ -216,7 +219,7 @@
 						'margin-left': (divider.width() - dividerHandler.outerWidth()) / 2
 					});
 				}
-			});
+			}));
 
 			//以上の配置を元にルート要素サイズに合わせて再配置
 			this._adjust();
@@ -293,7 +296,7 @@
 		},
 		maximize: function(index, opt) {
 			this.resize(index, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
-				resizeOrigin: 0.5
+				partition: 0.5
 			}));
 		},
 
@@ -301,11 +304,97 @@
 			this.resize(index, null, opt);
 		},
 
+		show: function(index, opt){
+			// hide状態のボックスを表示
+			var $box = this.getBoxByIndex(index);
+			if (!$box.length || !$box.data(DATA_HIDDEN)) {
+				return;
+			}
+			$box.data(DATA_HIDDEN, false);
+			// 指定されたindexのボックスの両隣のdividerを表示する
+			var $prevDivider = $box.prev();
+			var $nextDivider = $box.next();
+			if ($prevDivider.length) {
+				this.showDivider($prevDivider);
+			} else if ($nextDivider.length) {
+				this.showDivider($nextDivider,true);
+			}
+
+			// コンテンツの大きさにリサイズ
+			this.fitToContents(index, opt);
+		},
+
 		hide: function(index, opt) {
-			opt = $.extend(opt, {
-				hideDivider: true
-			});
+			var $box = this.getBoxByIndex(index);
+			if (!$box.length) {
+				return;
+			}
+			// 指定されたindexのボックスのどちらか片方のdividerを非表示にする
+			// 両側にdividerのあるboxの場合、残ったdividerは隠されたboxを無視して動作するdividerとして動作する
+			var $prevDivider = $box.prev();
+			var $nextDivider = $box.next();
+			if ($prevDivider.length) {
+				this.hideDivider($prevDivider);
+			} else if ($nextDivider) {
+				this.hideDivider($nextDivider, true);
+			}
+
+			// 0にリサイズ
 			this.resize(index, 0, opt);
+
+			$box.data(DATA_HIDDEN, true);
+		},
+
+		/**
+		 * 指定されたdividerを非表示にする
+		 *
+		 * @param {DOM|jQuery} divider要素
+		 * @param {Boolean} [fixPrev=false]
+		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
+		 */
+		hideDivider: function(divider, fixPrev) {
+			var $divider = $(divider);
+			if ($divider.css('display') === 'none') {
+				return;
+			}
+			var w_h = this._w_h;
+			var l_t = this._l_t;
+			var dividerWH = $divider[w_h]();
+			$divider.css('display', 'none');
+			if (fixPrev) {
+				var $prevBox = this._getPrevBoxByDivider($divider);
+				$prevBox.css(w_h, '+=' + (dividerWH));
+			} else {
+				var $nextBox = this._getNextBoxByDivider($divider);
+				$nextBox.css(l_t, '-=' + (dividerWH));
+				$nextBox.css(w_h, '+=' + (dividerWH));
+			}
+		},
+
+		/**
+		 * 指定されたdividerを表示する
+		 *
+		 * @param {DOM|jQuery} divider要素
+		 * @param {Boolean} [fixPrev=false]
+		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
+		 */
+		showDivider: function(divider, fixPrev) {
+			var $divider = $(divider);
+			if ($divider.css('display') === 'block') {
+				return;
+			}
+			$divider.css('display', 'block');
+			this.refresh();
+		},
+
+		/**
+		 * 引数に指定されたindexに対応するボックス要素を返します
+		 *
+		 * @param {Integer} index
+		 * @returns {jQuery}
+		 */
+		getBoxByIndex: function(index) {
+			return this.$find('> :not(.divider)').eq(index);
 		},
 
 		/**
@@ -314,24 +403,28 @@
 		 * @param {Integer} index 何番目のボックスか
 		 * @param {Integer} size リサイズするサイズ
 		 * @param {Object} opt リサイズオプション
-		 * @param {Number} [opt.resizeOrigin=0] 0.0～1.0を指定。リサイズするときの中心となる位置を割合で指定する。
+		 * @param {Number} [opt.partition=0]
 		 *            <p>
-		 *            0.0の場合は左(上)固定で、1.0の場合は右(下)を固定してリサイズする。
+		 *            左右(上下)にdividerがある場合、resize時に左右(上下)のdividerが動く割合を0.0～1.0を指定します。
 		 *            </p>
 		 *            <p>
-		 *            dividerが片側にしかない場合はこのオプションは無視されます。
+		 *            0.0を指定した場合(デフォルト)は左(上)のdividerを固定して右(下)のdividerの位置が変更されます。
+		 *            </p>
+		 *            <p>
+		 *            左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。
 		 *            </p>
 		 */
 		resize: function(index, size, opt) {
 			var opt = opt || {};
-			var resizeOrigin = parseFloat(opt.resizeOrigin) || 0;
+			var partition = parseFloat(opt.partition) || 0;
 
 			var l_t = this._l_t;
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 			var scrollW_H = this._triggerBoxSizeChange();
 
-			var $targetBox = this.$find('> :not(.divider)').eq(index);
+			var $targetBox = this.getBoxByIndex(index);
+
 			if (size == null) {
 				// nullの場合は中身の要素を設定
 				// 中身がはみ出ている場合はscrollWidth|Heigthで取得できる
@@ -346,18 +439,18 @@
 				}
 			}
 
-			// resizeOriginに合わせて両サイドのdividerを動かす
-			// dividerがそもそも片方にしか無い場合はresizeOriginに関係なくその1つのdividerを動かす
+			// partitionに合わせて両サイドのdividerを動かす
+			// dividerがそもそも片方にしか無い場合はpartitionに関係なくその1つのdividerを動かす
 			var $prevDivider = $targetBox.prev();
 			var $nextDivider = $targetBox.next();
 
 			var totalMove = size - $targetBox[outerW_H]();
 			if (!$prevDivider.length) {
-				resizeOrigin = 0;
+				partition = 0;
 			} else if (!$nextDivider.length) {
-				resizeOrigin = 1;
+				partition = 1;
 			}
-			var prevMove = -totalMove * resizeOrigin;
+			var prevMove = -totalMove * partition;
 			var nextMove = totalMove + prevMove;
 
 			if (prevMove) {
@@ -366,15 +459,6 @@
 			if (nextMove) {
 				this._move(nextMove, $nextDivider);
 			}
-
-			//			var dviderWH = 0;
-			//			if (opt.hideDivider) {
-			//				dviderWH = (isNext ? 1 : -1) * $divider[this._outerW_H]();
-			//				$divider.css('display', 'none');
-			//			} else {
-			//				$divider.css('display', 'block');
-			//			}
-			//			$divider.next().css(this._l_t, '-=' + dviderWH);
 		},
 
 		'> .divider h5trackstart': function(context) {
@@ -382,8 +466,8 @@
 			var outerW_H = this._outerW_H;
 
 			var divider = $(context.event.currentTarget);
-			var prev = divider.prev();
-			var next = divider.next();
+			var prev = this._getPrevBoxByDivider(divider);
+			var next = this._getNextBoxByDivider(divider);
 			this._lastPos = divider.position();
 			this._prevStart = prev.position()[l_t];
 			this._nextEnd = next.position()[l_t] + next[outerW_H](true) - divider[outerW_H](true);
@@ -405,22 +489,26 @@
 				return;
 			}
 			var $divider = $(divider);
-			if (prevStart == null) {
-				// 第3引数が未指定ならprevStart,nextEnd,lastPosはdividerから計算する
-				var l_t = this._l_t;
-				var outerW_H = this._outerW_H;
-				var $prev = $divider.prev();
-				var $next = $divider.next();
-				lastPos = $divider.position();
-				prevStart = $prev.position()[l_t];
-				nextEnd = $next.position()[l_t] + $next[outerW_H](true) - $divider[outerW_H](true);
-			}
 			var l_t = this._l_t;
 			var w_h = this._w_h;
-			var prev = $divider.prev();
-			var next = $divider.next();
+			var outerW_H = this._outerW_H;
+			var $prev = this._getPrevBoxByDivider($divider);
+			var $next = this._getNextBoxByDivider($divider);
+			if (prevStart == null) {
+				// 第3引数が未指定ならprevStart,nextEnd,lastPosはdividerから計算する
+				// (トラック操作の場合はキャッシュしてある値を渡しているので計算する必要はない)
+				var isVisibleDivider = $divider.css('display') === 'block';
+				if (isVisibleDivider) {
+					lastPos = $divider.position();
+				} else {
+					// 非表示の場合はboxの位置を基にする
+					lastPos = $next.position();
+				}
+				prevStart = $prev.length? $prev.position()[l_t]: $divider.position()[l_t];
+				nextEnd = $next.length? ($next.position()[l_t] + $next[outerW_H](true)
+						- (isVisibleDivider ? $divider[outerW_H](true) : 0)): $divider.position()[l_t];
+			}
 			var moved = lastPos[l_t] + move;
-			//要検証。+1しないと親要素外にドラッグできてしまう。
 			if (moved <= prevStart + 1) {
 				move = prevStart - lastPos[l_t];
 				if (move <= -1 && isTrack)
@@ -429,26 +517,26 @@
 				move = nextEnd - lastPos[l_t];
 				if (move >= 1 && isTrack) {
 					return;
-					;
 				}
 			}
 
 			moved = lastPos[l_t] + move;
 
-			var prevWH = prev[w_h]() + move;
+			var prevWH = $prev[w_h]() + move;
 			if (prevWH < 0) {
 				prevWH = 0;
-				move = -prev[w_h]();
+				move = -$prev[w_h]();
 			}
 
-			var nextWH = next[w_h]() - move;
-			if (nextWH < 0)
+			var nextWH = $next[w_h]() - move;
+			if (nextWH < 0) {
 				nextWH = 0;
+			}
 
 			$divider.css(l_t, moved);
-			next[w_h](nextWH);
-			prev[w_h](prevWH);
-			next.css(l_t, '+=' + move);
+			$next[w_h](nextWH);
+			$prev[w_h](prevWH);
+			$next.css(l_t, '+=' + move);
 
 			this._triggerBoxSizeChange();
 		},
@@ -528,6 +616,27 @@
 			this.$find('> :not(.divider)').each(function() {
 				$(this).trigger('boxSizeChange');
 			});
+		},
+
+		_getPrevBoxByDivider: function(divider) {
+			var $divider = $(divider);
+			var $box = $divider.prev();
+			// hidden状態ならその前のboxを返す。
+			// 無い場合は空のjQueryオブジェクトを返す
+			if ($box.length && $box.data(DATA_HIDDEN)) {
+				return this._getPrevBoxByDivider($box.prev());
+			}
+			return $box;
+		},
+		_getNextBoxByDivider: function(divider) {
+			var $divider = $(divider);
+			var $box = $divider.next();
+			// hidden状態ならその次のboxを返す。
+			// 無い場合は空のjQueryオブジェクトを返す
+			if ($box.length && $box.data(DATA_HIDDEN)) {
+				return this._getNextBoxByDivider($box.next());
+			}
+			return $box;
 		}
 	};
 

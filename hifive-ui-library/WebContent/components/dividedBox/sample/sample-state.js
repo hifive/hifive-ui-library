@@ -80,9 +80,9 @@
 		},
 
 		_getResizeOption: function() {
-			var resizeOrigin = this.$find('[name="resize-origin"]:checked').val();
+			var partition = this.$find('[name="partition"]:checked').val();
 			return {
-				resizeOrigin: resizeOrigin
+				partition: partition
 			};
 		},
 
@@ -119,6 +119,14 @@
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'SBController'];
 			var state = this.$find('[name="state"]').val();
 			targetController.setState(state);
+		},
+
+		'.show-box click': function(context, $el) {
+			var $ctrlGroup = $el.parents('.control-group');
+			var $box = this.$find('.box.' + $ctrlGroup.find('[name="target"]').val());
+			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
+			var opt = this._getResizeOption();
+			target.targetDbCtrl.show(target.index, opt);
 		}
 	};
 	h5.core.expose(sampleController);
