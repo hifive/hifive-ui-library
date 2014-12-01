@@ -2455,7 +2455,7 @@
 				// 背景画像が無ければ何もしない
 				return;
 			}
-			var command = new Command({
+			var command = new CustomCommand({
 				execute: function() {
 					$(this._preBgElement).remove();
 				},
