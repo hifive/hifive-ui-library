@@ -218,15 +218,13 @@
 								+ $prev.outerHeight(true) : 0;
 						var dividerLeft = (type === 'x' && $prev.length) ? $prev.position().left
 								+ $prev.outerWidth(true) : 0;
-						if (isVisibleDivider) {
-							$divider.css({
-								cursor: (type === 'x') ? 'col-resize' : 'row-resize',
-								top: dividerTop,
-								left: dividerLeft,
-								position: 'absolute',
-								'z-index': nextZIndex + 1
-							});
-						}
+						$divider.css({
+							cursor: (type === 'x') ? 'col-resize' : 'row-resize',
+							top: dividerTop,
+							left: dividerLeft,
+							position: 'absolute',
+							'z-index': nextZIndex + 1
+						});
 						var nextTop = (type === 'y') ? dividerTop
 								+ (isVisibleDivider ? $divider.outerHeight(true) : 0) : 0;
 						var nextLeft = (type === 'x') ? dividerLeft
@@ -266,7 +264,7 @@
 		 * ボックスの追加
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index
+		 * @param {Integer} index 何番目に追加するか
 		 * @param {DOM|jQuery} box
 		 */
 		insert: function(index, box) {
@@ -277,7 +275,7 @@
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 
-			var $target = this.getBoxByIndex(index);
+			var $target = this._getBoxElement(index);
 			var $divider = $('<div class="divider"></div>');
 
 			var $box = $(box);
@@ -340,22 +338,22 @@
 		 * ボックスの最小化
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index 最小化するボックスのインデックス
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
 		 */
-		minimize: function(index, opt) {
-			this.resize(index, 0, opt);
+		minimize: function(box, opt) {
+			this.resize(box, 0, opt);
 		},
 
 		/**
 		 * ボックスの最大化
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index 最大化するボックスのインデックス
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
 		 */
-		maximize: function(index, opt) {
-			this.resize(index, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
+		maximize: function(box, opt) {
+			this.resize(box, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
 				partition: 0.5
 			}));
 		},
@@ -364,23 +362,23 @@
 		 * ボックスの中身の大きさを自動取得し、そのサイズにリサイズします
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index リサイズするボックスのインデックス
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
 		 */
-		fitToContents: function(index, opt) {
-			this.resize(index, null, opt);
+		fitToContents: function(box, opt) {
+			this.resize(box, null, opt);
 		},
 
 		/**
 		 * {@link h5.ui.container.DividedBox#hide}で非表示にしたボックスを表示します
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index 表示するボックスのインデックス
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
 		 */
-		show: function(index, opt) {
+		show: function(box, opt) {
 			// hide状態のボックスを表示
-			var $box = this.getBoxByIndex(index);
+			var $box = this._getBoxElement(box);
 			if (!$box.length || !$box.data(DATA_HIDDEN)) {
 				return;
 			}
@@ -389,24 +387,24 @@
 			var $prevDivider = this._getPrevDividerByBox($box);
 			var $nextDivider = this._getNextDividerByBox($box);
 			if ($prevDivider.length) {
-				this._showDivider($prevDivider);
+				this.showDivider($prevDivider);
 			} else if ($nextDivider.length) {
-				this._showDivider($nextDivider, true);
+				this.showDivider($nextDivider, true);
 			}
 
 			// コンテンツの大きさにリサイズ
-			this.fitToContents(index, opt);
+			this.fitToContents(box, opt);
 		},
 
 		/**
 		 * ボックスを非表示にします
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index 非表示にするボックスのインデックス
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
 		 */
-		hide: function(index, opt) {
-			var $box = this.getBoxByIndex(index);
+		hide: function(box, opt) {
+			var $box = this._getBoxElement(box);
 			if (!$box.length) {
 				return;
 			}
@@ -416,32 +414,21 @@
 			var $prevDivider = this._getPrevDividerByBox($box);
 			var $nextDivider = this._getNextDividerByBox($box);
 			if ($prevDivider.length) {
-				this._hideDivider($prevDivider);
+				this.hideDivider($prevDivider);
 			} else if ($nextDivider) {
-				this._hideDivider($nextDivider, true);
+				this.hideDivider($nextDivider, true);
 			}
 
 			// 0にリサイズ
-			this.resize(index, 0, opt);
+			this.resize(box, 0, opt);
 
 			$box.data(DATA_HIDDEN, true);
 		},
 
 		/**
-		 * 引数に指定されたindexに対応するボックス要素を返します
-		 *
-		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index
-		 * @returns {jQuery}
-		 */
-		getBoxByIndex: function(index) {
-			return this._getBoxes().eq(index);
-		},
-
-		/**
 		 * ボックスのサイズ変更を行います
 		 *
-		 * @param {Integer} index 何番目のボックスか
+		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Integer} size リサイズするサイズ
 		 * @param {Object} opt リサイズオプション
 		 * @param {Number} [opt.partition=0]
@@ -455,14 +442,14 @@
 		 *            左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。
 		 *            </p>
 		 */
-		resize: function(index, size, opt) {
+		resize: function(box, size, opt) {
 			var opt = opt || {};
 			var partition = parseFloat(opt.partition) || 0;
 
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 
-			var $targetBox = this.getBoxByIndex(index);
+			var $targetBox = this._getBoxElement(box);
 
 			// partitionに合わせて両サイドのdividerを動かす
 			// dividerがそもそも片方にしか無い場合はpartitionに関係なくその1つのdividerを動かす
@@ -557,14 +544,13 @@
 		/**
 		 * 指定されたdividerを非表示にする
 		 *
-		 * @private
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {DOM|jQuery} divider要素
+		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
 		 * @param {Boolean} [fixPrev=false]
 		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
 		 */
-		_hideDivider: function(divider, fixPrev) {
-			var $divider = $(divider);
+		hideDivider: function(divider, fixPrev) {
+			var $divider = this._getDividerElement(divider);
 			if ($divider.css('display') === 'none') {
 				return;
 			}
@@ -572,27 +558,19 @@
 			var l_t = this._l_t;
 			var dividerWH = $divider[w_h]();
 			$divider.css('display', 'none');
-			if (fixPrev) {
-				var $prevBox = this._getPrevBoxByDivider($divider);
-				$prevBox.css(w_h, '+=' + (dividerWH));
-			} else {
-				var $nextBox = this._getNextBoxByDivider($divider);
-				$nextBox.css(l_t, '-=' + (dividerWH));
-				$nextBox.css(w_h, '+=' + (dividerWH));
-			}
+			this.refresh();
 		},
 
 		/**
 		 * 指定されたdividerを表示する
 		 *
-		 * @private
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {DOM|jQuery} divider要素
+		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
 		 * @param {Boolean} [fixPrev=false]
 		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
 		 */
-		_showDivider: function(divider, fixPrev) {
-			var $divider = $(divider);
+		showDivider: function(divider, fixPrev) {
+			var $divider = this._getDividerElement(divider);
 			if ($divider.css('display') === 'block') {
 				return;
 			}
@@ -686,21 +664,23 @@
 
 			var adjustAreaWH = root[w_h]();
 
-			$dividers.each(this.ownWithOrg(function(orgThis) {
-				var $divider = $(orgThis);
-				if ($divider.css('display') === 'none') {
-					return;
-				}
-				var $next = this._getNextBoxByDivider($divider);
-
-				var dividerLT = $divider.position()[l_t];
-				var per = dividerLT / this._lastAdjustAreaWH;
-				var nextDivideLT = Math.round(adjustAreaWH * per);
-				var move = nextDivideLT - dividerLT;
-
-				$divider.css(l_t, '+=' + move);
-				$next.css(l_t, ($next.position()[l_t] + move));
-			}));
+			//			$dividers.each(this.ownWithOrg(function(orgThis) {
+			//				var $divider = $(orgThis);
+			//				var isDisplayNone = $divider.css('display') === 'none';
+			//				$divider.css('display', 'block');
+			//				var $next = this._getNextBoxByDivider($divider);
+			//
+			//				var dividerLT = $divider.position()[l_t];
+			//				var per = dividerLT / this._lastAdjustAreaWH;
+			//				var nextDivideLT = Math.round(adjustAreaWH * per);
+			//				var move = nextDivideLT - dividerLT;
+			//
+			//				$divider.css(l_t, '+=' + move);
+			//				$next.css(l_t, ($next.position()[l_t] + move));
+			//				if (isDisplayNone) {
+			//					$divider.css('display', 'none');
+			//				}
+			//			}));
 
 			var $boxes = this._getBoxes();
 			$boxes.each(this.ownWithOrg(function(orgThis, index) {
@@ -711,14 +691,27 @@
 				var $prev = this._getPrevDividerByBox($box);
 				var $next = this._getNextDividerByBox($box);
 				var outerSize = 0;
+				// 非表示の場合はいったん表示する(位置取得のため)
+				var isPrevDisplayNone = $prev.css('display') === 'none';
+				var isNextDisplayNone = $next.css('display') === 'none';
+				$prev.css('display', 'block');
+				$next.css('display', 'block');
 				if (!$prev.length) {
 					outerSize = $next.position()[l_t];
 				} else if (!$next.length) {
-					outerSize = adjustAreaWH - ($prev.position()[l_t] + $prev[outerW_H](true));
+					outerSize = adjustAreaWH - $prev.position()[l_t];
 				} else {
-					outerSize = $next.position()[l_t]
-							- ($prev.position()[l_t] + $prev[outerW_H](true));
+					outerSize = $next.position()[l_t] - $prev.position()[l_t]
+							- (isPrevDisplayNone ? 0 : $prev[outerW_H](true));
 				}
+				// 表示にしたdividerを元に戻す
+				if (isPrevDisplayNone) {
+					$prev.css('display', 'none');
+				}
+				if (isNextDisplayNone) {
+					$next.css('display', 'none');
+				}
+				// 計算したサイズを設定
 				this._setOuterSize($box, w_h, outerSize);
 			}));
 
@@ -804,6 +797,38 @@
 		 */
 		_getDividers: function() {
 			return this.$find('> .divider');
+		},
+
+		/**
+		 * indexからdividerを返す。DOM,jQueryが渡された場合はdivider要素ならそれを$()でラップして返す
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
+		 * @returns {jQuery} divider要素。該当するものが無い場合は空jQuery
+		 */
+		_getDividerElement: function(divider) {
+			var $dividers = this._getDividers();
+			if (!isNaN(parseInt(divider))) {
+				return $dividers.eq(divider);
+			}
+			return $dividers.filter(divider).eq(0);
+		},
+
+
+		/**
+		 * indexからボックスを返す。DOM,jQueryが渡された場合はdivider要素ならそれを$()でラップして返す
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {index|DOM|jQuery|String} ボックスのindexまたはボックス要素またはセレクタ
+		 * @returns {jQuery}
+		 */
+		_getBoxElement: function(box) {
+			var $boxes = this._getBoxes();
+			if (!isNaN(parseInt(box))) {
+				return $boxes.eq(box);
+			}
+			return $boxes.filter(box).eq(0);
 		},
 
 		/**

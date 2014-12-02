@@ -19,18 +19,18 @@
 	var sampleController = {
 		__name: 'sample.sampleController',
 
-		db1Controller: h5.ui.container.DividedBox,
-		db2Controller: h5.ui.container.DividedBox,
+		verticalDBController: h5.ui.container.DividedBox,
+		horizontalDBController: h5.ui.container.DividedBox,
 		yellowSBController: h5.ui.container.StateBox,
 		greenSBController: h5.ui.container.StateBox,
 		purpleSBController: h5.ui.container.StateBox,
 		blueSBController: h5.ui.container.StateBox,
 		orangeSBController: h5.ui.container.StateBox,
 		__meta: {
-			db1Controller: {
+			verticalDBController: {
 				rootElement: '._dividedBox.horizontal'
 			},
-			db2Controller: {
+			horizontalDBController: {
 				rootElement: '._dividedBox.vertical'
 			},
 			yellowSBController: {
@@ -68,10 +68,10 @@
 			var $element = $box.parent('._dividedBox');
 			var index = $element.find('>:not(.divider)').index($box);
 			var targetDbCtrl;
-			if ($element[0] === this.db1Controller.rootElement) {
-				targetDbCtrl = this.db1Controller;
-			} else if ($element[0] === this.db2Controller.rootElement) {
-				targetDbCtrl = this.db2Controller;
+			if ($element[0] === this.verticalDBController.rootElement) {
+				targetDbCtrl = this.verticalDBController;
+			} else if ($element[0] === this.horizontalDBController.rootElement) {
+				targetDbCtrl = this.horizontalDBController;
 			}
 			return {
 				targetDbCtrl: targetDbCtrl,
@@ -127,6 +127,20 @@
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
 			var opt = this._getResizeOption();
 			target.targetDbCtrl.show(target.index, opt);
+		},
+
+		'.hide-divider click': function(context, $el){
+			var $ctrlGroup = $el.parents('.control-group');
+			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
+			var index = $ctrlGroup.find('[name="index"]').val();
+			targetController.hideDivider(index);
+		},
+
+		'.show-divider click': function(context, $el){
+			var $ctrlGroup = $el.parents('.control-group');
+			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
+			var index = $ctrlGroup.find('[name="index"]').val();
+			targetController.showDivider(index);
 		}
 	};
 	h5.core.expose(sampleController);

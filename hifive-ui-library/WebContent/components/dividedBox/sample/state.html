@@ -125,7 +125,7 @@ body {
 						<option value="middle">middle</option>
 						<option value="large">large</option>
 				</select>
-					<button class="btn btn-default set-state">SelectBoxController.setState()</button>
+					<button class="btn btn-default set-state">StateBoxController.setState()</button>
 				</label>
 			</div>
 			<div class="control-group">
@@ -136,6 +136,14 @@ body {
 						<option value="blue">blue</option>
 						<option value="orange">orange</option></select>
 					<button class="btn btn-default show-box">DividedBox.show(index)</button></label>
+			</div>
+			<div class="control-group">
+				<label>dividerの非表示・表示<select name="target"><option
+							value="vertical">vertical</option>
+						<option value="horizontal">horizontal</option></select> <span>index</span><input
+					type="text" name=index " size="2" value="0">
+					<button class="btn btn-default hide-divider">DividedBox.hideDivider(index)</button>
+					<button class="btn btn-default show-divider">DividedBox.showDivider(index)</button></label>
 			</div>
 			<div class="_dividedBox horizontal">
 				<div class="box yellow state-container">
