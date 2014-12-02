@@ -66,7 +66,23 @@
 	/** データ属性名：ボックスが隠れているかどうか */
 	var DATA_HIDDEN = 'dividedbox-boxhidden';
 
-	var logger = h5.log.createLogger('DivideBoxController');
+	/** クラス名：サイズの自動調整設定 */
+	var CLASS_AUTO_SIZE = 'autoSize';
+
+	/** クラス名：垂直区切り設定 */
+	var CLASS_VERTICAL = 'vertical';
+
+	/** クラス名：水平区切り設定 */
+	var CLASS_HORIZONTAL = 'horizontal';
+
+	/** クラス名: dividedBoxのルートに追加するクラス名 */
+	var CLASS_ROOT = 'dividedBox';
+
+	/** クラス名：サイズ固定 */
+	var CLASS_FREEZE_SIZE = 'freezeSize';
+
+	/** イベント名：ボックスのサイズが変更されたときに上げるイベント */
+	var EVENT_BOX_SIZE_CHANGE = 'boxSizeChange';
 
 	var dividedBoxController = {
 
@@ -102,34 +118,33 @@
 		_lastPos: null,
 
 		__init: function(context) {
-
 			var root = this._root = $(this.rootElement);
-			var type = this._type = root.hasClass('vertical') ? 'y' : 'x';
-			var that = this;
+			var type = this._type = root.hasClass(CLASS_VERTICAL) ? 'y' : 'x';
 
+			// 要素内の空のテキストノードを削除
 			this._cleanWhitespace(root[0]);
 
-			root.addClass('dividedBox');
-			if (type == 'x') {
-				root.addClass('horizontal');
+			root.addClass(CLASS_ROOT);
+			if (type === 'x') {
+				root.addClass(CLASS_HORIZONTAL);
 			}
 
-			var w_h = this._w_h = (type == 'x') ? 'width' : 'height';
-			var l_t = this._l_t = (type == 'x') ? 'left' : 'top';
+			var w_h = this._w_h = (type === 'x') ? 'width' : 'height';
+			this._l_t = (type === 'x') ? 'left' : 'top';
 
-			var outerW_H = this._outerW_H = w_h == 'width' ? 'outerWidth' : 'outerHeight';
-			this._scrollW_H = w_h == 'width' ? 'scrollWidth' : 'scrolleight';
+			var outerW_H = this._outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
+			this._scrollW_H = w_h === 'width' ? 'scrollWidth' : 'scrolleight';
 
-			if (root.hasClass('freezeSize')) {
+			// サイズ固定が指定されているボックスは、dividedBox適用時のサイズに固定
+			if (root.hasClass(CLASS_FREEZE_SIZE)) {
 				root.width(root.width());
 				root.height(root.height());
 			}
 
 			this._lastAdjustAreaWH = root[w_h]();
-
-			var pcp = root.css('position');
-
-			if (pcp == 'static' || !pcp) {
+			var rootPosition = root.css('position');
+			if (rootPosition === 'static' || !rootPosition) {
+				// ルートがposition:staticまたは指定無しの場合はposition:relativeを設定
 				root.css('position', 'relative');
 				if (h5.env.ua.isOpera) {
 					root.css({
@@ -139,32 +154,39 @@
 				}
 			}
 
+			// ボックスのサイズがオートのものについてサイズ計算
 			var autoSizeBoxCouunt = 0;
 			var autoSizeBoxAreaWH = root[w_h]();
 
-			var boxArray = this.$find('> :not(.divider)');
-			boxArray.each(function(index, domEle) {
-				var box = $(this);
-				if (box.hasClass('autoSize')) {
+			var $boxes = this._getBoxes();
+			$boxes.each(this.ownWithOrg(function(orgThis) {
+				var $box = $(orgThis);
+				if ($box.hasClass(CLASS_AUTO_SIZE)) {
 					autoSizeBoxCouunt++;
 				} else {
-					autoSizeBoxAreaWH -= box[outerW_H](true);
+					autoSizeBoxAreaWH -= $box[outerW_H](true);
 				}
-			});
+			}));
 
 			if (autoSizeBoxCouunt) {
 				var autoSizeBoxWH = autoSizeBoxAreaWH / autoSizeBoxCouunt;
-				boxArray.each(function(index, domEle) {
-					var box = $(this);
-					if (box.hasClass('autoSize')) {
-						that._setOuterSize(box, w_h, autoSizeBoxWH);
+				$boxes.each(this.ownWithOrg(function(orgThis) {
+					var $box = $(orgThis);
+					if ($box.hasClass(CLASS_AUTO_SIZE)) {
+						this._setOuterSize($box, w_h, autoSizeBoxWH);
 					}
-				});
+				}));
 			}
 
+			// リフレッシュ
 			this.refresh();
 		},
 
+		/**
+		 * ボックスとdividerの位置を最適化します
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 */
 		refresh: function() {
 			var root = this._root = $(this.rootElement);
 			var type = this._type;
@@ -176,7 +198,7 @@
 			});
 
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
-			this.$find('> .divider').each(
+			this._getDividers().each(
 					this.ownWithOrg(function(orgThis) {
 						var $divider = $(orgThis);
 						var isVisibleDivider = $divider.css('display') !== 'none';
@@ -187,27 +209,27 @@
 						//next[w_h](next[w_h]());
 
 						var nextZIndex = $next.css('z-index');
-						if (!nextZIndex || nextZIndex == 'auto') {
+						if (!nextZIndex || nextZIndex === 'auto') {
 							nextZIndex = 0;
 						}
 
 						// dividerの位置調整
-						var dividerTop = (type == 'y' && $prev.length) ? $prev.position().top
+						var dividerTop = (type === 'y' && $prev.length) ? $prev.position().top
 								+ $prev.outerHeight(true) : 0;
-						var dividerLeft = (type == 'x' && $prev.length) ? $prev.position().left
+						var dividerLeft = (type === 'x' && $prev.length) ? $prev.position().left
 								+ $prev.outerWidth(true) : 0;
 						if (isVisibleDivider) {
 							$divider.css({
-								cursor: (type == 'x') ? 'col-resize' : 'row-resize',
+								cursor: (type === 'x') ? 'col-resize' : 'row-resize',
 								top: dividerTop,
 								left: dividerLeft,
 								position: 'absolute',
 								'z-index': nextZIndex + 1
 							});
 						}
-						var nextTop = (type == 'y') ? dividerTop
+						var nextTop = (type === 'y') ? dividerTop
 								+ (isVisibleDivider ? $divider.outerHeight(true) : 0) : 0;
-						var nextLeft = (type == 'x') ? dividerLeft
+						var nextLeft = (type === 'x') ? dividerLeft
 								+ (isVisibleDivider ? $divider.outerWidth(true) : 0) : 0;
 						// dividerの次の要素の調整
 						$next.css({
@@ -216,7 +238,7 @@
 							position: 'absolute'
 						});
 						var dividerHandler = $divider.find('.dividerHandler');
-						if (dividerHandler.length == 0) {
+						if (dividerHandler.length === 0) {
 							$divider.append('<div style="height:50%;"></div>');
 							dividerHandler = $('<div class="dividerHandler"></div>');
 							$divider.append(dividerHandler);
@@ -224,7 +246,7 @@
 						dividerHandler.css({
 							'margin-top': -dividerHandler.height() / 2
 						});
-						if (type == 'y') {
+						if (type === 'y') {
 							dividerHandler.css({
 								'margin-left': 'auto',
 								'margin-right': 'auto'
@@ -240,85 +262,122 @@
 			this._adjust();
 		},
 
+		/**
+		 * ボックスの追加
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index
+		 * @param {DOM|jQuery} box
+		 */
 		insert: function(index, box) {
 			var root = this._root;
 			var type = this._type;
 			var l_t = this._l_t;
-			var t_l = l_t == 'left' ? 'top' : 'left';
+			var t_l = l_t === 'left' ? 'top' : 'left';
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 
-			var target = root.children(':not(.divider)').eq(index);
-			var divider = $('<div class="divider"></div>');
+			var $target = this.getBoxByIndex(index);
+			var $divider = $('<div class="divider"></div>');
 
-			box = $(box);
+			var $box = $(box);
 
-			target.after(box);
-			target.after(divider);
+			$target.after($box);
+			$target.after($divider);
 
-			var targetWH = target[w_h](true) - divider[outerW_H](true) - box[outerW_H](true);
+			var targetWH = $target[w_h](true) - $divider[outerW_H](true) - $box[outerW_H](true);
 
-			var mbpSize = this._getMBPSize(target, w_h);
-			if (targetWH <= mbpSize)
+			var mbpSize = this._getMBPSize($target, w_h);
+			if (targetWH <= mbpSize) {
 				targetWH = mbpSize + 1;
-			this._setOuterSize(target, w_h, targetWH);
+			}
+			this._setOuterSize($target, w_h, targetWH);
 			//jQueryが古いと以下のようにする必要があるかもしれない。1.8.3だと以下で動作しない。何かのオブジェクトが返ってくる。
 			//divider.css(l_t, target.position()[l_t] + target[outerW_H]({margin:true}));
-			divider.css(l_t, target.position()[l_t] + target[outerW_H](true));
-			divider.css(t_l, divider.position()[t_l]);
-			divider.css('position', 'absolute');
-			divider.css('cursor', (type == 'x') ? 'col-resize' : 'row-resize');
+			$divider.css(l_t, $target.position()[l_t] + $target[outerW_H](true));
+			$divider.css(t_l, $divider.position()[t_l]);
+			$divider.css('position', 'absolute');
+			$divider.css('cursor', (type === 'x') ? 'col-resize' : 'row-resize');
 
-			box.css(l_t, divider.position()[l_t] + divider[outerW_H](true));
-			box.css(t_l, 0);
-			box.css('position', 'absolute');
+			$box.css(l_t, $divider.position()[l_t] + $divider[outerW_H](true));
+			$box.css(t_l, 0);
+			$box.css('position', 'absolute');
 
-			var next = box.next();
+			var $nextDivider = this._getNextDividerByBox($box);
 			var distance = 0;
-			if (next.length > 0) {
-				distance = next.position()[l_t] - box.position()[l_t];
+			if ($nextDivider.length) {
+				distance = $nextDivider.position()[l_t] - $box.position()[l_t];
 			} else {
-				distance = root[w_h]() - box.position()[l_t];
+				distance = root[w_h]() - $box.position()[l_t];
 			}
-			var boxOuterWH = box[outerW_H](true);
+			var boxOuterWH = $box[outerW_H](true);
 			if (distance < boxOuterWH) {
-				this._setOuterSize(box, w_h, distance);
+				this._setOuterSize($box, w_h, distance);
 			}
 
-			var dividerHandler = $('<div class="dividerHandler"></div>');
-			divider.append('<div style="height:50%;"></div>');
-			dividerHandler = $('<div class="dividerHandler"></div>');
-			divider.append(dividerHandler);
-			dividerHandler.css({
-				'margin-top': -dividerHandler.height() / 2
+			var $dividerHandler = $('<div class="dividerHandler"></div>');
+			$divider.append('<div style="height:50%;"></div>');
+			$dividerHandler = $('<div class="dividerHandler"></div>');
+			$divider.append($dividerHandler);
+			$dividerHandler.css({
+				'margin-top': -$dividerHandler.height() / 2
 			});
-			if (type == 'y') {
-				dividerHandler.css({
+			if (type === 'y') {
+				$dividerHandler.css({
 					'margin-left': 'auto',
 					'margin-right': 'auto'
 				});
 			} else {
-				dividerHandler.css({
-					'margin-left': (divider.width() - dividerHandler.width()) / 2
+				$dividerHandler.css({
+					'margin-left': ($divider.width() - $dividerHandler.width()) / 2
 				});
 			}
 
 			this._triggerBoxSizeChange();
 		},
 
+		/**
+		 * ボックスの最小化
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index 最小化するボックスのインデックス
+		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 */
 		minimize: function(index, opt) {
 			this.resize(index, 0, opt);
 		},
+
+		/**
+		 * ボックスの最大化
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index 最大化するボックスのインデックス
+		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 */
 		maximize: function(index, opt) {
 			this.resize(index, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
 				partition: 0.5
 			}));
 		},
 
+		/**
+		 * ボックスの中身の大きさを自動取得し、そのサイズにリサイズします
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index リサイズするボックスのインデックス
+		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 */
 		fitToContents: function(index, opt) {
 			this.resize(index, null, opt);
 		},
 
+		/**
+		 * {@link h5.ui.container.DividedBox#hide}で非表示にしたボックスを表示します
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index 表示するボックスのインデックス
+		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 */
 		show: function(index, opt) {
 			// hide状態のボックスを表示
 			var $box = this.getBoxByIndex(index);
@@ -330,28 +389,36 @@
 			var $prevDivider = this._getPrevDividerByBox($box);
 			var $nextDivider = this._getNextDividerByBox($box);
 			if ($prevDivider.length) {
-				this.showDivider($prevDivider);
+				this._showDivider($prevDivider);
 			} else if ($nextDivider.length) {
-				this.showDivider($nextDivider, true);
+				this._showDivider($nextDivider, true);
 			}
 
 			// コンテンツの大きさにリサイズ
 			this.fitToContents(index, opt);
 		},
 
+		/**
+		 * ボックスを非表示にします
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index 非表示にするボックスのインデックス
+		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 */
 		hide: function(index, opt) {
 			var $box = this.getBoxByIndex(index);
 			if (!$box.length) {
 				return;
 			}
-			// 指定されたindexのボックスのどちらか片方のdividerを非表示にする
-			// 両側にdividerのあるboxの場合、残ったdividerは隠されたboxを無視して動作するdividerとして動作する
+			// 指定されたindexの左(上)側ボックスのどちらか片方のdividerを非表示にする
+			// 右(下)側にdividerのあるboxの場合、そのdividerは隠されたboxを無視して動作するdividerとして動作する
+			// 左(上)端のボックスでdividerが右(下)にしかない場合はそのdividerを非表示にする
 			var $prevDivider = this._getPrevDividerByBox($box);
 			var $nextDivider = this._getNextDividerByBox($box);
 			if ($prevDivider.length) {
-				this.hideDivider($prevDivider);
+				this._hideDivider($prevDivider);
 			} else if ($nextDivider) {
-				this.hideDivider($nextDivider, true);
+				this._hideDivider($nextDivider, true);
 			}
 
 			// 0にリサイズ
@@ -361,55 +428,14 @@
 		},
 
 		/**
-		 * 指定されたdividerを非表示にする
-		 *
-		 * @param {DOM|jQuery} divider要素
-		 * @param {Boolean} [fixPrev=false]
-		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
-		 */
-		hideDivider: function(divider, fixPrev) {
-			var $divider = $(divider);
-			if ($divider.css('display') === 'none') {
-				return;
-			}
-			var w_h = this._w_h;
-			var l_t = this._l_t;
-			var dividerWH = $divider[w_h]();
-			$divider.css('display', 'none');
-			if (fixPrev) {
-				var $prevBox = this._getPrevBoxByDivider($divider);
-				$prevBox.css(w_h, '+=' + (dividerWH));
-			} else {
-				var $nextBox = this._getNextBoxByDivider($divider);
-				$nextBox.css(l_t, '-=' + (dividerWH));
-				$nextBox.css(w_h, '+=' + (dividerWH));
-			}
-		},
-
-		/**
-		 * 指定されたdividerを表示する
-		 *
-		 * @param {DOM|jQuery} divider要素
-		 * @param {Boolean} [fixPrev=false]
-		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
-		 */
-		showDivider: function(divider, fixPrev) {
-			var $divider = $(divider);
-			if ($divider.css('display') === 'block') {
-				return;
-			}
-			$divider.css('display', 'block');
-			this.refresh();
-		},
-
-		/**
 		 * 引数に指定されたindexに対応するボックス要素を返します
 		 *
+		 * @memberOf h5.ui.container.DividedBox
 		 * @param {Integer} index
 		 * @returns {jQuery}
 		 */
 		getBoxByIndex: function(index) {
-			return this.$find('> :not(.divider)').eq(index);
+			return this._getBoxes().eq(index);
 		},
 
 		/**
@@ -433,12 +459,20 @@
 			var opt = opt || {};
 			var partition = parseFloat(opt.partition) || 0;
 
-			var l_t = this._l_t;
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
-			var scrollW_H = this._triggerBoxSizeChange();
 
 			var $targetBox = this.getBoxByIndex(index);
+
+			// partitionに合わせて両サイドのdividerを動かす
+			// dividerがそもそも片方にしか無い場合はpartitionに関係なくその1つのdividerを動かす
+			var $prevDivider = this._getPrevDividerByBox($targetBox);
+			var $nextDivider = this._getNextDividerByBox($targetBox);
+
+			if (!$prevDivider.length && !$nextDivider.length) {
+				// dividerが無い場合は何もしない
+				return;
+			}
 
 			if (size == null) {
 				// nullの場合は中身の要素を設定
@@ -447,17 +481,13 @@
 
 				// FIXME StateBoxが子コントローラだった場合はgetControllers()で取得できないので、data属性を使って取得
 				var stateBox = $targetBox.data('h5controller-statebox-instance');
-				if (stateBox.getContentsSize) {
+				if (stateBox && stateBox.getContentsSize) {
 					size = stateBox.getContentsSize()[w_h];
 				} else {
 					size = $targetBox[0][this._scrollW_H]();
 				}
 			}
 
-			// partitionに合わせて両サイドのdividerを動かす
-			// dividerがそもそも片方にしか無い場合はpartitionに関係なくその1つのdividerを動かす
-			var $prevDivider = this._getPrevDividerByBox($targetBox);
-			var $nextDivider = this._getNextDividerByBox($targetBox);
 
 			var totalMove = size - $targetBox[outerW_H]();
 			if (!$prevDivider.length) {
@@ -476,6 +506,12 @@
 			}
 		},
 
+		/**
+		 * dividerのトラック操作開始時イベントハンドラ
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param context
+		 */
 		'> .divider h5trackstart': function(context) {
 			var l_t = this._l_t;
 			var outerW_H = this._outerW_H;
@@ -488,19 +524,96 @@
 			this._nextEnd = next.position()[l_t] + next[outerW_H](true) - divider[outerW_H](true);
 		},
 
+		/**
+		 * dividerのトラック操作中イベントハンドラ
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param context
+		 */
 		'> .divider h5trackmove': function(context) {
 			context.event.preventDefault();
 			var divider = $(context.event.currentTarget);
 			var l_t = this._l_t;
-			var move = (l_t == 'left') ? context.event.dx : context.event.dy;
-			if (move == 0)
+			var move = (l_t === 'left') ? context.event.dx : context.event.dy;
+			if (move === 0)
 				return;
 			this._move(move, divider, this._prevStart, this._nextEnd, this._lastPos, true);
 			this._lastPos = divider.position();
 		},
 
+		/**
+		 * dividerのトラック操作終了イベントハンドラ
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param context
+		 */
+		'> .divider h5trackend': function(context) {
+			// キャッシュした値のクリア
+			this._lastPos = null;
+			this._prevStart = null;
+			this._nextEnd = null;
+		},
+
+		/**
+		 * 指定されたdividerを非表示にする
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {DOM|jQuery} divider要素
+		 * @param {Boolean} [fixPrev=false]
+		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
+		 */
+		_hideDivider: function(divider, fixPrev) {
+			var $divider = $(divider);
+			if ($divider.css('display') === 'none') {
+				return;
+			}
+			var w_h = this._w_h;
+			var l_t = this._l_t;
+			var dividerWH = $divider[w_h]();
+			$divider.css('display', 'none');
+			if (fixPrev) {
+				var $prevBox = this._getPrevBoxByDivider($divider);
+				$prevBox.css(w_h, '+=' + (dividerWH));
+			} else {
+				var $nextBox = this._getNextBoxByDivider($divider);
+				$nextBox.css(l_t, '-=' + (dividerWH));
+				$nextBox.css(w_h, '+=' + (dividerWH));
+			}
+		},
+
+		/**
+		 * 指定されたdividerを表示する
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {DOM|jQuery} divider要素
+		 * @param {Boolean} [fixPrev=false]
+		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
+		 */
+		_showDivider: function(divider, fixPrev) {
+			var $divider = $(divider);
+			if ($divider.css('display') === 'block') {
+				return;
+			}
+			$divider.css('display', 'block');
+			this.refresh();
+		},
+
+		/**
+		 * dividerを動かす
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} move 移動量
+		 * @param {DOM|jQuery} divider divider
+		 * @param {Integer} prevStart 左(上)の移動限界位置(指定しない場合は_move内で計算)
+		 * @param {Integer} nextStart 右(下)の移動限界位置(指定しない場合は_move内で計算)
+		 * @param {Object} lastPost 移動前の位置(指定しない場合は_move内で計算)
+		 * @param {Boolean} isTrack トラック操作による呼び出しかどうか
+		 */
 		_move: function(move, divider, prevStart, nextEnd, lastPos, isTrack) {
-			if (move == 0) {
+			if (move === 0) {
 				return;
 			}
 			var $divider = $(divider);
@@ -558,18 +671,18 @@
 			this._triggerBoxSizeChange();
 		},
 
-		'> .divider h5trackend': function(context) {
-			this._lastPos = null;
-			this._prevStart = null;
-			this._nextEnd = null;
-		},
-
+		/**
+		 * 位置の調整を行う
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 */
 		_adjust: function() {
 			var l_t = this._l_t;
 			var w_h = this._w_h;
 			var root = this._root;
 			var outerW_H = this._outerW_H;
-			var $dividers = this.$find('> .divider');
+			var $dividers = this._getDividers();
 
 			var adjustAreaWH = root[w_h]();
 
@@ -589,7 +702,7 @@
 				$next.css(l_t, ($next.position()[l_t] + move));
 			}));
 
-			var $boxes = this.$find('> :not(.divider)');
+			var $boxes = this._getBoxes();
 			$boxes.each(this.ownWithOrg(function(orgThis, index) {
 				var $box = $(orgThis);
 				if ($box.data(DATA_HIDDEN)) {
@@ -612,33 +725,97 @@
 			this._lastAdjustAreaWH = adjustAreaWH;
 		},
 
-		_setOuterSize: function(element, w_h, outerSize) {
-			element[w_h](outerSize - this._getMBPSize(element, w_h));
+		/**
+		 * 要素のouterWidthまたはouterHeightがouterSizeになるようにサイズを設定する
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {jQuery} $el
+		 * @param {String} w_h 'width'または'height'
+		 * @param {Integer} outerSize
+		 */
+		_setOuterSize: function($el, w_h, outerSize) {
+			$el[w_h](outerSize - this._getMBPSize($el, w_h));
 		},
 
+		/**
+		 * 要素のマージン+ボーダー+パディングの値を計算する
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {jQuery} $el
+		 * @param {String} w_h 'width'または'height'
+		 */
 		_getMBPSize: function(element, w_h) {
-			var outerW_H = w_h == 'width' ? 'outerWidth' : 'outerHeight';
+			var outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
 			return element[outerW_H](true) - element[w_h]();
 		},
 
-		//prototype.js v1.5.0 より
+		/**
+		 * エレメント内のホワイトスペース(===空のTEXT_NODE)を削除
+		 * <p>
+		 * prototype.js v1.5.0のElement.cleanWhitespace()相当のことを行っている
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {DOM} element
+		 */
 		_cleanWhitespace: function(element) {
 			var node = element.firstChild;
 			while (node) {
 				var nextNode = node.nextSibling;
-				if (node.nodeType == 3 && !/\S/.test(node.nodeValue))
+				if (node.nodeType === 3 && !/\S/.test(node.nodeValue))
 					element.removeChild(node);
 				node = nextNode;
 			}
 			return element;
 		},
 
+		/**
+		 * 全てのボックスについて、boxSizeChangeイベントをあげる
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 */
 		_triggerBoxSizeChange: function() {
-			this.$find('> :not(.divider)').each(function() {
-				$(this).trigger('boxSizeChange');
+			this._getBoxes().each(function() {
+				$(this).trigger(EVENT_BOX_SIZE_CHANGE);
 			});
 		},
 
+		/**
+		 * 全てのボックスを取得
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
+		_getBoxes: function() {
+			return this.$find('> :not(.divider)');
+		},
+
+		/**
+		 * 全てのdividerを取得
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
+		_getDividers: function() {
+			return this.$find('> .divider');
+		},
+
+		/**
+		 * 指定されたdividerの前のボックスを返す
+		 * <p>
+		 * ただし非表示のボックスは除いてその前のボックスを返す
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
 		_getPrevBoxByDivider: function(divider) {
 			var $divider = $(divider);
 			var $box = $divider.prev();
@@ -649,6 +826,17 @@
 			}
 			return $box;
 		},
+
+		/**
+		 * 指定されたdividerの次のボックスを返す
+		 * <p>
+		 * ただし非表示のボックスは除く
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
 		_getNextBoxByDivider: function(divider) {
 			var $divider = $(divider);
 			var $box = $divider.next();
@@ -659,6 +847,17 @@
 			}
 			return $box;
 		},
+
+		/**
+		 * 指定されたボックスの前のdividerを返す
+		 * <p>
+		 * ただし非表示のdividerは除いてその前のdividerを返す
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
 		_getPrevDividerByBox: function(box) {
 			var $box = $(box);
 			var $divider = $box.prev();
@@ -670,6 +869,17 @@
 			}
 			return $divider;
 		},
+
+		/**
+		 * 指定されたボックスの次のdividerを返す
+		 * <p>
+		 * ただし非表示のdividerは除いてその次のdividerを返す
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 * @returns {jQuery}
+		 */
 		_getNextDividerByBox: function(box) {
 			var $box = $(box);
 			var $divider = $box.next();
