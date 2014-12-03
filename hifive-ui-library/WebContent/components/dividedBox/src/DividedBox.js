@@ -44,6 +44,9 @@
 			this._currentState = state;
 			this.trigger(EVENT_STATE_CHANGE, state);
 		},
+		getState: function() {
+			return this._currentState;
+		},
 		getContentsSize: function() {
 			var $current = this._getStateBoxByState(this._currentState);
 			// TODO outerWidth/Heightかどうかはオプション？
