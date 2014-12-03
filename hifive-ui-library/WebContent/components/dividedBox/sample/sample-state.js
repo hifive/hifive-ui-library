@@ -133,14 +133,14 @@
 			var $ctrlGroup = $el.parents('.control-group');
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
 			var index = $ctrlGroup.find('[name="index"]').val();
-			targetController.hideDivider(index);
+			targetController.hideDivider(parseInt(index));
 		},
 
 		'.show-divider click': function(context, $el){
 			var $ctrlGroup = $el.parents('.control-group');
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
 			var index = $ctrlGroup.find('[name="index"]').val();
-			targetController.showDivider(index);
+			targetController.showDivider(parseInt(index));
 		}
 	};
 	h5.core.expose(sampleController);

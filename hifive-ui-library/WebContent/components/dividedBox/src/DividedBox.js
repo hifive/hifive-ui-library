@@ -809,7 +809,7 @@
 		 */
 		_getDividerElement: function(divider) {
 			var $dividers = this._getDividers();
-			if (!isNaN(parseInt(divider))) {
+			if (typeof divider === 'number') {
 				return $dividers.eq(divider);
 			}
 			return $dividers.filter(divider).eq(0);
@@ -825,7 +825,7 @@
 		 */
 		_getBoxElement: function(box) {
 			var $boxes = this._getBoxes();
-			if (!isNaN(parseInt(box))) {
+			if (typeof box === 'number') {
 				return $boxes.eq(box);
 			}
 			return $boxes.filter(box).eq(0);
