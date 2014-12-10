@@ -136,7 +136,7 @@
 			this._l_t = (type === 'x') ? 'left' : 'top';
 
 			var outerW_H = this._outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
-			this._scrollW_H = w_h === 'width' ? 'scrollWidth' : 'scrolleight';
+			this._scrollW_H = w_h === 'width' ? 'scrollWidth' : 'scrollHeight';
 
 			// サイズ固定が指定されているボックスは、dividedBox適用時のサイズに固定
 			if (root.hasClass(CLASS_FREEZE_SIZE)) {
