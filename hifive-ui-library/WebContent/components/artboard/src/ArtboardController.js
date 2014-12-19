@@ -194,27 +194,27 @@
 })();
 
 //----------------------------------------------------------------------------
-// h5.ui.components.drawing.logic.ArtboadCommandLogic
+// h5.ui.components.artboard.logic.ArtboadCommandLogic
 //----------------------------------------------------------------------------
 (function() {
 	/**
 	 * ArtboadCommandLogic
 	 * <p>
-	 * ArtboadCommandLogicは{@link h5.ui.components.drawing.logic.ArtboadCommandLogic}によって生成されたコマンドのトランザクション管理を行います。
+	 * ArtboadCommandLogicは{@link h5.ui.components.artboard.logic.ArtboadCommandLogic}によって生成されたコマンドのトランザクション管理を行います。
 	 * </p>
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.logic.ArtboadCommandLogic
+	 * @name h5.ui.components.artboard.logic.ArtboadCommandLogic
 	 */
 	var artboadCommandLogic = {
 		/**
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @type String
 		 */
-		__name: 'h5.ui.components.drawing.logic.ArtboadCommandLogic',
+		__name: 'h5.ui.components.artboard.logic.ArtboadCommandLogic',
 
 		/**
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @type CommandManager
 		 */
 		_commandManager: null,
@@ -257,7 +257,7 @@
 		 * noExecuteがtrueの場合はコマンドを実行せずに登録します。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @param {Command} command コマンド
 		 * @param {Integer} transactionId トランザクションID
 		 * @param {boolean} noExecute 実行しない場合はtrueを指定
@@ -283,7 +283,7 @@
 		 * appendCommandでtransactionIdを指定しないでコマンドが追加されたとき、アップデートセッショントランザクションに登録されます。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		beginUpdate: function() {
 			if (this._updateTransactionId) {
@@ -296,7 +296,7 @@
 		/**
 		 * アップデートセッションを終了します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @param {boolean} noExecute 実行しない場合はtrueを指定
 		 */
 		endUpdate: function() {
@@ -312,7 +312,7 @@
 		/**
 		 * トランザクションを生成し、トランザクションIDを返します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @returns {Integer} トランザクションID
 		 */
 		createTransaction: function() {
@@ -324,7 +324,7 @@
 		/**
 		 * トランザクションのコミット
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @param transactionId トランザクションID
 		 * @param {boolean} noExecute 実行しない場合はtrueを指定
 		 */
@@ -334,7 +334,7 @@
 				return;
 			}
 			var command = commands.length === 1 ? commands[0]
-					: new h5.ui.components.drawing.SequenceCommand(commands);
+					: new h5.ui.components.artboard.SequenceCommand(commands);
 			delete this._transactionMap[transactionId];
 			this.appendCommand(command, null, noExecute);
 		},
@@ -342,19 +342,19 @@
 		/**
 		 * トランザクションの中断
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 * @param transactionId
 		 */
 		abortTransaction: function(transactionId) {
 			var sequenceCommand = this._transactionMap[transactionId];
 			delete this._transactionMap[transactionId];
-			new h5.ui.components.drawing.SequenceCommand(sequenceCommand).undo();
+			new h5.ui.components.artboard.SequenceCommand(sequenceCommand).undo();
 		},
 
 		/**
 		 * 取り消し
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		undo: function() {
 			this._commandManager.undo();
@@ -363,7 +363,7 @@
 		/**
 		 * やり直し
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		redo: function() {
 			this._commandManager.redo();
@@ -372,7 +372,7 @@
 		/**
 		 * 履歴をすべて削除
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.ArtboadCommandLogic
+		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		clearAll: function() {
 			this.abortTransaction();
@@ -383,7 +383,7 @@
 })();
 
 //----------------------------------------------------------------------------
-// h5.ui.components.drawing.controller.ArtboardController
+// h5.ui.components.artboard.controller.ArtboardController
 //----------------------------------------------------------------------------
 (function() {
 	//------------------------------------------------------------
@@ -391,29 +391,29 @@
 	//------------------------------------------------------------
 	// CommandManagerが上げるイベント名
 	/** undoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_UNDO = h5.ui.components.drawing.consts.EVENT_ENABLE_UNDO;
+	var EVENT_ENABLE_UNDO = h5.ui.components.artboard.consts.EVENT_ENABLE_UNDO;
 
 	/** redoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_REDO = h5.ui.components.drawing.consts.EVENT_ENABLE_REDO;
+	var EVENT_ENABLE_REDO = h5.ui.components.artboard.consts.EVENT_ENABLE_REDO;
 
 	/** undoができなくなった時に上がるイベント名 */
-	var EVENT_DISABLE_UNDO = h5.ui.components.drawing.consts.EVENT_DISABLE_UNDO;
+	var EVENT_DISABLE_UNDO = h5.ui.components.artboard.consts.EVENT_DISABLE_UNDO;
 
 	/** redoが出来なくなったときに上がるイベント名 */
-	var EVENT_DISABLE_REDO = h5.ui.components.drawing.consts.EVENT_DISABLE_REDO;
+	var EVENT_DISABLE_REDO = h5.ui.components.artboard.consts.EVENT_DISABLE_REDO;
 
 	// ArtboardControllerが上げるイベント名
 	/** 描画操作を開始した時に上がるイベント名 */
-	var EVENT_DRAWSTART = h5.ui.components.drawing.consts.EVENT_DRAWSTART;
+	var EVENT_DRAWSTART = h5.ui.components.artboard.consts.EVENT_DRAWSTART;
 
 	/** 描画操作を終了した時に上がるイベント名 */
-	var EVENT_DRAWEND = h5.ui.components.drawing.consts.EVENT_DRAWEND;
+	var EVENT_DRAWEND = h5.ui.components.artboard.consts.EVENT_DRAWEND;
 
 	/** 図形を選択した時に上がるイベント名 */
-	var EVENT_SELECT_SHAPE = h5.ui.components.drawing.consts.EVENT_SELECT_SHAPE;
+	var EVENT_SELECT_SHAPE = h5.ui.components.artboard.consts.EVENT_SELECT_SHAPE;
 
 	/** 図形の選択を解除した時に上がるイベント名 */
-	var EVENT_UNSELECT_SHAPE = h5.ui.components.drawing.consts.EVENT_UNSELECT_SHAPE;
+	var EVENT_UNSELECT_SHAPE = h5.ui.components.artboard.consts.EVENT_UNSELECT_SHAPE;
 
 	//------------------------------------------------------------
 	// Body
@@ -422,41 +422,41 @@
 	 * DrawingLogicを使って描画を行うコントローラ
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.controller.ArtboardController
+	 * @name h5.ui.components.artboard.controller.ArtboardController
 	 */
 	var controller = {
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
-		__name: 'h5.ui.components.drawing.controller.ArtboardController',
+		__name: 'h5.ui.components.artboard.controller.ArtboardController',
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @type h5.ui.components.SelectionLogic
 		 */
 		selectionLogic: h5.ui.components.SelectionLogic,
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
-		 * @type h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 * @type h5.ui.components.artboard.logic.DrawingLogic
 		 */
-		drawingLogic: h5.ui.components.drawing.logic.DrawingLogic,
+		drawingLogic: h5.ui.components.artboard.logic.DrawingLogic,
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
-		artboadCommandLogic: h5.ui.components.drawing.logic.ArtboadCommandLogic,
+		artboadCommandLogic: h5.ui.components.artboard.logic.ArtboadCommandLogic,
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		imageSourceMap: {},
 
 		/**
 		 * 描画モード(定数)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		MODE_DISABLE: 0,
@@ -471,7 +471,7 @@
 		/**
 		 * canvas要素(__initで設定)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_canvas: null,
@@ -479,7 +479,7 @@
 		/**
 		 * canvas要素のcontext(__initで設定)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_canvasContext: null,
@@ -487,7 +487,7 @@
 		/**
 		 * 描画レイヤ要素
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_layers: null,
@@ -495,7 +495,7 @@
 		/**
 		 * トラック操作中に保持するデータ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_trackingData: null,
@@ -503,7 +503,7 @@
 		/**
 		 * トラックして範囲選択するときに表示する要素(__initで設定)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_$selectionScopeRectangle: null,
@@ -517,7 +517,7 @@
 		 * デフォルト#000
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeColor: '#000',
@@ -528,7 +528,7 @@
 		 * デフォルト#fff
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_fillColor: '#fff',
@@ -539,7 +539,7 @@
 		 * デフォルト5
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeWidth: 5,
@@ -547,7 +547,7 @@
 		/**
 		 * 線のopacity
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeOpacity: '1',
@@ -555,7 +555,7 @@
 		/**
 		 * 塗りつぶしのopacity
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_fillOpacity: '1',
@@ -566,7 +566,7 @@
 		 * デフォルト'none'
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeFill: 'none',
@@ -577,7 +577,7 @@
 		 * 'miter','round','bevel'のいずれか。(デフォルト'round')
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeLinejoin: 'round',
@@ -588,7 +588,7 @@
 		 * 'butt','round','square'のいずれか。(デフォルト'round')
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_strokeLinecap: 'round',
@@ -596,7 +596,7 @@
 		/**
 		 * 多角形の継ぎ目に利用される形状(デフォルト'miter')
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		_polygonLinejoin: 'miter',
@@ -604,7 +604,7 @@
 		/**
 		 * 描画モードの設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param mode
 		 */
 		setMode: function(mode) {
@@ -621,7 +621,7 @@
 		/**
 		 * 線の色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param color
 		 */
 		setStrokeColor: function(color) {
@@ -631,7 +631,7 @@
 		/**
 		 * 塗りつぶしの色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param color
 		 */
 		setFillColor: function(color) {
@@ -641,7 +641,7 @@
 		/**
 		 * 線のopacity設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param opacity
 		 */
 		setStrokeOpacity: function(opacity) {
@@ -650,7 +650,7 @@
 		/**
 		 * 塗りつぶしのopacity設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param opacity
 		 */
 		setFillOpacity: function(opacity) {
@@ -660,7 +660,7 @@
 		/**
 		 * 線の太さ設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param lineWidth
 		 */
 		setStrokeWidth: function(lineWidth) {
@@ -678,7 +678,7 @@
 		/**
 		 * ストロークされる際の継ぎ目に利用される形状(bevel,round,miterの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param strokeLinejoin
 		 */
 		setStrokeLinejoin: function(strokeLinejoin) {
@@ -688,7 +688,7 @@
 		/**
 		 * ストロークの両端に利用される形状(butt, round, squareの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param strokeLinecap
 		 */
 		setStrokeLinecap: function(strokeLinecap) {
@@ -698,7 +698,7 @@
 		/**
 		 * 多角形の継ぎ目に利用される形状(bevel,round,miterの何れか)
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param polygonLinejoin
 		 */
 		setPolygonLinejoin: function(polygonLinejoin) {
@@ -706,7 +706,7 @@
 		},
 
 		/**
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 */
 		__init: function() {
@@ -726,7 +726,7 @@
 			var backgroundLayerElement = $layers.find('.background-layer')[0];
 
 			// ロジックの初期化
-			var commandManager = new h5.ui.components.drawing.CommandManager();
+			var commandManager = new h5.ui.components.artboard.CommandManager();
 			this.artboadCommandLogic.init(commandManager);
 			this.drawingLogic.init(svgLayerElement, backgroundLayerElement,
 					this.artboadCommandLogic);
@@ -754,7 +754,7 @@
 		/**
 		 * canvasをクリア
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		clearCanvas: function() {
 			var ctx = this._canvasContext;
@@ -772,7 +772,7 @@
 		 * canvasにイベントが来るのは描画モードの場合のみ
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackstart': function(context) {
@@ -796,7 +796,7 @@
 		/**
 		 * canvas要素のトラックイベント
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackmove': function(context) {
@@ -809,7 +809,7 @@
 		/**
 		 * canvas要素のトラックイベント
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{this._canvas} h5trackend': function(context) {
@@ -824,7 +824,7 @@
 		/**
 		 * 選択モード(canvasが無い)時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackstart': function(context) {
@@ -853,7 +853,7 @@
 		/**
 		 * 選択モード時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackmove': function(context) {
@@ -872,7 +872,7 @@
 		/**
 		 * 選択モード時のトラック操作のハンドラ
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param context
 		 */
 		'{rootElement} h5trackend': function(context) {
@@ -917,7 +917,7 @@
 		/**
 		 * 描画されている図形からセーブデータを作成します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @returns {DrawingSaveData}
 		 */
 		save: function() {
@@ -927,7 +927,7 @@
 		/**
 		 * セーブデータををロードして描画します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {DrawingSaveData}
 		 */
 		load: function(artboardSaveData) {
@@ -937,7 +937,7 @@
 		/**
 		 * 操作の取り消し
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		undo: function() {
 			this.drawingLogic.undo();
@@ -946,7 +946,7 @@
 		/**
 		 * 操作のやり直し
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		redo: function() {
 			this.drawingLogic.redo();
@@ -961,7 +961,7 @@
 		 * 描画や既存の図形の変更などの操作を複数回行った結果を１つのundoデータにしたい場合はこのメソッドを使用してください
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		beginUpdate: function() {
 			this.artboadCommandLogic.beginUpdate();
@@ -970,7 +970,7 @@
 		/**
 		 * アップデートセッションの終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {boolean} shouldMerge 直前の同一トランザクションのコマンドとマージできる場合にマージするかどうか
 		 */
 		endUpdate: function(shouldMerge) {
@@ -983,7 +983,7 @@
 		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} [processParameter]
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
@@ -995,7 +995,7 @@
 		/**
 		 * 管理下にある図形を全て取得します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
 		 * @returns {DRShape[]}
 		 */
@@ -1006,7 +1006,7 @@
 		/**
 		 * 渡された図形のIDを返します
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {DRShape} shape
 		 * @returns {String}
 		 */
@@ -1020,7 +1020,7 @@
 		/**
 		 * 矩形を描画する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅
@@ -1042,7 +1042,7 @@
 		/**
 		 * 楕円を描画する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Integer} cx 楕円の中心位置のx座標
 		 * @param {Integer} cy 楕円の中心位置のy座標
 		 * @param {Integer} rx 楕円の水平方向の半径
@@ -1071,7 +1071,7 @@
 		 * 'M 100 200 l 10 20 -10 -10'
 		 * </pre>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {String} pathData
 		 * @returns {DRPath}
 		 */
@@ -1096,7 +1096,7 @@
 		 * クローンしてdivレイヤに配置します
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Object} data
 		 *
 		 * <pre class="sh_javascript">
@@ -1126,7 +1126,7 @@
 		 * href="#setBackgroundImage">setBackgroundImage</a>を使用してください
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {String} color 指定無しの場合は背景色は変更しません
 		 * @param {Object} backgroundImageData 指定無しの場合は背景画像は変更しません
 		 */
@@ -1146,7 +1146,7 @@
 		/**
 		 * 背景色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {String} color 色
 		 */
 		setBackgroundColor: function(color) {
@@ -1156,7 +1156,7 @@
 		/**
 		 * 背景画像をクリアします
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		clearBackgroundImage: function() {
 			this.drawingLogic.clearBackgroundImage();
@@ -1177,7 +1177,7 @@
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -1197,7 +1197,7 @@
 		/**
 		 * 図形の追加
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {DRShape} shape
 		 */
 		append: function(shape) {
@@ -1207,7 +1207,7 @@
 		/**
 		 * 図形の削除
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {DRShape} shape
 		 */
 		remove: function(shape) {
@@ -1225,7 +1225,7 @@
 		/**
 		 * ペン描画開始
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1237,7 +1237,7 @@
 		/**
 		 * ペン描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1268,7 +1268,7 @@
 		/**
 		 * ペン描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1296,7 +1296,7 @@
 		/**
 		 * ライン描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1325,7 +1325,7 @@
 		/**
 		 * ライン描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1362,7 +1362,7 @@
 		/**
 		 * 矩形描画移動
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1396,7 +1396,7 @@
 		/**
 		 * 矩形描画終了
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1664,7 +1664,7 @@
 		/**
 		 * 図形の選択
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Shape|Shape[]} shapes
 		 * @param {Boolean} isExclusive trueの場合は既に選択状態の図形について選択状態を解除する
 		 */
@@ -1691,7 +1691,7 @@
 		/**
 		 * 図形の選択状態を解除
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @param {Shape|Shape[]} shapes
 		 */
 		unselect: function(shapes) {
@@ -1711,7 +1711,7 @@
 		/**
 		 * 全ての描画されている図形を選択状態にする
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		selectAll: function() {
 			this.select(this.getAllShapes(true));
@@ -1720,7 +1720,7 @@
 		/**
 		 * 全ての選択状態である図形について選択状態を解除
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 */
 		unselectAll: function(Shapes) {
 			var selectionLogic = this.selectionLogic;
@@ -1738,7 +1738,7 @@
 		/**
 		 * 選択されている図形リストを取得
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @returns {Shapes[]}
 		 */
 		getSelectedShapes: function() {
@@ -1747,7 +1747,7 @@
 		/**
 		 * セレクトモード時の選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1800,7 +1800,7 @@
 		/**
 		 * セレクトモード時のドラッグ選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1840,7 +1840,7 @@
 		/**
 		 * セレクトモード時のドラッグ選択操作
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param context
 		 */
@@ -1869,7 +1869,7 @@
 		/**
 		 * 指定された図形について、選択範囲表示を削除する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param shape
 		 */
@@ -1881,7 +1881,7 @@
 		/**
 		 * 指定された図形について、選択範囲表示を表示する
 		 *
-		 * @memberOf h5.ui.components.drawing.controller.ArtboardController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @param shape
 		 */

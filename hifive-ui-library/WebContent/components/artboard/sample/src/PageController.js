@@ -47,7 +47,7 @@
 		 * @memberOf sample.PageController
 		 */
 
-		_artboardController: h5.ui.components.drawing.controller.ArtboardController,
+		_artboardController: h5.ui.components.artboard.controller.ArtboardController,
 
 		/**
 		 * ToolbarController

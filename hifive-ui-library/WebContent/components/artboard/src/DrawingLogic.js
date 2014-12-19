@@ -39,7 +39,7 @@
 	/** ドキュメントツリー上にない要素で作成したRemoveCommandを実行した時のエラーメッセージ */
 	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = 'removeはレイヤに追加されている要素のみ実行できます';
 
-	h5.u.obj.expose('h5.ui.components.drawing', {
+	h5.u.obj.expose('h5.ui.components.artboard', {
 		consts: {
 			EVENT_ENABLE_UNDO: EVENT_ENABLE_UNDO,
 			EVENT_ENABLE_REDO: EVENT_ENABLE_REDO,
@@ -141,10 +141,10 @@
 	//------------------------------------------------------------
 	// Cache
 	//------------------------------------------------------------
-	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = h5.ui.components.drawing.message.ERR_MSG_CANNOT_REMOVE_NOT_APPENDED;
-	var useDataForGetBBox = h5.ui.components.drawing.useDataForGetBBox;
-	var setBoundsData = h5.ui.components.drawing.setBoundsData;
-	var getBounds = h5.ui.components.drawing.getBounds;
+	var ERR_MSG_CANNOT_REMOVE_NOT_APPENDED = h5.ui.components.artboard.message.ERR_MSG_CANNOT_REMOVE_NOT_APPENDED;
+	var useDataForGetBBox = h5.ui.components.artboard.useDataForGetBBox;
+	var setBoundsData = h5.ui.components.artboard.setBoundsData;
+	var getBounds = h5.ui.components.artboard.getBounds;
 
 	//------------------------------------------------------------
 	// Body
@@ -702,7 +702,7 @@
 		}
 	});
 
-	h5.u.obj.expose('h5.ui.components.drawing', {
+	h5.u.obj.expose('h5.ui.components.artboard', {
 		Command: Command,
 		CustomCommand: CustomCommand,
 		AppendCommand: AppendCommand,
@@ -721,7 +721,7 @@
 	/**
 	 * SVGの名前空間
 	 */
-	var XLINKNS = h5.ui.components.drawing.consts.XLINKNS;
+	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
 
 	//------------------------------------------------------------
 	// Logic
@@ -730,10 +730,10 @@
 	 * canvasの画像変換を行うロジック
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.logic.CanvasConvertLogic
+	 * @name h5.ui.components.artboard.logic.CanvasConvertLogic
 	 */
 	var canvasConvertLogic = {
-		__name: 'h5.ui.components.drawing.logic.CanvasConvertLogic',
+		__name: 'h5.ui.components.artboard.logic.CanvasConvertLogic',
 
 		/**
 		 * svg要素の中身をcanvasに描画します。
@@ -741,7 +741,7 @@
 		 * このメソッドはプロミスを返します。画像(image要素)が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.CanvasConvertLogic
+		 * @memberOf h5.ui.components.artboard.logic.CanvasConvertLogic
 		 * @param {SVG} svgElement svg要素
 		 * @param {Canvas} canvas canvas要素
 		 */
@@ -880,7 +880,7 @@
 		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.CanvasConvertLogic
+		 * @memberOf h5.ui.components.artboard.logic.CanvasConvertLogic
 		 * @param {String} returnType imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} processParameter 0.0～1.0の範囲で品質レベルを指定
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
@@ -909,18 +909,18 @@
 	//------------------------------------------------------------
 	// Cache
 	//------------------------------------------------------------
-	var XMLNS = h5.ui.components.drawing.consts.XMLNS;
-	var XLINKNS = h5.ui.components.drawing.consts.XLINKNS;
-	var Command = h5.ui.components.drawing.Command;
-	var CustomCommand = h5.ui.components.drawing.CustomCommand;
-	var AppendCommand = h5.ui.components.drawing.AppendCommand;
-	var RemoveCommand = h5.ui.components.drawing.RemoveCommand;
-	var StyleCommand = h5.ui.components.drawing.StyleCommand;
-	var AttrCommand = h5.ui.components.drawing.AttrCommand;
-	//	var SequenceCommand = h5.ui.components.drawing.SequenceCommand;
-	//	var CommandManager = h5.ui.components.drawing.CommandManager;
-	var getBounds = h5.ui.components.drawing.getBounds;
-	var DATA_IMAGE_SOURCE_ID = h5.ui.components.drawing.consts.DATA_IMAGE_SOURCE_ID;
+	var XMLNS = h5.ui.components.artboard.consts.XMLNS;
+	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
+	var Command = h5.ui.components.artboard.Command;
+	var CustomCommand = h5.ui.components.artboard.CustomCommand;
+	var AppendCommand = h5.ui.components.artboard.AppendCommand;
+	var RemoveCommand = h5.ui.components.artboard.RemoveCommand;
+	var StyleCommand = h5.ui.components.artboard.StyleCommand;
+	var AttrCommand = h5.ui.components.artboard.AttrCommand;
+	//	var SequenceCommand = h5.ui.components.artboard.SequenceCommand;
+	//	var CommandManager = h5.ui.components.artboard.CommandManager;
+	var getBounds = h5.ui.components.artboard.getBounds;
+	var DATA_IMAGE_SOURCE_ID = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_ID;
 
 	//------------------------------------------------------------
 	// Functions
@@ -1940,14 +1940,14 @@
 	 * 図形の描画を行うロジック
 	 *
 	 * @class
-	 * @name h5.ui.components.drawing.logic.DrawingLogic
+	 * @name h5.ui.components.artboard.logic.DrawingLogic
 	 */
 	var drawingLogic = {
 		/**
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
-		__name: 'h5.ui.components.drawing.logic.DrawingLogic',
+		__name: 'h5.ui.components.artboard.logic.DrawingLogic',
 
 		/**
 		 * 画像IDと画像パスのマップ
@@ -1956,7 +1956,7 @@
 		 * 画像IDを使って画像を指定する場合はこのオブジェクトに直接登録してください。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @type {Object}
 		 */
 		imageSourceMap: {},
@@ -1964,15 +1964,15 @@
 		/**
 		 * canvasの画像変換を行うロジック
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
-		_canvasConvertLogic: h5.ui.components.drawing.logic.CanvasConvertLogic,
+		_canvasConvertLogic: h5.ui.components.artboard.logic.CanvasConvertLogic,
 
 		/**
 		 * 図形描画領域のレイヤー
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
 		_shapeLayer: null,
@@ -1980,7 +1980,7 @@
 		/**
 		 * 背景画像レイヤー
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
 		_backgroundLayer: null,
@@ -1988,16 +1988,16 @@
 		/**
 		 * コマンド管理ロジックインスタンス
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
-		 * @type h5.ui.components.drawing.logic.CommandTransactionLogic
+		 * @type h5.ui.components.artboard.logic.CommandTransactionLogic
 		 */
 		artboadCommandManager: null,
 
 		/**
 		 * このロジックで作成した図形(Shape)と図形IDのマップ
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
 		_shapeMap: {},
@@ -2005,7 +2005,7 @@
 		/**
 		 * このロジックで作成した図形(Shape)のID管理用シーケンス
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 */
 		_shapeIdSequence: h5.core.data.createSequence(),
@@ -2013,7 +2013,7 @@
 		/**
 		 * 初期化処理
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 * @param {DOM} drawingElement 図形描画領域レイヤ要素
 		 * @param {DOM} backgroundElement 背景領域レイヤ要素
@@ -2029,7 +2029,7 @@
 		/**
 		 * 直前の操作を取り消します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 */
 		undo: function() {
 			this.artboadCommandManager.undo();
@@ -2038,7 +2038,7 @@
 		/**
 		 * 直前に取り消した操作を再実行します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 */
 		redo: function() {
 			this.artboadCommandManager.redo();
@@ -2050,7 +2050,7 @@
 		/**
 		 * 図形を追加
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param layer {DOM|jQuery} 追加先レイヤ
 		 */
 		append: function(shape) {
@@ -2084,7 +2084,7 @@
 		/**
 		 * パス(フリーハンド、直線、多角形)描画
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2122,7 +2122,7 @@
 		/**
 		 * 長方形描画
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅
@@ -2152,7 +2152,7 @@
 		/**
 		 * 正方形描画
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅(=正方形の高さ)
@@ -2167,7 +2167,7 @@
 		/**
 		 * 楕円描画
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Integer} cx 楕円の中心位置のx座標
 		 * @param {Integer} cy 楕円の中心位置のy座標
 		 * @param {Integer} rx 楕円の水平方向の半径
@@ -2196,7 +2196,7 @@
 		/**
 		 * 真円描画
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Integer} cx 円の中心位置のx座標
 		 * @param {Integer} cy 円の中心位置のy座標
 		 * @param {Integer} r 円の半径
@@ -2214,7 +2214,7 @@
 		 * クローンしてdivレイヤに配置します
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2263,7 +2263,7 @@
 		/**
 		 * ロジック管理下にある図形(Shape)を全て取得
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
 		 * @returns {DRShape[]}
 		 */
@@ -2283,7 +2283,7 @@
 		/**
 		 * 渡された図形のIDを返す。(ロジック管理下にある図形のみ)
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {DRShape} shape
 		 * @returns {String}
 		 */
@@ -2300,7 +2300,7 @@
 		/**
 		 * 図形(Shape)をこのロジックの管理下に置く
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 * @param {DRShape} shape
 		 */
@@ -2329,7 +2329,7 @@
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2415,7 +2415,7 @@
 		/**
 		 * 背景色の設定
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {String} color 色
 		 */
 		setBackgroundColor: function(color) {
@@ -2447,7 +2447,7 @@
 		/**
 		 * 背景画像をクリアします
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 */
 		clearBackgroundImage: function() {
 			var bgElement = this._backgroundLayer.children[0];
@@ -2471,7 +2471,7 @@
 		/**
 		 * 現在設定されている背景情報を取得します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 * @returns {Object}
 		 *
@@ -2514,7 +2514,7 @@
 		/**
 		 * 描画されている図形からセーブデータを作成します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @returns {DrawingSaveData}
 		 */
 		save: function() {
@@ -2527,7 +2527,7 @@
 		/**
 		 * セーブデータををロードして描画します
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {DrawingSaveData}
 		 */
 		load: function(drawingSaveData) {
@@ -2587,7 +2587,7 @@
 		 * このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。
 		 * </p>
 		 *
-		 * @memberOf h5.ui.components.drawing.logic.DrawingLogic
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} [processParameter]
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
