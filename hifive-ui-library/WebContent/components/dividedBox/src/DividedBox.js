@@ -38,7 +38,7 @@
 				this.log.warn('指定されたstateの要素はありません。{}', state);
 				return;
 			}
-			var $stateBoxes = this.$find('*[data-' + DATA_STATE + ']');
+			var $stateBoxes = this.$find('>*[data-' + DATA_STATE + ']');
 			$stateBoxes.css('display', 'none');
 			$target.css('display', 'block');
 			this._currentState = state;
