@@ -474,7 +474,7 @@
 				if (stateBox && stateBox.getContentsSize) {
 					size = stateBox.getContentsSize()[w_h];
 				} else {
-					size = $targetBox[0][this._scrollW_H]();
+					size = $targetBox[0][this._scrollW_H];
 				}
 			}
 
