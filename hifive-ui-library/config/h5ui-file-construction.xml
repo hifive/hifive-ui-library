@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<h5-file-constraction xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="h5ui-file-constraction.xsd">
+
+	<module name="animate" description="animate">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="animate/src/animate.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="appContainer" description="appContainer">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="appContainer/src/appContainer.js" />
+		</files>
+		<cssfiles>
+			<file name="appContainer/src/appContainer.css" />
+		</cssfiles>
+	</module>
+
+	<module name="arrowbox" description="arrowbox">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="arrowbox/src/arrowbox.js" />
+		</files>
+		<cssfiles>
+			<file name="arrowbox/src/arrowbox.css" />
+		</cssfiles>
+	</module>
+
+	<module name="calendar" description="calendar">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="calendar/src/calendar.js" />
+		</files>
+		<cssfiles>
+			<file name="calendar/src/calendar.css" />
+		</cssfiles>
+	</module>
+
+	<module name="carousel" description="carousel">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="carousel/src/CarouselController.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="chart" description="chart">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="chart/src/graphic-rendere.js" />
+			<file name="chart/src/chart.js" />
+		</files>
+		<cssfiles>
+			<file name="chart/src/chart.css" />
+		</cssfiles>
+	</module>
+
+	<module name="combobox" description="combobox">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="combobox/src/combobox.js" />
+		</files>
+		<cssfiles>
+			<file name="combobox/src/combobox.css" />
+		</cssfiles>
+	</module>
+
+	<module name="contextMenu" description="contextMenu">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="contextMenu/src/contextMenu.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="datagrid" description="datagrid">
+		<dependencies>
+			<dependency name="virtualScroll" />
+		</dependencies>
+		<files>
+			<file name="datagrid/src/datagrid.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="dividedBox" description="dividedBox">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="dividedBox/src/DividedBox.js" />
+		</files>
+		<cssfiles>
+			<file name="dividedBox/src/DividedBox.css" />
+		</cssfiles>
+	</module>
+
+	<module name="drawing" description="drawing">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="drawing/src/DrawingController.js" />
+			<file name="drawing/src/DrawingOperationController.js" />
+		</files>
+		<cssfiles>
+			<file name="drawing/src/drawing.css" />
+		</cssfiles>
+	</module>
+
+	<module name="graph" description="graph">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="graph/src/graph.js" />
+		</files>
+		<cssfiles>
+			<file name="graph/src/graph.css" />
+		</cssfiles>
+	</module>
+
+	<module name="magnetContainer" description="magnetContainer">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="magnetContainer/src/MagnetController.js" />
+		</files>
+		<cssfiles>
+			<file name="magnetContainer/src/magnet.css" />
+		</cssfiles>
+	</module>
+
+	<module name="popup" description="popup">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="popup/src/popup.js" />
+		</files>
+		<cssfiles>
+			<file name="popup/src/popup.css" />
+		</cssfiles>
+	</module>
+
+	<module name="replaceBox" description="replaceBox">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="replaceBox/src/replaceBox.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="screen" description="screen">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="screen/src/PageLoadLogic.js" />
+			<file name="screen/src/ScreenUIController.js" />
+		</files>
+		<cssfiles>
+			<file name="screen/src/screen.css" />
+		</cssfiles>
+	</module>
+
+	<module name="tabbable" description="tabbable">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="tabbable/src/tabbable.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="tileContainer" description="tileContainer">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="tileContainer/src/tileContainer.js" />
+		</files>
+		<cssfiles>
+			<file name="tileContainer/src/tileContainer.css" />
+		</cssfiles>
+	</module>
+
+	<module name="virtualScroll" description="vertualScroll">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="virtualScroll/src/data-source.js" />
+			<file name="virtualScroll/src/virtual-scroll.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+
+</h5-file-constraction>

@@ -1,0 +1,5 @@
+(function($){
+#foreach($file in $files)
+${file}
+#end
+})(jQuery);
