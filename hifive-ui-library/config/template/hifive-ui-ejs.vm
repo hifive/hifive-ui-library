@@ -1,0 +1,3 @@
+#foreach($file in $files)
+${file}
+#end

@@ -8,6 +8,7 @@
 	<property name="configBaseDir" value="${basedir}/config" />
 	<property name="constructionFile" value="h5ui-file-construction.xml"/>
 	<property name="jsTempFile" value="template/hifive-ui-js.vm" />
+	<property name="ejsTempFile" value="template/hifive-ui-ejs.vm" />
 	<property name="cssTempFile" value="template/hifive-ui-css.vm" />
 	<property name="minHeaderFile" value="template/min-header.vm" />
 
@@ -36,18 +37,22 @@
 
 
 	<target name="build" depends="getComponentNames,getVersion,getGitHash">
+		<delete dir="${archives}/current"/>
 		<mkdir dir="${archives}/current" />
 		<buildService>
 			<buildParameter
 				tmpFiles="false"
 				cssName="hifive-ui.css"
+				ejsName="hifive-ui.ejs"
 				releaseName="hifive-ui.js"
-				srcDir="${componentdir}"
-				cssSrcDir="${componentdir}"
+				jsDir="${componentdir}"
+				cssDir="${componentdir}"
+				ejsDir="${componentdir}"
 				dstDir="${archives}/current/"
 				version="v${version}"
 				configBaseDir="${configBaseDir}"
 				jsTemplateFile="${jsTempFile}"
+				ejsTemplateFile="${ejsTempFile}"
 				cssTemplateFile="${cssTempFile}"
 				minHeaderFile="${minHeaderFile}"
 				moduleNames="${targetComponents}"
@@ -63,19 +68,23 @@
 	</target>
 
 	<target name="build-nightly" depends="getComponentNames,getVersion,getGitHash">
+		<delete dir="${archives}/v${version}"/>
 		<mkdir dir="${archives}/v${version}" />
 		<buildService>
 			<buildParameter
 				tmpFiles="false"
 				cssName="hifive-ui.v${version}.css"
+				ejsName="hifive-ui.v${version}.ejs"
 				releaseName="hifive-ui.v${version}.js"
-				srcDir="${componentdir}"
-				cssSrcDir="${componentdir}"
+				jsDir="${componentdir}"
+				cssDir="${componentdir}"
+				ejsDir="${componentdir}"
 				dstDir="${archives}/v${version}/"
 				version="v${version}"
 				configBaseDir="${configBaseDir}"
 				jsTemplateFile="${jsTempFile}"
 				cssTemplateFile="${cssTempFile}"
+				ejsTemplateFile="${ejsTempFile}"
 				minHeaderFile="${minHeaderFile}"
 				moduleNames="${targetComponents}"
 				constructionFile="${constructionFile}"/>
