@@ -14,7 +14,6 @@
 			<xs:element name="dependencies" type="dependencies" maxOccurs="1" minOccurs="1"></xs:element>
 			<xs:element name="files" type="files" maxOccurs="1" minOccurs="1"></xs:element>
 			<xs:element name="cssfiles" type="files" maxOccurs="1" minOccurs="1"></xs:element>
-			<xs:element name="ejsfiles" type="files" maxOccurs="1" minOccurs="1"></xs:element>
 		</xs:sequence>
 		<xs:attribute name="name" type="xs:string" use="required"></xs:attribute>
 		<xs:attribute name="description" type="xs:string" use="required"></xs:attribute>

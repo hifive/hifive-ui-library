@@ -10,8 +10,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="appContainer" description="appContainer">
@@ -23,8 +21,6 @@
 		<cssfiles>
 			<file name="appContainer/src/ApplicationController.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="arrowbox" description="arrowbox">
@@ -36,9 +32,6 @@
 		<cssfiles>
 			<file name="arrowbox/src/arrowbox.css" />
 		</cssfiles>
-		<ejsfiles>
-			<file name="arrowbox/src/arrowbox.ejs" />
-		</ejsfiles>
 	</module>
 
 	<module name="calendar" description="calendar">
@@ -50,8 +43,6 @@
 		<cssfiles>
 			<file name="calendar/src/CalendarController.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="carousel" description="carousel">
@@ -62,8 +53,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="chart" description="chart">
@@ -87,8 +76,6 @@
 		<cssfiles>
 			<file name="combobox/src/combobox.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="contextMenu" description="contextMenu">
@@ -99,8 +86,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="datagrid" description="datagrid">
@@ -112,8 +97,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="dividedBox" description="dividedBox">
@@ -125,8 +108,6 @@
 		<cssfiles>
 			<file name="dividedBox/src/DividedBox.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="drawing" description="drawing">
@@ -139,9 +120,6 @@
 		<cssfiles>
 			<file name="drawing/src/drawing.css" />
 		</cssfiles>
-		<ejsfiles>
-			<file name="drawing/src/drawing.ejs" />
-		</ejsfiles>
 	</module>
 
 	<module name="graph" description="graph">
@@ -153,8 +131,6 @@
 		<cssfiles>
 			<file name="graph/src/graph.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="magnetContainer" description="magnetContainer">
@@ -166,8 +142,6 @@
 		<cssfiles>
 			<file name="magnetContainer/src/magnet.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="popup" description="popup">
@@ -179,8 +153,6 @@
 		<cssfiles>
 			<file name="popup/src/popup.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="replaceBox" description="replaceBox">
@@ -191,8 +163,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="screen" description="screen">
@@ -205,8 +175,6 @@
 		<cssfiles>
 			<file name="screen/src/screen.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="tabbable" description="tabbable">
@@ -217,8 +185,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="tileContainer" description="tileContainer">
@@ -230,8 +196,6 @@
 		<cssfiles>
 			<file name="tileContainer/src/tileContainer.css" />
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 	<module name="virtualScroll" description="vertualScroll">
@@ -243,8 +207,6 @@
 		</files>
 		<cssfiles>
 		</cssfiles>
-		<ejsfiles>
-		</ejsfiles>
 	</module>
 
 
