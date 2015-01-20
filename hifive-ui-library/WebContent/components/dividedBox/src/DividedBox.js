@@ -703,7 +703,8 @@
 				if (!$prev.length) {
 					outerSize = $next.position()[l_t];
 				} else if (!$next.length) {
-					outerSize = adjustAreaWH - $prev.position()[l_t] - $prev[outerW_H](true);
+					outerSize = adjustAreaWH - $prev.position()[l_t]
+							- (isPrevDisplayNone ? 0 : $prev[outerW_H](true));
 				} else {
 					outerSize = $next.position()[l_t] - $prev.position()[l_t]
 							- (isPrevDisplayNone ? 0 : $prev[outerW_H](true));
