@@ -663,27 +663,28 @@
 			var w_h = this._w_h;
 			var root = this._root;
 			var outerW_H = this._outerW_H;
-			var $dividers = this._getDividers();
 
 			var adjustAreaWH = root[w_h]();
 
-			//			$dividers.each(this.ownWithOrg(function(orgThis) {
-			//				var $divider = $(orgThis);
-			//				var isDisplayNone = $divider.css('display') === 'none';
-			//				$divider.css('display', 'block');
-			//				var $next = this._getNextBoxByDivider($divider);
-			//
-			//				var dividerLT = $divider.position()[l_t];
-			//				var per = dividerLT / this._lastAdjustAreaWH;
-			//				var nextDivideLT = Math.round(adjustAreaWH * per);
-			//				var move = nextDivideLT - dividerLT;
-			//
-			//				$divider.css(l_t, '+=' + move);
-			//				$next.css(l_t, ($next.position()[l_t] + move));
-			//				if (isDisplayNone) {
-			//					$divider.css('display', 'none');
-			//				}
-			//			}));
+			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
+			var $dividers = this._getDividers();
+			$dividers.each(this.ownWithOrg(function(orgThis) {
+				var $divider = $(orgThis);
+				var isDisplayNone = $divider.css('display') === 'none';
+				$divider.css('display', 'block');
+				var $next = this._getNextBoxByDivider($divider);
+
+				var dividerLT = $divider.position()[l_t];
+				var per = dividerLT / this._lastAdjustAreaWH;
+				var nextDivideLT = Math.round(adjustAreaWH * per);
+				var move = nextDivideLT - dividerLT;
+
+				$divider.css(l_t, '+=' + move);
+				$next.css(l_t, ($next.position()[l_t] + move));
+				if (isDisplayNone) {
+					$divider.css('display', 'none');
+				}
+			}));
 
 			var $boxes = this._getBoxes();
 			$boxes.each(this.ownWithOrg(function(orgThis, index) {
@@ -702,7 +703,7 @@
 				if (!$prev.length) {
 					outerSize = $next.position()[l_t];
 				} else if (!$next.length) {
-					outerSize = adjustAreaWH - $prev.position()[l_t];
+					outerSize = adjustAreaWH - $prev.position()[l_t] - $prev[outerW_H](true);
 				} else {
 					outerSize = $next.position()[l_t] - $prev.position()[l_t]
 							- (isPrevDisplayNone ? 0 : $prev[outerW_H](true));
