@@ -27,13 +27,16 @@
 	</target>
 
 	<target name="getComponentNames">
+		<!--
 		<input message="ビルドするコンポーネント名を入力してください(複数ある場合はカンマ区切り)" addproperty="targetComponents" />
 		<condition property="isNotEmpty">
 			<matches pattern="\w+" string="${targetComponents}" />
 		</condition>
 		<fail unless="isNotEmpty" message="空でないコンポーネント名を指定してください" />
+		-->
+		<!-- コンポーネント名列挙 -->
+		<property name="targetComponents" value="animate,appContainer,arrowbox,calendar,carousel,chart,combobox,contextMenu,datagrid,dividedBox,drawing,graph,magnetContainer,popup,replaceBox,screen,tabbable,tileContainer,virtualScroll" />
 	</target>
-
 
 	<target name="build" depends="getComponentNames,getVersion,getGitHash">
 		<delete dir="${archives}/current"/>
@@ -42,6 +45,7 @@
 			<buildParameter
 				tmpFiles="false"
 				cssName="hifive-ui.css"
+				devName="hifive-ui.dev.js"
 				releaseName="hifive-ui.js"
 				jsDir="${componentdir}"
 				cssDir="${componentdir}"
@@ -70,6 +74,7 @@
 			<buildParameter
 				tmpFiles="false"
 				cssName="hifive-ui.v${version}.css"
+				devName="hifive-ui.dev.js"
 				releaseName="hifive-ui.v${version}.js"
 				jsDir="${componentdir}"
 				cssDir="${componentdir}"
