@@ -75,6 +75,9 @@
 	/** クラス名：垂直区切り設定 */
 	var CLASS_VERTICAL = 'vertical';
 
+	/** dividedBoxによって位置を管理されているboxかどうか(動的に追加される要素についても位置計算時のこのクラスが追加される) */
+	var CLASS_MANAGED = 'dividedbox-managed';
+
 	/** クラス名：水平区切り設定 */
 	var CLASS_HORIZONTAL = 'horizontal';
 
@@ -191,14 +194,14 @@
 		 * @memberOf h5.ui.container.DividedBox
 		 */
 		refresh: function() {
-			var root = this._root = $(this.rootElement);
 			var type = this._type;
-			var w_h = this._w_h;
 
-			//ボックス間に区切り線がない場合は挿入
-			root.children(':not(.divider) + :not(.divider)').each(function() {
-				$(this).before('<div class="divider"></div>');
-			});
+			// ボックスにクラスCLASS_MANAGEDを追加
+			// ボックス間に区切り線がない場合は挿入
+			this._getBoxes().addClass(CLASS_MANAGED).filter(':not(.divider) + :not(.divider)')
+					.each(function() {
+						$(this).before('<div class="divider"></div>');
+					});
 
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
 			this._getDividers().each(
@@ -207,9 +210,6 @@
 						var isVisibleDivider = $divider.css('display') !== 'none';
 						var $prev = this._getPrevBoxByDivider($divider);
 						var $next = this._getNextBoxByDivider($divider);
-
-						//prev[w_h](prev[w_h]());
-						//next[w_h](next[w_h]());
 
 						var nextZIndex = $next.css('z-index');
 						if (!nextZIndex || nextZIndex === 'auto') {
@@ -281,7 +281,9 @@
 			var $target = this._getBoxElement(index);
 			var $divider = $('<div class="divider"></div>');
 
+			// 追加したボックスにクラスCLASS_MANAGEDを追加
 			var $box = $(box);
+			$box.addClass(CLASS_MANAGED);
 
 			$target.after($box);
 			$target.after($divider);
@@ -673,14 +675,15 @@
 				var isDisplayNone = $divider.css('display') === 'none';
 				$divider.css('display', 'block');
 				var $next = this._getNextBoxByDivider($divider);
+				if ($next.length) {
+					var dividerLT = $divider.position()[l_t];
+					var per = dividerLT / this._lastAdjustAreaWH;
+					var nextDivideLT = Math.round(adjustAreaWH * per);
+					var move = nextDivideLT - dividerLT;
 
-				var dividerLT = $divider.position()[l_t];
-				var per = dividerLT / this._lastAdjustAreaWH;
-				var nextDivideLT = Math.round(adjustAreaWH * per);
-				var move = nextDivideLT - dividerLT;
-
-				$divider.css(l_t, '+=' + move);
-				$next.css(l_t, ($next.position()[l_t] + move));
+					$divider.css(l_t, '+=' + move);
+					$next.css(l_t, ($next.position()[l_t] + move));
+				}
 				if (isDisplayNone) {
 					$divider.css('display', 'none');
 				}
@@ -719,7 +722,6 @@
 				// 計算したサイズを設定
 				this._setOuterSize($box, w_h, outerSize);
 			}));
-
 			this._lastAdjustAreaWH = adjustAreaWH;
 		},
 
@@ -790,7 +792,12 @@
 		 * @returns {jQuery}
 		 */
 		_getBoxes: function() {
-			return this.$find('> :not(.divider)');
+			// ルート要素直下の要素(divider以外)
+			// ただし、動的に追加された要素でかつposition:absoluteのものは除く
+			// (動的に追加された要素でもposition:absoluteでなければ新規boxとして位置計算の対象にする
+			return this.$find('> :not(.divider)').filter(function() {
+				return $(this).hasClass(CLASS_MANAGED) || $(this).css('position') !== 'absolute';
+			});
 		},
 
 		/**
@@ -848,7 +855,7 @@
 		 */
 		_getPrevBoxByDivider: function(divider) {
 			var $divider = $(divider);
-			var $box = $divider.prev();
+			var $box = $divider.prevAll('.' + CLASS_MANAGED + ':first');
 			// hidden状態ならその前のboxを返す。
 			// 無い場合は空のjQueryオブジェクトを返す
 			if ($box.length && $box.data(DATA_HIDDEN)) {
@@ -869,7 +876,7 @@
 		 */
 		_getNextBoxByDivider: function(divider) {
 			var $divider = $(divider);
-			var $box = $divider.next();
+			var $box = $divider.nextAll('.' + CLASS_MANAGED + ':first');
 			// hidden状態ならその次のboxを返す。
 			// 無い場合は空のjQueryオブジェクトを返す
 			if ($box.length && $box.data(DATA_HIDDEN)) {
@@ -890,11 +897,12 @@
 		 */
 		_getPrevDividerByBox: function(box) {
 			var $box = $(box);
-			var $divider = $box.prev();
-			// dividerの前のボックスがhiddenかつそのボックスが先頭要素なら
+			var $divider = $box.prevAll('.divider:first');
+			// dividerの前にボックスがない(先頭要素)、またはdividerの前のボックスがhiddenなら
 			// dividerは無効なので空jQueryを返す
-			if ($divider.length && !$divider.prev().prev().length
-					&& $divider.prev().data(DATA_HIDDEN)) {
+			if ($divider.length
+					&& (!$divider.prevAll('.' + CLASS_MANAGED).length || $divider.prevAll(
+							'.' + CLASS_MANAGED + ':first').data(DATA_HIDDEN))) {
 				return $();
 			}
 			return $divider;
@@ -912,7 +920,7 @@
 		 */
 		_getNextDividerByBox: function(box) {
 			var $box = $(box);
-			var $divider = $box.next();
+			var $divider = $box.nextAll('.divider:first');
 			// 次のボックスがhiddenならその次のdividerを返す
 			if ($divider.length && $divider.next().data(DATA_HIDDEN)) {
 				return this._getNextDividerByBox($divider.next());
