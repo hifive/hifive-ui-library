@@ -125,6 +125,10 @@
 			// デフォルトはフリーハンド描画モード
 			this._artboardController.setMode(this._artboardController.MODE_PEN);
 			this._artboardController.setStrokeWidth(5);
+
+			// ツールバーコントローラにArtboardControllerを持たせる
+			// (スタンプの配置、背景画像、背景色の設定ははToolbarから直接行うため)
+			this._toolbarController.targetArtboard = this._artboardController;
 		},
 
 		/**
@@ -146,10 +150,6 @@
 				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
 				srcMap[id] = $this.attr('src');
 			});
-
-			// ツールバーコントローラにArtboardControllerを持たせる
-			// (スタンプの配置、背景画像、背景色の設定ははToolbarから直接行うため)
-			this._toolbarController.targetArtboard = this._artboardController;
 		},
 
 		//---------------------------------------------------------------
@@ -206,6 +206,9 @@
 				break;
 			case 'stamp':
 				this._artboardController.setMode(this._artboardController.MODE_NODRAW);
+				break;
+			case 'text':
+				this._artboardController.setMode(this._artboardController.MODE_TEXT);
 				break;
 			}
 		},

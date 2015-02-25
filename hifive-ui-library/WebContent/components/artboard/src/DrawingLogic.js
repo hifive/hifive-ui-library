@@ -127,7 +127,7 @@
 		};
 	}
 
-	h5.u.obj.expose('h5.ui.components.drawing', {
+	h5.u.obj.expose('h5.ui.components.artboard', {
 		useDataForGetBBox: useDataForGetBBox,
 		setBoundsData: setBoundsData,
 		getBounds: getBounds
@@ -1800,10 +1800,6 @@
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
 			var data = getDataAttr(element);
-			var shapeData = {
-				type: this.type,
-				style: styleDeclaration
-			};
 			// 画像パスは名前空間属性
 			var attrNS = [{
 				ns: XLINKNS,
@@ -1821,6 +1817,84 @@
 				style: styleDeclaration,
 				attr: attr,
 				attrNS: attrNS,
+				data: data
+			};
+		}
+	});
+
+	/**
+	 * テキスト(text)クラス
+	 *
+	 * @class
+	 * @name DRText
+	 * @extends DRShape
+	 * @param element
+	 * @param artboadCommandManager
+	 */
+	function DRText(element, artboadCommandManager) {
+		// typeの設定
+		setShapeInstanceType(this, 'text');
+		this._init(element, artboadCommandManager);
+	}
+	DRText.prototype = Object.create(DRShape.prototype);
+	DRText.constructor = DRText;
+	$.extend(DRText.prototype, {
+		/**
+		 * {@link DRShape.moveTo}の実装
+		 *
+		 * @memberOf DRText
+		 * @override
+		 */
+		moveTo: function(position) {
+			var command = new AttrCommand({
+				element: this.getElement(),
+				attr: {
+					x: position.x,
+					y: position.y
+				}
+			}).execute();
+			if (this.artboadCommandManager) {
+				this.artboadCommandManager.appendCommand(command);
+			}
+			return command;
+		},
+
+		/**
+		 * {@link DRShape.moveBy}の実装
+		 *
+		 * @memberOf DRText
+		 * @override
+		 */
+		moveBy: function(position) {
+			var element = this.getElement();
+			var x = parseInt(element.getAttribute('x')) + position.x;
+			var y = parseInt(element.getAttribute('y')) + position.y;
+			return this.moveTo({
+				x: x,
+				y: y
+			});
+		},
+
+		/**
+		 * シリアライズ可能なオブジェクトを生成
+		 *
+		 * @memberOf DRText
+		 * @returns {Object}
+		 */
+		serialize: function() {
+			var element = this.getElement();
+			var styleDeclaration = getStyleDeclaration(element);
+			var data = getDataAttr(element);
+			var attr = {
+				x: element.getAttribute('x'),
+				y: element.getAttribute('y'),
+				width: element.getAttribute('width'),
+				height: element.getAttribute('height')
+			};
+			return {
+				type: this.type,
+				style: styleDeclaration,
+				attr: attr,
 				data: data
 			};
 		}
@@ -2255,6 +2329,53 @@
 
 			// Shapeの作成
 			var shape = new DRImage(elem, this.artboadCommandManager);
+			// 図形の追加
+			this.append(shape);
+			return shape;
+		},
+
+		/**
+		 * テキストの配置
+		 * <p>
+		 * svgレイヤに配置します
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @param {Object} data
+		 *
+		 * <pre>
+		 * {
+		 *  x: 左上のx座標,
+		 *  y: 左上のy座標
+		 *  text: 入力文字列,
+		 * 	font: フォント,
+		 * 	fontSize: フォントサイズ,
+		 * 	fill: 色,
+		 * 	fillOpacity: 透明度
+		 * }
+		 * </pre>
+		 *
+		 * @returns {DRImage}
+		 */
+		drawText: function(data) {
+			var attr = {
+				x: data.x,
+				y: data.y,
+				fill: data.fill,
+				'font-family': data.font,
+				'font-size': data.fontSize
+			};
+			var style = {
+				opacity: data.style
+			};
+			var elem = createSvgDrawingElement('text', {
+				attr: attr,
+				style: style
+			});
+			$(elem).text(data.text);
+
+			// Shapeの作成
+			var shape = new DRText(elem, this.artboadCommandManager);
 			// 図形の追加
 			this.append(shape);
 			return shape;

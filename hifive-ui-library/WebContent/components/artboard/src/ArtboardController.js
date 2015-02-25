@@ -466,6 +466,7 @@
 		MODE_FILL_RECT: 'fillrect',
 		MODE_CIRCLE: 'circle',
 		MODE_FILL_CIRCLE: 'fillcircle',
+		MODE_TEXT: 'text',
 		MODE_SELECT: 'select',
 
 		/**
@@ -608,7 +609,7 @@
 		 * @param mode
 		 */
 		setMode: function(mode) {
-			if (mode === this.MODE_SELECT || mode === this.MODE_DISABLE) {
+			if (mode === this.MODE_SELECT || mode === this.MODE_DISABLE || mode === this.MODE_TEXT) {
 				// セレクトモード時は、canvasを隠す
 				$(this._canvas).css('display', 'none');
 			} else {
@@ -1114,6 +1115,43 @@
 		 */
 		drawImage: function(data) {
 			return this.drawingLogic.drawImage(data);
+		},
+
+		/**
+		 * テキストの配置
+		 * <p>
+		 * svgレイヤに配置します
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 * @param {String} text
+		 * @param {Integer} x
+		 * @param {Integer} y
+		 * @param {Object} data
+		 *
+		 * <pre>
+		 * {
+		 *  x: 左上のx座標,
+		 *  y: 左上のy座標
+		 *  text: 入力文字列,
+		 * 	font: フォント,
+		 * 	fontSize: フォントサイズ
+		 * }
+		 * </pre>
+		 *
+		 * @returns {DRImage}
+		 */
+		drawText: function(data) {
+			// strokeの色でテキストを描画
+			return this.drawingLogic.drawText({
+				text: data.text,
+				x: data.x,
+				y: data.y,
+				fill: this._strokeColor,
+				fillOpacity: this._strokeOpacity,
+				font: data && data.font,
+				fontSize: data && data.fontSize
+			});
 		},
 
 		/**

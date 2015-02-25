@@ -123,7 +123,7 @@
 		 * </p>
 		 *
 		 * @memberOf sample.ToolbarController
-		 * @type {h5.ui.components.drawing.controller.DrawingController}
+		 * @type {h5.ui.components.artboard.controller.DrawingController}
 		 */
 		targetArtboard: null,
 
@@ -134,6 +134,22 @@
 		 * @private
 		 */
 		_$stampList: null,
+
+		/**
+		 * テキスト入力要素
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_$textInput: null,
+
+		/**
+		 * テキストスタンプモードかどうか
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_isTextStampMode: false,
 
 		/**
 		 * ドラッグ中のスタンプ
@@ -171,6 +187,8 @@
 		__init: function() {
 			// スタンプリストの設定
 			this._$stampList = this.$find('.stamp-list');
+			// テキスト入力エリアの設定
+			this._$textInput = this.$find('.text-input');
 
 			// 各スライダーの設定(nouislider使用)
 			$('.opacity-slidebar').each(function() {
@@ -330,6 +348,17 @@
 			} else {
 				this._hideStampList();
 			}
+
+			// 文字入力ならinputを表示
+			// テキストスタンプモードに変更
+			if (toolName === "text") {
+				this._showTextInput();
+				this._isTextStampMode = true;
+			} else {
+				this._hideTextInput();
+				this._isTextStampMode = false;
+			}
+
 			this.$find('.toolbar-icon').removeClass('selected');
 			this.$find('.mode-select').removeClass('selected');
 			$el.addClass('selected');
@@ -345,6 +374,20 @@
 			$el.addClass('selected');
 		},
 
+		/**
+		 * テキスト入力要素を取得
+		 */
+		getTextValue: function() {
+			return this._$textInput.find('input[name="text"]').val();
+		},
+
+		/**
+		 * テキスト入力のフォントサイズを取得
+		 */
+		getTextSize: function() {
+			return this._$textInput.find('input[name="size"]').val();
+		},
+
 		//--------------------------------------------------------
 		// 色の設定
 		//--------------------------------------------------------
@@ -358,6 +401,7 @@
 			var isFill = $selectedColor.hasClass('fill');
 
 			this.trigger(isFill ? 'fill-change' : 'stroke-change', color);
+			this._refreshTextStamp();
 		},
 
 		'.selected-color h5trackstart': function(context, $el) {
@@ -471,6 +515,101 @@
 			}
 			$stamp.remove();
 			this._$draggingStamp = null;
+		},
+
+		//--------------------------------------------------------
+		// テキスト
+		//--------------------------------------------------------
+		'{this.targetArtboard.rootElement} h5trackstart': function(context) {
+			this._isTracking = true;
+			if (!this._isTextStampMode) {
+				return;
+			}
+			this._showTextStamp(context);
+		},
+		'{this.targetArtboard.rootElement} h5trackmove': function(context) {
+			if (!this._isTextStampMode) {
+				return;
+			}
+			this._showTextStamp(context);
+		},
+		'{this.targetArtboard.rootElement} mousemove': function(context) {
+			if (this._isTracking || !this._isTextStampMode) {
+				return;
+			}
+			this._showTextStamp(context);
+		},
+
+		_showTextStamp: function(context) {
+			var targetArtboard = this.targetArtboard;
+			var offset = $(targetArtboard.rootElement).offset();
+			var x = event.pageX - offset.left;
+			var y = event.pageY - offset.top;
+			this._$textStamp.text(this.getTextValue()).addClass('dragging').css({
+				fontSize: this.getTextSize() + 'px',
+				position: 'absolute',
+				color: this.$find('.selected-color.stroke').css('background-color'),
+				opacity: parseInt(this.$find('.opacity-slidebar.opacity-fill').val()) / 100,
+				left: x,
+				top: y,
+				border: 'none'
+			});
+		},
+
+		'{this.targetArtboard.rootElement} h5trackend': function(context) {
+			this._isTracking = false;
+			if (!this._isTextStampMode) {
+				return;
+			}
+			var event = context.event;
+			var targetArtboard = this.targetArtboard;
+			var offset = $(targetArtboard.rootElement).offset();
+			var x = event.pageX - offset.left;
+			var y = event.pageY - offset.top;
+			var text = this.getTextValue();
+
+			var $drawingRoot = $(targetArtboard.rootElement);
+			if (0 < x && 0 < y && x < $drawingRoot.innerWidth() && y < $drawingRoot.innerHeight()) {
+				// 範囲内なら描画
+				targetArtboard.drawText({
+					text: text,
+					x: x,
+					y: y,
+					fontSize: this.getTextSize()
+				});
+			}
+		},
+
+		// テキストの内容やサイズ変更
+		'.text-input input keydown': function(context, $el) {
+			if ($el.attr('name') === 'size') {
+				var keyCode = context.event.keyCode;
+				var val = parseInt($el.val());
+				if (isNaN(val)) {
+					return;
+				}
+				// 上下キーは数値の上下
+				if (keyCode === 38) {
+					$el.val(val + 1);
+					context.event.preventDefault();
+				} else if (keyCode === 40 && val > 0) {
+					$el.val(val - 1);
+					context.event.preventDefault();
+				}
+			}
+		},
+		'.text-input input keyup': function(context, $el) {
+			this._refreshTextStamp();
+		},
+		_refreshTextStamp: function() {
+			if (!this._$textStamp) {
+				return;
+			}
+			this._$textStamp.text(this.getTextValue()).css({
+				fontSize: this.getTextSize() + 'px',
+				color: this.$find('.selected-color.stroke').css('background-color'),
+				opacity: parseInt(this.$find('.opacity-slidebar.opacity-fill').val()) / 100
+			});
 		},
 
 		//--------------------------------------------------------
@@ -605,6 +744,33 @@
 
 		_hideStampList: function() {
 			this._$stampList.addClass('display-none');
+		},
+
+		_showTextInput: function(position) {
+			this._$textInput.removeClass('display-none');
+			var $textIcon = $('[data-tool-name="text"]');
+			var offset = $textIcon.offset();
+			this._$textInput.css({
+				left: offset.left + $textIcon.width() - this._$textInput.width(),
+				top: offset.top + $textIcon.height() + 1
+			});
+			if (this._$textStamp) {
+				this._$textStamp.removeClass('display-none');
+			}
+			// テキストのスタンプを作って表示する
+			if (!this._$textStamp) {
+				this._$textStamp = $('<span></span>');
+				$(this.rootElement).append(this._$textStamp);
+			}
+			this._$textStamp.removeClass('display-none');
+		},
+
+		_hideTextInput: function() {
+			this._$textInput.addClass('display-none');
+			// テキストのスタンプを非表示
+			if (this._$textStamp) {
+				this._$textStamp.addClass('display-none');
+			}
 		},
 
 		_hideOpacitySlideBar: function() {

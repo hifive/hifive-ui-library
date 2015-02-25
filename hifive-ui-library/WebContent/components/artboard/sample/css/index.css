@@ -197,9 +197,16 @@ h1 {
 	border: 2px solid #fff;
 }
 
-.stamp-img.dragging {
+.dragging {
 	display: block;
 	z-index: 101;
+	cursor: default;
+}
+
+.text-input {
+	position: absolute;
+	padding: 4px;
+	background-color: #fff;
 }
 
 /* 透明度設定スライドバー */
