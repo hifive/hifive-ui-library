@@ -1150,7 +1150,9 @@
 				fill: this._strokeColor,
 				opacity: this._strokeOpacity,
 				font: data && data.font,
-				fontSize: data && data.fontSize
+				fontSize: data && data.fontSize,
+				fontFamily: data && data.fontFamily,
+				style: data && data.style
 			});
 		},
 

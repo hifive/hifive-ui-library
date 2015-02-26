@@ -46,6 +46,10 @@ h1 {
 	box-sizing: border-box;
 }
 
+.h5drawing-canvas-wrapper.mode-text-input {
+	cursor: text
+}
+
 /** ポップアップ **/
 .popupContents {
 	padding: 10px;
@@ -212,10 +216,45 @@ h1 {
 	white-space: nowrap;
 }
 
-.text-input {
+/** テキスト入力 **/
+.text-input-box {
 	position: absolute;
+}
+
+.text-input-box .set-text {
+	text-align: center;
+	width: 2em;
+	background-color: #fff;
+}
+/** テキスト設定 **/
+.text-settings-box {
 	padding: 4px;
 	background-color: #fff;
+}
+
+.set-text-style {
+	cursor: pointer;
+	min-width: 1.2em;
+	display: inline-block;
+	padding: 3px;
+	box-sizing: border-box;
+}
+
+.font-family-select {
+	margin-top: 3px;
+	position: relative;
+}
+
+.font-family-select input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100px;
+	height: 1em;
+}
+
+.font-family-select select {
+	width: 120px;
 }
 
 /* 透明度設定スライドバー */

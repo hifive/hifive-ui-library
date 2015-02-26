@@ -1567,6 +1567,109 @@
 						opacity: val
 					});
 				}
+			},
+
+			/**
+			 * テキストの文字列
+			 * <p>
+			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name textContent
+			 * @memberOf DRTextShape
+			 * @type {String}
+			 */
+			textContent: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return $(this.getElement()).text();
+				},
+				set: function(val) {
+					this._setTextContent(val);
+				}
+			},
+
+
+			/**
+			 * フォントファミリー
+			 * <p>
+			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name fontFamily
+			 * @memberOf DRTextShape
+			 * @type {String}
+			 */
+			fontFamily: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this.getElement().getAttribute('font-family');
+				},
+				set: function(val) {
+					this._setAttr({
+						'font-family': val
+					});
+				}
+			},
+
+			/**
+			 * フォントサイズ
+			 * <p>
+			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name fontSize
+			 * @memberOf DRTextShape
+			 * @type {Number}
+			 */
+			fontSize: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this.getElement().getAttribute('font-size');
+				},
+				set: function(val) {
+					this._setAttr({
+						'font-size': val
+					});
+				}
+			},
+
+			/**
+			 * フォントススタイル
+			 * <p>
+			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name fontStyle
+			 * @memberOf DRTextShape
+			 * @type {Object}
+			 */
+			fontStyle: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					// 文字の装飾に関する設定のみ
+					return {
+						'text-decoration': this._getStyle('text-decoration'),
+						'font-weight': this._getStyle('font-weight'),
+						'font-style': this._getStyle('font-style')
+					};
+				},
+				set: function(val) {
+					if (!val) {
+						return;
+					}
+					// 文字の装飾に関する設定のみ
+					// (font-familyとfont-sizeは属性で設定しています)
+					this._setStyle({
+						'text-decoration': val['text-decoration'],
+						'font-weight': val['font-weight'],
+						'font-style': val['font-style']
+					});
+				}
 			}
 		});
 		return textProto;
@@ -2000,6 +2103,26 @@
 				style: styleDeclaration,
 				data: data
 			};
+		},
+
+		/**
+		 * テキストを設定
+		 *
+		 * @private
+		 * @param {String} val
+		 */
+		_setTextContent: function(val) {
+			var command = new CustomCommand({
+				execute: function() {
+					$(this._element).text(val);
+				},
+				undo: function() {
+					$(this._element).text(this._preVal);
+				},
+				_preVal: $(this.getElement()).text(),
+				_element: this.getElement()
+			});
+			this.artboadCommandManager.appendCommand(command);
 		}
 	});
 	//---------------------- 図形クラスの定義ここまで ----------------------
@@ -2466,13 +2589,17 @@
 				y: data.y,
 				fill: data.fill,
 				opacity: data.opacity,
-				'font-family': data.font,
+				'font-family': data.fontFamily,
 				'font-size': data.fontSize
 			};
 			var elem = createSvgDrawingElement('text', {
 				attr: attr
 			});
 			$(elem).text(data.text);
+
+			if (data.style) {
+				$(elem).css(data.style);
+			}
 
 			// Shapeの作成
 			var shape = new DRText(elem, this.artboadCommandManager);

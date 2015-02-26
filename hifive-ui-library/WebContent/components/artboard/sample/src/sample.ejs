@@ -58,12 +58,27 @@
 		<div class="stamp-img"><img class="drawing-image" data-stamp-id="close" src="res/img/stamp/close.png"></div>
 	</div>
 
-	[%# テキスト入力 %]
-	<div class="text-input border1 display-none">
+	[%# テキスト設定 %]
+	<div class="text-settings-box border1 display-none pull-left">
 		<input type="text" name="text" placeholder="ここにテキストを入力" /><br>
-		<input type="text" name="size" size="4" value="24"/>px<br>
+		<input type="text" name="size" size="2" value="24"/>px
+		<span class="set-text-style border1" data-text-style="bold" style="font-weight:bold">B</span>
+		<span class="set-text-style border1" data-text-style="italic" style="font-style:italic">I</span>
+		<span class="set-text-style border1" data-text-style="underline" style="text-decoration:underline">U</span>
+		<span class="set-text-style border1" data-text-style="line-through" style="text-decoration:line-through">abc</span>
+		<br>
+		<div class="font-family-select">
+			<select><option value="sans-serif" selected>ゴシック</option><option value="serif">明朝</option></select>
+			<input type="text" name="font-family"/>
+		</div>
 	</div>
-
+	
+	[%# テキスト入力要素 %]
+	<div class="text-input-box display-none">
+		<input type="text" name="text-input"/>
+		<div class="set-text border1">OK</div>
+	</div>
+	
 	[%# ポップアップ %]
 	<div class="display-none popup-contents-wrapper">
 		<div class="load-popup">

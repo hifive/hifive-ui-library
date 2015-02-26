@@ -314,6 +314,28 @@
 			}
 		},
 
+		'{this._$toolbar} textSettingsChange': function(context) {
+			var textSettings = context.evArg;
+			var shapes = this._artboardController.getSelectedShapes();
+			if (!shapes.length) {
+				return;
+			}
+			var fontSize = textSettings.fontSize;
+			var fontStyle = textSettings.fontStyle;
+			var fontFamily = textSettings.fontFamily;
+			var textContent = textSettings.textContent;
+			for (var i = 0, l = shapes.length; i < l; i++) {
+				var shape = shapes[i];
+				if (shape.textContent === undefined) {
+					continue;
+				}
+				shape.fontSize = fontSize;
+				shape.textContent = textContent;
+				shape.fontStyle = fontStyle;
+				shape.fontFamily = fontFamily;
+			}
+		},
+
 		/**
 		 * 選択中の図形を消去
 		 *
@@ -462,19 +484,35 @@
 
 			// shapeには図形によってstrokeColorやfillColorを設定できる
 			// 選択された図形(複数)のtypeをみて判定し、一つでも設定できるものがあれば有効にする
-			var strokeColor, strokeOpacity, fillColor, fillOpacity, strokeWidth;
+			var strokeColor, strokeOpacity, fillColor, fillOpacity, strokeWidth, textSettings;
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
 				if (fillColor == null && shape.fillColor !== undefined) {
 					fillColor = shape.fillColor;
 					fillOpacity = shape.fillOpacity;
-				} else if (strokeColor == null && shape.strokeColor !== undefined) {
+				}
+				if (strokeColor == null && shape.strokeColor !== undefined) {
 					strokeColor = shape.strokeColor;
 					strokeOpacity = shape.strokeOpacity;
-					strokeWidth = shape.strokeColor;
-				} else if (strokeColor == null && shape.textColor !== undefined) {
+				}
+
+				// strokeColorの設定でtextColorも設定
+				if (strokeColor == null && shape.textColor !== undefined) {
 					strokeColor = shape.textColor;
-					strokeOpacity = shape.textOpacity;
+					strokeOpacity = shape.textOpacity
+				}
+
+				if (strokeWidth == null && shape.strokeWidth !== undefined) {
+					strokeWidth = shape.strokeWidth;
+				}
+
+				if (!textSettings && shape.textContent !== undefined) {
+					textSettings = {
+						textContent: shape.textContent,
+						fontFamily: shape.fontFamily,
+						fontSize: shape.fontSize,
+						fontStyle: shape.fontStyle
+					};
 				}
 			}
 
@@ -505,6 +543,14 @@
 				toolCtrl.enableStrokeWidth();
 			} else {
 				toolCtrl.disableStrokeWidth();
+			}
+
+			// textの設定
+			if (textSettings != null) {
+				toolCtrl.setTextSettings(textSettings);
+				toolCtrl.enableTextSettings();
+			} else {
+				toolCtrl.disableTextSettings();
 			}
 		},
 
