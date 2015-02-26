@@ -853,6 +853,21 @@
 					ctx.closePath();
 					ctx.restore();
 					break;
+				case 'text':
+					var x = element.getAttribute('x');
+					var y = element.getAttribute('y');
+					var fill = element.getAttribute('fill');
+					var opacity = element.getAttribute('opacity');
+					var fontFamily = element.getAttribute('font-family');
+					var fontSize = element.getAttribute('font-size');
+					var content = $(element).text();
+					ctx.save();
+					ctx.font = h5.u.str.format('{0}px {1}', fontSize, fontFamily);
+					ctx.fillStyle = fill;
+					ctx.globalAlpha = opacity;
+					ctx.fillText(content, x, y);
+					ctx.restore();
+					break;
 				case 'image':
 					var x = parseInt(element.getAttribute('x'));
 					var y = parseInt(element.getAttribute('y'));
@@ -1087,6 +1102,7 @@
 			style: shapeData.style
 		});
 		$(element).data(shapeData.data);
+		var shape = null;
 		switch (type) {
 		case 'path':
 			shape = new DRPath(element, artboadCommandManager);
@@ -1099,6 +1115,9 @@
 			break;
 		case 'image':
 			shape = new DRImage(element, artboadCommandManager);
+			break;
+		case 'text':
+			shape = new DRText(element, artboadCommandManager);
 			break;
 		}
 		return shape;
@@ -1282,7 +1301,7 @@
 		 */
 		_setAttr: function(attr, attrNS) {
 			var command = new AttrCommand({
-				element: element,
+				element: this._element,
 				attr: attr,
 				attrNS: attrNS
 			});
@@ -1478,6 +1497,79 @@
 			}
 		});
 		return fillProto;
+	}
+
+	/**
+	 * テキスト持つ図形クラスのプロトタイプに、setter/getterを持つプロパティを追加
+	 *
+	 * @private
+	 * @param {Object} textProto
+	 * @returns {Object} 渡されたオブジェクトにテキスト図形のプロパティを追加して返す
+	 */
+	function mixinDRTextShape(textProto) {
+		/**
+		 * テキストを持つ図形についてのプロパティ定義
+		 * <p>
+		 * 以下のクラスがDRTextShapeのプロパティを持ちます(プロトタイプにmixinしています)
+		 * </p>
+		 * <ul>
+		 * <li>{@link DRText}
+		 * </ul>
+		 *
+		 * @mixin
+		 * @name DRTextShape
+		 */
+		Object.defineProperties(textProto, {
+			/**
+			 * テキストの色
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 * <p>
+			 * CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)
+			 * </p>
+			 *
+			 * @name textColor
+			 * @memberOf DRTextShape
+			 * @type {String}
+			 */
+			textColor: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this.getElement().getAttribute('fill');
+				},
+				set: function(val) {
+					this._setAttr({
+						fill: val
+					});
+				}
+			},
+
+			/**
+			 * テキストの透明度(0～1)
+			 * <p>
+			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
+			 * </p>
+			 *
+			 * @name textOpacity
+			 * @memberOf DRTextShape
+			 * @type {Number}
+			 */
+			textOpacity: {
+				configurable: false,
+				enumerable: true,
+				get: function() {
+					return this.getElement().getAttribute('opacity');
+				},
+				set: function(val) {
+					this._setAttr({
+						opacity: val
+					});
+				}
+			}
+		});
+		return textProto;
 	}
 
 	/**
@@ -1834,11 +1926,17 @@
 	function DRText(element, artboadCommandManager) {
 		// typeの設定
 		setShapeInstanceType(this, 'text');
+		// data属性にtextの中身が設定されていればそれを適用する(deserialize時用)
+		var $element = $(element);
+		var text = $element.data('text-content');
+		if (text) {
+			$element.text(text);
+		}
 		this._init(element, artboadCommandManager);
 	}
 	DRText.prototype = Object.create(DRShape.prototype);
 	DRText.constructor = DRText;
-	$.extend(DRText.prototype, {
+	$.extend(mixinDRTextShape(DRText.prototype), {
 		/**
 		 * {@link DRShape.moveTo}の実装
 		 *
@@ -1884,17 +1982,22 @@
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
+			// textの内容をdata属性に保存
+			var $element = $(element);
+			$element.data('text-content', $element.text());
 			var data = getDataAttr(element);
 			var attr = {
 				x: element.getAttribute('x'),
 				y: element.getAttribute('y'),
-				width: element.getAttribute('width'),
-				height: element.getAttribute('height')
+				fill: element.getAttribute('fill'),
+				opacity: element.getAttribute('opacity'),
+				'font-size': element.getAttribute('font-size'),
+				'font-family': element.getAttribute('font-family')
 			};
 			return {
 				type: this.type,
-				style: styleDeclaration,
 				attr: attr,
+				style: styleDeclaration,
 				data: data
 			};
 		}
@@ -2362,15 +2465,12 @@
 				x: data.x,
 				y: data.y,
 				fill: data.fill,
+				opacity: data.opacity,
 				'font-family': data.font,
 				'font-size': data.fontSize
 			};
-			var style = {
-				opacity: data.style
-			};
 			var elem = createSvgDrawingElement('text', {
-				attr: attr,
-				style: style
+				attr: attr
 			});
 			$(elem).text(data.text);
 
@@ -2608,11 +2708,14 @@
 		_getCurrentBackgroundData: function() {
 			var $layer = $(this._backgroundLayer);
 			var $bgElement = $layer.children().eq(0);
-			if (!$bgElement.length) {
+			var ret = {};
+			// 背景色
+			var color = $layer.css('background-color');
+			if (!color && !$bgElement.length) {
 				// 設定されていない場合はnullを返す
 				return null;
 			}
-			var ret = {};
+			ret.color = color;
 			ret.fillMode = $bgElement.data('fillmode');
 			var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			if (id) {
@@ -2620,7 +2723,6 @@
 			} else {
 				ret.src = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			}
-			ret.color = $layer.css('background-color');
 			if (ret.fillMode === 'none') {
 				// noneならx,yも返す(四捨五入したint)
 				ret.x = Math.round(parseFloat($bgElement.css('left')));

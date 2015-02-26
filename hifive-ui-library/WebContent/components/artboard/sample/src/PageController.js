@@ -228,6 +228,9 @@
 				var shape = shapes[i];
 				if (shape.strokeColor !== undefined) {
 					shape.strokeColor = val;
+				} else if (shape.textColor !== undefined) {
+					// strokeColor設定時にtextColorも変更する
+					shape.textColor = val;
 				}
 			}
 		},
@@ -247,6 +250,9 @@
 				var shape = shapes[i];
 				if (shape.strokeOpacity !== undefined) {
 					shape.strokeOpacity = val;
+				} else if (shape.textColor !== undefined) {
+					// strokeOpacity設定時にtextOpacityも変更する
+					shape.textOpacity = val;
 				}
 			}
 		},
@@ -450,30 +456,32 @@
 			if (!this._existSelectedShape) {
 				toolCtrl.saveSettings();
 			}
+			this._existSelectedShape = true;
 			// 削除ボタンを有効
 			toolCtrl.enableRemove();
 
 			// shapeには図形によってstrokeColorやfillColorを設定できる
 			// 選択された図形(複数)のtypeをみて判定し、一つでも設定できるものがあれば有効にする
-			var isFillShape = false;
-			var isStrokeShape = false;
-			var firstFillShape = null;
-			var firstStrokeShape = null;
+			var strokeColor, strokeOpacity, fillColor, fillOpacity, strokeWidth;
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
-				if (shape.fillColor !== undefined) {
-					isFillShape = true;
-					firstFillShape = shape;
-				}
-				if (shape.strokeColor !== undefined) {
-					isStrokeShape = true;
-					firstStrokeShape = shape;
+				if (fillColor == null && shape.fillColor !== undefined) {
+					fillColor = shape.fillColor;
+					fillOpacity = shape.fillOpacity;
+				} else if (strokeColor == null && shape.strokeColor !== undefined) {
+					strokeColor = shape.strokeColor;
+					strokeOpacity = shape.strokeOpacity;
+					strokeWidth = shape.strokeColor;
+				} else if (strokeColor == null && shape.textColor !== undefined) {
+					strokeColor = shape.textColor;
+					strokeOpacity = shape.textOpacity;
 				}
 			}
+
 			// Fillの設定
-			if (isFillShape) {
+			if (fillColor != null) {
 				// 最初にヒットしたfillShapeの色をパレットに適用する
-				toolCtrl.setFillColor(firstFillShape.fillColor, firstFillShape.fillOpacity);
+				toolCtrl.setFillColor(fillColor, fillOpacity);
 				toolCtrl.enableFillColor();
 			} else {
 				// Fill設定不可
@@ -481,20 +489,23 @@
 				toolCtrl.disableFillColor();
 			}
 			// Strokeの設定
-			if (isStrokeShape) {
+			if (strokeColor != null) {
 				// 最初にヒットしたstrokeShapeの色、幅をパレットに適用する
-				toolCtrl.setStrokeColor(firstStrokeShape.strokeColor,
-						firstStrokeShape.strokeOpacity);
-				toolCtrl.setStrokeWidth(firstStrokeShape.strokeWidth);
+				toolCtrl.setStrokeColor(strokeColor, strokeOpacity);
 				toolCtrl.enableStrokeColor();
 			} else {
 				// Stroke設定不可
 				toolCtrl.setStrokeColor('#fff', 0);
 				toolCtrl.disableStrokeColor();
-				toolCtrl.disableStrokeWidth();
-				toolCtrl.enableStrokeWidth();
 			}
-			this._existSelectedShape = true;
+
+			// StrokeWidthの設定
+			if (strokeWidth != null) {
+				toolCtrl.setStrokeWidth(strokeWidth);
+				toolCtrl.enableStrokeWidth();
+			} else {
+				toolCtrl.disableStrokeWidth();
+			}
 		},
 
 		/**

@@ -1148,7 +1148,7 @@
 				x: data.x,
 				y: data.y,
 				fill: this._strokeColor,
-				fillOpacity: this._strokeOpacity,
+				opacity: this._strokeOpacity,
 				font: data && data.font,
 				fontSize: data && data.fontSize
 			});

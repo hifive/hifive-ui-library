@@ -23,6 +23,18 @@ h1 {
 	margin: 0
 }
 
+.clear-both {
+	clear: both;
+}
+
+.pull-right {
+	float: right;
+}
+
+.pull-left {
+	float: left;
+}
+
 .border1 {
 	border: 1px solid #ccc;
 	box-sizing: border-box;
@@ -83,10 +95,6 @@ h1 {
 .drawing-toolbar .icon48 {
 	width: 48px;
 	height: 48px;
-}
-
-.drawing-toolbar .clear-both {
-	clear: both;
 }
 
 .load-data-list {
@@ -201,6 +209,7 @@ h1 {
 	display: block;
 	z-index: 101;
 	cursor: default;
+	white-space: nowrap;
 }
 
 .text-input {
@@ -255,4 +264,8 @@ h1 {
 .toolbar-file-operation>* {
 	display: inline-block;
 	border: 2px solid #ccc;
+}
+
+.saved-img-wrapper {
+	float: left;
 }

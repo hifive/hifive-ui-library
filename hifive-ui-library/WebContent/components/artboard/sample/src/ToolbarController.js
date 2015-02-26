@@ -337,13 +337,15 @@
 			context.event.preventDefault();
 			var toolName = $el.data('tool-name');
 			var isSelected = $el.hasClass('selected');
+
+			// 既に選択されているツールなら何もしない
 			if (isSelected) {
 				return;
 			}
+			this.hideOptionView();
+
 			// スタンプならスタンプリストを表示
 			if (toolName === 'stamp') {
-				var offset = $el.offset();
-				this.hideOptionView();
 				this._showStampList();
 			} else {
 				this._hideStampList();
@@ -351,13 +353,12 @@
 
 			// 文字入力ならinputを表示
 			// テキストスタンプモードに変更
-			if (toolName === "text") {
+			if (toolName === 'text') {
 				this._showTextInput();
-				this._isTextStampMode = true;
 			} else {
 				this._hideTextInput();
-				this._isTextStampMode = false;
 			}
+
 
 			this.$find('.toolbar-icon').removeClass('selected');
 			this.$find('.mode-select').removeClass('selected');
@@ -436,6 +437,7 @@
 				this.trigger('fill-opacity-change', val / 100);
 			} else {
 				this.trigger('stroke-opacity-change', val / 100);
+				this._refreshTextStamp();
 			}
 		},
 
@@ -539,19 +541,28 @@
 			}
 			this._showTextStamp(context);
 		},
+		'{this.targetArtboard.rootElement} mouseleave': function(context) {
+			if (this._isTracking || !this._isTextStampMode) {
+				return;
+			}
+			this._$textStamp.addClass('display-none');
+		},
 
 		_showTextStamp: function(context) {
 			var targetArtboard = this.targetArtboard;
 			var offset = $(targetArtboard.rootElement).offset();
 			var x = event.pageX - offset.left;
 			var y = event.pageY - offset.top;
-			this._$textStamp.text(this.getTextValue()).addClass('dragging').css({
-				fontSize: this.getTextSize() + 'px',
+			var fontSize = this.getTextSize();
+			this._$textStamp.text(this.getTextValue()).addClass('dragging').removeClass(
+					'display-none').css({
+				fontSize: fontSize + 'px',
+				lineHeight: fontSize + 'px',
 				position: 'absolute',
 				color: this.$find('.selected-color.stroke').css('background-color'),
-				opacity: parseInt(this.$find('.opacity-slidebar.opacity-fill').val()) / 100,
+				opacity: parseInt(this.$find('.opacity-slidebar.opacity-stroke').val()) / 100,
 				left: x,
-				top: y,
+				top: y - fontSize,
 				border: 'none'
 			});
 		},
@@ -574,7 +585,7 @@
 				targetArtboard.drawText({
 					text: text,
 					x: x,
-					y: y,
+					y: y - 3,
 					fontSize: this.getTextSize()
 				});
 			}
@@ -608,7 +619,7 @@
 			this._$textStamp.text(this.getTextValue()).css({
 				fontSize: this.getTextSize() + 'px',
 				color: this.$find('.selected-color.stroke').css('background-color'),
-				opacity: parseInt(this.$find('.opacity-slidebar.opacity-fill').val()) / 100
+				opacity: parseInt(this.$find('.opacity-slidebar.opacity-stroke').val()) / 100
 			});
 		},
 
@@ -748,6 +759,7 @@
 
 		_showTextInput: function(position) {
 			this._$textInput.removeClass('display-none');
+			this._$textInput.find('input:first').focus();
 			var $textIcon = $('[data-tool-name="text"]');
 			var offset = $textIcon.offset();
 			this._$textInput.css({
@@ -760,9 +772,10 @@
 			// テキストのスタンプを作って表示する
 			if (!this._$textStamp) {
 				this._$textStamp = $('<span></span>');
-				$(this.rootElement).append(this._$textStamp);
+				$(this.targetArtboard.rootElement).append(this._$textStamp);
 			}
-			this._$textStamp.removeClass('display-none');
+			this._$textStamp.addClass('display-none');
+			this._isTextStampMode = true;
 		},
 
 		_hideTextInput: function() {
@@ -771,6 +784,7 @@
 			if (this._$textStamp) {
 				this._$textStamp.addClass('display-none');
 			}
+			this._isTextStampMode = false;
 		},
 
 		_hideOpacitySlideBar: function() {
@@ -780,6 +794,7 @@
 		hideOptionView: function() {
 			this._hideOpacitySlideBar();
 			this._hideStampList();
+			this._hideTextInput();
 		},
 
 		/**
