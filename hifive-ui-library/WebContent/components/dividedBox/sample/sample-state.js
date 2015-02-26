@@ -66,7 +66,7 @@
 
 		_getTargetDvidedBoxCtrlAndIndexByBox: function($box) {
 			var $element = $box.parent('._dividedBox');
-			var index = $element.find('>:not(.divider)').index($box);
+			var index = $element.find('>.dividedbox-managed:not(.divider)').index($box);
 			var targetDbCtrl;
 			if ($element[0] === this.verticalDBController.rootElement) {
 				targetDbCtrl = this.verticalDBController;
