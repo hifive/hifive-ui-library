@@ -871,7 +871,7 @@
 					ctx.globalAlpha = opacity;
 					ctx.fillText(textContent, x, y);
 
-					// 下線、鎖線はstroeを使って描画
+					// 下線、鎖線はstrokeを使って描画
 					var fontStyle = $element.css('text-decoration');
 					var lineThrough = fontStyle.indexOf('line-through') !== -1;
 					var underline = fontStyle.indexOf('underline') !== -1;
