@@ -870,20 +870,18 @@
 					ctx.fillStyle = fill;
 					ctx.globalAlpha = opacity;
 					ctx.fillText(textContent, x, y);
-					// restore前にサイズを取得
-					var measure = ctx.measureText(textContent);
-					ctx.restore();
+
 					// 下線、鎖線はstroeを使って描画
 					var fontStyle = $element.css('text-decoration');
 					var lineThrough = fontStyle.indexOf('line-through') !== -1;
 					var underline = fontStyle.indexOf('underline') !== -1;
 					if (underline || lineThrough) {
+						// サイズを取得
+						var measure = ctx.measureText(textContent);
 						var width = measure.width;
 						var height = fontSize;
-						ctx.save();
 						ctx.strokeStyle = fill;
 						ctx.lineWidth = Math.floor(parseInt(fontSize) * 0.05 + 1);
-						ctx.globalAlpha = opacity;
 						// 下線
 						if (underline) {
 							ctx.beginPath();
@@ -898,8 +896,8 @@
 							ctx.lineTo(x + width, y - height * 0.3);
 							ctx.stroke();
 						}
-						ctx.restore();
 					}
+					ctx.restore();
 					break;
 				case 'image':
 					var x = parseInt(element.getAttribute('x'));
