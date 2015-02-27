@@ -694,6 +694,7 @@
 
 		_showTextInput: function(context) {
 			var targetArtboard = this.targetArtboard;
+			var event = context.event;
 			var offset = $(targetArtboard.rootElement).offset();
 			var x = event.pageX - offset.left;
 			var y = event.pageY - offset.top;

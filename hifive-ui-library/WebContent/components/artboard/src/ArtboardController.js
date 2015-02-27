@@ -864,7 +864,7 @@
 			}
 			if (this._trackingData.selectedWhenTrackstart) {
 				// トラックスタート時に図形が新しく選択されたら、図形の移動のトラック
-				this._trackmoveSelectedShape(event, this.$find('.selection-rectangle'));
+				this._trackmoveSelectedShape(context.event, this.$find('.selection-rectangle'));
 				return;
 			}
 			this._selectTrackmove(context);
@@ -882,7 +882,7 @@
 			}
 			if (this._trackingData.selectedWhenTrackstart) {
 				// トラックスタート時に図形が新しく選択されたら、図形の移動のトラック
-				this._trackendSelectedShape(event, this.$find('.selection-rectangle'));
+				this._trackendSelectedShape(context.event, this.$find('.selection-rectangle'));
 				return;
 			}
 			this._selectTrackend(context);
