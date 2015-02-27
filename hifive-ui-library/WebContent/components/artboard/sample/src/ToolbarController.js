@@ -698,9 +698,10 @@
 			var offset = $(targetArtboard.rootElement).offset();
 			var x = event.pageX - offset.left;
 			var y = event.pageY - offset.top;
-			var fontSize = this.textSettingsController.getFontSize();
-			this._$textInputBox.addClass('dragging').removeClass('display-none').css({
-				left: x,
+			this._$textInputBox.addClass('dragging').removeClass('display-none');
+			var maxLeft = $(targetArtboard.rootElement).width() - this._$textInputBox.width();
+			this._$textInputBox.css({
+				left: x > maxLeft ? maxLeft : x,
 				top: y
 			});
 			this._$textInputBox.find('input').focus();
@@ -910,6 +911,7 @@
 			this._hideOpacitySlideBar();
 			this._hideStampList();
 			this._hideTextSettings();
+			this._$textInputBox.addClass('display-none');
 		},
 
 		/**
