@@ -249,12 +249,15 @@ h1 {
 	position: absolute;
 	top: 0;
 	left: 0;
-	width: 100px;
-	height: 1em;
+	width: 105px;
+	height: 20px;
+	box-sizing: border-box;
 }
 
 .font-family-select select {
 	width: 120px;
+	height: 20px;
+	box-sizing: border-box;
 }
 
 /* 透明度設定スライドバー */
