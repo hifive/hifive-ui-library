@@ -723,6 +723,59 @@
 	 */
 	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
 
+	/**
+	 * italic体で描画した時に斜体になるかどうかの判定結果マップ
+	 */
+	var italicSimulateNecessaryMap = {};
+
+	//------------------------------------------------------------
+	// Functions
+	//------------------------------------------------------------
+	/**
+	 * 指定されたフォントでcanvasにitalic指定で描画した時に、斜体になるか
+	 * <p>
+	 * Firefoxでは斜体フォントが無いとitalic指定しても描画できないので、結果はフォントによる
+	 * </p>
+	 * <p>
+	 * それ以外のブラウザでは斜体フォントが無くてもシミュレートして描画するので、結果は常にtrue
+	 * </p>
+	 *
+	 * @param {String} fontFamily フォント名
+	 * @returns {Boolean}
+	 */
+	function canDrawItalicText(fontFamily) {
+		if (italicSimulateNecessaryMap.hasOwnProperty(fontFamily)) {
+			return italicSimulateNecessaryMap[fontFamily];
+		}
+		// italicを指定する場合とそうでない場合でcanvasに実際に描画してみて、差異があるかどうかで判定
+		var normalCanvas = document.createElement('canvas');
+		var italicCanvas = document.createElement('canvas');
+		var size = {
+			width: 10,
+			height: 10
+		};
+		$(normalCanvas).attr(size);
+		$(italicCanvas).attr(size);
+		var normalCtx = normalCanvas.getContext('2d');
+		var italicCtx = italicCanvas.getContext('2d');
+		var font = '12px ' + fontFamily;
+		normalCtx.font = font;
+		italicCtx.font = 'italic ' + font;
+		normalCtx.fillText('|', 5, 10);
+		italicCtx.fillText('|', 5, 10);
+		var normalPixelArray = normalCtx.getImageData(0, 0, 10, 10).data;
+		var italicPixelArray = italicCtx.getImageData(0, 0, 10, 10).data;
+		var length = normalPixelArray.length;
+		for (var i = 0; i < length; i++) {
+			if (normalPixelArray[i] !== italicPixelArray[i]) {
+				italicSimulateNecessaryMap[fontFamily] = true;
+				return true;
+			}
+		}
+		italicSimulateNecessaryMap[fontFamily] = false;
+		return false;
+	}
+
 	//------------------------------------------------------------
 	// Logic
 	//------------------------------------------------------------
@@ -744,9 +797,12 @@
 		 * @memberOf h5.ui.components.artboard.logic.CanvasConvertLogic
 		 * @param {SVG} svgElement svg要素
 		 * @param {Canvas} canvas canvas要素
+		 * @param {Object} [processParameter.simulateItalic = false]
+		 *            italic体が描画できるかどうかチェックして描画できない場合に変形してシミュレートするかどうか
 		 */
-		drawSVGToCanvas: function(svgElement, canvas) {
+		drawSVGToCanvas: function(svgElement, canvas, processParameter) {
 			var ctx = canvas.getContext('2d');
+			var simulateItalic = processParameter || processParameter.simulateItalic;
 			// h5.async.loopを使って非同期処理がある場合に待機してから次のループを実行するようにしている
 			var elements = $(svgElement).children().toArray();
 			var promise = h5.async.loop(elements, function(index, element) {
@@ -864,12 +920,28 @@
 					var fontWeight = $element.css('font-weight');
 					var fontStyle = $element.css('font-style');
 					var textContent = $element.text();
+
 					ctx.save();
 					ctx.font = h5.u.str.format('{0} {1} {2}px {3}', fontStyle, fontWeight,
 							fontSize, fontFamily);
 					ctx.fillStyle = fill;
 					ctx.globalAlpha = opacity;
-					ctx.fillText(textContent, x, y);
+					// italic体のtransformによるシミュレートが必要かどうか
+					var shouldTransform = simulateItalic && fontStyle.indexOf('italic') !== -1
+							&& !canDrawItalicText(fontFamily);
+					if (shouldTransform) {
+						// シミュレートが必要な場合は変形
+						// FIXME
+						// 位置がずれるので移動が必要
+						// 移動量は位置(x,y)に依存するはず
+						ctx.setTransform(1, 0.1, -1 / 3, 1, 0, 0);
+						ctx.font = ctx.font.replace('italic', '');
+						ctx.fillText(textContent, x, y);
+						// 変形を元に戻す
+						ctx.setTransform(1, 0, 0, 1, 0, 0);
+					} else {
+						ctx.fillText(textContent, x, y);
+					}
 
 					// 下線、鎖線はstrokeを使って描画
 					var fontStyle = $element.css('text-decoration');
@@ -2970,7 +3042,18 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {Object} [processParameter]
+		 * @param {Object} [processParameter.simulateItalic = false]
+		 *            italicの指定されたDRTextオブジェクトの画像化の際に、指定されているフォントがitalic体を持たない場合に、変形して出力を行うかどうか
+		 *            <p>
+		 *            Firefox以外のブラウザでは、italic体を持たないフォントについてもブラウザが自動で変形を行うので、このフラグを指定しても結果は変わりません。
+		 *            </p>
+		 *            <p>
+		 *            Firefoxの場合は、フォントファイルにitalick体が含まれていない場合、italicを指定してもブラウザによる自動変形は行われず、canvasに斜体を描画しません。
+		 *            </p>
+		 *            <p>
+		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
+		 *            </p>
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
@@ -3047,9 +3130,11 @@
 			}
 
 			// 背景描画が終わったら図形をカンバスに描画
-			backgroundDfd.promise().then(this.own(function() {
-				return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas);
-			})).then(this.own(function() {
+			backgroundDfd.promise().then(
+					this.own(function() {
+						return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas,
+								processParameter);
+					})).then(this.own(function() {
 				// カンバスを画像化
 				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
 			}));

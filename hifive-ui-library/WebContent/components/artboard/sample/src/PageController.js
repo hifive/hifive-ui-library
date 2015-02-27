@@ -366,7 +366,9 @@
 		 * @memberOf sample.PageController
 		 */
 		'{this._$toolbar} export': function() {
-			this._artboardController.getImage().done(
+			this._artboardController.getImage('imgage/png', {
+				simulateItalic: true//h5.env.ua.isFirefox
+			}).done(
 					this.own(function(dataUrl) {
 						this._$savedImgWrapper
 								.prepend('<div><label>' + sample.util.dateFormat(new Date())
