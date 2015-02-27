@@ -157,6 +157,10 @@
 		//---------------------------------------------------------------
 		'{window} keydown': function(context) {
 			var event = context.event;
+			if (event.target.tagName.toLowerCase() === 'input') {
+				// input要素のキーイベントなら何もしない
+				return;
+			}
 			var keyCode = event.keyCode;
 			var ctrlKey = event.ctrlKey;
 			switch (keyCode) {

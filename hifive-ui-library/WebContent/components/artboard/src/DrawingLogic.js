@@ -854,19 +854,52 @@
 					ctx.restore();
 					break;
 				case 'text':
-					var x = element.getAttribute('x');
-					var y = element.getAttribute('y');
+					var $element = $(element);
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
 					var fill = element.getAttribute('fill');
 					var opacity = element.getAttribute('opacity');
 					var fontFamily = element.getAttribute('font-family');
-					var fontSize = element.getAttribute('font-size');
-					var content = $(element).text();
+					var fontSize = parseFloat(element.getAttribute('font-size'));
+					var fontWeight = $element.css('font-weight');
+					var fontStyle = $element.css('font-style');
+					var textContent = $element.text();
 					ctx.save();
-					ctx.font = h5.u.str.format('{0}px {1}', fontSize, fontFamily);
+					ctx.font = h5.u.str.format('{0} {1} {2}px {3}', fontStyle, fontWeight,
+							fontSize, fontFamily);
 					ctx.fillStyle = fill;
 					ctx.globalAlpha = opacity;
-					ctx.fillText(content, x, y);
+					ctx.fillText(textContent, x, y);
+					// restore前にサイズを取得
+					var measure = ctx.measureText(textContent);
 					ctx.restore();
+					// 下線、鎖線はstroeを使って描画
+					var fontStyle = $element.css('text-decoration');
+					var lineThrough = fontStyle.indexOf('line-through') !== -1;
+					var underline = fontStyle.indexOf('underline') !== -1;
+					if (underline || lineThrough) {
+						var width = measure.width;
+						var height = fontSize;
+						ctx.save();
+						ctx.strokeStyle = fill;
+						ctx.lineWidth = Math.floor(parseInt(fontSize) * 0.05 + 1);
+						ctx.globalAlpha = opacity;
+						// 下線
+						if (underline) {
+							ctx.beginPath();
+							ctx.moveTo(x, y + height / 10);
+							ctx.lineTo(x + width, y + height / 10);
+							ctx.stroke();
+						}
+						// 鎖線
+						if (lineThrough) {
+							ctx.beginPath();
+							ctx.moveTo(x, y - height * 0.3);
+							ctx.lineTo(x + width, y - height * 0.3);
+							ctx.stroke();
+						}
+						ctx.restore();
+					}
 					break;
 				case 'image':
 					var x = parseInt(element.getAttribute('x'));
@@ -1665,9 +1698,9 @@
 					// 文字の装飾に関する設定のみ
 					// (font-familyとfont-sizeは属性で設定しています)
 					this._setStyle({
-						'text-decoration': val['text-decoration'],
-						'font-weight': val['font-weight'],
-						'font-style': val['font-style']
+						'text-decoration': val['text-decoration'] || '',
+						'font-weight': val['font-weight'] || '',
+						'font-style': val['font-style'] || ''
 					});
 				}
 			}

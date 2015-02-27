@@ -114,18 +114,20 @@
 		 * </p>
 		 */
 		'{this._$fontSizeInput} keydown': function(context, $el) {
-			var keyCode = context.event.keyCode;
+			var event = context.event;
+			var keyCode = event.keyCode;
 			var val = parseInt($el.val());
+
 			if (isNaN(val)) {
 				return;
 			}
 			// 上下キーは数値の上下
 			if (keyCode === 38) {
 				$el.val(val + 1);
-				context.event.preventDefault();
+				event.preventDefault();
 			} else if (keyCode === 40 && val > 0) {
 				$el.val(val - 1);
-				context.event.preventDefault();
+				event.preventDefault();
 			}
 		},
 		'input keyup': function(context, $el) {
