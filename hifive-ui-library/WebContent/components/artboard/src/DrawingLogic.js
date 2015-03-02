@@ -726,7 +726,7 @@
 	/**
 	 * italic体で描画した時に斜体になるかどうかの判定結果マップ
 	 */
-	var italicSimulateNecessaryMap = {};
+	var italicDrawableMap = {};
 
 	//------------------------------------------------------------
 	// Functions
@@ -744,8 +744,8 @@
 	 * @returns {Boolean}
 	 */
 	function canDrawItalicText(fontFamily) {
-		if (italicSimulateNecessaryMap.hasOwnProperty(fontFamily)) {
-			return italicSimulateNecessaryMap[fontFamily];
+		if (italicDrawableMap.hasOwnProperty(fontFamily)) {
+			return italicDrawableMap[fontFamily];
 		}
 		// italicを指定する場合とそうでない場合でcanvasに実際に描画してみて、差異があるかどうかで判定
 		var normalCanvas = document.createElement('canvas');
@@ -768,11 +768,11 @@
 		var length = normalPixelArray.length;
 		for (var i = 0; i < length; i++) {
 			if (normalPixelArray[i] !== italicPixelArray[i]) {
-				italicSimulateNecessaryMap[fontFamily] = true;
+				italicDrawableMap[fontFamily] = true;
 				return true;
 			}
 		}
-		italicSimulateNecessaryMap[fontFamily] = false;
+		italicDrawableMap[fontFamily] = false;
 		return false;
 	}
 
