@@ -931,10 +931,7 @@
 							&& !canDrawItalicText(fontFamily);
 					if (shouldTransform) {
 						// シミュレートが必要な場合は変形
-						// FIXME
-						// 位置がずれるので移動が必要
-						// 移動量は位置(x,y)に依存するはず
-						ctx.setTransform(1, 0.1, -1 / 3, 1, 0, 0);
+						ctx.setTransform(1, 0.0, -1 / 3, 1, y / 3, 0);
 						ctx.font = ctx.font.replace('italic', '');
 						ctx.fillText(textContent, x, y);
 						// 変形を元に戻す
