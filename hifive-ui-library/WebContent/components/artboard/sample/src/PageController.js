@@ -181,12 +181,12 @@
 		//-------------------------------------------------------------------------------
 		// ツールバーの上げるイベント
 		//-------------------------------------------------------------------------------
-		'{this._$toolbar} shape-select': function() {
+		'{this._$toolbar} selectMode': function() {
 			this._artboardController.unselectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
 		},
 
-		'{this._$toolbar} tool-select': function(context) {
+		'{this._$toolbar} drawMode': function(context) {
 			this._artboardController.unselectAll();
 			var toolName = context.evArg;
 			switch (toolName) {
@@ -217,7 +217,7 @@
 			}
 		},
 
-		'{this._$toolbar} stroke-change': function(context) {
+		'{this._$toolbar} strokeChange': function(context) {
 			var val = context.evArg;
 			var artboadCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
@@ -239,7 +239,7 @@
 			}
 		},
 
-		'{this._$toolbar} stroke-opacity-change': function(context) {
+		'{this._$toolbar} strokeOpacityChange': function(context) {
 			var val = context.evArg;
 			var artboadCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
@@ -261,7 +261,7 @@
 			}
 		},
 
-		'{this._$toolbar} fill-change': function(context) {
+		'{this._$toolbar} fillChange': function(context) {
 			var val = context.evArg;
 			var artboadCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
@@ -280,7 +280,7 @@
 			}
 		},
 
-		'{this._$toolbar} fill-opacity-change': function(context) {
+		'{this._$toolbar} fillOpacityChange': function(context) {
 			var val = context.evArg;
 			var artboadCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
@@ -299,7 +299,7 @@
 			}
 		},
 
-		'{this._$toolbar} stroke-width-change': function(context) {
+		'{this._$toolbar} strokeWidthChange': function(context) {
 			var val = context.evArg;
 			var artboadCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
@@ -345,7 +345,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} remove-selected-shape': function() {
+		'{this._$toolbar} removeSelectedShape': function() {
 			this._removeSelectedShape();
 		},
 		_removeSelectedShape: function() {
@@ -410,7 +410,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} remove-all': function() {
+		'{this._$toolbar} removeAll': function() {
 			if (!confirm('描画されている図形をすべて削除します')) {
 				return;
 			}
@@ -429,40 +429,40 @@
 		/**
 		 * 全ての図形を選択
 		 */
-		'{this._$toolbar} select-all': function() {
+		'{this._$toolbar} selectAll': function() {
 			this._selectAll();
 		},
 
 		/**
 		 * 全ての図形の選択を解除
 		 */
-		'{this._$toolbar} unselect-all': function() {
+		'{this._$toolbar} unselectAll': function() {
 			this._artboardController.unselectAll();
 		},
 
-		'{this._$canvasWrapper} enable-undo': function() {
+		'{this._$canvasWrapper} enableUndo': function() {
 			this.$find('.undo').removeClass('disabled');
 		},
-		'{this._$canvasWrapper} disable-undo': function() {
+		'{this._$canvasWrapper} disableUndo': function() {
 			this.$find('.undo').addClass('disabled');
 		},
-		'{this._$canvasWrapper} enable-redo': function() {
+		'{this._$canvasWrapper} enableRedo': function() {
 			this.$find('.redo').removeClass('disabled');
 
 		},
-		'{this._$canvasWrapper} disable-redo': function() {
+		'{this._$canvasWrapper} disableRedo': function() {
 			this.$find('.redo').addClass('disabled');
 		},
 		'{this._$canvasWrapper} drawstart': function() {
 			this._toolbarController.hideOptionView();
 		},
-		'{this._$canvasWrapper} drawend': function() {
+		'{this._$canvasWrapper} drawEnd': function() {
 		// 何もしない
 		},
-		'{this._$canvasWrapper} select-shape': function(context) {
+		'{this._$canvasWrapper} selectShape': function(context) {
 			this._setToolbarForSelectedShape();
 		},
-		'{this._$canvasWrapper} unselect-shape': function(context) {
+		'{this._$canvasWrapper} unselectShape': function(context) {
 			var shapes = this._artboardController.getSelectedShapes();
 			if (shapes.length) {
 				this._setToolbarForSelectedShape();

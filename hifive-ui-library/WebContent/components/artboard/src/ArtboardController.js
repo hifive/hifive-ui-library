@@ -15,6 +15,35 @@
  *
  */
 
+//--------------------------------------------------------
+// 定数定義
+//--------------------------------------------------------
+(function() {
+	//----------------------------------------
+	// ArtboardControllerが上げるイベント
+	//----------------------------------------
+	/** 描画操作を開始した時に上がるイベント名 */
+	var EVENT_DRAW_START = 'drawStart';
+
+	/** 描画操作を終了した時に上がるイベント名 */
+	var EVENT_DRAW_END = 'drawEnd';
+
+	/** 図形を選択した時に上がるイベント名 */
+	var EVENT_SELECT_SHAPE = 'selectShape';
+
+	/** 図形の選択を解除した時に上がるイベント名 */
+	var EVENT_UNSELECT_SHAPE = 'unselectShape';
+
+	// exposeしてイベント名を公開する
+	// コマンドマネージャが上げるイベントはDrawingLogicで公開している
+	h5.u.obj.expose('h5.ui.components.artboard.consts', {
+		EVENT_DRAW_START: EVENT_DRAW_START,
+		EVENT_DRAW_END: EVENT_DRAW_END,
+		EVENT_SELECT_SHAPE: EVENT_SELECT_SHAPE,
+		EVENT_UNSELECT_SHAPE: EVENT_UNSELECT_SHAPE
+	});
+})();
+
 //----------------------------------------------------------------------------
 // h5.ui.components.SelectionLogic
 //----------------------------------------------------------------------------
@@ -390,6 +419,12 @@
 	// Cache
 	//------------------------------------------------------------
 	// CommandManagerが上げるイベント名
+	/** undo実行時に上がるイベント名 */
+	var EVENT_UNDO = h5.ui.components.artboard.consts.EVENT_UNDO;
+
+	/** redo実行時に上がるイベント名 */
+	var EVENT_REDO = h5.ui.components.artboard.consts.EVENT_REDO;
+
 	/** undoができるようになった時に上がるイベント名 */
 	var EVENT_ENABLE_UNDO = h5.ui.components.artboard.consts.EVENT_ENABLE_UNDO;
 
@@ -404,10 +439,10 @@
 
 	// ArtboardControllerが上げるイベント名
 	/** 描画操作を開始した時に上がるイベント名 */
-	var EVENT_DRAWSTART = h5.ui.components.artboard.consts.EVENT_DRAWSTART;
+	var EVENT_DRAW_START = h5.ui.components.artboard.consts.EVENT_DRAW_START;
 
 	/** 描画操作を終了した時に上がるイベント名 */
-	var EVENT_DRAWEND = h5.ui.components.artboard.consts.EVENT_DRAWEND;
+	var EVENT_DRAW_END = h5.ui.components.artboard.consts.EVENT_DRAW_END;
 
 	/** 図形を選択した時に上がるイベント名 */
 	var EVENT_SELECT_SHAPE = h5.ui.components.artboard.consts.EVENT_SELECT_SHAPE;
@@ -743,8 +778,8 @@
 			}
 			// CommandManagerにイベントをバインドする
 			// undo/redoが可能/不可能になった時にルートエレメントからイベントをあげる
-			var events = [EVENT_ENABLE_UNDO, EVENT_ENABLE_REDO, EVENT_DISABLE_UNDO,
-					EVENT_DISABLE_REDO];
+			var events = [EVENT_UNDO, EVENT_REDO, EVENT_ENABLE_UNDO, EVENT_ENABLE_REDO,
+					EVENT_DISABLE_UNDO, EVENT_DISABLE_REDO];
 			for (var i = 0, l = events.length; i < l; i++) {
 				this.on(commandManager, events[i], function(context) {
 					this.trigger(context.event.type);
@@ -790,7 +825,7 @@
 				},
 				moved: false
 			};
-			this.trigger(EVENT_DRAWSTART);
+			this.trigger(EVENT_DRAW_START);
 			var startFunctionName = '_' + this._mode + 'DrawStart';
 			this[startFunctionName] && this[startFunctionName](context);
 		},
@@ -818,7 +853,7 @@
 			event.stopPropagation();
 			var endFunctionName = '_' + this._mode + 'DrawEnd';
 			this[endFunctionName] && this[endFunctionName](context);
-			this.trigger(EVENT_DRAWEND);
+			this.trigger(EVENT_DRAW_END);
 			this._trackingData = null;
 		},
 
@@ -1241,6 +1276,7 @@
 		 * @param {DRShape} shape
 		 */
 		append: function(shape) {
+			console.log('append')
 			this.drawingLogic.append(shape);
 		},
 

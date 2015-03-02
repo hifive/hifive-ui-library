@@ -1,13 +1,63 @@
 (function() {
-
+	//--------------------------------------------
+	//  定数
+	//--------------------------------------------
 	/**
 	 * 画像IDを保持するデータ属性名
 	 */
 	var DATA_DRAWING_IMAGE_ID = sample.consts.DATA_DRAWING_IMAGE_ID;
 
-	//--------------------------------------------
-	// ToolbarControllerで使用する内部コントローラ
-	//--------------------------------------------
+	//--------------------------------------
+	//  ToolbarControllerが上げるイベント
+	//--------------------------------------
+	/** 選択モードに切り替え */
+	var EVENT_SELECT_MODE = 'selectMode';
+
+	/** 描画モードに切り替え */
+	var EVENT_DRAW_MODE = 'drawMode';
+
+	/** ストロークカラー変更 */
+	var EVENT_STROKE_CHANGE = 'strokeChange';
+
+	/** 塗りつぶしカラー変更 */
+	var EVENT_FILL_CHANGE = 'fillChange';
+
+	/** ストロークカラーの透明度設定 */
+	var EVENT_STROKE_OPACITY_CHANGE = 'strokeOpacityChange';
+
+	/** 塗りつぶしカラーの透明度設定 */
+	var EVENT_FILL_OPACITY_CHANGE = 'fillOpacityChange';
+
+	/** ストローク幅設定 */
+	var EVENT_STROKE_WIDTH_CHANGE = 'strokeWidthChange';
+
+	/** テキスト設定変更時に上げるイベント */
+	var EVENT_TEXT_SETTINGS_CHANGE = 'textSettingsChange';
+
+	/** 全てを選択 */
+	var EVENT_SELECT_ALL = 'selectAll';
+
+	/** 選択を全て解除 */
+	var EVENT_UNSELECT_ALL = 'unselectAll';
+
+	/** 選択された図形をすべて削除 */
+	var EVENT_REMOVE_SELECTED_SHAPE = 'removeSelectedShape';
+
+	/** 図形全てを削除 */
+	var EVENT_REMOVE_ALL = 'removeAll';
+
+	/** 画像出力実行 */
+	var EVENT_EXPORT = 'export';
+
+	/** セーブ */
+	var EVENT_SAVE = 'save';
+
+	/** ロード */
+	var EVENT_LOAD = 'load';
+
+	//-------------------------------------------------------------
+	//  sample.ToolMenuController
+	//-------------------------------------------------------------
 	/**
 	 * ツールメニューの開閉を行うコントローラ
 	 *
@@ -89,6 +139,9 @@
 		}
 	};
 
+	//-------------------------------------------------------------
+	//  sample.TextSettingsController
+	//-------------------------------------------------------------
 	/**
 	 * テキストの設定コントローラ
 	 *
@@ -234,7 +287,7 @@
 			this._$fontFamilyInput.val(this._$fontFamilySelect.find('option:selected').text());
 		},
 		_triggerChangeEvent: function() {
-			this.trigger('textSettingsChange', {
+			this.trigger(EVENT_TEXT_SETTINGS_CHANGE, {
 				textContent: this.getTextContent(),
 				fontSize: this.getFontSize(),
 				fontStyle: this.getFontStyle(),
@@ -243,10 +296,9 @@
 		}
 	};
 
-
-	//--------------------------------------------
-	// ToolbarController
-	//--------------------------------------------
+	//-------------------------------------------------------------
+	//  sample.ToolbarController
+	//-------------------------------------------------------------
 	/**
 	 * ToolbarController
 	 *
@@ -447,7 +499,7 @@
 			// ダブルタップによるzoomが動かないようにpreventDefault
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			this.targetArtboard.undo();
 		},
 
@@ -460,7 +512,7 @@
 		'.redo h5trackstart': function(context) {
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			this.targetArtboard.redo();
 		},
 
@@ -471,14 +523,14 @@
 		 * @param context
 		 */
 		'.select-all h5trackstart': function(context) {
-			this.trigger('select-all');
+			this.trigger(EVENT_SELECT_ALL);
 		},
 
 		/**
 		 * 全て削除
 		 */
 		'.remove-all h5trackstart': function() {
-			this.trigger('remove-all');
+			this.trigger(EVENT_REMOVE_ALL);
 		},
 
 		/**
@@ -490,7 +542,7 @@
 		'.mode-select h5trackstart': function(context, $el) {
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('shape-select');
+			this.trigger(EVENT_SELECT_MODE);
 			this.$find('.toolbar-icon').removeClass('selected');
 			$el.addClass('selected');
 			// テキスト入力モードの終了
@@ -504,7 +556,7 @@
 		 * @param context
 		 */
 		'.export h5trackstart': function(context) {
-			this.trigger('export');
+			this.trigger(EVENT_EXPORT);
 		},
 
 		/**
@@ -544,7 +596,7 @@
 			this.$find('.mode-select').removeClass('selected');
 			$el.addClass('selected');
 
-			this.trigger('tool-select', toolName);
+			this.trigger(EVENT_DRAW_MODE, toolName);
 		},
 
 		'.stamp-img h5trackstart': function(context, $el) {
@@ -567,7 +619,7 @@
 			$selectedColor.css('background-color', color);
 			var isFill = $selectedColor.hasClass('fill');
 
-			this.trigger(isFill ? 'fill-change' : 'stroke-change', color);
+			this.trigger(isFill ? EVENT_FILL_CHANGE : EVENT_STROKE_CHANGE, color);
 		},
 
 		'.selected-color h5trackstart': function(context, $el) {
@@ -596,13 +648,11 @@
 		'.opacity-slidebar-wrapper slide': function(context, $el) {
 			var $target = $(context.event.target);
 			var val = parseInt($target.val());
+			var opacity = val / 100;
 			$el.find('.slider-value').text(val);
-			$el.parent().find('.selected-color').css('opacity', val / 100);
-			if ($target.hasClass('opacity-fill')) {
-				this.trigger('fill-opacity-change', val / 100);
-			} else {
-				this.trigger('stroke-opacity-change', val / 100);
-			}
+			$el.parent().find('.selected-color').css('opacity', opacity);
+			var isFill = $target.hasClass('opacity-fill');
+			this.trigger(isFill ? EVENT_FILL_OPACITY_CHANGE : EVENT_STROKE_OPACITY_CHANGE, opacity);
 		},
 
 		//--------------------------------------------------------
@@ -612,7 +662,7 @@
 			var $target = $(context.event.target);
 			var val = parseInt($target.val() + 'px');
 			$el.find('.slider-value').text(val);
-			this.trigger('stroke-width-change', val);
+			this.trigger(EVENT_STROKE_WIDTH_CHANGE, val);
 		},
 
 		//--------------------------------------------------------
@@ -799,7 +849,7 @@
 				rgbaColor = sample.util.rgbToRgba(color, opacity);
 			}
 
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			targetArtboard.setBackground(rgbaColor, backgroundData);
 		},
 
@@ -877,7 +927,7 @@
 
 
 		'.remove-selected-shape h5trackstart': function() {
-			this.trigger('remove-selected-shape');
+			this.trigger(EVENT_REMOVE_SELECTED_SHAPE);
 		},
 
 		_showStampList: function(position) {
@@ -1035,7 +1085,7 @@
 		 * セーブ
 		 */
 		'.save h5trackstart': function() {
-			this.trigger('save');
+			this.trigger(EVENT_SAVE);
 			this.$find('.popup-open[data-popup-name="load-popup"]').removeClass('disabled');
 		},
 
@@ -1051,7 +1101,7 @@
 			if (!confirm(h5.u.str.format('{0}\nをロードします。よろしいですか？', label))) {
 				return;
 			}
-			this.trigger('load', saveNo);
+			this.trigger(EVENT_LOAD, saveNo);
 			this._loadPopup.hide();
 		},
 

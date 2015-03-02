@@ -1,31 +1,37 @@
 //--------------------------------------------------------
-// 共通定数定義
+// 定数定義
 //--------------------------------------------------------
 (function() {
+	//----------------------------------------
+	// コマンドマネージャが上げるイベント
+	//----------------------------------------
+	/** undo実行完了時に上がるイベント名 */
+	var EVENT_UNDO = 'undo';
+
+	/** redo実行完了時に上がるイベント名 */
+	var EVENT_REDO = 'redo';
+
 	/** undoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_UNDO = 'enable-undo';
+	var EVENT_ENABLE_UNDO = 'enableUndo';
 
 	/** redoができるようになった時に上がるイベント名 */
-	var EVENT_ENABLE_REDO = 'enable-redo';
+	var EVENT_ENABLE_REDO = 'enableRedo';
 
 	/** undoができなくなった時に上がるイベント名 */
-	var EVENT_DISABLE_UNDO = 'disable-undo';
+	var EVENT_DISABLE_UNDO = 'disableUndo';
 
 	/** redoが出来なくなったときに上がるイベント名 */
-	var EVENT_DISABLE_REDO = 'disable-redo';
+	var EVENT_DISABLE_REDO = 'disableRedo';
 
 	/** 描画操作を開始した時に上がるイベント名 */
-	var EVENT_DRAWSTART = 'drawstart';
+	var EVENT_DRAWSTART = 'drawStart';
 
 	/** 描画操作を終了した時に上がるイベント名 */
-	var EVENT_DRAWEND = 'drawend';
+	var EVENT_DRAWEND = 'drawEnd';
 
-	/** 図形を選択した時に上がるイベント名 */
-	var EVENT_SELECT_SHAPE = 'select-shape';
-
-	/** 図形の選択を解除した時に上がるイベント名 */
-	var EVENT_UNSELECT_SHAPE = 'unselect-shape';
-
+	//----------------------------------------
+	// 定数
+	//----------------------------------------
 	/** imageSourceMapと対応付けるために要素に持たせるデータ属性名 */
 	var DATA_IMAGE_SOURCE_ID = 'h5-artboad-image-id';
 
@@ -47,8 +53,6 @@
 			EVENT_DISABLE_REDO: EVENT_DISABLE_REDO,
 			EVENT_DRAWSTART: EVENT_DRAWSTART,
 			EVENT_DRAWEND: EVENT_DRAWEND,
-			EVENT_SELECT_SHAPE: EVENT_SELECT_SHAPE,
-			EVENT_UNSELECT_SHAPE: EVENT_UNSELECT_SHAPE,
 			XMLNS: XMLNS,
 			XLINKNS: XLINKNS,
 			DATA_IMAGE_SOURCE_ID: DATA_IMAGE_SOURCE_ID
@@ -145,6 +149,12 @@
 	var useDataForGetBBox = h5.ui.components.artboard.useDataForGetBBox;
 	var setBoundsData = h5.ui.components.artboard.setBoundsData;
 	var getBounds = h5.ui.components.artboard.getBounds;
+	var EVENT_UNDO = h5.ui.components.artboard.consts.EVENT_UNDO;
+	var EVENT_REDO = h5.ui.components.artboard.consts.EVENT_REDO;
+	var EVENT_ENABLE_UNDO = h5.ui.components.artboard.consts.EVENT_ENABLE_UNDO;
+	var EVENT_ENABLE_REDO = h5.ui.components.artboard.consts.EVENT_ENABLE_REDO;
+	var EVENT_DISABLE_UNDO = h5.ui.components.artboard.consts.EVENT_DISABLE_UNDO;
+	var EVENT_DISABLE_REDO = h5.ui.components.artboard.consts.EVENT_DISABLE_REDO;
 
 	//------------------------------------------------------------
 	// Body
@@ -592,7 +602,7 @@
 				history.splice(index);
 				// 最後尾を見ていない時(==今までREDO可能だったとき)にREDO不可になったことを通知
 				this.dispatchEvent({
-					type: 'disable-redo'
+					type: EVENT_DISABLE_REDO
 				});
 			}
 			// 最後尾に追加
@@ -602,7 +612,7 @@
 			if (index === 0) {
 				// 0番目を見ていた時は、UNDO可能になったことを通知
 				this.dispatchEvent({
-					type: 'enable-undo'
+					type: EVENT_ENABLE_UNDO
 				});
 			}
 		},
@@ -627,17 +637,22 @@
 			} else {
 				command.undo();
 			}
+			// undoされたことをイベントで通知
+			this.dispatchEvent({
+				type: EVENT_UNDO
+			});
+
 			this._index--;
 			// 元々redoできなかった場合(最後を見ていた場合)はredo可能になったことを通知
 			if (index === history.length) {
 				this.dispatchEvent({
-					type: 'enable-redo'
+					type: EVENT_ENABLE_REDO
 				});
 			}
 			// 1番目を見ていた時は、今回のundoでundo不可になったことを通知
 			if (index === 1) {
 				this.dispatchEvent({
-					type: 'disable-undo'
+					type: EVENT_DISABLE_UNDO
 				});
 			}
 		},
@@ -662,17 +677,22 @@
 			} else {
 				command.execute();
 			}
+			// redoされたことをイベントで通知
+			this.dispatchEvent({
+				type: EVENT_REDO
+			});
+
 			this._index++;
 			// 元々undeできなかった場合(0番目を見ていた場合はundo可能になったことを通知
 			if (index === 0) {
 				this.dispatchEvent({
-					type: 'enable-undo'
+					type: EVENT_ENABLE_UNDO
 				});
 			}
 			// 最後の一個前を見ていた時は、今回のredoでredo不可になったことを通知
 			if (index === history.length - 1) {
 				this.dispatchEvent({
-					type: 'disable-redo'
+					type: EVENT_DISABLE_REDO
 				});
 			}
 		},
@@ -690,13 +710,13 @@
 			// undo不可になったことを通知
 			if (index !== 0) {
 				this.dispatchEvent({
-					type: 'disable-undo'
+					type: EVENT_DISABLE_UNDO
 				});
 			}
 			// redo不可になったことを通知
 			if (index < historyLength) {
 				this.dispatchEvent({
-					type: 'disable-redo'
+					type: EVENT_DISABLE_REDO
 				});
 			}
 		}
