@@ -369,7 +369,7 @@
 			this._data.layer.appendChild(this.getShape().getElement());
 			return {
 				type: EVENT_APPEND_SHAPE,
-				shape: this.getShape(),
+				target: this.getShape(),
 				layer: this._data._layer
 			};
 		},
@@ -382,7 +382,7 @@
 			this._data.layer.removeChild(this.getShape().getElement());
 			return {
 				type: EVENT_REMOVE_SHAPE,
-				shape: this.getShape(),
+				target: this.getShape(),
 				layer: this._data._layer
 			};
 		}
@@ -421,7 +421,7 @@
 			parent.removeChild(shape.getElement());
 			return {
 				type: EVENT_REMOVE_SHAPE,
-				shape: shape,
+				target: shape,
 				layer: parent
 			};
 		},
@@ -436,7 +436,7 @@
 			parent.appendChild(shape.getElement());
 			return {
 				type: EVENT_APPEND_SHAPE,
-				shape: shape,
+				target: shape,
 				layer: parent
 			};
 		}
@@ -468,8 +468,10 @@
 		 */
 		_execute: function() {
 			var before = this._undoData.beforeStyle;
-			var after = this._undoData.after;
+			var after = this._undoData.afterStyle;
 			var shape = this.getShape();
+			var prop = this._data.propertyName;
+			var oldValue = shape[prop];
 			if (after && before) {
 				// 一度でも実行していれば、適用前、適用後のスタイルは知っているので
 				// そのまま適用
@@ -488,17 +490,15 @@
 					after[camel] = element.style[camel];
 				}
 				this._undoData.beforeStyle = before;
-				this._undoData.after = after;
+				this._undoData.afterStyle = after;
 			}
+			var newValue = shape[prop];
 			return {
 				type: EVENT_EDIT_SHAPE,
-				shape: shape,
-				oldValue: {
-					style: $.extend({}, before)
-				},
-				newValue: {
-					style: $.extend({}, after)
-				}
+				target: shape,
+				prop: prop,
+				oldValue: oldValue,
+				newValue: newValue
 			};
 		},
 
@@ -508,18 +508,17 @@
 		 */
 		_undo: function() {
 			var before = this._undoData.beforeStyle;
-			var after = this._undoData.afterStyle;
 			var shape = this.getShape();
+			var prop = this._data.propertyName;
+			var oldValue = shape[prop];
 			$(shape.getElement()).css(before);
+			var newValue = shape[prop];
 			return {
 				type: EVENT_EDIT_SHAPE,
-				shape: shape,
-				oldValue: {
-					style: $.extend({}, after)
-				},
-				newValue: {
-					style: $.extend({}, before)
-				}
+				target: shape,
+				prop: prop,
+				oldValue: oldValue,
+				newValue: newValue
 			};
 		}
 	//		,
@@ -575,6 +574,8 @@
 			var attr = this._data.attr;
 			var attrNS = this._data.attrNS;
 			var shape = this.getShape();
+			var prop = this._data.propertyName;
+			var oldValue = shape[prop];
 			var element = shape.getElement();
 			var beforeAttr, beforeAttrNS;
 			if (attr) {
@@ -615,17 +616,13 @@
 				bBox.y += dy;
 				setBoundsData(element, bBox);
 			}
+			var newValue = shape[prop];
 			return {
 				type: EVENT_EDIT_SHAPE,
-				shape: shape,
-				oldValue: {
-					attr: beforeAttr && $.extend({}, beforeAttr),
-					attrNS: beforeAttrNS && beforeAttrNS.slice(0)
-				},
-				newValue: {
-					attr: attr && $.extend({}, attr),
-					attrNS: attrNS && attrNS.slice(0)
-				}
+				target: shape,
+				prop: prop,
+				oldValue: oldValue,
+				newValue: newValue
 			};
 		},
 
@@ -637,6 +634,8 @@
 			var attr = this._beforeAttr.attr;
 			var attrNS = this._beforeAttr.attrNS;
 			var shape = this.getShape();
+			var prop = this._data.propertyName;
+			var oldValue = shape[prop];
 			var element = shape.getElement();
 			if (attr) {
 				for ( var p in attr) {
@@ -653,17 +652,13 @@
 			if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
 				setBoundsData(element, this._beforeBounds);
 			}
+			var newValue = shape[prop];
 			return {
 				type: EVENT_EDIT_SHAPE,
-				shape: shape,
-				oldValue: {
-					attr: this._data.attr,
-					attrNS: this._data.attrNS
-				},
-				newValue: {
-					attr: attr,
-					attrNS: attrNS
-				}
+				target: shape,
+				prop: prop,
+				oldValue: oldValue,
+				newValue: newValue
 			};
 		}
 	});
@@ -1578,12 +1573,14 @@
 		 * @memberOf DRShape
 		 * @private
 		 * @param style
+		 * @param propertyName 設定するスタイルについてのshape上のプロパティ名。editShapeイベントオブジェクトの生成に必要
 		 * @returns {Command}
 		 */
-		_setStyle: function(style) {
+		_setStyle: function(style, propertyName) {
 			var command = new StyleCommand({
 				shape: this,
-				style: style
+				style: style,
+				propertyName: propertyName
 			});
 			this.artboadCommandManager.appendCommand(command);
 			return command;
@@ -1607,13 +1604,15 @@
 		 * @private
 		 * @param attr
 		 * @param attrNS
+		 * @param propertyName 設定するスタイルについてのshape上のプロパティ名。editShapeイベントオブジェクトの生成に必要
 		 * @returns {Command}
 		 */
-		_setAttr: function(attr, attrNS) {
+		_setAttr: function(attr, attrNS, propertyName) {
 			var command = new AttrCommand({
 				shape: this,
 				attr: attr,
-				attrNS: attrNS
+				attrNS: attrNS,
+				propertyName: propertyName
 			});
 			this.artboadCommandManager.appendCommand(command);
 			return command;
@@ -1677,7 +1676,7 @@
 					// 再描画
 					this._setStyle({
 						'stroke': val
-					});
+					}, 'strokeColor');
 				}
 			},
 
@@ -1701,7 +1700,7 @@
 					// 再描画
 					this._setStyle({
 						'stroke-opacity': val
-					});
+					}, 'strokeOpacity');
 				}
 			},
 
@@ -1725,7 +1724,7 @@
 					// 再描画
 					this._setStyle({
 						'stroke-width': val
-					});
+					}, 'strokeWidth');
 				}
 			}
 		};
@@ -1784,7 +1783,7 @@
 					// 再描画
 					this._setStyle({
 						'fill': val
-					});
+					}, 'fillColor');
 				}
 			},
 			/**
@@ -1809,7 +1808,7 @@
 					// 再描画
 					this._setStyle({
 						'fill-opacity': opacity
-					});
+					}, 'fillOpacity');
 				}
 			}
 		};
@@ -1870,7 +1869,7 @@
 					}
 					this._setAttr({
 						fill: val
-					});
+					}, null, 'textColor');
 				}
 			},
 
@@ -1897,7 +1896,7 @@
 					}
 					this._setAttr({
 						opacity: val
-					});
+					}, null, 'textOpacity');
 				}
 			},
 
@@ -1922,7 +1921,7 @@
 					if (val === this.textContent) {
 						return;
 					}
-					this._setTextContent(val);
+					this._setTextContent(val, 'textContent');
 				}
 			},
 
@@ -1950,7 +1949,7 @@
 					}
 					this._setAttr({
 						'font-family': val
-					});
+					}, null, 'fontFamily');
 				}
 			},
 
@@ -1977,7 +1976,7 @@
 					}
 					this._setAttr({
 						'font-size': val
-					});
+					}, null, 'fontSize');
 				}
 			},
 
@@ -2025,7 +2024,7 @@
 						'text-decoration': val['text-decoration'] || '',
 						'font-weight': val['font-weight'] || '',
 						'font-style': val['font-style'] || ''
-					});
+					}, 'fontStyle');
 				}
 			}
 		};
@@ -2079,7 +2078,7 @@
 				attr: {
 					d: d
 				}
-			})
+			});
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
 			} else {
@@ -2485,8 +2484,9 @@
 		 * @private
 		 * @memberOf DRText
 		 * @param {String} val
+		 * @param {String} prop テキストの設定を行うShapeが持つプロパティの名前
 		 */
-		_setTextContent: function(val) {
+		_setTextContent: function(val, prop) {
 			var shape = this;
 			var element = this.getElement();
 			var EVENT_EDIT_SHAPE = h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE;
@@ -2496,7 +2496,8 @@
 					$(element).text(val);
 					return {
 						type: EVENT_EDIT_SHAPE,
-						shape: shape,
+						target: shape,
+						prop: prop,
 						oldValue: this._preVal,
 						newValue: val
 					};
@@ -2505,7 +2506,8 @@
 					$(element).text(this._preVal);
 					return {
 						type: EVENT_EDIT_SHAPE,
-						shape: shape,
+						prop: prop,
+						target: shape,
 						oldValue: val,
 						newValue: this._preVal
 					};

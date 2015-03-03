@@ -426,10 +426,6 @@
 				if (!type) {
 					continue;
 				}
-				// EVENT_EDIT_SHAPEイベントなら図形の編集可能プロパティをイベントオブジェクトに追加
-				if (type === h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE) {
-					$.extend(r, r.shape.getEditableProperties());
-				}
 				// 受け取ったイベントオブジェクトをコマンドマネージャから上げる
 				this._commandManager.dispatchEvent(r);
 			}
