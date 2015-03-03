@@ -293,16 +293,18 @@
 		 */
 		appendCommand: function(command, transactionId, noExecute) {
 			if (!noExecute) {
-				command.execute();
+				var ret = command.execute();
 			}
 			transactionId = transactionId || this._updateTransactionId;
 			if (transactionId) {
 				// transactionの指定がある場合、Command配列に追加する
 				var commands = this._transactionMap[transactionId].push(command);
-				return;
+			} else {
+				this._commandManager.append(command);
+				this._lastAppendedCommand = command;
 			}
-			this._commandManager.append(command);
-			this._lastAppendedCommand = command;
+			// 実行したコマンドについてイベントを上げる
+			this._dispatchExecuteResult(ret);
 		},
 
 		/**
@@ -386,7 +388,8 @@
 		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		undo: function() {
-			this._commandManager.undo();
+			var ret = this._commandManager.undo();
+			this._dispatchExecuteResult(ret);
 		},
 
 		/**
@@ -395,7 +398,8 @@
 		 * @memberOf h5.ui.components.artboard.logic.ArtboadCommandLogic
 		 */
 		redo: function() {
-			this._commandManager.redo();
+			var ret = this._commandManager.redo();
+			this._dispatchExecuteResult(ret);
 		},
 
 		/**
@@ -406,7 +410,30 @@
 		clearAll: function() {
 			this.abortTransaction();
 			this._commandManager.clearAll();
-		}
+		},
+
+		/**
+		 * コマンドのexecute(またはundo)実行時に返ってきたイベントオブジェクトについて、そのイベントをコマンドマネージャから上げる
+		 *
+		 * @param {Any} ret
+		 */
+		_dispatchExecuteResult: function(ret) {
+			// SequenceCommandの場合はexecute()の戻り値は配列なので、複数結果に対応
+			ret = $.isArray(ret) ? ret : [ret];
+			for (var i = 0, l = ret.length; i < l; i++) {
+				var r = ret[i];
+				var type = r && r.type;
+				if (!type) {
+					continue;
+				}
+				// EVENT_EDIT_SHAPEイベントなら図形の編集可能プロパティをイベントオブジェクトに追加
+				if (type === h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE) {
+					$.extend(r, r.shape.getEditableProperties());
+				}
+				// 受け取ったイベントオブジェクトをコマンドマネージャから上げる
+				this._commandManager.dispatchEvent(r);
+			}
+		},
 	};
 	h5.core.expose(artboadCommandLogic);
 })();
@@ -419,6 +446,18 @@
 	// Cache
 	//------------------------------------------------------------
 	// CommandManagerが上げるイベント名
+	/** 図形追加時に上がるイベント名 */
+	var EVENT_APPEND_SHAPE = h5.ui.components.artboard.consts.EVENT_APPEND_SHAPE;
+
+	/** 図形削除時に上がるイベント名 */
+	var EVENT_REMOVE_SHAPE = h5.ui.components.artboard.consts.EVENT_REMOVE_SHAPE;
+
+	/** 図形編集時に上がるイベント名 */
+	var EVENT_EDIT_SHAPE = h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE;
+
+	/** 背景編集時に上がるイベント名 */
+	var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
+
 	/** undo実行時に上がるイベント名 */
 	var EVENT_UNDO = h5.ui.components.artboard.consts.EVENT_UNDO;
 
@@ -779,10 +818,12 @@
 			// CommandManagerにイベントをバインドする
 			// undo/redoが可能/不可能になった時にルートエレメントからイベントをあげる
 			var events = [EVENT_UNDO, EVENT_REDO, EVENT_ENABLE_UNDO, EVENT_ENABLE_REDO,
-					EVENT_DISABLE_UNDO, EVENT_DISABLE_REDO];
+					EVENT_DISABLE_UNDO, EVENT_DISABLE_REDO, EVENT_EDIT_SHAPE, EVENT_APPEND_SHAPE,
+					EVENT_REMOVE_SHAPE, EVENT_EDIT_BACKGROUND];
 			for (var i = 0, l = events.length; i < l; i++) {
 				this.on(commandManager, events[i], function(context) {
-					this.trigger(context.event.type);
+					// shapeがあればshapeをトリガ引数にする
+					this.trigger(context.event, context.event.shape || undefined);
 				});
 			}
 		},
@@ -851,9 +892,9 @@
 		'{this._canvas} h5trackend': function(context) {
 			var event = context.event;
 			event.stopPropagation();
+			this.trigger(EVENT_DRAW_END);
 			var endFunctionName = '_' + this._mode + 'DrawEnd';
 			this[endFunctionName] && this[endFunctionName](context);
-			this.trigger(EVENT_DRAW_END);
 			this._trackingData = null;
 		},
 
@@ -1207,7 +1248,7 @@
 		 */
 		setBackground: function(color, backgroundImageData) {
 			this.beginUpdate();
-			if (color !== null) {
+			if (color != null) {
 				this.setBackgroundColor(color);
 			}
 			if (backgroundImageData) {

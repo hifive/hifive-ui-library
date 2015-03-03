@@ -29,6 +29,18 @@
 	/** 描画操作を終了した時に上がるイベント名 */
 	var EVENT_DRAWEND = 'drawEnd';
 
+	/** コマンドによる図形追加時に生成されるイベント名 */
+	var EVENT_APPEND_SHAPE = 'appendShape';
+
+	/** コマンドによる図形削除時に生成されるイベント名 */
+	var EVENT_REMOVE_SHAPE = 'removeShape';
+
+	/** コマンドによる図形編集(スタイル、属性)時に生成されるイベント名 */
+	var EVENT_EDIT_SHAPE = 'editShape';
+
+	/** 背景変更時に生成されるイベント名 */
+	var EVENT_EDIT_BACKGROUND = 'editBackground';
+
 	//----------------------------------------
 	// 定数
 	//----------------------------------------
@@ -53,6 +65,10 @@
 			EVENT_DISABLE_REDO: EVENT_DISABLE_REDO,
 			EVENT_DRAWSTART: EVENT_DRAWSTART,
 			EVENT_DRAWEND: EVENT_DRAWEND,
+			EVENT_APPEND_SHAPE: EVENT_APPEND_SHAPE,
+			EVENT_REMOVE_SHAPE: EVENT_REMOVE_SHAPE,
+			EVENT_EDIT_SHAPE: EVENT_EDIT_SHAPE,
+			EVENT_EDIT_BACKGROUND: EVENT_EDIT_BACKGROUND,
 			XMLNS: XMLNS,
 			XLINKNS: XLINKNS,
 			DATA_IMAGE_SOURCE_ID: DATA_IMAGE_SOURCE_ID
@@ -155,6 +171,9 @@
 	var EVENT_ENABLE_REDO = h5.ui.components.artboard.consts.EVENT_ENABLE_REDO;
 	var EVENT_DISABLE_UNDO = h5.ui.components.artboard.consts.EVENT_DISABLE_UNDO;
 	var EVENT_DISABLE_REDO = h5.ui.components.artboard.consts.EVENT_DISABLE_REDO;
+	var EVENT_APPEND_SHAPE = h5.ui.components.artboard.consts.EVENT_APPEND_SHAPE;
+	var EVENT_REMOVE_SHAPE = h5.ui.components.artboard.consts.EVENT_REMOVE_SHAPE;
+	var EVENT_EDIT_SHAPE = h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE;
 
 	//------------------------------------------------------------
 	// Body
@@ -167,37 +186,37 @@
 	 * @abstruct
 	 */
 	function Command() {
-	// 空コンストラクタ
+	// 何もしない
 	}
 	$.extend(Command.prototype, {
 		/**
 		 * コマンドの実行
 		 *
 		 * @memberOf Command
-		 * @returns {Command} 自分自身を返す
+		 * @returns {Any} コマンドの実行結果
 		 */
 		execute: function() {
 			if (this._isExecuted) {
 				return this;
 			}
-			this._execute();
+			var ret = this._execute();
 			this._isExecuted = true;
-			return this;
+			return ret;
 		},
 
 		/**
 		 * コマンドの取り消し
 		 *
 		 * @memberOf Command
-		 * @returns {Command} 自分自身を返す
+		 * @returns {Any} コマンドの実行結果
 		 */
 		undo: function() {
 			if (!this._isExecuted) {
 				return this;
 			}
-			this._undo();
+			var ret = this._undo();
 			this._isExecuted = false;
-			return this;
+			return ret;
 		},
 
 		/**
@@ -218,12 +237,34 @@
 		 *
 		 * @memberOf Command
 		 * @param {Command} マージ対象のコマンド
-		 * @returns {boolean} マージできたかどうか
+		 * @returns {Command} マージされたコマンド(自分自身)を返します。マージできなかった場合はnullを返します。
 		 */
 		mergeCommand: function(after) {
 			// マージ処理の実装はそれぞれの子クラスで実装します
 			// マージをサポートしないCommandの子クラスは実装の必要ありません
-			return false;
+			return null;
+		},
+
+		/**
+		 * 実行済みのコマンドかどうかを返します
+		 *
+		 * @memberOf Command
+		 * @returns {Boolean}
+		 */
+		isExecuted: function() {
+			return this._isExecuted;
+		},
+
+		/**
+		 * 初期化処理
+		 *
+		 * @private
+		 * @memberOf Command
+		 */
+		_init: function(commandData) {
+			// コマンドデータを_dataとして持っておく
+			this._data = commandData;
+			this._isExecuted = false;
 		}
 	});
 
@@ -244,12 +285,12 @@
 	 * @abstruct
 	 */
 	function CustomCommand(commandData) {
-		this._data = commandData;
+		this._init(commandData);
 		this._execute = function() {
-			commandData.execute.call(commandData);
+			return commandData.execute.call(commandData);
 		};
 		this._undo = function() {
-			commandData.undo.call(commandData);
+			return commandData.undo.call(commandData);
 		};
 		if (commandData.margeCustomCommand) {
 			// ユーザ定義があれば上書き
@@ -260,31 +301,77 @@
 	}
 	$.extend(CustomCommand.prototype, Command.prototype);
 
+
+	/**
+	 * DRShape取り扱うコマンド
+	 * <p>
+	 * このクラスは抽象クラスです。以下のクラスがこのクラスを実装しています。
+	 * </p>
+	 * <ul>
+	 * <li>AppendCommand
+	 * <li>RemoveCommand
+	 * </ul>
+	 * <p>
+	 * _execute時にイベントオブジェクトを生成して戻り値として返します。
+	 * </p>
+	 *
+	 * @name DRShapeCommand
+	 * @class DRShapeCommand
+	 * @abstruct
+	 * @extend Command
+	 * @param {Object} commandData コマンドデータオブジェクト。以下のプロパティは必須です。
+	 *
+	 * <pre><code class="sh_javascript">
+	 * {
+	 * 	shape: DRShapeオブジェクト
+	 * }
+	 * </code></pre>
+	 */
+	function DRShapeCommand(commandData) {
+	// 抽象クラスのため何もしない
+	}
+	$.extend(DRShapeCommand.prototype, Command.prototype, {
+		/**
+		 * コマンドと紐づくDRShapeオブジェクトを取得する
+		 *
+		 * @memberOf DRShapeCommand
+		 * @returns {DRShape}
+		 */
+		getShape: function() {
+			return this._data.shape;
+		}
+	});
+
 	/**
 	 * 要素の追加を行うコマンド
 	 *
 	 * @name AppendCommand
 	 * @class
-	 * @extend Command
+	 * @extend DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。AppendCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre class="sh_javascript">
+	 * <pre><code class="sh_javascript">
 	 * {
-	 * 	element: 追加する要素
-	 * 	layer: 追加先の要素
+	 * 	shape: 追加するDRShape
+	 * 	layer: DRShapeの要素を追加する対象の要素
 	 * }
-	 * </pre>
+	 * </code></pre>
 	 */
 	function AppendCommand(commandData) {
-		this._data = commandData;
+		this._init(commandData);
 	}
-	$.extend(AppendCommand.prototype, Command.prototype, {
+	$.extend(AppendCommand.prototype, DRShapeCommand.prototype, {
 		/**
 		 * @private
 		 * @see Command#execute
 		 */
 		_execute: function() {
-			this._data.layer.appendChild(this._data.element);
+			this._data.layer.appendChild(this.getShape().getElement());
+			return {
+				type: EVENT_APPEND_SHAPE,
+				shape: this.getShape(),
+				layer: this._data._layer
+			};
 		},
 
 		/**
@@ -292,40 +379,51 @@
 		 * @see Command#undo
 		 */
 		_undo: function() {
-			this._data.layer.removeChild(this._data.element);
+			this._data.layer.removeChild(this.getShape().getElement());
+			return {
+				type: EVENT_REMOVE_SHAPE,
+				shape: this.getShape(),
+				layer: this._data._layer
+			};
 		}
 	});
 
 	/**
 	 * 要素の削除を行うコマンド
 	 *
-	 * @name RemoveCommand
+	 * @name AppendCommand
 	 * @class
-	 * @extend Command
+	 * @extend DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。RemoveCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre class="sh_javascript">
+	 * <pre><code class="sh_javascript">
 	 * {
-	 * 	element: 削除する要素
+	 * 	shape: 削除するDRShape
 	 * }
-	 * </pre>
+	 * </code></pre>
 	 */
 	function RemoveCommand(commandData) {
-		this._data = commandData;
+		this._init(commandData);
 		this._undoData = {};
 	}
-	$.extend(RemoveCommand.prototype, Command.prototype, {
+	$.extend(RemoveCommand.prototype, DRShapeCommand.prototype, {
 		/**
 		 * @private
 		 * @see Command#execute
 		 */
 		_execute: function() {
-			var parent = this._data.element.parentNode;
+			var shape = this.getShape();
+			var parent = shape.getElement().parentNode;
 			if (!parent) {
 				throw new Error(ERR_MSG_CANNOT_REMOVE_NOT_APPENDED);
 			}
 			this._undoData.parent = parent;
-			parent.removeChild(this._data.element);
+			parent.removeChild(shape.getElement());
+			return {
+				type: EVENT_REMOVE_SHAPE,
+				shape: shape,
+				layer: parent
+			};
 		},
 
 		/**
@@ -333,7 +431,14 @@
 		 * @see Command#undo
 		 */
 		_undo: function() {
-			this._undoData.parent.appendChild(this._data.element);
+			var shape = this.getShape();
+			var parent = this._undoData.parent;
+			parent.appendChild(shape.getElement());
+			return {
+				type: EVENT_APPEND_SHAPE,
+				shape: shape,
+				layer: parent
+			};
 		}
 	});
 
@@ -342,36 +447,59 @@
 	 *
 	 * @name StyleCommand
 	 * @class
-	 * @extend Command
+	 * @extend DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。StyleCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre class="sh_javascript">
+	 * <pre><code class="sh_javascript">
 	 * {
-	 * 	element: スタイルを適用する要素,
+	 * 	shape: スタイルを適用するDRShape
 	 * 	style: 適用するスタイルオブジェクト
 	 * }
-	 * </pre>
+	 * </code></pre>
 	 */
-	function StyleCommand(data) {
-		this._data = data;
+	function StyleCommand(commandData) {
+		this._init(commandData);
 		this._undoData = {};
 	}
-	$.extend(StyleCommand.prototype, Command.prototype, {
+	$.extend(StyleCommand.prototype, DRShapeCommand.prototype, {
 		/**
 		 * @private
 		 * @see Command#execute
 		 */
 		_execute: function() {
-			var before = {};
-			var element = this._data.element;
-			for ( var p in this._data.style) {
-				// camelCaseにして、jQueryを使わずにスタイルを適用する
-				// (jQueryを使った場合にopacityの値に'px'が足されてしまい、Firefoxだと値が反映されない)
-				var camel = $.camelCase(p);
-				before[camel] = element.style[camel];
-				element.style[camel] = this._data.style[p];
+			var before = this._undoData.beforeStyle;
+			var after = this._undoData.after;
+			var shape = this.getShape();
+			if (after && before) {
+				// 一度でも実行していれば、適用前、適用後のスタイルは知っているので
+				// そのまま適用
+				$(shape.getElement()).css(after);
+			} else {
+				before = {};
+				after = {};
+				var element = shape.getElement();
+				for ( var p in this._data.style) {
+					// camelCaseにして、jQueryを使わずにスタイルを適用する
+					// (jQueryを使った場合にopacityの値に'px'が足されてしまい、Firefoxだと値が反映されない)
+					var camel = $.camelCase(p);
+					before[camel] = element.style[camel];
+					element.style[camel] = this._data.style[p];
+					// 設定した後の値を再取得してafterに覚えておく
+					after[camel] = element.style[camel];
+				}
+				this._undoData.beforeStyle = before;
+				this._undoData.after = after;
 			}
-			this._undoData.beforeStyle = before;
+			return {
+				type: EVENT_EDIT_SHAPE,
+				shape: shape,
+				oldValue: {
+					style: $.extend({}, before)
+				},
+				newValue: {
+					style: $.extend({}, after)
+				}
+			};
 		},
 
 		/**
@@ -379,7 +507,20 @@
 		 * @see Command#undo
 		 */
 		_undo: function() {
-			$(this._data.element).css(this._undoData.beforeStyle);
+			var before = this._undoData.beforeStyle;
+			var after = this._undoData.afterStyle;
+			var shape = this.getShape();
+			$(shape.getElement()).css(before);
+			return {
+				type: EVENT_EDIT_SHAPE,
+				shape: shape,
+				oldValue: {
+					style: $.extend({}, after)
+				},
+				newValue: {
+					style: $.extend({}, before)
+				}
+			};
 		}
 	//		,
 	//		/**
@@ -410,22 +551,22 @@
 	 *
 	 * @name AttrCommand
 	 * @class
-	 * @extend Command
+	 * @extend DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre class="sh_javascript">
+	 * <pre><code class="sh_javascript">
 	 * {
-	 * 	element: 属性値を適用する要素,
+	 * 	shape: スタイルを適用するDRShape
 	 * 	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),
 	 * 	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれの値を持つオブジェクト)の配列
 	 * }
-	 * </pre>
+	 * </code></pre>
 	 */
-	function AttrCommand(data) {
-		this._data = data;
+	function AttrCommand(commandData) {
+		this._init(commandData);
 		this._undoData = {};
 	}
-	$.extend(AttrCommand.prototype, Command.prototype, {
+	$.extend(AttrCommand.prototype, DRShapeCommand.prototype, {
 		/**
 		 * @private
 		 * @see Command#execute
@@ -433,7 +574,8 @@
 		_execute: function() {
 			var attr = this._data.attr;
 			var attrNS = this._data.attrNS;
-			var element = this._data.element;
+			var shape = this.getShape();
+			var element = shape.getElement();
 			var beforeAttr, beforeAttrNS;
 			if (attr) {
 				beforeAttr = {};
@@ -473,6 +615,18 @@
 				bBox.y += dy;
 				setBoundsData(element, bBox);
 			}
+			return {
+				type: EVENT_EDIT_SHAPE,
+				shape: shape,
+				oldValue: {
+					attr: beforeAttr && $.extend({}, beforeAttr),
+					attrNS: beforeAttrNS && beforeAttrNS.slice(0)
+				},
+				newValue: {
+					attr: attr && $.extend({}, attr),
+					attrNS: attrNS && attrNS.slice(0)
+				}
+			};
 		},
 
 		/**
@@ -482,7 +636,8 @@
 		_undo: function() {
 			var attr = this._beforeAttr.attr;
 			var attrNS = this._beforeAttr.attrNS;
-			var element = this._data.element;
+			var shape = this.getShape();
+			var element = shape.getElement();
 			if (attr) {
 				for ( var p in attr) {
 					element.setAttribute(p, attr[p]);
@@ -494,9 +649,22 @@
 					element.setAttributeNS(at.ns, at.name, at.value);
 				}
 			}
+			// pathのBBoxが自動更新されないブラウザについて、自分で計算してelementに持たせる
 			if (useDataForGetBBox && element.tagName.toLowerCase() === 'path') {
 				setBoundsData(element, this._beforeBounds);
 			}
+			return {
+				type: EVENT_EDIT_SHAPE,
+				shape: shape,
+				oldValue: {
+					attr: this._data.attr,
+					attrNS: this._data.attrNS
+				},
+				newValue: {
+					attr: attr,
+					attrNS: attrNS
+				}
+			};
 		}
 	});
 
@@ -515,21 +683,27 @@
 		/**
 		 * @private
 		 * @see Command#execute
+		 * @returns {Array} 各コマンドのexecute()の戻り値の配列
 		 */
 		_execute: function() {
+			var ret = [];
 			for (var i = 0, l = this._commands.length; i < l; i++) {
-				this._commands[i].execute();
+				ret.push(this._commands[i].execute());
 			}
+			return ret;
 		},
 
 		/**
 		 * @private
 		 * @see Command#undo
+		 * @returns {Array} 各コマンドのundo()の戻り値の配列
 		 */
 		_undo: function() {
+			var ret = [];
 			for (var i = this._commands.length - 1; i >= 0; i--) {
-				this._commands[i].undo();
+				ret.push(this._commands[i].undo());
 			}
+			return ret;
 		},
 
 		/**
@@ -621,6 +795,7 @@
 		 * 一つ戻す
 		 *
 		 * @memberOf CommandManager
+		 * @returns {Any[]} 実行したコマンドのundoの戻り値
 		 */
 		undo: function() {
 			var history = this._history;
@@ -630,16 +805,11 @@
 				return;
 			}
 			// undo実行
-			if ($.isArray(command)) {
-				for (var i = command.length - 1; i >= 0; i--) {
-					command[i].undo();
-				}
-			} else {
-				command.undo();
-			}
+			var returnValues = command.undo();
 			// undoされたことをイベントで通知
 			this.dispatchEvent({
-				type: EVENT_UNDO
+				type: EVENT_UNDO,
+				returnValues: returnValues
 			});
 
 			this._index--;
@@ -655,12 +825,14 @@
 					type: EVENT_DISABLE_UNDO
 				});
 			}
+			return returnValues;
 		},
 
 		/**
 		 * 一つ進む
 		 *
 		 * @memberOf CommandManager
+		 * @returns {Any[]} 実行したコマンドのexecuteの戻り値
 		 */
 		redo: function() {
 			var history = this._history;
@@ -670,13 +842,7 @@
 				return;
 			}
 			// redo実行
-			if ($.isArray(command)) {
-				for (var i = command.length - 1; i >= 0; i--) {
-					command[i].execute();
-				}
-			} else {
-				command.execute();
-			}
+			var returnValues = command.execute();
 			// redoされたことをイベントで通知
 			this.dispatchEvent({
 				type: EVENT_REDO
@@ -695,6 +861,7 @@
 					type: EVENT_DISABLE_REDO
 				});
 			}
+			return returnValues;
 		},
 
 		/**
@@ -1370,6 +1537,30 @@
 		},
 
 		/**
+		 * 図形について編集可能な項目と、その値のオブジェクトを返します。
+		 * <p>
+		 * 項目はDRShapeを実装する子クラスに依存します。
+		 * </p>
+		 *
+		 * @memberOf DRShape
+		 * @function
+		 * @interface
+		 * @returns {Object}
+		 */
+		getEditableProperties: function() {
+			var props = this._mixinProperties;
+			if (!props) {
+				return null;
+			}
+			var ret = {};
+			for (var i = 0, l = props.length; i < l; i++) {
+				var p = props[i];
+				ret[p] = this[p];
+			}
+			return ret;
+		},
+
+		/**
 		 * 図形をシリアライズ可能なオブジェクトに変換します
 		 *
 		 * @memberOf DRShape
@@ -1390,9 +1581,8 @@
 		 * @returns {Command}
 		 */
 		_setStyle: function(style) {
-			var element = this._element;
 			var command = new StyleCommand({
-				element: element,
+				shape: this,
 				style: style
 			});
 			this.artboadCommandManager.appendCommand(command);
@@ -1421,7 +1611,7 @@
 		 */
 		_setAttr: function(attr, attrNS) {
 			var command = new AttrCommand({
-				element: this._element,
+				shape: this,
 				attr: attr,
 				attrNS: attrNS
 			});
@@ -1443,10 +1633,10 @@
 	 * ストロークを持つ図形クラスのプロトタイプに、setter/getterを持つプロパティを追加
 	 *
 	 * @private
-	 * @param {Object} strokeProto
+	 * @param {Object} proto
 	 * @returns {Object} 渡されたオブジェクトにストロークを持つ図形のプロパティを追加して返す
 	 */
-	function mixinDRStrokeShape(strokeProto) {
+	function mixinDRStrokeShape(proto) {
 		// JSDocのみ
 		/**
 		 * ストロークを持つ図形についてのプロパティ定義
@@ -1463,7 +1653,7 @@
 		 * @name DRStrokeShape
 		 */
 
-		Object.defineProperties(strokeProto, {
+		var props = {
 			/**
 			 * ストロークの色
 			 * <p>
@@ -1538,18 +1728,25 @@
 					});
 				}
 			}
-		});
-		return strokeProto;
+		};
+		Object.defineProperties(proto, props);
+
+		// mixinによって追加されたプロパティをprotoに覚えさせておく
+		proto._mixinProperties = proto._mixinProperties || [];
+		for ( var p in props) {
+			proto._mixinProperties.push(p);
+		}
+		return proto;
 	}
 
 	/**
 	 * 塗りつぶしを持つ図形クラスのプロトタイプに、setter/getterを持つプロパティを追加
 	 *
 	 * @private
-	 * @param {Object} fillProto
+	 * @param {Object} proto
 	 * @returns {Object} 渡されたオブジェクトに塗りつぶし図形のプロパティを追加して返す
 	 */
-	function mixinDRFillShape(fillProto) {
+	function mixinDRFillShape(proto) {
 		/**
 		 * 塗りつぶしを持つ図形についてのプロパティ定義
 		 * <p>
@@ -1563,7 +1760,7 @@
 		 * @mixin
 		 * @name DRFillShape
 		 */
-		Object.defineProperties(fillProto, {
+		var props = {
 			/**
 			 * 塗りつぶしの色
 			 * <p>
@@ -1615,18 +1812,25 @@
 					});
 				}
 			}
-		});
-		return fillProto;
+		};
+		Object.defineProperties(proto, props);
+
+		// mixinによって追加されたプロパティをprotoに覚えさせておく
+		proto._mixinProperties = proto._mixinProperties || [];
+		for ( var p in props) {
+			proto._mixinProperties.push(p);
+		}
+		return proto;
 	}
 
 	/**
 	 * テキスト持つ図形クラスのプロトタイプに、setter/getterを持つプロパティを追加
 	 *
 	 * @private
-	 * @param {Object} textProto
+	 * @param {Object} proto
 	 * @returns {Object} 渡されたオブジェクトにテキスト図形のプロパティを追加して返す
 	 */
-	function mixinDRTextShape(textProto) {
+	function mixinDRTextShape(proto) {
 		/**
 		 * テキストを持つ図形についてのプロパティ定義
 		 * <p>
@@ -1639,7 +1843,7 @@
 		 * @mixin
 		 * @name DRTextShape
 		 */
-		Object.defineProperties(textProto, {
+		var props = {
 			/**
 			 * テキストの色
 			 * <p>
@@ -1660,6 +1864,10 @@
 					return this.getElement().getAttribute('fill');
 				},
 				set: function(val) {
+					// 一緒だったら何もしない
+					if (val === this.textColor) {
+						return;
+					}
 					this._setAttr({
 						fill: val
 					});
@@ -1683,6 +1891,10 @@
 					return this.getElement().getAttribute('opacity');
 				},
 				set: function(val) {
+					// 一緒だったら何もしない
+					if (val === this.textOpacity) {
+						return;
+					}
 					this._setAttr({
 						opacity: val
 					});
@@ -1706,6 +1918,10 @@
 					return $(this.getElement()).text();
 				},
 				set: function(val) {
+					// 一緒だったら何もしない
+					if (val === this.textContent) {
+						return;
+					}
 					this._setTextContent(val);
 				}
 			},
@@ -1728,6 +1944,10 @@
 					return this.getElement().getAttribute('font-family');
 				},
 				set: function(val) {
+					// 一緒だったら何もしない
+					if (val === this.fontFamily) {
+						return;
+					}
 					this._setAttr({
 						'font-family': val
 					});
@@ -1751,6 +1971,10 @@
 					return this.getElement().getAttribute('font-size');
 				},
 				set: function(val) {
+					// 一緒だったら何もしない
+					if (val === this.fontSize) {
+						return;
+					}
 					this._setAttr({
 						'font-size': val
 					});
@@ -1779,7 +2003,20 @@
 					};
 				},
 				set: function(val) {
+					// 指定無しなら何もしない
 					if (!val) {
+						return;
+					}
+					// 今の値と同じなら何もしない
+					var fontStyle = this.fontStyle;
+					var existDiff = false;
+					for ( var p in fontStyle) {
+						if (val[p] !== fontStyle[p]) {
+							existDiff = true;
+							break;
+						}
+					}
+					if (!existDiff) {
 						return;
 					}
 					// 文字の装飾に関する設定のみ
@@ -1791,8 +2028,15 @@
 					});
 				}
 			}
-		});
-		return textProto;
+		};
+		Object.defineProperties(proto, props);
+
+		// mixinによって追加されたプロパティをprotoに覚えさせておく
+		proto._mixinProperties = proto._mixinProperties || [];
+		for ( var p in props) {
+			proto._mixinProperties.push(p);
+		}
+		return proto;
 	}
 
 	/**
@@ -1831,13 +2075,15 @@
 				d = tmpAry.join(' ') + d.slice(startStr.length);
 			}
 			var command = new AttrCommand({
-				element: element,
+				shape: this,
 				attr: {
 					d: d
 				}
-			}).execute();
+			})
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
+			} else {
+				command.execute();
 			}
 			return command;
 		},
@@ -1922,11 +2168,13 @@
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
-				element: this.getElement(),
+				shape: this,
 				attr: position
-			}).execute();
+			});
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
+			} else {
+				command.execute();
 			}
 			return command;
 		},
@@ -1999,14 +2247,16 @@
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
-				element: this.getElement(),
+				shape: this,
 				attr: {
 					cx: position.x,
 					cy: position.y
 				}
-			}).execute();
+			});
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
+			} else {
+				command.execute();
 			}
 			return command;
 		},
@@ -2077,14 +2327,16 @@
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
-				element: this.getElement(),
+				shape: this,
 				attr: {
 					x: position.x,
 					y: position.y
 				}
-			}).execute();
+			});
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
+			} else {
+				command.execute();
 			}
 			return command;
 		},
@@ -2168,14 +2420,16 @@
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
-				element: this.getElement(),
+				shape: this,
 				attr: {
 					x: position.x,
 					y: position.y
 				}
-			}).execute();
+			});
 			if (this.artboadCommandManager) {
 				this.artboadCommandManager.appendCommand(command);
+			} else {
+				command.execute();
 			}
 			return command;
 		},
@@ -2229,18 +2483,34 @@
 		 * テキストを設定
 		 *
 		 * @private
+		 * @memberOf DRText
 		 * @param {String} val
 		 */
 		_setTextContent: function(val) {
+			var shape = this;
+			var element = this.getElement();
+			var EVENT_EDIT_SHAPE = h5.ui.components.artboard.consts.EVENT_EDIT_SHAPE;
 			var command = new CustomCommand({
 				execute: function() {
-					$(this._element).text(val);
+					this._preVal = $(element).text();
+					$(element).text(val);
+					return {
+						type: EVENT_EDIT_SHAPE,
+						shape: shape,
+						oldValue: this._preVal,
+						newValue: val
+					};
 				},
 				undo: function() {
-					$(this._element).text(this._preVal);
+					$(element).text(this._preVal);
+					return {
+						type: EVENT_EDIT_SHAPE,
+						shape: shape,
+						oldValue: val,
+						newValue: this._preVal
+					};
 				},
-				_preVal: $(this.getElement()).text(),
-				_element: this.getElement()
+				_preVal: ''
 			});
 			this.artboadCommandManager.appendCommand(command);
 		}
@@ -2475,10 +2745,9 @@
 		 */
 		append: function(shape) {
 			// コマンドを作成して実行
-			var element = shape.getElement();
 			var command = new AppendCommand({
 				layer: this._shapeLayer,
-				element: element
+				shape: shape
 			});
 			this._registShape(shape);
 			this.artboadCommandManager.appendCommand(command);
@@ -2493,7 +2762,7 @@
 		remove: function(shape) {
 			var command = new RemoveCommand({
 				layer: this._shapeLayer,
-				element: shape.getElement()
+				shape: shape
 			});
 			this.artboadCommandManager.appendCommand(command);
 		},
@@ -2864,18 +3133,49 @@
 			if (id) {
 				$element.data(DATA_IMAGE_SOURCE_ID, id);
 			}
+
+			// コマンドの作成
+			var layer = this._backgroundLayer;
+			var afterElement = $element[0];
+			var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
+			var that = this;
 			var command = new CustomCommand({
 				execute: function() {
-					$(this._layer).append(this._element);
+					var oldValue = that._getCurrentBackgroundData();
+					this._preBgElement = $layer.children()[0];
+					$(layer).append(afterElement);
 					$(this._preBgElement).remove();
+					var newValue = that._getCurrentBackgroundData();
+					// 必要なデータだけ取得
+					delete oldValue.color;
+					delete newValue.color;
+					return {
+						type: EVENT_EDIT_BACKGROUND,
+						layer: layer,
+						oldValue: oldValue,
+						newValue: newValue
+					};
 				},
 				undo: function() {
-					$(this._layer).append(this._preBgElement);
-					$(this._element).remove();
+					var oldValue = that._getCurrentBackgroundData();
+					$(layer).append(this._preBgElement);
+					$(afterElement).remove();
+					var newValue = that._getCurrentBackgroundData();
+					// 必要なデータだけ取得
+					oldValue = {
+						color: oldValue.color
+					};
+					newValue = {
+						color: newValue.color
+					};
+					return {
+						type: EVENT_EDIT_BACKGROUND,
+						layer: layer,
+						oldValue: oldValue,
+						newValue: newValue
+					};
 				},
-				_layer: $layer[0],
-				_element: $element[0],
-				_preBgElement: $layer.children()[0]
+				_preBgElement: null
 			});
 			this.artboadCommandManager.appendCommand(command);
 		},
@@ -2895,18 +3195,29 @@
 				// 同じなら何もしない
 				return;
 			}
+			var layer = this._backgroundLayer;
+			var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
 			var command = new CustomCommand({
 				execute: function() {
-					var $layer = $(this._layer);
+					var $layer = $(layer);
 					this._preColor = $layer.css('background-color');
-					$layer.css('background-color', this._color);
+					$layer.css('background-color', color);
+					return {
+						type: EVENT_EDIT_BACKGROUND,
+						layer: layer,
+						oldValue: this._preColor,
+						newValue: color
+					};
 				},
 				undo: function() {
-					var $layer = $(this._layer);
-					$layer.css('background-color', this._preColor);
+					$(layer).css('background-color', this._preColor);
+					return {
+						type: EVENT_EDIT_BACKGROUND,
+						layer: layer,
+						oldValue: color,
+						newValue: this._preColor
+					};
 				},
-				_layer: this._backgroundLayer,
-				_color: color,
 				_preColor: null
 			});
 			this.artboadCommandManager.appendCommand(command);

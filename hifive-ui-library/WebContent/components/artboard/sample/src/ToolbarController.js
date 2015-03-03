@@ -252,9 +252,9 @@
 		},
 		getFontStyle: function() {
 			var ret = {
-				'text-decoration': null,
+				'text-decoration': '',
 				'font-weight': 'normal',
-				'font-style': null
+				'font-style': ''
 			};
 			this.$find('.set-text-style.selected').each(function() {
 				var value = $(this).data('text-style');
@@ -345,12 +345,12 @@
 		/**
 		 * ツールバーコントローラが操作するArtbordController
 		 * <p>
-		 * すでにバインド済みのArtboadControllerのインスタンスを設定する(親コントローラが設定している)。
+		 * すでにバインド済みのArtboadControllerのインスタンスを設定する(親コントローラ等で設定)。
 		 * スタンプの配置、Controllerのメソッドを呼んでスタンプを配置する。
 		 * </p>
 		 *
 		 * @memberOf sample.ToolbarController
-		 * @type {h5.ui.components.artboard.controller.DrawingController}
+		 * @type {h5.ui.components.artboard.controller.ArtboardController}
 		 */
 		targetArtboard: null,
 
@@ -717,9 +717,9 @@
 			var x = event.pageX - width / 2 - offset.left;
 			var y = event.pageY - height / 2 - offset.top;
 
-			var $drawingRoot = $(targetArtboard.rootElement);
-			if (0 < x + width && 0 < y + height && x < $drawingRoot.innerWidth()
-					&& y < $drawingRoot.innerHeight()) {
+			var $artboardRoot = $(targetArtboard.rootElement);
+			if (0 < x + width && 0 < y + height && x < $artboardRoot.innerWidth()
+					&& y < $artboardRoot.innerHeight()) {
 				// 範囲内なら描画
 				targetArtboard.drawImage({
 					id: $stamp.data(DATA_DRAWING_IMAGE_ID),
@@ -790,8 +790,8 @@
 			var x = offset.left;
 			var y = offset.top;
 
-			var $drawingRoot = $(targetArtboard.rootElement);
-			if (0 < x && 0 < y && x < $drawingRoot.innerWidth() && y < $drawingRoot.innerHeight()) {
+			var $artboardRoot = $(targetArtboard.rootElement);
+			if (0 < x && 0 < y && x < $artboardRoot.innerWidth() && y < $artboardRoot.innerHeight()) {
 				// 範囲内なら描画
 				var settings = this.textSettingsController;
 				var fontSize = settings.getFontSize();
@@ -842,7 +842,7 @@
 					backgroundData.fillMode = 'none';
 				}
 			}
-			var rgbaColor = '';
+			var rgbaColor = null;
 			if ($parent.find('.background-color-list').val() !== 'none') {
 				var color = $parent.find('.background-color-selected').css('background-color');
 				var opacity = $parent.find('.background-color-selected').css('opacity');
