@@ -45,7 +45,7 @@
 	// 定数
 	//----------------------------------------
 	/** imageSourceMapと対応付けるために要素に持たせるデータ属性名 */
-	var DATA_IMAGE_SOURCE_ID = 'h5-artboad-image-id';
+	var DATA_IMAGE_SOURCE_ID = 'h5-artboard-image-id';
 
 	/**
 	 * SVGの名前空間
@@ -193,6 +193,7 @@
 		 * コマンドの実行
 		 *
 		 * @memberOf Command
+		 * @instance
 		 * @returns {Any} コマンドの実行結果
 		 */
 		execute: function() {
@@ -208,6 +209,7 @@
 		 * コマンドの取り消し
 		 *
 		 * @memberOf Command
+		 * @instance
 		 * @returns {Any} コマンドの実行結果
 		 */
 		undo: function() {
@@ -223,6 +225,7 @@
 		 * コンストラクタで指定したコマンドデータオブジェクトを返します
 		 *
 		 * @memberOf Command
+		 * @instance
 		 * @returns {Object} コマンドデータオブジェクト
 		 */
 		getCommandData: function() {
@@ -230,36 +233,11 @@
 		},
 
 		/**
-		 * コマンド同士をマージする
-		 * <p>
-		 * 戻り値としてマージ可能かどうかを返します。
-		 * </p>
-		 *
-		 * @memberOf Command
-		 * @param {Command} マージ対象のコマンド
-		 * @returns {Command} マージされたコマンド(自分自身)を返します。マージできなかった場合はnullを返します。
-		 */
-		mergeCommand: function(after) {
-			// マージ処理の実装はそれぞれの子クラスで実装します
-			// マージをサポートしないCommandの子クラスは実装の必要ありません
-			return null;
-		},
-
-		/**
-		 * 実行済みのコマンドかどうかを返します
-		 *
-		 * @memberOf Command
-		 * @returns {Boolean}
-		 */
-		isExecuted: function() {
-			return this._isExecuted;
-		},
-
-		/**
 		 * 初期化処理
 		 *
-		 * @private
 		 * @memberOf Command
+		 * @private
+		 * @instance
 		 */
 		_init: function(commandData) {
 			// コマンドデータを_dataとして持っておく
@@ -282,6 +260,7 @@
 	 * }
 	 * </pre>
 	 *
+	 * @class
 	 * @abstruct
 	 */
 	function CustomCommand(commandData) {
@@ -318,10 +297,10 @@
 	 * @name DRShapeCommand
 	 * @class DRShapeCommand
 	 * @abstruct
-	 * @extend Command
+	 * @extends Command
 	 * @param {Object} commandData コマンドデータオブジェクト。以下のプロパティは必須です。
 	 *
-	 * <pre><code class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	shape: DRShapeオブジェクト
 	 * }
@@ -335,6 +314,7 @@
 		 * コマンドと紐づくDRShapeオブジェクトを取得する
 		 *
 		 * @memberOf DRShapeCommand
+		 * @instance
 		 * @returns {DRShape}
 		 */
 		getShape: function() {
@@ -347,10 +327,10 @@
 	 *
 	 * @name AppendCommand
 	 * @class
-	 * @extend DRShapeCommand
+	 * @extends DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。AppendCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre><code class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	shape: 追加するDRShape
 	 * 	layer: DRShapeの要素を追加する対象の要素
@@ -362,7 +342,9 @@
 	}
 	$.extend(AppendCommand.prototype, DRShapeCommand.prototype, {
 		/**
+		 * @memberOf AppendCommand
 		 * @private
+		 * @instance
 		 * @see Command#execute
 		 */
 		_execute: function() {
@@ -375,7 +357,9 @@
 		},
 
 		/**
+		 * @memberOf AppendCommand
 		 * @private
+		 * @instance
 		 * @see Command#undo
 		 */
 		_undo: function() {
@@ -391,12 +375,12 @@
 	/**
 	 * 要素の削除を行うコマンド
 	 *
-	 * @name AppendCommand
+	 * @name RemoveCommand
 	 * @class
-	 * @extend DRShapeCommand
+	 * @extends DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。RemoveCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre><code class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	shape: 削除するDRShape
 	 * }
@@ -408,7 +392,9 @@
 	}
 	$.extend(RemoveCommand.prototype, DRShapeCommand.prototype, {
 		/**
+		 * @memberOf RemoveCommand
 		 * @private
+		 * @instance
 		 * @see Command#execute
 		 */
 		_execute: function() {
@@ -427,7 +413,9 @@
 		},
 
 		/**
+		 * @memberOf RemoveCommand
 		 * @private
+		 * @instance
 		 * @see Command#undo
 		 */
 		_undo: function() {
@@ -447,10 +435,10 @@
 	 *
 	 * @name StyleCommand
 	 * @class
-	 * @extend DRShapeCommand
+	 * @extends DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。StyleCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre><code class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	shape: スタイルを適用するDRShape
 	 * 	style: 適用するスタイルオブジェクト
@@ -463,7 +451,9 @@
 	}
 	$.extend(StyleCommand.prototype, DRShapeCommand.prototype, {
 		/**
+		 * @memberOf StyleCommand
 		 * @private
+		 * @instance
 		 * @see Command#execute
 		 */
 		_execute: function() {
@@ -503,7 +493,9 @@
 		},
 
 		/**
+		 * @memberOf StyleCommand
 		 * @private
+		 * @instance
 		 * @see Command#undo
 		 */
 		_undo: function() {
@@ -521,28 +513,6 @@
 				newValue: newValue
 			};
 		}
-	//		,
-	//		/**
-	//		 * 同一要素のスタイル変更コマンドについてマージします
-	//		 * <p>
-	//		 * 同一要素が対象でない場合はマージできません。falseを返します。
-	//		 * </p>
-	//		 *
-	//		 * @see Command#mergeCommand
-	//		 */
-	//		mergeCommand: function(after) {
-	//			// スタイルの場合は一つのコマンドにする
-	//			// 同一の要素に対するスタイル変更のコマンドのマージ
-	//			if (after instanceof StyleCommand && this._undoData.beforeStyle
-	//					&& after._undoData.beforeStyle
-	//					&& this._data.element === after.getCommandData().element) {
-	//				this._undoData.beforeStyle = $.extend({}, after._undoData.beforeStyle,
-	//						this._undoData.beforeStyle);
-	//				$.extend(this._data.style, after._data.style);
-	//				return true;
-	//			}
-	//			return false;
-	//		}
 	});
 
 	/**
@@ -550,10 +520,10 @@
 	 *
 	 * @name AttrCommand
 	 * @class
-	 * @extend DRShapeCommand
+	 * @extends DRShapeCommand
 	 * @param {Object} commandData コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre><code class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	shape: スタイルを適用するDRShape
 	 * 	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),
@@ -567,7 +537,9 @@
 	}
 	$.extend(AttrCommand.prototype, DRShapeCommand.prototype, {
 		/**
+		 * @memberOf AttrCommand
 		 * @private
+		 * @instance
 		 * @see Command#execute
 		 */
 		_execute: function() {
@@ -627,7 +599,9 @@
 		},
 
 		/**
+		 * @memberOf AttrCommand
 		 * @private
+		 * @instance
 		 * @see Command#undo
 		 */
 		_undo: function() {
@@ -668,7 +642,7 @@
 	 *
 	 * @name SequenceCommand
 	 * @class
-	 * @extends{Command}
+	 * @extends Command
 	 * @param {Command[]} [commands=[]] Commandの配列
 	 */
 	function SequenceCommand(commands) {
@@ -676,7 +650,9 @@
 	}
 	$.extend(SequenceCommand.prototype, Command.prototype, {
 		/**
+		 * @memberOf SequenceCommand
 		 * @private
+		 * @instance
 		 * @see Command#execute
 		 * @returns {Array} 各コマンドのexecute()の戻り値の配列
 		 */
@@ -689,7 +665,9 @@
 		},
 
 		/**
+		 * @memberOf SequenceCommand
 		 * @private
+		 * @instance
 		 * @see Command#undo
 		 * @returns {Array} 各コマンドのundo()の戻り値の配列
 		 */
@@ -705,6 +683,7 @@
 		 * コマンドの追加
 		 *
 		 * @memberOf SequenceCommand
+		 * @instance
 		 * @param {Command}
 		 */
 		push: function(command) {
@@ -715,28 +694,11 @@
 		 * 内部コマンドの取得
 		 *
 		 * @memberOf SequenceCommand
+		 * @instance
 		 * @returns {Commands[]}
 		 */
 		getInnerCommands: function() {
 			return this._commands;
-		},
-
-		/**
-		 * 引数にSequenceCommandが渡された場合にコマンドをマージします
-		 *
-		 * @memberOf SequenceCommand
-		 * @see {@link Command.mergeCommand}
-		 */
-		mergeCommand: function(after) {
-			if (after instanceof SequenceCommand) {
-				Array.prototype.push.apply(this._commands, after._commands);
-				return true;
-			}
-			if (after instanceof Command) {
-				this.push(after);
-				return true;
-			}
-			return false;
 		}
 	});
 
@@ -745,7 +707,7 @@
 	 *
 	 * @name CommandManager
 	 * @class
-	 * @extends EventDispatcher
+	 * @mixes EventDispatcher
 	 */
 	function CommandManager() {
 		// 空コンストラクタ
@@ -761,6 +723,7 @@
 		 * </p>
 		 *
 		 * @memberOf CommandManager
+		 * @instance
 		 * @param {Command} command
 		 */
 		append: function(command) {
@@ -790,7 +753,8 @@
 		 * 一つ戻す
 		 *
 		 * @memberOf CommandManager
-		 * @returns {Any[]} 実行したコマンドのundoの戻り値
+		 * @instance
+		 * @returns {Any} 実行したコマンドのundoの戻り値
 		 */
 		undo: function() {
 			var history = this._history;
@@ -827,7 +791,8 @@
 		 * 一つ進む
 		 *
 		 * @memberOf CommandManager
-		 * @returns {Any[]} 実行したコマンドのexecuteの戻り値
+		 * @instance
+		 * @returns {Any} 実行したコマンドのexecuteの戻り値
 		 */
 		redo: function() {
 			var history = this._history;
@@ -863,6 +828,7 @@
 		 * 管理対象のコマンドを全て管理対象から外す
 		 *
 		 * @memberOf CommandManager
+		 * @instance
 		 */
 		clearAll: function() {
 			var index = this._index;
@@ -977,6 +943,7 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.CanvasConvertLogic
+		 * @instance
 		 * @param {SVG} svgElement svg要素
 		 * @param {Canvas} canvas canvas要素
 		 * @param {Object} [processParameter.simulateItalic = false]
@@ -1178,8 +1145,9 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.CanvasConvertLogic
+		 * @instance
 		 * @param {String} returnType imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {Object} processParameter 0.0～1.0の範囲で品質レベルを指定
+		 * @param {Object} processParameter 第1引数にimage/jpegを指定した場合、第2引数は0.0～1.0の範囲で品質レベルを指定
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		toDataURL: function(canvas, returnType, encoderOptions) {
@@ -1310,7 +1278,7 @@
 		 *
 		 * <pre>
 		 * {
-		 * 	type: ['path' | 'rect' | 'ellipse' | 'image'],
+		 * 	type: ['path' | 'rect' | 'ellipse' | 'image' | 'text'],
 		 * 	data: (typeごとに異なります)
 		 * }
 		 * </pre>
@@ -1371,11 +1339,11 @@
 	 * @memberOf DRShape
 	 * @static
 	 * @function
-	 * @param {Object} shapeData
-	 * @param {CommandTransactionLogic} artboadCommandManager
+	 * @param {Object} shapeData あるDRShapeについてのセーブデータ。{@link DrawingSaveData#saveData}.shapes配列の要素がshapeDataに該当します。
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 * @returns {DRShape}
 	 */
-	DRShape.deserialize = function(shapeData, artboadCommandManager) {
+	DRShape.deserialize = function(shapeData, commandManagerWrapper) {
 		var type = shapeData.type;
 		// エレメントの作成
 		var element = createSvgDrawingElement(type, {
@@ -1387,19 +1355,19 @@
 		var shape = null;
 		switch (type) {
 		case 'path':
-			shape = new DRPath(element, artboadCommandManager);
+			shape = new DRPath(element, commandManagerWrapper);
 			break;
 		case 'rect':
-			shape = new DRRect(element, artboadCommandManager);
+			shape = new DRRect(element, commandManagerWrapper);
 			break;
 		case 'ellipse':
-			shape = new DREllipse(element, artboadCommandManager);
+			shape = new DREllipse(element, commandManagerWrapper);
 			break;
 		case 'image':
-			shape = new DRImage(element, artboadCommandManager);
+			shape = new DRImage(element, commandManagerWrapper);
 			break;
 		case 'text':
-			shape = new DRText(element, artboadCommandManager);
+			shape = new DRText(element, commandManagerWrapper);
 			break;
 		}
 		return shape;
@@ -1411,9 +1379,10 @@
 		 *
 		 * @memberOf DRShape
 		 * @private
+		 * @instance
 		 */
-		_init: function(element, artboadCommandManager) {
-			this.artboadCommandManager = artboadCommandManager;
+		_init: function(element, commandManagerWrapper) {
+			this.commandManagerWrapper = commandManagerWrapper;
 			this._element = element;
 			$(element).data(DATA_ELEMENT_TYPE, this.type);
 		},
@@ -1422,6 +1391,7 @@
 		 * 図形要素を取得
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 */
 		getElement: function() {
 			return this._element;
@@ -1429,18 +1399,23 @@
 
 		/**
 		 * ドラッグセッションの開始
+		 * <p>
+		 * 図形のドラッグ操作を行うための{@link DragSession}オブジェクトを生成して返します。
+		 * </p>
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @returns {DragSession}
 		 */
 		beginDrag: function() {
-			return new DragSession(this, this.artboadCommandManager);
+			return new DragSession(this, this.commandManagerWrapper);
 		},
 
 		/**
 		 * 図形の位置とサイズを取得
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @returns {Object} x,y,width,heightを持つオブジェクト
 		 */
 		getBounds: function() {
@@ -1451,6 +1426,7 @@
 		 * レイヤ上に描画されていない図形ならisAloneはtrue、そうでないならfalseを返します
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @returns {Boolean}
 		 */
 		isAlone: function() {
@@ -1464,8 +1440,9 @@
 		 * </p>
 		 *
 		 * @memberOf DRShape
-		 * @param x
-		 * @param y
+		 * @instance
+		 * @param {Number} x x座標位置
+		 * @param {Number} y y座標位置
 		 * @returns {Boolean}
 		 */
 		hitTest: function(x, y) {
@@ -1486,10 +1463,11 @@
 		 * </p>
 		 *
 		 * @memberOf DRShape
-		 * @param x
-		 * @param y
-		 * @param w
-		 * @param h
+		 * @instance
+		 * @param {Number} x 矩形の左上のx座標位置
+		 * @param {Number} y 矩形の左上のy座標位置
+		 * @param {Number} w 矩形の幅
+		 * @param {Number} h 矩形の高さ
 		 * @returns {Boolean}
 		 */
 		isInRect: function(x, y, w, h) {
@@ -1507,9 +1485,10 @@
 		 * 図形の移動を絶対座標指定で行います
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @function
-		 * @param {Integer} x x座標位置
-		 * @param {Integer} y y座標位置
+		 * @param {Number} x x座標位置
+		 * @param {Number} y y座標位置
 		 * @interface
 		 */
 		moveTo: function() {
@@ -1521,9 +1500,10 @@
 		 * 図形の移動を相対座標指定で行います
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @function
-		 * @param {Integer} x x座標位置
-		 * @param {Integer} y y座標位置
+		 * @param {Number} x x座標位置
+		 * @param {Number} y y座標位置
 		 * @interface
 		 */
 		moveBy: function() {
@@ -1535,8 +1515,10 @@
 		 * 図形をシリアライズ可能なオブジェクトに変換します
 		 *
 		 * @memberOf DRShape
+		 * @instance
 		 * @function
 		 * @interface
+		 * @returns {Object} 各図形についてのデータオブジェクト
 		 */
 		serialize: function() {
 			// 子クラスでの実装が必須
@@ -1548,6 +1530,7 @@
 		 *
 		 * @memberOf DRShape
 		 * @private
+		 * @instance
 		 * @param style
 		 * @param propertyName 設定するスタイルについてのshape上のプロパティ名。editShapeイベントオブジェクトの生成に必要
 		 * @returns {Command}
@@ -1558,7 +1541,7 @@
 				style: style,
 				propertyName: propertyName
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.commandManagerWrapper.appendCommand(command);
 			return command;
 		},
 
@@ -1567,6 +1550,7 @@
 		 *
 		 * @memberOf DRShape
 		 * @private
+		 * @instance
 		 * @param prop
 		 */
 		_getStyle: function(prop) {
@@ -1578,6 +1562,7 @@
 		 *
 		 * @memberOf DRShape
 		 * @private
+		 * @instance
 		 * @param attr
 		 * @param attrNS
 		 * @param propertyName 設定するスタイルについてのshape上のプロパティ名。editShapeイベントオブジェクトの生成に必要
@@ -1590,7 +1575,7 @@
 				attrNS: attrNS,
 				propertyName: propertyName
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.commandManagerWrapper.appendCommand(command);
 			return command;
 		}
 
@@ -1599,6 +1584,7 @@
 	 * 図形のタイプ
 	 *
 	 * @memberOf DRShape
+	 * @instance
 	 * @name type
 	 * @type {String}
 	 */
@@ -1640,6 +1626,7 @@
 			 *
 			 * @name strokeColor
 			 * @memberOf DRStrokeShape
+			 * @instance
 			 * @type {String}
 			 */
 			strokeColor: {
@@ -1664,6 +1651,7 @@
 			 *
 			 * @name strokeOpacity
 			 * @memberOf DRStrokeShape
+			 * @instance
 			 * @type {Number}
 			 */
 			strokeOpacity: {
@@ -1688,6 +1676,7 @@
 			 *
 			 * @name strokeWidth
 			 * @memberOf DRStrokeShape
+			 * @instance
 			 * @type {Integer}
 			 */
 			strokeWidth: {
@@ -1741,6 +1730,7 @@
 			 *
 			 * @name fillColor
 			 * @memberOf DRFillShape
+			 * @instance
 			 * @type {String}
 			 */
 			fillColor: {
@@ -1764,6 +1754,7 @@
 			 *
 			 * @name fillOpacity
 			 * @memberOf DRFillShape
+			 * @instance
 			 * @type {Number}
 			 */
 			fillOpacity: {
@@ -1818,6 +1809,7 @@
 			 *
 			 * @name textColor
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {String}
 			 */
 			textColor: {
@@ -1845,6 +1837,7 @@
 			 *
 			 * @name textOpacity
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {Number}
 			 */
 			textOpacity: {
@@ -1872,6 +1865,7 @@
 			 *
 			 * @name textContent
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {String}
 			 */
 			textContent: {
@@ -1898,6 +1892,7 @@
 			 *
 			 * @name fontFamily
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {String}
 			 */
 			fontFamily: {
@@ -1925,6 +1920,7 @@
 			 *
 			 * @name fontSize
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {Number}
 			 */
 			fontSize: {
@@ -1952,6 +1948,7 @@
 			 *
 			 * @name fontStyle
 			 * @memberOf DRTextShape
+			 * @instance
 			 * @type {Object}
 			 */
 			fontStyle: {
@@ -2003,13 +2000,13 @@
 	 * @name DRPath
 	 * @extends DRShape
 	 * @mixes DRStrokeShape
-	 * @param element
-	 * @param artboadCommandManager
+	 * @param element {DOM} パス要素(path)
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 */
-	function DRPath(element, artboadCommandManager) {
+	function DRPath(element, commandManagerWrapper) {
 		// typeの設定
 		setShapeInstanceType(this, 'path');
-		this._init(element, artboadCommandManager);
+		this._init(element, commandManagerWrapper);
 	}
 	DRPath.prototype = Object.create(DRShape.prototype);
 	DRPath.constructor = DRPath;
@@ -2018,6 +2015,7 @@
 		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRPath
+		 * @instance
 		 * @override
 		 */
 		moveTo: function(position) {
@@ -2037,8 +2035,8 @@
 					d: d
 				}
 			});
-			if (this.artboadCommandManager) {
-				this.artboadCommandManager.appendCommand(command);
+			if (this.commandManagerWrapper) {
+				this.commandManagerWrapper.appendCommand(command);
 			} else {
 				command.execute();
 			}
@@ -2049,6 +2047,7 @@
 		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRPath
+		 * @instance
 		 * @override
 		 */
 		moveBy: function(position) {
@@ -2071,6 +2070,8 @@
 		 * シリアライズ可能なオブジェクトを生成
 		 *
 		 * @memberOf DRPath
+		 * @instance
+		 * @override
 		 * @returns {Object}
 		 */
 		serialize: function() {
@@ -2106,13 +2107,13 @@
 	 * @extends DRShape
 	 * @mixes DRStrokeShape
 	 * @mixes DRFillShape
-	 * @param element
-	 * @param artboadCommandManager
+	 * @param {DOM} element 矩形要素(rect)
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 */
-	function DRRect(element, artboadCommandManager) {
+	function DRRect(element, commandManagerWrapper) {
 		// typeの設定
 		setShapeInstanceType(this, 'rect');
-		this._init(element, artboadCommandManager);
+		this._init(element, commandManagerWrapper);
 	}
 	DRRect.prototype = Object.create(DRShape.prototype);
 	DRRect.constructor = DRRect;
@@ -2121,6 +2122,7 @@
 		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRRect
+		 * @instance
 		 * @override
 		 */
 		moveTo: function(position) {
@@ -2128,8 +2130,8 @@
 				shape: this,
 				attr: position
 			});
-			if (this.artboadCommandManager) {
-				this.artboadCommandManager.appendCommand(command);
+			if (this.commandManagerWrapper) {
+				this.commandManagerWrapper.appendCommand(command);
 			} else {
 				command.execute();
 			}
@@ -2140,6 +2142,7 @@
 		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRRect
+		 * @instance
 		 * @override
 		 */
 		moveBy: function(position) {
@@ -2156,6 +2159,7 @@
 		 * シリアライズ可能なオブジェクトを生成
 		 *
 		 * @memberOf DRRect
+		 * @instance
 		 * @returns {Object}
 		 */
 		serialize: function() {
@@ -2185,13 +2189,13 @@
 	 * @extends DRShape
 	 * @mixes DRStrokeShape
 	 * @mixes DRFillShape
-	 * @param element
-	 * @param artboadCommandManager
+	 * @param element 楕円要素(ellipse)
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 */
-	function DREllipse(element, artboadCommandManager) {
+	function DREllipse(element, commandManagerWrapper) {
 		// typeの設定
 		setShapeInstanceType(this, 'ellipse');
-		this._init(element, artboadCommandManager);
+		this._init(element, commandManagerWrapper);
 	}
 	DREllipse.prototype = Object.create(DRShape.prototype);
 	DREllipse.constructor = DREllipse;
@@ -2200,6 +2204,7 @@
 		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DREllipse
+		 * @instance
 		 * @override
 		 */
 		moveTo: function(position) {
@@ -2210,8 +2215,8 @@
 					cy: position.y
 				}
 			});
-			if (this.artboadCommandManager) {
-				this.artboadCommandManager.appendCommand(command);
+			if (this.commandManagerWrapper) {
+				this.commandManagerWrapper.appendCommand(command);
 			} else {
 				command.execute();
 			}
@@ -2222,6 +2227,7 @@
 		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DREllipse
+		 * @instance
 		 * @override
 		 */
 		moveBy: function(position) {
@@ -2238,6 +2244,7 @@
 		 * シリアライズ可能なオブジェクトを生成
 		 *
 		 * @memberOf DREllipse
+		 * @instance
 		 * @returns {Object}
 		 */
 		serialize: function() {
@@ -2265,13 +2272,13 @@
 	 * @class
 	 * @name DRImage
 	 * @extends DRShape
-	 * @param element
-	 * @param artboadCommandManager
+	 * @param element 画像要素(image)
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 */
-	function DRImage(element, artboadCommandManager) {
+	function DRImage(element, commandManagerWrapper) {
 		// typeの設定
 		setShapeInstanceType(this, 'image');
-		this._init(element, artboadCommandManager);
+		this._init(element, commandManagerWrapper);
 	}
 	DRImage.prototype = Object.create(DRShape.prototype);
 	DRImage.constructor = DRImage;
@@ -2280,6 +2287,7 @@
 		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRImage
+		 * @instance
 		 * @override
 		 */
 		moveTo: function(position) {
@@ -2290,8 +2298,8 @@
 					y: position.y
 				}
 			});
-			if (this.artboadCommandManager) {
-				this.artboadCommandManager.appendCommand(command);
+			if (this.commandManagerWrapper) {
+				this.commandManagerWrapper.appendCommand(command);
 			} else {
 				command.execute();
 			}
@@ -2302,6 +2310,7 @@
 		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRImage
+		 * @instance
 		 * @override
 		 */
 		moveBy: function(position) {
@@ -2318,6 +2327,7 @@
 		 * シリアライズ可能なオブジェクトを生成
 		 *
 		 * @memberOf DRImage
+		 * @instance
 		 * @returns {Object}
 		 */
 		serialize: function() {
@@ -2352,10 +2362,10 @@
 	 * @class
 	 * @name DRText
 	 * @extends DRShape
-	 * @param element
-	 * @param artboadCommandManager
+	 * @param element text要素
+	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
 	 */
-	function DRText(element, artboadCommandManager) {
+	function DRText(element, commandManagerWrapper) {
 		// typeの設定
 		setShapeInstanceType(this, 'text');
 		// data属性にtextの中身が設定されていればそれを適用する(deserialize時用)
@@ -2364,7 +2374,7 @@
 		if (text) {
 			$element.text(text);
 		}
-		this._init(element, artboadCommandManager);
+		this._init(element, commandManagerWrapper);
 	}
 	DRText.prototype = Object.create(DRShape.prototype);
 	DRText.constructor = DRText;
@@ -2373,6 +2383,7 @@
 		 * {@link DRShape.moveTo}の実装
 		 *
 		 * @memberOf DRText
+		 * @instance
 		 * @override
 		 */
 		moveTo: function(position) {
@@ -2383,8 +2394,8 @@
 					y: position.y
 				}
 			});
-			if (this.artboadCommandManager) {
-				this.artboadCommandManager.appendCommand(command);
+			if (this.commandManagerWrapper) {
+				this.commandManagerWrapper.appendCommand(command);
 			} else {
 				command.execute();
 			}
@@ -2395,6 +2406,7 @@
 		 * {@link DRShape.moveBy}の実装
 		 *
 		 * @memberOf DRText
+		 * @instance
 		 * @override
 		 */
 		moveBy: function(position) {
@@ -2411,6 +2423,7 @@
 		 * シリアライズ可能なオブジェクトを生成
 		 *
 		 * @memberOf DRText
+		 * @instance
 		 * @returns {Object}
 		 */
 		serialize: function() {
@@ -2439,8 +2452,9 @@
 		/**
 		 * テキストを設定
 		 *
-		 * @private
 		 * @memberOf DRText
+		 * @private
+		 * @instance
 		 * @param {String} val
 		 * @param {String} prop テキストの設定を行うShapeが持つプロパティの名前
 		 */
@@ -2472,7 +2486,7 @@
 				},
 				_preVal: ''
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.commandManagerWrapper.appendCommand(command);
 		}
 	});
 	//---------------------- 図形クラスの定義ここまで ----------------------
@@ -2480,7 +2494,7 @@
 	/**
 	 * DragSession
 	 * <p>
-	 * 図形のドラッグ操作を行うためのクラスです
+	 * 図形のドラッグ操作を行うためのクラスです。
 	 * </p>
 	 *
 	 * @class
@@ -2497,6 +2511,7 @@
 		 * ドラッグ操作対象の図形
 		 *
 		 * @memberOf DragSession
+		 * @instance
 		 * @name shape
 		 * @type Shape
 		 */
@@ -2507,6 +2522,7 @@
 		 *
 		 * @memberOf DragSession
 		 * @private
+		 * @instance
 		 */
 		this._move = {
 			x: 0,
@@ -2517,10 +2533,18 @@
 		/**
 		 * 指定された位置に移動
 		 * <p>
-		 * ドラッグセッション開始位置からの移動量を引数で指定する
+		 * このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(DRShape)のmoveToやmoveByは呼ばれません。
+		 * ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。
+		 * </p>
+		 * <p>
+		 * このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。
+		 * </p>
+		 * <p>
+		 * 引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。
 		 * </p>
 		 *
 		 * @memberOf DragSession
+		 * @instance
 		 * @param {Integer} x
 		 * @param {Integer} y
 		 */
@@ -2535,8 +2559,12 @@
 
 		/**
 		 * ドラッグセッションを終了して位置を確定させる
+		 * <p>
+		 * moveメソッドを使って移動させた位置で、図形の位置を確定します。
+		 * </p>
 		 *
 		 * @memberOf DragSession
+		 * @instance
 		 * @returns {DragSession}
 		 */
 		end: function() {
@@ -2554,8 +2582,12 @@
 
 		/**
 		 * ドラッグセッションを終了して位置を元に戻す
+		 * <p>
+		 * moveメソッドで移動させた処理を元に戻します。
+		 * </p>
 		 *
 		 * @memberOf DragSession
+		 * @instance
 		 * @returns {DragSession}
 		 */
 		cancel: function() {
@@ -2569,8 +2601,11 @@
 		},
 
 		/**
+		 * transform属性を指定して要素を移動
+		 *
 		 * @memberOf DragSession
 		 * @private
+		 * @instance
 		 * @param {Integer} x
 		 * @param {Integer} y
 		 */
@@ -2607,6 +2642,7 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @type {Object}
 		 */
 		imageSourceMap: {},
@@ -2616,6 +2652,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 */
 		_canvasConvertLogic: h5.ui.components.artboard.logic.CanvasConvertLogic,
 
@@ -2624,6 +2661,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 */
 		_shapeLayer: null,
 
@@ -2632,6 +2670,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 */
 		_backgroundLayer: null,
 
@@ -2640,15 +2679,17 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 * @type h5.ui.components.artboard.logic.CommandTransactionLogic
 		 */
-		artboadCommandManager: null,
+		artboardCommandManager: null,
 
 		/**
 		 * このロジックで作成した図形(Shape)と図形IDのマップ
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 */
 		_shapeMap: {},
 
@@ -2657,6 +2698,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 */
 		_shapeIdSequence: h5.core.data.createSequence(),
 
@@ -2664,34 +2706,38 @@
 		 * 初期化処理
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
-		 * @private
+		 * @instance
 		 * @param {DOM} drawingElement 図形描画領域レイヤ要素
 		 * @param {DOM} backgroundElement 背景領域レイヤ要素
-		 * @param {ArtboadCommandLogic} [artboadCommandManager] アートボードコマンドマネージャ
+		 * @param {ArtboardCommandLogic} [artboardCommandManager] アートボードコマンドマネージャ
 		 */
-		init: function(drawingElement, backgroundElement, artboadCommandManager) {
+		init: function(drawingElement, backgroundElement, artboardCommandManager) {
 			// svg要素とcanvas要素を取得
 			this._shapeLayer = drawingElement;
 			this._backgroundLayer = backgroundElement;
-			this.artboadCommandManager = artboadCommandManager;
+			this.artboardCommandManager = artboardCommandManager;
 		},
 
 		/**
 		 * 直前の操作を取り消します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
+		 * @returns {Any} アートボードコマンドマネージャのundo結果
 		 */
 		undo: function() {
-			this.artboadCommandManager.undo();
+			return this.artboardCommandManager.undo();
 		},
 
 		/**
 		 * 直前に取り消した操作を再実行します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
+		 * @returns {Any} アートボードコマンドマネージャのredo結果
 		 */
 		redo: function() {
-			this.artboadCommandManager.redo();
+			return this.artboardCommandManager.redo();
 		},
 
 		//---------------------------------------------------------------
@@ -2701,6 +2747,7 @@
 		 * 図形を追加
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param layer {DOM|jQuery} 追加先レイヤ
 		 */
 		append: function(shape) {
@@ -2710,13 +2757,14 @@
 				shape: shape
 			});
 			this._registShape(shape);
-			this.artboadCommandManager.appendCommand(command);
+			this.artboardCommandManager.appendCommand(command);
 		},
 
 		/**
 		 * 図形を削除
 		 *
 		 * @memberOf ShapeLayer
+		 * @instance
 		 * @param {DRShape} shape
 		 */
 		remove: function(shape) {
@@ -2724,7 +2772,7 @@
 				layer: this._shapeLayer,
 				shape: shape
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.artboardCommandManager.appendCommand(command);
 		},
 
 		//----------------------------
@@ -2734,6 +2782,7 @@
 		 * パス(フリーハンド、直線、多角形)描画
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2762,7 +2811,7 @@
 			});
 
 			// Shapeの作成
-			var shape = new DRPath(elem, this.artboadCommandManager);
+			var shape = new DRPath(elem, this.artboardCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2772,6 +2821,7 @@
 		 * 長方形描画
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅
@@ -2792,7 +2842,7 @@
 			});
 
 			// Shapeの作成
-			var shape = new DRRect(elem, this.artboadCommandManager);
+			var shape = new DRRect(elem, this.artboardCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2802,6 +2852,7 @@
 		 * 正方形描画
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Integer} x 左上のx座標
 		 * @param {Integer} y 左上のy座標
 		 * @param {Integer} width 正方形の幅(=正方形の高さ)
@@ -2817,6 +2868,7 @@
 		 * 楕円描画
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Integer} cx 楕円の中心位置のx座標
 		 * @param {Integer} cy 楕円の中心位置のy座標
 		 * @param {Integer} rx 楕円の水平方向の半径
@@ -2836,7 +2888,7 @@
 				style: style
 			});
 			// Shapeの作成
-			var shape = new DREllipse(elem, this.artboadCommandManager);
+			var shape = new DREllipse(elem, this.artboardCommandManager);
 			// 図形の登録と追加
 			this.append(shape);
 			return shape;
@@ -2846,6 +2898,7 @@
 		 * 真円描画
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Integer} cx 円の中心位置のx座標
 		 * @param {Integer} cy 円の中心位置のy座標
 		 * @param {Integer} r 円の半径
@@ -2860,10 +2913,11 @@
 		/**
 		 * 画像の配置
 		 * <p>
-		 * クローンしてdivレイヤに配置します
+		 * 画像をdivレイヤに配置します
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2903,7 +2957,7 @@
 			$(elem).data(DATA_IMAGE_SOURCE_ID, data.id);
 
 			// Shapeの作成
-			var shape = new DRImage(elem, this.artboadCommandManager);
+			var shape = new DRImage(elem, this.artboardCommandManager);
 			// 図形の追加
 			this.append(shape);
 			return shape;
@@ -2916,6 +2970,7 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -2951,7 +3006,7 @@
 			}
 
 			// Shapeの作成
-			var shape = new DRText(elem, this.artboadCommandManager);
+			var shape = new DRText(elem, this.artboardCommandManager);
 			// 図形の追加
 			this.append(shape);
 			return shape;
@@ -2961,6 +3016,7 @@
 		 * ロジック管理下にある図形(Shape)を全て取得
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
 		 * @returns {DRShape[]}
 		 */
@@ -2981,6 +3037,7 @@
 		 * 渡された図形のIDを返す。(ロジック管理下にある図形のみ)
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {DRShape} shape
 		 * @returns {String}
 		 */
@@ -2999,6 +3056,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 * @param {DRShape} shape
 		 */
 		_registShape: function(shape) {
@@ -3027,6 +3085,7 @@
 		 * </ul>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {Object} data
 		 *
 		 * <pre>
@@ -3137,13 +3196,14 @@
 				},
 				_preBgElement: null
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.artboardCommandManager.appendCommand(command);
 		},
 
 		/**
 		 * 背景色の設定
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {String} color 色
 		 */
 		setBackgroundColor: function(color) {
@@ -3180,13 +3240,14 @@
 				},
 				_preColor: null
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.artboardCommandManager.appendCommand(command);
 		},
 
 		/**
 		 * 背景画像をクリアします
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 */
 		clearBackgroundImage: function() {
 			var bgElement = this._backgroundLayer.children[0];
@@ -3204,7 +3265,7 @@
 				_layer: this._backgroundLayer,
 				_preBgElement: bgElement
 			});
-			this.artboadCommandManager.appendCommand(command);
+			this.artboardCommandManager.appendCommand(command);
 		},
 
 		/**
@@ -3212,6 +3273,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @instance
 		 * @returns {Object}
 		 *
 		 * <pre>
@@ -3256,6 +3318,7 @@
 		 * 描画されている図形からセーブデータを作成します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @returns {DrawingSaveData}
 		 */
 		save: function() {
@@ -3269,6 +3332,7 @@
 		 * セーブデータををロードして描画します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {DrawingSaveData}
 		 */
 		load: function(drawingSaveData) {
@@ -3304,7 +3368,7 @@
 			var shapesData = saveData.shapes;
 			for (var i = 0, l = shapesData.length; i < l; i++) {
 				// 図形の登録と追加
-				this.append(DRShape.deserialize(shapesData[i], this.artboadCommandManager));
+				this.append(DRShape.deserialize(shapesData[i], this.artboardCommandManager));
 			}
 
 			// image要素について、idから画像パスを復元する
@@ -3319,7 +3383,7 @@
 			});
 
 			// コマンドマネージャのクリア
-			this.artboadCommandManager.clearAll();
+			this.artboardCommandManager.clearAll();
 		},
 
 		/**
@@ -3329,6 +3393,7 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
 		 * @param {Object} [processParameter.simulateItalic = false]
 		 *            italicの指定されたDRTextオブジェクトの画像化の際に、指定されているフォントがitalic体を持たない場合に、変形して出力を行うかどうか
@@ -3341,7 +3406,6 @@
 		 *            <p>
 		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
 		 *            </p>
-		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {

@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Mixin: DRStrokeShape</title>
+	<title>JSDoc: Mixin: DRTextShape</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,20 +34,20 @@
 
     <div id="main">
 
-        <h1 class="page-title">Mixin: DRStrokeShape</h1>
+        <h1 class="page-title">Mixin: DRTextShape</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DRStrokeShape</h2>
+            <h2>DRTextShape</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
-            <p class="description">ストロークを持つ図形についてのプロパティ定義<p>以下のクラスがDRStrokeShapeのプロパティを持ちます(プロトタイプにmixinしています)</p><ul><li><a href="DRPath.html">DRPath</a><li><a href="DRRect.html">DRRect</a><li><a href="DREllipse.html">DREllipse</a></ul></p><dl class="details">
+            <p class="description">テキストを持つ図形についてのプロパティ定義<p>以下のクラスがDRTextShapeのプロパティを持ちます(プロトタイプにmixinしています)</p><ul><li><a href="DRText.html">DRText</a></ul></p><dl class="details">
     
 
 	
@@ -67,7 +67,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1602</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1788</li></ul></dd>
 	
 	-->
 
@@ -96,14 +96,14 @@
 
                 <dl>
 <dt>
-    <h4 class="name" id="strokeColor"><span class="type-signature"></span>strokeColor<span class="type-signature"> :String</span></h4>
+    <h4 class="name" id="fontFamily"><span class="type-signature"></span>fontFamily<span class="type-signature"> :String</span></h4>
     
     
 </dt>
 <dd>
     
     <p class="description">
-        ストロークの色<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p><p>CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)</p>
+        フォントファミリー<p>このプロパティはsetterが設定されており、値を変更すると図形に反映されます</p>
     </p>
     
     
@@ -127,7 +127,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1618</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1887</li></ul></dd>
 	
 	-->
 
@@ -143,14 +143,14 @@
 </dd>
 <hr>
 <dt>
-    <h4 class="name" id="strokeOpacity"><span class="type-signature"></span>strokeOpacity<span class="type-signature"> :Number</span></h4>
+    <h4 class="name" id="fontSize"><span class="type-signature"></span>fontSize<span class="type-signature"> :Number</span></h4>
     
     
 </dt>
 <dd>
     
     <p class="description">
-        ストロークの透明度(0～1)<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
+        フォントサイズ<p>このプロパティはsetterが設定されており、値を変更すると図形に反映されます</p>
     </p>
     
     
@@ -174,7 +174,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1646</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1915</li></ul></dd>
 	
 	-->
 
@@ -190,14 +190,14 @@
 </dd>
 <hr>
 <dt>
-    <h4 class="name" id="strokeWidth"><span class="type-signature"></span>strokeWidth<span class="type-signature"> :Integer</span></h4>
+    <h4 class="name" id="fontStyle"><span class="type-signature"></span>fontStyle<span class="type-signature"> :Object</span></h4>
     
     
 </dt>
 <dd>
     
     <p class="description">
-        ストロークの幅<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
+        フォントススタイル<p>このプロパティはsetterが設定されており、値を変更すると図形に反映されます</p>
     </p>
     
     
@@ -221,7 +221,148 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1671</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1943</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="textColor"><span class="type-signature"></span>textColor<span class="type-signature"> :String</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        テキストの色<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p><p>CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1801</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="textContent"><span class="type-signature"></span>textContent<span class="type-signature"> :String</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        テキストの文字列<p>このプロパティはsetterが設定されており、値を変更すると図形に反映されます</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1860</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="textOpacity"><span class="type-signature"></span>textOpacity<span class="type-signature"> :Number</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        テキストの透明度(0～1)<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1832</li></ul></dd>
 	
 	-->
 

@@ -1,6 +1,6 @@
 /**
  * EventDispatcher
  *
- * @class
+ * @mixin
  */
 function EventDispatcher() {}

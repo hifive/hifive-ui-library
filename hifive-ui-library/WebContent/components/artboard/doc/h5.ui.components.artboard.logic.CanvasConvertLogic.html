@@ -25,11 +25,11 @@
 
 <div id="container">
     <nav>
-    	<div class="h5-searchBox">
+        <div class="h5-searchBox">
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboadCommandLogic.html">h5.ui.components.artboard.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="DRShapeCommand.html">DRShapeCommand</a></li><li><a href="DRText.html">DRText</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li><li><a href="DRTextShape.html">DRTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
@@ -84,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 729</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 930</li></ul></dd>
 	
 	-->
 
@@ -125,7 +125,7 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="drawSVGToCanvas"><span class="type-signature">&lt;static> </span>drawSVGToCanvas</h4>
+    <h4 class="name" id="drawSVGToCanvas"><span class="type-signature"></span>drawSVGToCanvas</h4>
     
     
 </dt>
@@ -151,7 +151,11 @@
 		<th>Type</th>
 		
 		
+		<th>Argument</th>
 		
+		
+		
+		<th>Default</th>
 		
 		
 		<th class="last">Description</th>
@@ -171,7 +175,15 @@
             </td>
             
             
+                <td class="attributes">
+                
+                </td>
             
+            
+            
+                <td class="default">
+                
+                </td>
             
             
             <td class="description last">svg要素</td>
@@ -189,10 +201,44 @@
             </td>
             
             
+                <td class="attributes">
+                
+                </td>
             
+            
+            
+                <td class="default">
+                
+                </td>
             
             
             <td class="description last">canvas要素</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>processParameter.simulateItalic</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                false
+                </td>
+            
+            
+            <td class="description last">italic体が描画できるかどうかチェックして描画できない場合に変形してシミュレートするかどうか</td>
         </tr>
 	
 	
@@ -219,7 +265,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 748</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 952</li></ul></dd>
 	
 	-->
 
@@ -241,7 +287,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="toDataURL"><span class="type-signature">&lt;static> </span>toDataURL</h4>
+    <h4 class="name" id="toDataURL"><span class="type-signature"></span>toDataURL</h4>
     
     
 </dt>
@@ -308,7 +354,7 @@
             
             
             
-            <td class="description last">0.0～1.0の範囲で品質レベルを指定</td>
+            <td class="description last">第1引数にimage/jpegを指定した場合、第2引数は0.0～1.0の範囲で品質レベルを指定</td>
         </tr>
 	
 	
@@ -335,7 +381,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 888</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>C:/Users/fukuda/hifive-ui-library/hifive-ui-library/WebContent/components/artboard/src/DrawingLogic.js, line 1153</li></ul></dd>
 	
 	-->
 
@@ -393,7 +439,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Dec 19 2014 17:36:57 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Wed Mar 04 2015 15:13:17 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
