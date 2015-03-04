@@ -1532,30 +1532,6 @@
 		},
 
 		/**
-		 * 図形について編集可能な項目と、その値のオブジェクトを返します。
-		 * <p>
-		 * 項目はDRShapeを実装する子クラスに依存します。
-		 * </p>
-		 *
-		 * @memberOf DRShape
-		 * @function
-		 * @interface
-		 * @returns {Object}
-		 */
-		getEditableProperties: function() {
-			var props = this._mixinProperties;
-			if (!props) {
-				return null;
-			}
-			var ret = {};
-			for (var i = 0, l = props.length; i < l; i++) {
-				var p = props[i];
-				ret[p] = this[p];
-			}
-			return ret;
-		},
-
-		/**
 		 * 図形をシリアライズ可能なオブジェクトに変換します
 		 *
 		 * @memberOf DRShape
@@ -1729,12 +1705,6 @@
 			}
 		};
 		Object.defineProperties(proto, props);
-
-		// mixinによって追加されたプロパティをprotoに覚えさせておく
-		proto._mixinProperties = proto._mixinProperties || [];
-		for ( var p in props) {
-			proto._mixinProperties.push(p);
-		}
 		return proto;
 	}
 
@@ -1813,12 +1783,6 @@
 			}
 		};
 		Object.defineProperties(proto, props);
-
-		// mixinによって追加されたプロパティをprotoに覚えさせておく
-		proto._mixinProperties = proto._mixinProperties || [];
-		for ( var p in props) {
-			proto._mixinProperties.push(p);
-		}
 		return proto;
 	}
 
@@ -2029,12 +1993,6 @@
 			}
 		};
 		Object.defineProperties(proto, props);
-
-		// mixinによって追加されたプロパティをprotoに覚えさせておく
-		proto._mixinProperties = proto._mixinProperties || [];
-		for ( var p in props) {
-			proto._mixinProperties.push(p);
-		}
 		return proto;
 	}
 
