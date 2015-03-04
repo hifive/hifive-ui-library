@@ -345,7 +345,7 @@
 		/**
 		 * ツールバーコントローラが操作するArtbordController
 		 * <p>
-		 * すでにバインド済みのArtboadControllerのインスタンスを設定する(親コントローラ等で設定)。
+		 * すでにバインド済みのArtboardControllerのインスタンスを設定する(親コントローラ等で設定)。
 		 * スタンプの配置、Controllerのメソッドを呼んでスタンプを配置する。
 		 * </p>
 		 *

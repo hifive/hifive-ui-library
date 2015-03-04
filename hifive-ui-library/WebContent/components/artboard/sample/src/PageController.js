@@ -219,12 +219,12 @@
 
 		'{this._$toolbar} strokeChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
 				this._artboardController.setStrokeColor(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -241,12 +241,12 @@
 
 		'{this._$toolbar} strokeOpacityChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setStrokeOpacity(val);
+				artboardCtrl.setStrokeOpacity(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -263,12 +263,12 @@
 
 		'{this._$toolbar} fillChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setFillColor(val);
+				artboardCtrl.setFillColor(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -282,12 +282,12 @@
 
 		'{this._$toolbar} fillOpacityChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setFillOpacity(val);
+				artboardCtrl.setFillOpacity(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -301,12 +301,12 @@
 
 		'{this._$toolbar} strokeWidthChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setStrokeWidth(val);
+				artboardCtrl.setStrokeWidth(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -349,15 +349,15 @@
 			this._removeSelectedShape();
 		},
 		_removeSelectedShape: function() {
-			var artboadCtrl = this._artboardController;
-			var selectedShapes = artboadCtrl.getSelectedShapes();
+			var artboardCtrl = this._artboardController;
+			var selectedShapes = artboardCtrl.getSelectedShapes();
 			if (!selectedShapes.length) {
 				return;
 			}
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
-				artboadCtrl.remove(selectedShapes[i]);
+				artboardCtrl.remove(selectedShapes[i]);
 			}
-			artboadCtrl.unselectAll();
+			artboardCtrl.unselectAll();
 		},
 
 		/**
@@ -414,16 +414,16 @@
 			if (!confirm('描画されている図形をすべて削除します')) {
 				return;
 			}
-			var artboadCtrl = this._artboardController;
-			var shapes = artboadCtrl.getAllShapes(true);
+			var artboardCtrl = this._artboardController;
+			var shapes = artboardCtrl.getAllShapes(true);
 			if (!shapes.length) {
 				return;
 			}
 			// アップデートセッション内で削除(undo/redoで実行される操作を一つにまとめるため)
 			for (var i = 0, l = shapes.length; i < l; i++) {
-				artboadCtrl.remove(shapes[i]);
+				artboardCtrl.remove(shapes[i]);
 			}
-			artboadCtrl.unselectAll();
+			artboardCtrl.unselectAll();
 		},
 
 		/**

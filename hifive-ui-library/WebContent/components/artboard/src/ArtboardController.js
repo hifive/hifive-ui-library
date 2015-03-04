@@ -52,6 +52,7 @@
 	 * セレクションロジック
 	 *
 	 * @name h5.ui.components.SelectionLogic
+	 * @class
 	 */
 	var logic = {
 		/**
@@ -522,7 +523,7 @@
 	// Body
 	//------------------------------------------------------------
 	/**
-	 * DrawingLogicを使って描画を行うコントローラ
+	 * [DrawingLogic]{@link h5.ui.components.artboard.logic.DrawingLogic}を使って描画を行うコントローラ
 	 *
 	 * @class
 	 * @name h5.ui.components.artboard.controller.ArtboardController
@@ -535,22 +536,29 @@
 		__name: 'h5.ui.components.artboard.controller.ArtboardController',
 
 		/**
+		 * 図形の選択・非選択を管理するロジック
+		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @type h5.ui.components.SelectionLogic
+		 * @type [SelectionLogic]{@link h5.ui.components.SelectionLogic}
 		 */
 		selectionLogic: h5.ui.components.SelectionLogic,
 
 		/**
+		 * 図形の描画を行うロジック
+		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @type h5.ui.components.artboard.logic.DrawingLogic
+		 * @type [DrawingLogic]{@link h5.ui.components.artboard.logic.DrawingLogic}
 		 */
 		drawingLogic: h5.ui.components.artboard.logic.DrawingLogic,
 
 		/**
+		 * 描画におけるコマンドを管理するロジック
+		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
+		 * @type [ArtboardCommandLogic]{@link h5.ui.components.artboard.logic.ArtboardCommandLogic}
 		 */
 		artboardCommandLogic: h5.ui.components.artboard.logic.ArtboardCommandLogic,
 
@@ -560,28 +568,103 @@
 		 * ここに設定されたマップは、ArtboardController初期化時(__init時)にdrawingLogicのimageSouceMapにも適用されます。
 		 * </p>
 		 * <p>
-		 * {@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}
+		 * この設定をdrawingLogicで有効にするには、ArtboardControllerの__initが呼ばれる前(親コントローラの__initなど)で設定してください。
 		 * </p>
 		 *
+		 * @see {@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 */
 		imageSourceMap: {},
 
 		/**
-		 * 描画モード(定数)
+		 * 描画モード定数：使用不可モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
-		 * @private
 		 */
-		MODE_DISABLE: 0,
+		MODE_DISABLE: 'disable',
+
+		/**
+		 * 描画モード定数：ペン描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_PEN: 'pen',
+
+		/**
+		 * 描画モード定数：直線描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_LINE: 'line',
+
+		/**
+		 * 描画モード定数：矩形(塗りつぶしなし)描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_RECT: 'rect',
+
+		/**
+		 * 描画モード定数：矩形(塗りつぶしあり)描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_FILL_RECT: 'fillrect',
+
+		/**
+		 * 描画モード定数：円(塗りつぶしなし)描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_CIRCLE: 'circle',
+
+		/**
+		 * 描画モード定数：円(塗りつぶしあり)描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_FILL_CIRCLE: 'fillcircle',
+
+		/**
+		 * 描画モード定数：テキスト描画モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_TEXT: 'text',
+
+		/**
+		 * 描画モード定数：図形選択モード
+		 * <p>
+		 * <a href="#setMode">setMode</a>で設定できるモードの一つです。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 */
 		MODE_SELECT: 'select',
 
 		/**
@@ -754,7 +837,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param color
+		 * @param {String} color
 		 */
 		setStrokeColor: function(color) {
 			this._strokeColor = color;
@@ -765,7 +848,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param color
+		 * @param {String} color
 		 */
 		setFillColor: function(color) {
 			this._fillColor = color;
@@ -776,7 +859,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param opacity
+		 * @param {Number|String} opacity 0～1の数値で指定
 		 */
 		setStrokeOpacity: function(opacity) {
 			this._strokeOpacity = opacity.toString();
@@ -786,7 +869,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param opacity
+		 * @param {Number|String} opacity 0～1の数値で指定
 		 */
 		setFillOpacity: function(opacity) {
 			this._fillOpacity = opacity.toString();
@@ -803,42 +886,43 @@
 			this._strokeWidth = lineWidth;
 		},
 
-		//		/**
-		//		 * ストロークの塗りつぶし色(無しの場合は'none')
-		//		 * @param strokeFill
-		//		 */
-		//		setStrokeFill: function(strokeFill) {
-		//			this._strokeFill = strokeFill;
-		//		},
+		// TODO strokeFill設定時に塗りつぶしありのパスの描画は可能ですが、exportが未実装のため、APIから外しています。
+		//				/**
+		//				 * ストロークの塗りつぶし色(無しの場合は'none')
+		//				 * @param strokeFill
+		//				 */
+		//				setStrokeFill: function(strokeFill) {
+		//					this._strokeFill = strokeFill;
+		//				},
 
 		/**
-		 * ストロークされる際の継ぎ目に利用される形状(bevel,round,miterの何れか)
+		 * ストロークされる際の継ぎ目に利用される形状
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param strokeLinejoin
+		 * @param {String} strokeLinejoin bevel, round, miterのいずれかを指定
 		 */
 		setStrokeLinejoin: function(strokeLinejoin) {
 			this._strokeLinejoin = strokeLinejoin;
 		},
 
 		/**
-		 * ストロークの両端に利用される形状(butt, round, squareの何れか)
+		 * ストロークの両端に利用される形状
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param strokeLinecap
+		 * @param {String} strokeLinecap butt, round, squareのいずれかを指定
 		 */
 		setStrokeLinecap: function(strokeLinecap) {
 			this._strokeLinecap = strokeLinecap;
 		},
 
 		/**
-		 * 多角形の継ぎ目に利用される形状(bevel,round,miterの何れか)
+		 * 多角形の継ぎ目に利用される形状
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param polygonLinejoin
+		 * @param {String} polygonLinejoin bevel, round, miterのいずれかを指定
 		 */
 		setPolygonLinejoin: function(polygonLinejoin) {
 			this._polygonLinejoin = polygonLinejoin;
@@ -895,6 +979,9 @@
 
 		/**
 		 * canvasをクリア
+		 * <p>
+		 * DRShapeの生成された確定済みの図形はcanvas上には無いので削除されません。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
@@ -917,7 +1004,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{this._canvas} h5trackstart': function(context) {
 			// トラックデータの作成
@@ -943,7 +1030,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{this._canvas} h5trackmove': function(context) {
 			var event = context.event;
@@ -958,7 +1045,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{this._canvas} h5trackend': function(context) {
 			var event = context.event;
@@ -974,7 +1061,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{rootElement} h5trackstart': function(context) {
 			if (this._mode !== this.MODE_SELECT) {
@@ -1004,7 +1091,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{rootElement} h5trackmove': function(context) {
 			context.event.preventDefault();
@@ -1024,7 +1111,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{rootElement} h5trackend': function(context) {
 			if (this._mode !== this.MODE_SELECT) {
@@ -1043,7 +1130,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		'{this._layers} mousemove': function(context) {
 			if (this._mode !== this.MODE_SELECT) {
@@ -1447,7 +1534,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_penDrawStart: function(context) {
 			var start = this._trackingData.start;
@@ -1460,7 +1547,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_penDrawMove: function(context) {
 			// canvasに描画
@@ -1492,7 +1579,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_penDrawEnd: function(context) {
 			if (!this._trackingData.moved) {
@@ -1521,7 +1608,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_lineDrawMove: function(context) {
 			// canvasに描画
@@ -1551,7 +1638,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_lineDrawEnd: function(context) {
 			if (!this._trackingData.moved) {
@@ -1589,7 +1676,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_rectDrawMove: function(context, isFill) {
 			// canvasに描画
@@ -1624,7 +1711,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_rectDrawEnd: function(context, isFill) {
 			if (!this._trackingData.moved) {
@@ -1696,7 +1783,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 * @param isFill 塗りつぶすかどうか
 		 */
 		_circleDrawMove: function(context, isFill) {
@@ -1749,7 +1836,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 * @param isFill 塗りつぶすかどうか
 		 */
 		_circleDrawEnd: function(context, isFill) {
@@ -1792,7 +1879,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_fillcircleDrawMove: function(context) {
 			this._circleDrawMove(context, true);
@@ -1801,7 +1888,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_fillcircleDrawEnd: function(context) {
 			this._circleDrawEnd(context, true);
@@ -1818,8 +1905,8 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		'.selection-rectangle h5trackstart': function(context, $el) {
 			this._trackstartSelectedShape(context.event, $el);
@@ -1830,8 +1917,8 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		'.selection-rectangle h5trackmove': function(context, $el) {
 			this._trackmoveSelectedShape(context.event, $el);
@@ -1842,8 +1929,8 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		'.selection-rectangle h5trackend': function(context, $el) {
 			// トラック操作による図形の移動はそれで一つのアップデートセッションを作成する
@@ -1860,8 +1947,8 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		_trackstartSelectedShape: function(event, $el) {
 			event.stopPropagation();
@@ -1911,8 +1998,8 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		_trackmoveSelectedShape: function(event, $el) {
 			event.stopPropagation();
@@ -1945,8 +2032,8 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
-		 * @param $el
+		 * @param {Object} context イベントコンテキスト
+		 * @param {jQuery} $el イベントターゲット
 		 */
 		_trackendSelectedShape: function(event, $el) {
 			event.stopPropagation();
@@ -2057,7 +2144,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_selectTrackstart: function(context) {
 			var event = context.event;
@@ -2111,7 +2198,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_selectTrackmove: function(context) {
 			var event = context.event;
@@ -2152,7 +2239,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @private
 		 * @instance
-		 * @param context
+		 * @param {Object} context イベントコンテキスト
 		 */
 		_selectTrackend: function(context) {
 			this._$selectionScopeRectangle.css({
