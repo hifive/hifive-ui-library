@@ -320,7 +320,7 @@
 			transactionId = transactionId || this._updateTransactionId;
 			if (transactionId) {
 				// transactionの指定がある場合、Command配列に追加する
-				var commands = this._transactionMap[transactionId].push(command);
+				this._transactionMap[transactionId].push(command);
 			} else {
 				this._commandManager.append(command);
 				this._lastAppendedCommand = command;
@@ -1505,7 +1505,6 @@
 		 * @param {DRShape} shape
 		 */
 		append: function(shape) {
-			console.log('append')
 			this.drawingLogic.append(shape);
 		},
 
@@ -1960,9 +1959,7 @@
 			// ドラッグセッションの開始
 			var sessions = [];
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
-				var shape = selectedShapes[i];
-				sessions.push(shape.beginDrag());
-				var id = this.getShapeID(shape);
+				sessions.push(selectedShapes[i].beginDrag());
 			}
 
 			// ドラッグ開始時の選択範囲表示要素の位置

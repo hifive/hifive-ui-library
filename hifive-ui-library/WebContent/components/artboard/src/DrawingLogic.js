@@ -263,7 +263,8 @@
 	 * </pre>
 	 *
 	 * @class
-	 * @abstruct
+	 * @extends Command
+	 * @param {Object} commandData コマンドデータオブジェクト
 	 */
 	function CustomCommand(commandData) {
 		this._init(commandData);
@@ -1178,7 +1179,6 @@
 	//------------------------------------------------------------
 	var XMLNS = h5.ui.components.artboard.consts.XMLNS;
 	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
-	var Command = h5.ui.components.artboard.Command;
 	var CustomCommand = h5.ui.components.artboard.CustomCommand;
 	var AppendCommand = h5.ui.components.artboard.AppendCommand;
 	var RemoveCommand = h5.ui.components.artboard.RemoveCommand;
