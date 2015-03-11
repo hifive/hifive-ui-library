@@ -52,6 +52,10 @@
 	 * @returns {String}
 	 */
 	function rgbToRgba(color, opacity) {
+		if (color == null) {
+			// nullならnullを返す
+			return color;
+		}
 		opacity = parseFloat(opacity);
 		if (opacity === 1) {
 			// opacityが1ならそのままcolorを返す

@@ -1,13 +1,63 @@
 (function() {
-
+	//--------------------------------------------
+	//  定数
+	//--------------------------------------------
 	/**
 	 * 画像IDを保持するデータ属性名
 	 */
 	var DATA_DRAWING_IMAGE_ID = sample.consts.DATA_DRAWING_IMAGE_ID;
 
-	//--------------------------------------------
-	// ToolbarControllerで使用する内部コントローラ
-	//--------------------------------------------
+	//--------------------------------------
+	//  ToolbarControllerが上げるイベント
+	//--------------------------------------
+	/** 選択モードに切り替え */
+	var EVENT_SELECT_MODE = 'selectMode';
+
+	/** 描画モードに切り替え */
+	var EVENT_DRAW_MODE = 'drawMode';
+
+	/** ストロークカラー変更 */
+	var EVENT_STROKE_CHANGE = 'strokeChange';
+
+	/** 塗りつぶしカラー変更 */
+	var EVENT_FILL_CHANGE = 'fillChange';
+
+	/** ストロークカラーの透明度設定 */
+	var EVENT_STROKE_OPACITY_CHANGE = 'strokeOpacityChange';
+
+	/** 塗りつぶしカラーの透明度設定 */
+	var EVENT_FILL_OPACITY_CHANGE = 'fillOpacityChange';
+
+	/** ストローク幅設定 */
+	var EVENT_STROKE_WIDTH_CHANGE = 'strokeWidthChange';
+
+	/** テキスト設定変更時に上げるイベント */
+	var EVENT_TEXT_SETTINGS_CHANGE = 'textSettingsChange';
+
+	/** 全てを選択 */
+	var EVENT_SELECT_ALL = 'selectAll';
+
+	/** 選択を全て解除 */
+	var EVENT_UNSELECT_ALL = 'unselectAll';
+
+	/** 選択された図形をすべて削除 */
+	var EVENT_REMOVE_SELECTED_SHAPE = 'removeSelectedShape';
+
+	/** 図形全てを削除 */
+	var EVENT_REMOVE_ALL = 'removeAll';
+
+	/** 画像出力実行 */
+	var EVENT_EXPORT = 'export';
+
+	/** セーブ */
+	var EVENT_SAVE = 'save';
+
+	/** ロード */
+	var EVENT_LOAD = 'load';
+
+	//-------------------------------------------------------------
+	//  sample.ToolMenuController
+	//-------------------------------------------------------------
 	/**
 	 * ツールメニューの開閉を行うコントローラ
 	 *
@@ -89,9 +139,166 @@
 		}
 	};
 
-	//--------------------------------------------
-	// ToolbarController
-	//--------------------------------------------
+	//-------------------------------------------------------------
+	//  sample.TextSettingsController
+	//-------------------------------------------------------------
+	/**
+	 * テキストの設定コントローラ
+	 *
+	 * @private
+	 * @class
+	 * @name sample.TextSettingsController
+	 */
+	var textSettingsController = {
+		__name: 'sample.TextSettingsController',
+		__init: function() {
+			this._$fontFamilySelect = this.$find('select');
+			this._$fontFamilyInput = this.$find('[name="font-family"]');
+			this._$fontSizeInput = this.$find('[name="size"]');
+			this._$textInput = this.$find('[name="text"]');
+		},
+		__ready: function() {
+			this._setSelectedFontFamilyToInput();
+		},
+		/**
+		 * フォントサイズのinputのkeydown
+		 * <p>
+		 * 数値キー以外の制御、矢印キーで数値の上下
+		 * </p>
+		 */
+		'{this._$fontSizeInput} keydown': function(context, $el) {
+			var event = context.event;
+			var keyCode = event.keyCode;
+			var val = parseInt($el.val());
+
+			if (isNaN(val)) {
+				return;
+			}
+			// 上下キーは数値の上下
+			if (keyCode === 38) {
+				$el.val(val + 1);
+				event.preventDefault();
+			} else if (keyCode === 40 && val > 0) {
+				$el.val(val - 1);
+				event.preventDefault();
+			}
+		},
+		'input keyup': function(context, $el) {
+			// keyup時に変更通知
+			this._triggerChangeEvent();
+		},
+		'{this._$fontFamilySelect} change': function(context, $el) {
+			this._$fontFamilyInput.val($el.find('option:selected').text());
+			this._triggerChangeEvent();
+		},
+		'.set-text-style h5trackstart': function(context, $el) {
+			if ($el.hasClass('selected')) {
+				$el.removeClass('selected');
+			} else {
+				$el.addClass('selected');
+			}
+			this._triggerChangeEvent();
+		},
+
+		setTextSettings: function(settings) {
+			this._$textInput.val(settings.textContent);
+			this._$fontSizeInput.val(settings.fontSize);
+			var $fontFamilyOption = this._$fontFamilySelect.find('[value="' + settings.fontFamily
+					+ '"]');
+			if ($fontFamilyOption.length) {
+				$fontFamilyOption.prop('selected', true);
+				this._$fontFamilyInput.val($fontFamilyOption.text());
+			} else {
+				this._$fontFamilyInput.val(settings.fontFamily);
+			}
+			for ( var p in settings.fontStyle) {
+				var $setStyleBtn = this.$find('.set-text-style[data-text-style="' + p + '"]');
+				if (!settings.fontStyle[p]) {
+					$setStyleBtn.removeClass('selected');
+				} else {
+					$setStyleBtn.addClass('selected');
+				}
+			}
+		},
+
+		show: function() {
+			$(this.rootElement).removeClass('display-none');
+		},
+
+		hide: function() {
+			$(this.rootElement).addClass('display-none');
+		},
+
+		getFontFamily: function() {
+			var inputValue = this._$fontFamilyInput.val();
+			// フォント選択セレクトボックスに存在する名前かどうかチェック
+			var $options = this._$fontFamilySelect.find('option');
+			var fontFamily;
+			$options.each(function() {
+				if ($.trim($(this).text()) === inputValue) {
+					fontFamily = $(this).val();
+					return false;
+				}
+			});
+			// フォント選択セレクトボックスに存在する名前ならその値を返す
+			// 存在しないならinputの値をそのまま返す(ユーザ入力フォント)
+			return fontFamily || inputValue;
+		},
+		getFontSize: function() {
+			return this._$fontSizeInput.val();
+		},
+		getTextContent: function() {
+			return this._$textInput.val();
+		},
+		getFontStyle: function() {
+			var ret = {
+				'text-decoration': '',
+				'font-weight': 'normal',
+				'font-style': ''
+			};
+			this.$find('.set-text-style.selected').each(function() {
+				var value = $(this).data('text-style');
+				switch (value) {
+				case 'bold':
+					ret['font-weight'] = value;
+					break;
+				case 'italic':
+					ret['font-style'] = value;
+					break;
+				case 'underline':
+					if (ret['text-decoration']) {
+						ret['text-decoration'] += ' ' + value;
+					} else {
+						ret['text-decoration'] = value;
+					}
+					break;
+				case 'line-through':
+					if (ret['text-decoration']) {
+						ret['text-decoration'] += ' ' + value;
+					} else {
+						ret['text-decoration'] = value;
+					}
+					break;
+				}
+			});
+			return ret;
+		},
+		_setSelectedFontFamilyToInput: function() {
+			this._$fontFamilyInput.val(this._$fontFamilySelect.find('option:selected').text());
+		},
+		_triggerChangeEvent: function() {
+			this.trigger(EVENT_TEXT_SETTINGS_CHANGE, {
+				textContent: this.getTextContent(),
+				fontSize: this.getFontSize(),
+				fontStyle: this.getFontStyle(),
+				fontFamily: this.getFontFamily()
+			});
+		}
+	};
+
+	//-------------------------------------------------------------
+	//  sample.ToolbarController
+	//-------------------------------------------------------------
 	/**
 	 * ToolbarController
 	 *
@@ -116,14 +323,34 @@
 		_menuController: toolMenuController,
 
 		/**
+		 * テキスト設定コントローラ
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		textSettingsController: textSettingsController,
+
+		/**
+		 * コントローラのメタ定義
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		__meta: {
+			textSettingsController: {
+				rootElement: '.text-settings-box'
+			}
+		},
+
+		/**
 		 * ツールバーコントローラが操作するArtbordController
 		 * <p>
-		 * すでにバインド済みのArtboadControllerのインスタンスを設定する(親コントローラが設定している)。
+		 * すでにバインド済みのArtboardControllerのインスタンスを設定する(親コントローラ等で設定)。
 		 * スタンプの配置、Controllerのメソッドを呼んでスタンプを配置する。
 		 * </p>
 		 *
 		 * @memberOf sample.ToolbarController
-		 * @type {h5.ui.components.drawing.controller.DrawingController}
+		 * @type {h5.ui.components.artboard.controller.ArtboardController}
 		 */
 		targetArtboard: null,
 
@@ -134,6 +361,22 @@
 		 * @private
 		 */
 		_$stampList: null,
+
+		/**
+		 * テキスト入力要素
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_$textInputBox: null,
+
+		/**
+		 * テキストスタンプモードかどうか
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_isTextStampMode: false,
 
 		/**
 		 * ドラッグ中のスタンプ
@@ -222,6 +465,10 @@
 				'background-popup': this._backgroundPopup,
 				'load-popup': this._loadPopup
 			};
+
+			// テキスト入力要素
+			this._$textInputBox = this.$find('.text-input-box');
+			$(this.targetArtboard.rootElement).append(this._$textInput);
 		},
 
 		/**
@@ -252,7 +499,7 @@
 			// ダブルタップによるzoomが動かないようにpreventDefault
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			this.targetArtboard.undo();
 		},
 
@@ -265,7 +512,7 @@
 		'.redo h5trackstart': function(context) {
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			this.targetArtboard.redo();
 		},
 
@@ -276,14 +523,14 @@
 		 * @param context
 		 */
 		'.select-all h5trackstart': function(context) {
-			this.trigger('select-all');
+			this.trigger(EVENT_SELECT_ALL);
 		},
 
 		/**
 		 * 全て削除
 		 */
 		'.remove-all h5trackstart': function() {
-			this.trigger('remove-all');
+			this.trigger(EVENT_REMOVE_ALL);
 		},
 
 		/**
@@ -295,9 +542,12 @@
 		'.mode-select h5trackstart': function(context, $el) {
 			context.event.preventDefault();
 			this.hideOptionView();
-			this.trigger('shape-select');
+			this.trigger(EVENT_SELECT_MODE);
 			this.$find('.toolbar-icon').removeClass('selected');
 			$el.addClass('selected');
+			// テキスト入力モードの終了
+			this._isTextStampMode = false;
+			$(this.targetArtboard.rootElement).removeClass('mode-text-input');
 		},
 
 		/**
@@ -306,7 +556,7 @@
 		 * @param context
 		 */
 		'.export h5trackstart': function(context) {
-			this.trigger('export');
+			this.trigger(EVENT_EXPORT);
 		},
 
 		/**
@@ -319,22 +569,34 @@
 			context.event.preventDefault();
 			var toolName = $el.data('tool-name');
 			var isSelected = $el.hasClass('selected');
+
+			// 既に選択されているツールなら何もしない
 			if (isSelected) {
 				return;
 			}
+			this.hideOptionView();
+
 			// スタンプならスタンプリストを表示
 			if (toolName === 'stamp') {
-				var offset = $el.offset();
-				this.hideOptionView();
 				this._showStampList();
 			} else {
 				this._hideStampList();
 			}
+
+			// 文字入力ならテキスト入力モードに変更
+			if (toolName === 'text') {
+				this._isTextStampMode = true;
+				$(this.targetArtboard.rootElement).addClass('mode-text-input');
+			} else {
+				this._isTextStampMode = false;
+				$(this.targetArtboard.rootElement).removeClass('mode-text-input');
+			}
+
 			this.$find('.toolbar-icon').removeClass('selected');
 			this.$find('.mode-select').removeClass('selected');
 			$el.addClass('selected');
 
-			this.trigger('tool-select', toolName);
+			this.trigger(EVENT_DRAW_MODE, toolName);
 		},
 
 		'.stamp-img h5trackstart': function(context, $el) {
@@ -357,7 +619,7 @@
 			$selectedColor.css('background-color', color);
 			var isFill = $selectedColor.hasClass('fill');
 
-			this.trigger(isFill ? 'fill-change' : 'stroke-change', color);
+			this.trigger(isFill ? EVENT_FILL_CHANGE : EVENT_STROKE_CHANGE, color);
 		},
 
 		'.selected-color h5trackstart': function(context, $el) {
@@ -386,13 +648,11 @@
 		'.opacity-slidebar-wrapper slide': function(context, $el) {
 			var $target = $(context.event.target);
 			var val = parseInt($target.val());
+			var opacity = val / 100;
 			$el.find('.slider-value').text(val);
-			$el.parent().find('.selected-color').css('opacity', val / 100);
-			if ($target.hasClass('opacity-fill')) {
-				this.trigger('fill-opacity-change', val / 100);
-			} else {
-				this.trigger('stroke-opacity-change', val / 100);
-			}
+			$el.parent().find('.selected-color').css('opacity', opacity);
+			var isFill = $target.hasClass('opacity-fill');
+			this.trigger(isFill ? EVENT_FILL_OPACITY_CHANGE : EVENT_STROKE_OPACITY_CHANGE, opacity);
 		},
 
 		//--------------------------------------------------------
@@ -402,7 +662,7 @@
 			var $target = $(context.event.target);
 			var val = parseInt($target.val() + 'px');
 			$el.find('.slider-value').text(val);
-			this.trigger('stroke-width-change', val);
+			this.trigger(EVENT_STROKE_WIDTH_CHANGE, val);
 		},
 
 		//--------------------------------------------------------
@@ -457,9 +717,9 @@
 			var x = event.pageX - width / 2 - offset.left;
 			var y = event.pageY - height / 2 - offset.top;
 
-			var $drawingRoot = $(targetArtboard.rootElement);
-			if (0 < x + width && 0 < y + height && x < $drawingRoot.innerWidth()
-					&& y < $drawingRoot.innerHeight()) {
+			var $artboardRoot = $(targetArtboard.rootElement);
+			if (0 < x + width && 0 < y + height && x < $artboardRoot.innerWidth()
+					&& y < $artboardRoot.innerHeight()) {
 				// 範囲内なら描画
 				targetArtboard.drawImage({
 					id: $stamp.data(DATA_DRAWING_IMAGE_ID),
@@ -471,6 +731,83 @@
 			}
 			$stamp.remove();
 			this._$draggingStamp = null;
+		},
+
+		//--------------------------------------------------------
+		// テキスト
+		//--------------------------------------------------------
+		'{this.targetArtboard.rootElement} h5trackstart': function(context) {
+			this._isTracking = true;
+			if (!this._isTextStampMode) {
+				return;
+			}
+			this._showTextInput(context);
+		},
+
+		_showTextInput: function(context) {
+			var targetArtboard = this.targetArtboard;
+			var event = context.event;
+			var offset = $(targetArtboard.rootElement).offset();
+			var x = event.pageX - offset.left;
+			var y = event.pageY - offset.top;
+			this._$textInputBox.addClass('dragging').removeClass('display-none');
+			var maxLeft = $(targetArtboard.rootElement).width() - this._$textInputBox.width();
+			this._$textInputBox.css({
+				left: x > maxLeft ? maxLeft : x,
+				top: y
+			});
+			this._$textInputBox.find('input').focus();
+		},
+
+		'.text-input-box [name="text-input"] keydown': function(context) {
+			if (context.event.keyCode !== 13) {
+				return;
+			}
+			// エンターキーなら描画
+			var val = this._$textInputBox.find('input').val();
+			if (!val) {
+				// 何も入力されていないなら入力ボックスを非表示にして終了
+				this._$textInputBox.addClass('display-none');
+				return;
+			}
+			this._drawText(val);
+		},
+
+		'.text-input-box .set-text h5trackstart': function(context) {
+			var val = this._$textInputBox.find('input').val();
+			if (!val) {
+				// 何も入力されていないなら入力ボックスを非表示にして終了
+				this._$textInputBox.addClass('display-none');
+				return;
+			}
+			this._drawText(val);
+		},
+
+		_drawText: function(text) {
+			// テキストの描画
+			var targetArtboard = this.targetArtboard;
+			var offset = $(this._$textInputBox).offset();
+			var x = offset.left;
+			var y = offset.top;
+
+			var $artboardRoot = $(targetArtboard.rootElement);
+			if (0 < x && 0 < y && x < $artboardRoot.innerWidth() && y < $artboardRoot.innerHeight()) {
+				// 範囲内なら描画
+				var settings = this.textSettingsController;
+				var fontSize = settings.getFontSize();
+				var fontFamily = settings.getFontFamily();
+				var style = settings.getFontStyle();
+				targetArtboard.drawText({
+					x: x,
+					y: y - 3, // FIXME textタグにするときの位置調整
+					text: text,
+					fontSize: fontSize,
+					fontFamily: fontFamily,
+					style: style
+				});
+			}
+			this._$textInputBox.find('input').val('');
+			this._$textInputBox.addClass('display-none');
 		},
 
 		//--------------------------------------------------------
@@ -505,14 +842,14 @@
 					backgroundData.fillMode = 'none';
 				}
 			}
-			var rgbaColor = '';
+			var rgbaColor = null;
 			if ($parent.find('.background-color-list').val() !== 'none') {
 				var color = $parent.find('.background-color-selected').css('background-color');
 				var opacity = $parent.find('.background-color-selected').css('opacity');
 				rgbaColor = sample.util.rgbToRgba(color, opacity);
 			}
 
-			this.trigger('unselect-all');
+			this.trigger(EVENT_UNSELECT_ALL);
 			targetArtboard.setBackground(rgbaColor, backgroundData);
 		},
 
@@ -590,7 +927,7 @@
 
 
 		'.remove-selected-shape h5trackstart': function() {
-			this.trigger('remove-selected-shape');
+			this.trigger(EVENT_REMOVE_SELECTED_SHAPE);
 		},
 
 		_showStampList: function(position) {
@@ -607,6 +944,17 @@
 			this._$stampList.addClass('display-none');
 		},
 
+		_showTextSettings: function(position) {
+			var $textIcon = $('[data-tool-name="text"]');
+			var offset = $textIcon.offset();
+			this.textSettingsController.show();
+			var $textSettingsRoot = $(this.textSettingsController.rootElement);
+		},
+
+		_hideTextSettings: function() {
+			this.textSettingsController.hide();
+		},
+
 		_hideOpacitySlideBar: function() {
 			this.$find('.opacity-slidebar-wrapper').addClass('display-none');
 		},
@@ -614,6 +962,8 @@
 		hideOptionView: function() {
 			this._hideOpacitySlideBar();
 			this._hideStampList();
+			this._hideTextSettings();
+			this._$textInputBox.addClass('display-none');
 		},
 
 		/**
@@ -676,24 +1026,14 @@
 			$strokeWidthLabel.text(width + 'px');
 		},
 
+		setTextSettings: function(textSettings) {
+			this.textSettingsController.setTextSettings(textSettings);
+		},
+
 		disableStrokeColor: function() {
 			this.$find('.selected-color-wrapper.stroke').addClass('disabled').removeClass(
 					'selected');
 			this.$find('.opacity-slidebar-wrapper.opacity-stroke').addClass('display-none');
-		},
-
-		disableFillColor: function() {
-			this.$find('.selected-color-wrapper.fill').addClass('disabled').removeClass('selected');
-			this.$find('.opacity-slidebar-wrapper.opacity-fill').addClass('display-none');
-		},
-
-		disableStrokeWidth: function() {
-			this.$find('.stroke-width-slider-wrapper').addClass('disabled');
-			this.$find('.stroke-width-slidebar').attr('disabled', 'disabled');
-		},
-
-		disableRemove: function() {
-			this.$find('.remove-selected-shape').addClass('disabled');
 		},
 
 		enableStrokeColor: function() {
@@ -707,13 +1047,35 @@
 			this.$find('.selected-color-wrapper.stroke').removeClass('selected');
 		},
 
+		disableFillColor: function() {
+			this.$find('.selected-color-wrapper.fill').addClass('disabled').removeClass('selected');
+			this.$find('.opacity-slidebar-wrapper.opacity-fill').addClass('display-none');
+		},
+
 		enableStrokeWidth: function() {
 			this.$find('.stroke-width-slider-wrapper').removeClass('disabled');
 			this.$find('.stroke-width-slidebar').removeAttr('disabled');
 		},
 
+		disableStrokeWidth: function() {
+			this.$find('.stroke-width-slider-wrapper').addClass('disabled');
+			this.$find('.stroke-width-slidebar').attr('disabled', 'disabled');
+		},
+
 		enableRemove: function() {
 			this.$find('.remove-selected-shape').removeClass('disabled');
+		},
+
+		disableRemove: function() {
+			this.$find('.remove-selected-shape').addClass('disabled');
+		},
+
+		enableTextSettings: function() {
+			this._showTextSettings();
+		},
+
+		disableTextSettings: function() {
+			this._hideTextSettings();
 		},
 
 		//---------------------------
@@ -723,7 +1085,7 @@
 		 * セーブ
 		 */
 		'.save h5trackstart': function() {
-			this.trigger('save');
+			this.trigger(EVENT_SAVE);
 			this.$find('.popup-open[data-popup-name="load-popup"]').removeClass('disabled');
 		},
 
@@ -739,7 +1101,7 @@
 			if (!confirm(h5.u.str.format('{0}\nをロードします。よろしいですか？', label))) {
 				return;
 			}
-			this.trigger('load', saveNo);
+			this.trigger(EVENT_LOAD, saveNo);
 			this._loadPopup.hide();
 		},
 

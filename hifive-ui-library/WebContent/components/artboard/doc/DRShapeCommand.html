@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: StyleCommand</title>
+	<title>JSDoc: Class: DRShapeCommand</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: StyleCommand</h1>
+        <h1 class="page-title">Class: DRShapeCommand</h1>
 
         
 
         <section>
 
         <header>
-            <h2>StyleCommand</h2>
+            <h2>DRShapeCommand</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="StyleCommand"><span class="type-signature"></span>new StyleCommand</h4>
+    <h4 class="name" id="DRShapeCommand"><span class="type-signature"></span>new DRShapeCommand</h4>
     
     
 </dt>
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        スタイルの変更を行うコマンド
+        DRShape取り扱うコマンド<p>このクラスは抽象クラスです。以下のクラスがこのクラスを実装しています。</p><ul><li>AppendCommand<li>RemoveCommand</ul><p>_execute時にイベントオブジェクトを生成して戻り値として返します。</p>
     </p>
     
     
@@ -97,7 +97,7 @@
             
             
             
-            <td class="description last">コマンドデータオブジェクト。StyleCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。<pre class="sh_javascript"><code>{	shape: スタイルを適用するDRShape	style: 適用するスタイルオブジェクト}</code></pre></td>
+            <td class="description last">コマンドデータオブジェクト。以下のプロパティは必須です。<pre class="sh_javascript"><code>{	shape: DRShapeオブジェクト}</code></pre></td>
         </tr>
 	
 	
@@ -124,7 +124,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 436</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 287</li></ul></dd>
 	
 	-->
 
@@ -152,7 +152,7 @@
                 <h3 class="subsection-title">Extends</h3>
 
                 <ul>
-                    <li><a href="DRShapeCommand.html">DRShapeCommand</a></li>
+                    <li><a href="Command.html">Command</a></li>
                 </ul>
             
 
@@ -171,6 +171,162 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
+    <h4 class="name" id="execute"><span class="type-signature"></span>execute</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドの実行
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 201</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドの実行結果
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getCommandData"><span class="type-signature"></span>getCommandData</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コンストラクタで指定したコマンドデータオブジェクトを返します
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 233</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドデータオブジェクト
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Object</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
     <h4 class="name" id="getShape"><span class="type-signature"></span>getShape</h4>
     
     
@@ -236,6 +392,84 @@
 	<dd>
 		
 		<span class="param-type"><a href="DRShape.html">DRShape</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="undo"><span class="type-signature"></span>undo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドの取り消し
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 217</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドの実行結果
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
 		
 	</dd>
 </dl>

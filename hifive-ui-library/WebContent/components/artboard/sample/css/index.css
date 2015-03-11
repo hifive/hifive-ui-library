@@ -23,6 +23,18 @@ h1 {
 	margin: 0
 }
 
+.clear-both {
+	clear: both;
+}
+
+.pull-right {
+	float: right;
+}
+
+.pull-left {
+	float: left;
+}
+
 .border1 {
 	border: 1px solid #ccc;
 	box-sizing: border-box;
@@ -32,6 +44,10 @@ h1 {
 .h5drawing-canvas-wrapper {
 	border: 1px solid #ccc;
 	box-sizing: border-box;
+}
+
+.h5drawing-canvas-wrapper.mode-text-input {
+	cursor: text
 }
 
 /** ポップアップ **/
@@ -83,10 +99,6 @@ h1 {
 .drawing-toolbar .icon48 {
 	width: 48px;
 	height: 48px;
-}
-
-.drawing-toolbar .clear-both {
-	clear: both;
 }
 
 .load-data-list {
@@ -197,9 +209,55 @@ h1 {
 	border: 2px solid #fff;
 }
 
-.stamp-img.dragging {
+.dragging {
 	display: block;
 	z-index: 101;
+	cursor: default;
+	white-space: nowrap;
+}
+
+/** テキスト入力 **/
+.text-input-box {
+	position: absolute;
+}
+
+.text-input-box .set-text {
+	text-align: center;
+	width: 2em;
+	background-color: #fff;
+}
+/** テキスト設定 **/
+.text-settings-box {
+	padding: 4px;
+	background-color: #fff;
+}
+
+.set-text-style {
+	cursor: pointer;
+	min-width: 1.2em;
+	display: inline-block;
+	padding: 3px;
+	box-sizing: border-box;
+}
+
+.font-family-select {
+	margin-top: 3px;
+	position: relative;
+}
+
+.font-family-select input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 105px;
+	height: 20px;
+	box-sizing: border-box;
+}
+
+.font-family-select select {
+	width: 120px;
+	height: 20px;
+	box-sizing: border-box;
 }
 
 /* 透明度設定スライドバー */
@@ -248,4 +306,8 @@ h1 {
 .toolbar-file-operation>* {
 	display: inline-block;
 	border: 2px solid #ccc;
+}
+
+.saved-img-wrapper {
+	float: left;
 }

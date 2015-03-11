@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: ArtboadCommandLogic</title>
+	<title>JSDoc: Class: ArtboardCommandLogic</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -25,30 +25,30 @@
 
 <div id="container">
     <nav>
-    	<div class="h5-searchBox">
+        <div class="h5-searchBox">
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboadCommandLogic.html">h5.ui.components.artboard.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="DRShapeCommand.html">DRShapeCommand</a></li><li><a href="DRText.html">DRText</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li><li><a href="DRTextShape.html">DRTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
 
-        <h1 class="page-title">Class: ArtboadCommandLogic</h1>
+        <h1 class="page-title">Class: ArtboardCommandLogic</h1>
 
         
 
         <section>
 
         <header>
-            <h2>ArtboadCommandLogic</h2>
+            <h2>ArtboardCommandLogic</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="ArtboadCommandLogic"><span class="type-signature"></span>new ArtboadCommandLogic</h4>
+    <h4 class="name" id="ArtboardCommandLogic"><span class="type-signature"></span>new ArtboardCommandLogic</h4>
     
     
 </dt>
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        ArtboadCommandLogic<p>ArtboadCommandLogicは<a href="h5.ui.components.artboard.logic.ArtboadCommandLogic.html">h5.ui.components.artboard.logic.ArtboadCommandLogic</a>によって生成されたコマンドのトランザクション管理を行います。</p>
+        ArtboardCommandLogic<p>ArtboardCommandLogicは<a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a>によって生成されたコマンドのトランザクション管理を行います。</p>
     </p>
     
     
@@ -84,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 200</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 240</li></ul></dd>
 	
 	-->
 
@@ -120,104 +120,110 @@
 
             
 
-                <h3 class="subsection-title">Members</h3>
-
-                <dl>
-<dt>
-    <h4 class="name" id="__name"><span class="type-signature">&lt;static> </span>__name<span class="type-signature"> :String</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 214</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="_commandManager"><span class="type-signature">&lt;static> </span>_commandManager<span class="type-signature"> :<a href="CommandManager.html">CommandManager</a></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 220</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr></dl>
-
-            
-
             
 
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="abortTransaction"><span class="type-signature">&lt;static> </span>abortTransaction</h4>
+    <h4 class="name" id="_dispatchExecuteResult"><span class="type-signature"></span>_dispatchExecuteResult</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドのexecute(またはundo)実行時に返ってきたイベントオブジェクトについて、そのイベントをコマンドマネージャから上げる
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>ret</code></td>
+            
+            
+            <td class="type">
+            Any
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 454</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="abortTransaction"><span class="type-signature"></span>abortTransaction</h4>
     
     
 </dt>
@@ -293,7 +299,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 348</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 406</li></ul></dd>
 	
 	-->
 
@@ -315,7 +321,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="appendCommand"><span class="type-signature">&lt;static> </span>appendCommand</h4>
+    <h4 class="name" id="appendCommand"><span class="type-signature"></span>appendCommand</h4>
     
     
 </dt>
@@ -427,7 +433,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 265</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 316</li></ul></dd>
 	
 	-->
 
@@ -449,7 +455,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="beginUpdate"><span class="type-signature">&lt;static> </span>beginUpdate</h4>
+    <h4 class="name" id="beginUpdate"><span class="type-signature"></span>beginUpdate</h4>
     
     
 </dt>
@@ -485,7 +491,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 288</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 342</li></ul></dd>
 	
 	-->
 
@@ -507,7 +513,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="clearAll"><span class="type-signature">&lt;static> </span>clearAll</h4>
+    <h4 class="name" id="clearAll"><span class="type-signature"></span>clearAll</h4>
     
     
 </dt>
@@ -543,7 +549,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 377</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 442</li></ul></dd>
 	
 	-->
 
@@ -565,7 +571,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="commitTransaction"><span class="type-signature">&lt;static> </span>commitTransaction</h4>
+    <h4 class="name" id="commitTransaction"><span class="type-signature"></span>commitTransaction</h4>
     
     
 </dt>
@@ -659,7 +665,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 331</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 388</li></ul></dd>
 	
 	-->
 
@@ -681,7 +687,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="createTransaction"><span class="type-signature">&lt;static> </span>createTransaction</h4>
+    <h4 class="name" id="createTransaction"><span class="type-signature"></span>createTransaction</h4>
     
     
 </dt>
@@ -717,7 +723,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 318</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 374</li></ul></dd>
 	
 	-->
 
@@ -759,7 +765,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="endUpdate"><span class="type-signature">&lt;static> </span>endUpdate</h4>
+    <h4 class="name" id="endUpdate"><span class="type-signature"></span>endUpdate</h4>
     
     
 </dt>
@@ -808,7 +814,7 @@
             
             
             
-            <td class="description last">実行しない場合はtrueを指定</td>
+            <td class="description last">アップデートセッション中に生成されたコマンドのうち、未実行のものを実行しない場合はtrueを指定</td>
         </tr>
 	
 	
@@ -835,7 +841,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 302</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 357</li></ul></dd>
 	
 	-->
 
@@ -857,7 +863,105 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="redo"><span class="type-signature">&lt;static> </span>redo</h4>
+    <h4 class="name" id="init"><span class="type-signature"></span>init</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        初期化
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>commandManager</code></td>
+            
+            
+            <td class="type">
+            <a href="CommandManager.html">CommandManager</a>
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 299</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="redo"><span class="type-signature"></span>redo</h4>
     
     
 </dt>
@@ -893,7 +997,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 368</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 430</li></ul></dd>
 	
 	-->
 
@@ -915,7 +1019,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="undo"><span class="type-signature">&lt;static> </span>undo</h4>
+    <h4 class="name" id="undo"><span class="type-signature"></span>undo</h4>
     
     
 </dt>
@@ -951,7 +1055,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/ArtboardController.js, line 359</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtboardController.js, line 418</li></ul></dd>
 	
 	-->
 
@@ -989,7 +1093,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Dec 19 2014 17:36:57 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Mar 05 2015 13:11:46 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
