@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="../src/DividedBox.css" rel="stylesheet">
+
+<style type="text/css">
+body {
+	padding: 1em;
+}
+
+.sample>._dividedBox {
+	margin: 10px 0;
+	height: 480px;
+}
+
+.box,.box>* {
+	box-sizing: border-box;
+}
+
+.yellow {
+	background-color: #FFF280;
+}
+
+.green {
+	background-color: #B2CF3E;
+}
+
+.purple {
+	background-color: #B492CC;
+}
+
+.blue {
+	background-color: #6EB7DB;
+}
+
+.orange {
+	background-color: #EDAD0B;
+}
+
+.box {
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.vertical>.box {
+	height: 80px;
+}
+
+.vertical>.box.fixedSize {
+	height: 40px;
+}
+
+.fixedSize>* {
+	margin-right: 5px;
+}
+
+.state-fixed {
+	display: none;
+}
+
+.state-unfixed {
+	display: inline;
+}
+
+.fixSize {
+	display: inline;
+}
+
+.unfixSize {
+	display: none;
+}
+
+.fixedSize .fixSize {
+	display: none;
+}
+
+.fixedSize .unfixSize {
+	display: inline;
+}
+
+.fixedSize .state-fixed {
+	display: inline;
+}
+
+.fixedSize .state-unfixed {
+	display: none;
+}
+</style>
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<script src="../src/DividedBox.js"></script>
+<script src="sample-fixedSize.js"></script>
+
+<title>ボックス区切り移動サンプル(fixedSize floatSize)</title>
+</head>
+<body class="container">
+	<div class="row">
+		<h3>ボックス区切り移動サンプル(fixedSize floatSize)</h3>
+
+		<div class="row">
+			<div class="sample">
+				<div class="_dividedBox fill vertical">
+					<div class="box fill green state-container ">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+					<div class="box fill purple state-container fixedSize">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+					<div class="box fill yellow state-container fixedSize ">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+					<div class="box fill orange state-container autoSize">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+					<div class="box fill blue state-container fixedSize">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+					<div class="box fill green state-container fixedSize">
+						<p class="state-fixed">fixed</p>
+						<p class="state-unfixed">unfixed</p>
+					</div>
+				</div>
+			</div>
+		</div>
+</body>
+</html>
