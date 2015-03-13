@@ -215,9 +215,9 @@
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
 			var $dividers = this._getDividers();
 			var lastIndex = $dividers.length - 1;
+			var appearedUnfix = false;
 			$dividers.each(this.ownWithOrg(function(orgThis, index) {
 				var isLast = index === lastIndex;
-				var isFirst = !index;
 				var $divider = $(orgThis);
 				var isVisibleDivider = $divider.css('display') !== 'none';
 				var $prev = this._getPrevBoxByDivider($divider);
@@ -270,7 +270,7 @@
 					});
 				}
 				// fixedSizeのboxで囲まれていたらdividerは操作不可
-				if (!isLast && (isFirst || $next.hasClass(CLASS_FIXED_BOX))
+				if (!isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
 						&& $prev.hasClass(CLASS_FIXED_BOX)) {
 					$divider.addClass(CLASS_FIXED_DIVIDER);
 				} else {
@@ -290,6 +290,7 @@
 						}
 					} else {
 						$divider.removeClass(CLASS_FIXED_DIVIDER);
+						appearedUnfix = true;
 					}
 				}
 			}));
