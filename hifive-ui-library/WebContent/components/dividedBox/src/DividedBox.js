@@ -269,8 +269,9 @@
 						'margin-left': ($divider.width() - $dividerHandler.outerWidth()) / 2
 					});
 				}
-				// fixedSizeのboxで囲まれていたらdividerは操作不可
-				if (!isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
+				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可
+				if ((!isLast || lastIndex === 0)
+						&& (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
 						&& $prev.hasClass(CLASS_FIXED_BOX)) {
 					$divider.addClass(CLASS_FIXED_DIVIDER);
 				} else {
@@ -515,7 +516,6 @@
 				}
 			}
 
-
 			var totalMove = size - $targetBox[outerW_H]();
 			if (!$prevDivider.length) {
 				partition = 0;
@@ -525,12 +525,23 @@
 			var prevMove = -totalMove * partition;
 			var nextMove = totalMove + prevMove;
 
+			var isFixedSize = $targetBox.hasClass(CLASS_FIXED_BOX);
+			// reisze対象のboxがfixedSizeの場合はfixedSize指定を一旦無視してリサイズする
+			if (isFixedSize) {
+				$targetBox.removeClass(CLASS_FIXED_BOX);
+			}
 			if (prevMove) {
 				this._move(prevMove, $prevDivider);
 			}
 			if (nextMove) {
 				this._move(nextMove, $nextDivider);
 			}
+
+			// 一旦外したfixedSize指定を再設定
+			if (isFixedSize) {
+				$targetBox.addClass(CLASS_FIXED_BOX);
+			}
+			this._triggerBoxSizeChange();
 		},
 
 		/**
@@ -616,6 +627,8 @@
 			this._move(move, $divider, this._$dividerGroup, this._prevStart, this._nextEnd,
 					this._lastPos, true);
 			this._lastPos = $divider.position();
+
+			this._triggerBoxSizeChange();
 		},
 
 		/**
@@ -697,7 +710,7 @@
 			// 負方向への移動時は正方向にあるdividerGroupを探索して同時に動かす
 			// 逆に、正方向への移動なら負方向を探索
 			var forPlus = move < 0;
-			$dividerGroup = $dividerGroup || this._getDividerGroup($divider, forPlus, !forPlus);
+			$dividerGroup = $dividerGroup || this._getDividerGroup($divider);
 			var $groupFirst = $dividerGroup.eq(0);
 			var $groupLast = $dividerGroup.eq($dividerGroup.length - 1);
 			var $groupPrev = this._getPrevBoxByDivider($groupFirst);
@@ -746,8 +759,6 @@
 			$groupPrev[w_h](prevWH);
 			$groupNext[w_h](nextWH);
 			$groupNext.css(l_t, '+=' + move);
-
-			this._triggerBoxSizeChange();
 		},
 
 		/**
@@ -1029,36 +1040,30 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param [forPlus=true] 正方向(下、右)の探索を行わないならfalseを指定。false以外なら正方向を探索します。
-		 * @param [forMinus=true] 負方向(上、左)の探索を行わないならfalseを指定。false以外なら正方向を探索します。
 		 */
-		_getDividerGroup: function($divider, forPlus, forMinus) {
+		_getDividerGroup: function($divider) {
 			var $result = $divider;
-			if (forPlus !== false) {
-				var $d = $divider;
-				var $b = this._getNextBoxByDivider($d);
-				while (true) {
-					if (!$b.hasClass(CLASS_FIXED_BOX)) {
-						break;
-					}
-					$result = $result.add($b);
-					$d = this._getNextDividerByBox($b);
-					$result = $result.add($d);
-					$b = this._getNextBoxByDivider($d);
+			var $d = $divider;
+			var $b = this._getNextBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_BOX)) {
+					break;
 				}
+				$result = $result.add($b);
+				$d = this._getNextDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getNextBoxByDivider($d);
 			}
-			if (forMinus !== false) {
-				var $d = $divider;
-				var $b = this._getPrevBoxByDivider($d);
-				while (true) {
-					if (!$b.hasClass(CLASS_FIXED_BOX)) {
-						break;
-					}
-					$result = $result.add($b);
-					$d = this._getPrevDividerByBox($b);
-					$result = $result.add($d);
-					$b = this._getPrevBoxByDivider($d);
+			$d = $divider;
+			$b = this._getPrevBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_BOX)) {
+					break;
 				}
+				$result = $result.add($b);
+				$d = this._getPrevDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getPrevBoxByDivider($d);
 			}
 			return $result;
 		}
