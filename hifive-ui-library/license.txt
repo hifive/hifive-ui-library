@@ -60,3 +60,35 @@ License:Dual licensed under the MIT and GPL licenses
 	https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt
 	https://github.com/jquery/jquery/blob/master/GPL-LICENSE.txt
 Local Modifications: None.
+
+-----
+Code under:
+WebContent/res/lib/jqplugins/nouislider
+
+Shadow animation jQuery plugin
+URL:http://refreshless.com/nouislider/
+License:WTFPL
+	http://www.wtfpl.net/txt/copying/
+Local Modifications: None.
+
+-----
+Files:
+WebContent/components/drawing/res/img/stamp/check.png
+WebContent/components/drawing/res/img/stamp/close.png
+WebContent/components/drawing/res/img/stamp/home.png
+WebContent/components/drawing/res/img/toolicon/delete.png
+WebContent/components/drawing/res/img/toolicon/export.png
+WebContent/components/drawing/res/img/toolicon/pen.png
+WebContent/components/drawing/res/img/toolicon/redo.png
+WebContent/components/drawing/res/img/toolicon/remove.png
+WebContent/components/drawing/res/img/toolicon/save.png
+WebContent/components/drawing/res/img/toolicon/select.png
+WebContent/components/drawing/res/img/toolicon/stamp.png
+WebContent/components/drawing/res/img/toolicon/undo.png
+WebContent/components/drawing/res/img/toolicon/up.png
+
+Typeicons by Stephen Hutchings
+URL: http://typicons.com/
+License: CC BY-SA licence
+	http://creativecommons.org/licenses/by-sa/3.0/
+Local Modifications: Yes
