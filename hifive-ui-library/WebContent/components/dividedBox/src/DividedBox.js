@@ -60,6 +60,9 @@
 		},
 		_getStateBoxByState: function(state) {
 			return this.$find('>[data-' + DATA_STATE + '="' + state + '"]');
+		},
+		__unbind: function() {
+			$(this.rootElement).data('h5controller-statebox-instance', null);
 		}
 	};
 	h5.core.expose(selectBoxController);
@@ -150,8 +153,8 @@
 			}
 
 			this._lastAdjustAreaWH = $root[w_h]();
-			var $rootPosition = $root.css('position');
-			if ($rootPosition === 'static' || !$rootPosition) {
+			var rootPosition = $root.css('position');
+			if (rootPosition === 'static' || !rootPosition) {
 				// ルートがposition:staticまたは指定無しの場合はposition:relativeを設定
 				$root.css('position', 'relative');
 				if (h5.env.ua.isOpera) {
@@ -1066,6 +1069,20 @@
 				$b = this._getPrevBoxByDivider($d);
 			}
 			return $result;
+		},
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.container.DividedBox
+		 */
+		__unbind: function() {
+			var $root = this._$root = $(this.rootElement);
+			$root.removeClass(CLASS_ROOT);
+			$root.attr('style', '');
+			this.$find('.divider').remove();
+			var $boxes = this.$find('.' + CLASS_MANAGED);
+			$boxes.removeClass(CLASS_MANAGED);
+			$boxes.attr('style', '');
 		}
 	};
 
