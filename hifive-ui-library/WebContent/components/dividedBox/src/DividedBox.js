@@ -393,6 +393,32 @@
 		},
 
 		/**
+		 * ボックスの削除
+		 *
+		 * @memberOf h5.ui.container.DividedBox
+		 * @param {Integer} index 何番目のボックスを削除するか
+		 */
+		remove: function(index) {
+			var $target = this._getBoxElement(index);
+			if (!$target.length) {
+				// ターゲットとなるボックスが無い場合は何もしない
+				return;
+			}
+			var $prevDivider = this._getPrevDividerByBox($target);
+			if ($prevDivider.length) {
+				$prevDivider.remove();
+			} else {
+				// 先頭要素だった場合は次の要素を先頭に持ってくる
+				var $nextDivider = this._getNextDividerByBox($target);
+				var $nextBox = this._getNextBoxByDivider($nextDivider);
+				$nextBox.css(this._l_t, $target.css(this._l_t));
+				$nextDivider.remove();
+			}
+			$target.remove();
+			this.refresh();
+		},
+
+		/**
 		 * ボックスの最小化
 		 *
 		 * @memberOf h5.ui.container.DividedBox
