@@ -319,44 +319,27 @@
 			var outerW_H = this._outerW_H;
 
 			var $target = this._getBoxElement(index);
-			var $divider = $('<div class="divider"></div>');
+			var $boxes = this._getBoxes();
+			if ($target.length) {
+				// 範囲外の場合は一番最後に追加
+				$target = $boxes.eq($boxes.length - 1);
+			}
 
 			// 追加したボックスにクラスCLASS_MANAGEDを追加
 			var $box = $(box);
 			$box.addClass(CLASS_MANAGED);
 
-			$target.after($box);
-			$target.after($divider);
-
-			var targetWH = $target[w_h](true) - $divider[outerW_H](true) - $box[outerW_H](true);
-
-			var mbpSize = this._getMBPSize($target, w_h);
-			if (targetWH <= mbpSize) {
-				targetWH = mbpSize + 1;
-			}
-			this._setOuterSize($target, w_h, targetWH);
-			//jQueryが古いと以下のようにする必要があるかもしれない。1.8.3だと以下で動作しない。何かのオブジェクトが返ってくる。
-			//divider.css(l_t, target.position()[l_t] + target[outerW_H]({margin:true}));
-			$divider.css(l_t, $target.position()[l_t] + $target[outerW_H](true));
-			$divider.css(t_l, $divider.position()[t_l]);
-			$divider.css('position', 'absolute');
-
-			$box.css(l_t, $divider.position()[l_t] + $divider[outerW_H](true));
-			$box.css(t_l, 0);
-			$box.css('position', 'absolute');
-
-			var $nextDivider = this._getNextDividerByBox($box);
-			var distance = 0;
-			if ($nextDivider.length) {
-				distance = $nextDivider.position()[l_t] - $box.position()[l_t];
+			if ($target.length) {
+				$target.after($box);
 			} else {
-				distance = root[w_h]() - $box.position()[l_t];
-			}
-			var boxOuterWH = $box[outerW_H](true);
-			if (distance < boxOuterWH) {
-				this._setOuterSize($box, w_h, distance);
+				// 既存のboxが一つもない場合は追加して終了
+				root.append($box);
+				this._triggerBoxSizeChange();
+				return;
 			}
 
+			// 前のboxがあるならdividerを追加
+			var $divider = $('<div class="divider"></div>');
 			var $dividerHandler = $('<div class="dividerHandler"></div>');
 			$divider.append('<div style="height:50%;"></div>');
 			$dividerHandler = $('<div class="dividerHandler"></div>');
@@ -373,6 +356,37 @@
 				$dividerHandler.css({
 					'margin-left': ($divider.width() - $dividerHandler.width()) / 2
 				});
+			}
+			//jQueryが古いと以下のようにする必要があるかもしれない。1.8.3だと以下で動作しない。何かのオブジェクトが返ってくる。
+			//divider.css(l_t, target.position()[l_t] + target[outerW_H]({margin:true}));
+			$divider.css(l_t, $target.length ? $target.position()[l_t] + $target[outerW_H](true)
+					: 0);
+			$divider.css(t_l, $divider.position()[t_l]);
+			$divider.css('position', 'absolute');
+			$box.before($divider);
+
+			var targetWH = $target[w_h](true) - $divider[outerW_H](true) - $box[outerW_H](true);
+
+			var mbpSize = this._getMBPSize($target, w_h);
+			if (targetWH <= mbpSize) {
+				targetWH = mbpSize + 1;
+			}
+			this._setOuterSize($target, w_h, targetWH);
+
+			$box.css(l_t, $divider.position()[l_t] + $divider[outerW_H](true));
+			$box.css(t_l, 0);
+			$box.css('position', 'absolute');
+
+			var $nextDivider = this._getNextDividerByBox($box);
+			var distance = 0;
+			if ($nextDivider.length) {
+				distance = $nextDivider.position()[l_t] - $box.position()[l_t];
+			} else {
+				distance = root[w_h]() - $box.position()[l_t];
+			}
+			var boxOuterWH = $box[outerW_H](true);
+			if (distance < boxOuterWH) {
+				this._setOuterSize($box, w_h, distance);
 			}
 
 			this._triggerBoxSizeChange();
@@ -814,7 +828,7 @@
 				$prev.css('display', 'block');
 				$next.css('display', 'block');
 				if (!$prev.length) {
-					outerSize = $next.position()[l_t];
+					outerSize = $next.length ? $next.position()[l_t] : adjustAreaWH;
 				} else if (!$next.length) {
 					outerSize = adjustAreaWH - $prev.position()[l_t]
 							- (isPrevDisplayNone ? 0 : $prev[outerW_H](true));
