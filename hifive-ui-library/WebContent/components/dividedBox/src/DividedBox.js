@@ -16,14 +16,22 @@
  */
 (function() {
 	var DATA_STATE = 'state';
+	var DATA_DEFAULT_STATE = 'default-state';
 	var EVENT_STATE_CHANGE = 'state-change';
 	var selectBoxController = {
 		__name: 'h5.ui.container.StateBox',
 		_currentState: null,
 		__init: function() {
-			// data-stateが指定されているもののうち、最初以外を隠す
+			// 初期stateの設定
 			var $stateBoxes = this._getAllStateBoxes();
+			var defaultState = $(this.rootElement).data(DATA_DEFAULT_STATE);
+			if (defaultState) {
+				// defaultが設定されている場合はデフォルト
+				this.setState(defaultState);
+			} else {
+				// defaultが設定されていない場合は最初の要素を表示
 			this.setState($stateBoxes.data(DATA_STATE));
+			}
 
 			//FIXME ルートエレメントからこのコントローラを辿れるようにjQuery.dataを使って覚えさせておく
 			// (getControllers()を使ったDOM->Controllerの特定は子コントローラの場合にできないため)
