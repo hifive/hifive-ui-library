@@ -107,6 +107,9 @@
 	/** イベント名：ボックスのサイズが変更されたときに上げるイベント */
 	var EVENT_BOX_SIZE_CHANGE = 'boxSizeChange';
 
+	/** データ属性: ボックスの最小サイズ。このデータ属性で指定されたサイズ以下には動かないようになる */
+	var DATA_MIN_BOX_SIZE = 'dividedbox-min-size';
+
 	var dividedBoxController = {
 
 		__name: 'h5.ui.container.DividedBox',
@@ -655,8 +658,12 @@
 				}
 			});
 			this._$dividerGroup = $dividerGroup;
-			this._prevStart = beforeWH + $groupPrev.position()[l_t];
-			this._nextEnd = $groupNext.position()[l_t] + $groupNext[outerW_H](true) - afterWH;
+			// 可動範囲をh5trackstartの時点で決定する
+			// 両サイドのボックスで最小サイズが指定されている場合は、両サイドが指定されたサイズより小さくならないようにする
+			this._prevStart = beforeWH + $groupPrev.position()[l_t]
+					+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0);
+			this._nextEnd = $groupNext.position()[l_t] + $groupNext[outerW_H](true) - afterWH
+					- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0);
 		},
 
 		/**
@@ -785,10 +792,13 @@
 					// 非表示の場合はboxの位置を基にする
 					lastPos = $next.position();
 				}
-				prevStart = $groupPrev.length ? $groupPrev.position()[l_t] : 0;
+				// 両サイドのボックスの最小サイズを考慮して可動範囲を決定
+				prevStart = $groupPrev.length ? $groupPrev.position()[l_t]
+						+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0) : 0;
 				nextEnd = $groupNext.length ? ($groupNext.position()[l_t]
 						+ $groupNext[outerW_H](true) - (isVisibleDivider ? $divider[outerW_H](true)
-						: 0)) : $divider.position()[l_t];
+						: 0))
+						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0) : $divider.position()[l_t];
 			}
 			var moved = lastPos[l_t] + move;
 			if (moved <= prevStart + 1) {
