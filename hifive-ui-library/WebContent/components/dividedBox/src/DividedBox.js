@@ -30,7 +30,7 @@
 				this.setState(defaultState);
 			} else {
 				// defaultが設定されていない場合は最初の要素を表示
-			this.setState($stateBoxes.data(DATA_STATE));
+				this.setState($stateBoxes.data(DATA_STATE));
 			}
 
 			//FIXME ルートエレメントからこのコントローラを辿れるようにjQuery.dataを使って覚えさせておく
@@ -709,9 +709,12 @@
 			if ($divider.css('display') === 'none') {
 				return;
 			}
-			var w_h = this._w_h;
-			var l_t = this._l_t;
-			var dividerWH = $divider[w_h]();
+			if (fixPrev) {
+				var w_h = this._w_h;
+				var l_t = this._l_t;
+				var dividerWH = $divider[w_h]();
+				this._getPrevBoxByDivider($divider).css(w_h, '+=' + dividerWH);
+			}
 			$divider.css('display', 'none');
 			this.refresh();
 		},
@@ -728,6 +731,12 @@
 			var $divider = this._getDividerElement(divider);
 			if ($divider.css('display') === 'block') {
 				return;
+			}
+			if (fixPrev) {
+				var w_h = this._w_h;
+				var l_t = this._l_t;
+				var dividerWH = $divider[w_h]();
+				this._getPrevBoxByDivider($divider).css(w_h, '-=' + dividerWH);
 			}
 			$divider.css('display', 'block');
 			this.refresh();
