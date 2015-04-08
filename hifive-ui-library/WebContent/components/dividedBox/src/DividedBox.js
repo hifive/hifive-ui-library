@@ -108,7 +108,7 @@
 	var EVENT_BOX_SIZE_CHANGE = 'boxSizeChange';
 
 	/** データ属性: ボックスの最小サイズ。このデータ属性で指定されたサイズ以下には動かないようになる */
-	var DATA_MIN_BOX_SIZE = 'dividedbox-min-size';
+	var DATA_MIN_BOX_SIZE = 'min-size';
 
 	var dividedBoxController = {
 
