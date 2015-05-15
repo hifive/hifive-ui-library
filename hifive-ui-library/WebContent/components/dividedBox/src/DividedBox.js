@@ -237,6 +237,35 @@
 				var $prev = this._getPrevBoxByDivider($divider);
 				var $next = this._getNextBoxByDivider($divider);
 
+				// dividerハンドラーの調整
+				var $dividerHandler = $divider.find('.dividerHandler');
+				if ($dividerHandler.length === 0) {
+					$divider.append('<div style="height:50%;"></div>');
+					$dividerHandler = $('<div class="dividerHandler"></div>');
+					$divider.append($dividerHandler);
+				}
+				$dividerHandler.css({
+					'margin-top': -$dividerHandler.height() / 2
+				});
+				if (type === 'y') {
+					$dividerHandler.css({
+						'margin-left': 'auto',
+						'margin-right': 'auto'
+					});
+				} else {
+					$dividerHandler.css({
+						'margin-left': ($divider.width() - $dividerHandler.outerWidth()) / 2
+					});
+				}
+
+				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可
+				if ((!isLast || lastIndex === 0)
+						&& (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
+						&& $prev.hasClass(CLASS_FIXED_BOX)) {
+					$divider.addClass(CLASS_FIXED_DIVIDER);
+					return;
+				}
+
 				var nextZIndex = $next.css('z-index');
 				if (!nextZIndex || nextZIndex === 'auto') {
 					nextZIndex = 0;
@@ -263,50 +292,25 @@
 					left: nextLeft,
 					position: 'absolute'
 				});
-				// dividerハンドラーの調整
-				var $dividerHandler = $divider.find('.dividerHandler');
-				if ($dividerHandler.length === 0) {
-					$divider.append('<div style="height:50%;"></div>');
-					$dividerHandler = $('<div class="dividerHandler"></div>');
-					$divider.append($dividerHandler);
-				}
-				$dividerHandler.css({
-					'margin-top': -$dividerHandler.height() / 2
-				});
-				if (type === 'y') {
-					$dividerHandler.css({
-						'margin-left': 'auto',
-						'margin-right': 'auto'
-					});
-				} else {
-					$dividerHandler.css({
-						'margin-left': ($divider.width() - $dividerHandler.outerWidth()) / 2
-					});
-				}
-				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可
-				if ((!isLast || lastIndex === 0)
-						&& (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
-						&& $prev.hasClass(CLASS_FIXED_BOX)) {
+
+				// 一番下まで計算が終わったら、
+				if (isLast && $next.hasClass(CLASS_FIXED_BOX)) {
+					// 最後のboxがfixedの時は、そのboxの前のdividerはfixed
 					$divider.addClass(CLASS_FIXED_DIVIDER);
-				} else {
-					if (isLast && $next.hasClass(CLASS_FIXED_BOX)) {
-						// 最後のboxがfixedの時は、そのboxの前のdividerはfixed
-						$divider.addClass(CLASS_FIXED_DIVIDER);
-						// fixdeでないboxが出てくるまで、前のdividerを辿って全てfixedにする
-						var $p = $prev;
-						var $d = $divider;
-						while (true) {
-							$d.addClass(CLASS_FIXED_DIVIDER);
-							$p = this._getPrevBoxByDivider($d);
-							if (!$p.hasClass(CLASS_FIXED_BOX)) {
-								break;
-							}
-							$d = this._getPrevDividerByBox($p);
+					// fixdeでないboxが出てくるまで、前のdividerを辿って全てfixedにする
+					var $p = $prev;
+					var $d = $divider;
+					while (true) {
+						$d.addClass(CLASS_FIXED_DIVIDER);
+						$p = this._getPrevBoxByDivider($d);
+						if (!$p.hasClass(CLASS_FIXED_BOX)) {
+							break;
 						}
-					} else {
-						$divider.removeClass(CLASS_FIXED_DIVIDER);
-						appearedUnfix = true;
+						$d = this._getPrevDividerByBox($p);
 					}
+				} else {
+					$divider.removeClass(CLASS_FIXED_DIVIDER);
+					appearedUnfix = true;
 				}
 			}));
 

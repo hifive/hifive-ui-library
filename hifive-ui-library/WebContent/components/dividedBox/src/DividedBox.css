@@ -64,7 +64,7 @@
 	overflow: visible;
 }
 
-.dividerHandler {
+.dividedBox>.divider>.dividerHandler {
 	width: 30px;
 	height: 30px;
 	border-style: solid;
@@ -81,7 +81,7 @@
 	margin-right: auto;
 }
 
-.dividedBox>.divider,.dividerHandler {
+.dividedBox>.divider,.dividedBox .dividerHandler {
 	background-color: yellow;
 }
 
