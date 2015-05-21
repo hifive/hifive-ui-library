@@ -2424,10 +2424,6 @@
 	// Variables
 	//=============================
 
-	var disposedFunction = function() {
-		throw new Error('Already Disposed');
-	};
-
 
 	// =========================================================================
 	//
@@ -2514,13 +2510,8 @@
 					}
 				}
 
-				// MEMO: プロトタイプで継承したものまで消している（要らないかも）
+				// MEMO: プロトタイプで継承したものは消さない
 				if (!util.hasProperty(this, key)) {
-					if ($.isFunction(property)) {
-						this[key] = disposedFunction;
-					} else {
-						this[key] = null;
-					}
 					continue;
 				}
 
@@ -2694,7 +2685,7 @@
 
 		var nextParents = parents.concat([a]);
 
-		for (var i = 1; len < i; i++) {
+		for (var i = 0; i < len; i++) {
 			var aValue = a[i];
 			var bValue = b[i];
 
@@ -6282,6 +6273,76 @@
 	}
 
 	/**
+	 * 文字列 'partialMatch' です。
+	 * <p>
+	 * ユーザに部分一致文字列をフィルタ条件として入力させる UI とするパラメータです。
+	 * </p>
+	 * 
+	 * @typedef {string} PartialMatchFilterUIString
+	 */
+
+	function validatePartialMatchFilterUIString(v) {
+		v.check('PartialMatchFilterUIString', function(v) {
+			v.equal('partialMatch');
+		});
+	}
+
+	/**
+	 * 文字列 'distinctValues' です。
+	 * <p>
+	 * そのプロパティにおいて、存在する値の集合からフィルタ条件をユーザに選択させる UI とするパラメータです。 <br>
+	 * データを遅延ロードしている場合に選択することはできません。
+	 * </p>
+	 * 
+	 * @typedef {string} DistinctValuesFilterUIString
+	 */
+
+	function validateDistinctValuesFilterUIString(v) {
+		v.check('DistinctValuesFilterUIString', function(v) {
+			v.equal('distinctValues');
+		});
+	}
+
+	/**
+	 * フィルタ可能な値の配列を表す型です。
+	 * 
+	 * @typedef {Array.<Value>} ValueArrayFilterUIParam
+	 */
+
+	function validateValueArrayFilterUIParam(v) {
+		v.check('ValueArrayFilterUIParam', function(v) {
+			v.notNull();
+			v.array();
+			v.values(validateValue);
+		});
+	}
+
+	/**
+	 * フィルタ条件をどういった形でユーザに指定してもらうかの UI を選択するためのパラメータの型です。
+	 * <p>
+	 * 以下のパターンのいずれかで指定することができます。
+	 * <ul>
+	 * <li>'partialMatch': ユーザに部分一致文字列を入力してもらう UI</li>
+	 * <li>'distinctValues': 存在する値の集合から選択してもらう UI</li>
+	 * <li>値の配列: 指定した配列の値から選択してもらう UI</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * @typedef {PartialMatchFilterUIString|DistinctValuesFilterUIString|ValueArrayFilterUIParam}
+	 *          FilterUIParam
+	 */
+
+	function validateFilterUIParam(v) {
+		v.check('FilterUIParam', function(v) {
+			v.or(function(v) {
+				validatePartialMatchFilterUIString(v);
+				validateDistinctValuesFilterUIString(v);
+				validateValueArrayFilterUIParam(v);
+			});
+		});
+	}
+
+	/**
 	 * プロパティごとのUI上の設定を表す型です。
 	 * 
 	 * @typedef {Object} PropertyUIParam
@@ -6289,6 +6350,7 @@
 	 * @property {CellEventHandler=} changeHandler
 	 * @property {boolean=} sortable
 	 * @property {PropertyName=} sortProperty
+	 * @property {FilterUIParam=} filter
 	 */
 
 	function validatePropertyUIParam(v) {
@@ -6315,6 +6377,11 @@
 			v.property('sortProperty', function(v) {
 				v.nullable();
 				validatePropertyName(v);
+			});
+
+			v.property('filter', function(v) {
+				v.nullable();
+				validateFilterUIParam(v);
 			});
 		});
 	}
@@ -6387,7 +6454,10 @@
 	 * @property {GridAreaSize} gridWidth
 	 * @property {boolean} enableResizeColumnUI: true
 	 * @property {boolean} enableReorderColumnUI: true
-	 * @property {boolean} enableColumnSortUI: true
+	 * @property {boolean} enableColumnSortAndFilterUI: true
+	 * @property {Array.<string>=} [sortAscIconClasses]
+	 * @property {Array.<string>=} [sortDescIconClasses]
+	 * @property {Array.<string>=} [sortClearIconClasses]
 	 * @property {CellFormatter} defaultFormatter
 	 * @property {CellClassDefinition} cellClassDefinition
 	 * @property {DisableInputPredicate} disableInput
@@ -6410,9 +6480,33 @@
 				v.notNull();
 				v.type('boolean');
 			});
-			v.property('enableColumnSortUI', function(v) {
+			v.property('enableColumnSortAndFilterUI', function(v) {
 				v.notNull();
 				v.type('boolean');
+			});
+			v.property('sortAscIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function() {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('sortDescIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function() {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('sortClearIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function() {
+					v.notNull();
+					v.type('string');
+				});
 			});
 
 			v.property('defaultFormatter', validateCellFormatter);
@@ -10207,8 +10301,6 @@
 			},
 
 			clear: function() {
-				this._requireReady();
-
 				if (this._requestPromise != null) {
 					this._requestPromise.abort();
 					this._requestPromise = null;
@@ -10221,6 +10313,7 @@
 
 				this._isReady = true;
 				this._searchParam = {};
+				this._sourceSearchParam = null;
 				this._fetchParam = {};
 				this._dataSet = {};
 				this._cache = [];
@@ -10356,6 +10449,12 @@
 
 			/**
 			 * @private
+			 * @type {ServerSearchParam}
+			 */
+			_sourceSearchParam: null,
+
+			/**
+			 * @private
 			 * @type {FetchParam}
 			 */
 			_fetchParam: null,
@@ -10404,6 +10503,12 @@
 
 			/**
 			 * @private
+			 * @type {Array.<Data>}
+			 */
+			_originalDataArray: null,
+
+			/**
+			 * @private
 			 * @type {AbortablePromise.<*>}
 			 */
 			_requestPromise: null,
@@ -10442,7 +10547,16 @@
 					}
 				});
 
+				// sort, filter 以外が変わっていなければ再度の問い合わせはしない
+				if (util.deepEquals(sourceSearchParam, this._sourceSearchParam)) {
+					this._requestPromise = null;
+					this._refreshCache(searchParam);
+					this._searchParam = $.extend(true, {}, searchParam);
+					return resolve();
+				}
+
 				log.debug('[FETCH] Start');
+
 				var searchPromise = this._dataSource.searchData(sourceSearchParam);
 				this._requestPromise = searchPromise;
 
@@ -10487,22 +10601,12 @@
 					log.debug('[FETCH] Success: fetch');
 					this._fetchParam = fetchResult.fetchParam;
 
+					this._originalDataArray = fetchResult.dataArray;
 
 					// cache と idToIndex を更新
-					var dataArray = fetchResult.dataArray;
-					var addedSet = this._dataSource.getAddedDataSet();
-
-					util.forEach(addedSet, function(data, id) {
-						dataArray.push({
-							dataId: id,
-							editStatus: 'addded',
-							original: null,
-							edited: data
-						});
-					});
-
-					this._refreshCache(dataArray, searchParam);
+					this._refreshCache(searchParam);
 					this._searchParam = $.extend(true, {}, searchParam);
+					this._sourceSearchParam = sourceSearchParam;
 
 					// 状態に応じてイベントを投げる
 					if (!this._isReady) {
@@ -10521,23 +10625,28 @@
 
 			/**
 			 * @private
-			 * @param {Array.<EditedData>} searchedDataArray
 			 * @param {LocalSearchParam} searchParam
 			 */
-			_refreshCache: function(searchedDataArray, searchParam) {
+			_refreshCache: function(searchParam) {
 				var validator = ctx.argsValidator('private');
-
-				validator.arg('searchedDataArray', searchedDataArray, function(v) {
-					v.notNull();
-					v.array();
-
-					v.values(type.validateEditedData);
-				});
-
 				validator.arg('searchParam', searchParam, type.validateLocalSearchParam);
 
+				var dataArray = $.map(this._originalDataArray, this.own(function(data) {
+					return this._dataSource.applyEdit(data.original);
+				}));
+				var addedSet = this._dataSource.getAddedDataSet();
 
-				var dataSet = util.mapObject(searchedDataArray, function(data) {
+				util.forEach(addedSet, function(data, id) {
+					dataArray.push({
+						dataId: id,
+						editStatus: 'addded',
+						original: null,
+						edited: data
+					});
+				});
+
+
+				var dataSet = util.mapObject(dataArray, function(data) {
 					return {
 						key: data.dataId,
 						value: data.edited
@@ -11786,6 +11895,8 @@
 	// Constants
 	//
 	// =========================================================================
+
+	var SELECTED_BORDER_WIDTH = 3;
 
 
 	// =========================================================================
@@ -14683,41 +14794,41 @@
 
 						if (row + 1 === rowStart && inColumnRange) {
 							border = gridRange.getBottomBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						} else if (row === rowStart && inColumnRange) {
 							border = gridRange.getTopBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						}
 
 						if (row + 1 === rowEnd && inColumnRange) {
 							border = gridRange.getBottomBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						} else if (row === rowEnd && inColumnRange) {
 							border = gridRange.getTopBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						}
 
 						if (column + 1 === columnStart && inRowRange) {
 							border = gridRange.getRightBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						} else if (column === columnStart && inRowRange) {
 							border = gridRange.getLeftBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						}
 
 						if (column + 1 === columnEnd && inRowRange) {
 							border = gridRange.getRightBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						} else if (column === columnEnd && inRowRange) {
 							border = gridRange.getLeftBorder(i, j);
-							border.width = 3;
+							border.width = SELECTED_BORDER_WIDTH;
 							border.classes = ['gridSelectedRangeEdge'];
 						}
 					}
@@ -16684,6 +16795,8 @@
 
 	var exports = {
 
+		SELECTED_BORDER_WIDTH: SELECTED_BORDER_WIDTH,
+
 		// --- Private Class --- //
 
 		// テスト用にクラスを公開
@@ -16785,6 +16898,14 @@
 	})();
 
 
+	// --- ColumnSortAndFilterUI --- //
+
+	var COLUMN_SORT_AND_FILTER_OVERLAY_ID = 'gridSortAndFilterOverlay';
+	var COLUMN_SORT_AND_FILTER_MENU_CLASS = 'gridSortAndFilterMenu';
+	var COLUMN_SORT_AND_FILTER_OWNER_DATA_NAME = 'gridSortAndFilterMenuOwnerController';
+	var COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME = 'gridSortProperty';
+
+
 	// --- Table Grid View  --- //
 
 	var VERTICAL_SCROLL_BAR_CLASS = 'gridVerticalScrollBar';
@@ -16836,10 +16957,11 @@
 		var defaultFormatter = param.defaultFormatter;
 		var formatterSet = param.formatterSet;
 		var sortSet = param.sortSet;
+		var filterSet = param.filterSet;
 		var cellClassDefinition = param.cellClassDefinition;
 		var disableInput = param.disableInput;
 		var resizeColumnUI = param.resizeColumnUI;
-		var columnSortUI = param.columnSortUI;
+		var columnSortAndFilterUI = param.columnSortAndFilterUI;
 
 		return function($target, gridRange) {
 			var tableWidth = gridRange.getRangeWidth();
@@ -16907,10 +17029,11 @@
 					}
 
 
-					var divTop = topBorderWidth;
-					var divLeft = leftBorderWidth;
-					var divHeight = height - topBorderWidth - bottomBorderWidth;
-					var divWidth = width - leftBorderWidth - rightBorderWidth;
+					// FIXME
+					var divTop = 0;
+					var divLeft = 0;
+					var divHeight = height;
+					var divWidth = width;
 
 					html += '<td style="padding: 0; border-widht: 0; overflow: hidden;">';
 
@@ -16989,12 +17112,16 @@
 
 					html += formatter(cell, disabled, divHeight, divWidth);
 
-					// sortIcon の追加
+					// sortAndFilter ボタン の追加
 					if (cell.isHeaderRow && cell.isPropertyHeader) {
 						var sortSetting = sortSet[cell.propertyName];
-						if (sortSetting != null && sortSetting.enable) {
-							var sortOrder = gridRange.getSortOrder(sortSetting.property);
-							html += columnSortUI.makeSortIconHtml(sortOrder);
+						var filterSetting = filterSet[cell.propertyName];
+
+						var sortEnable = sortSetting != null && sortSetting.enable;
+						var filterEnable = filterSetting != null && filterSetting.enable;
+
+						if (sortEnable || filterEnable) {
+							html += columnSortAndFilterUI.makeButtonHtml();
 						}
 					}
 
@@ -17989,7 +18116,7 @@
 		/**
 		 * @memberOf VirtualScrollBoxController
 		 */
-		__name: 'h5.ui.components.virtualScroll.VirtualScrollBoxController',
+		__name: 'h5.ui.components.datagrid.view.dom.VirtualScrollBoxController',
 
 
 		// --- Life Cycle Method --- //
@@ -18503,6 +18630,743 @@
 		_isEnable: false
 	};
 
+
+	//=============================
+	// ColumnSortAndFilterUIController
+	//=============================
+
+	var columnSortAndFilterUIController = {
+
+		// --- Metadata --- //
+
+		/**
+		 * @memberOf ColumnSortAndFilterUIController
+		 */
+		__name: 'h5.ui.components.datagrid.view.dom.ColumnSortAndFilterUIController',
+
+
+		// --- Logic --- //
+
+		_gridLogic: null,
+
+
+		// --- Life Cycle Method --- //
+
+		__init: function() {
+			this._makeMenu();
+		},
+
+		__ready: function() {
+			if (!this._isEnable) {
+				this.disableListeners();
+			}
+		},
+
+
+		// --- Public Method --- //
+
+		setGridLogic: function(gridLogic) {
+			this._gridLogic = gridLogic;
+		},
+
+		setSortPropertySet: function(sortPropertySet) {
+			this._sortPropertySet = sortPropertySet;
+		},
+
+		setFilterPropertySet: function(filterPropertySet) {
+			this._filterPropertySet = filterPropertySet;
+		},
+
+		/**
+		 * @param {{asc: Array.<string>, desc: Array.<string>, clear: Array.<string>}} param
+		 */
+		setSortIconClasses: function(param) {
+			this._ascIconClasses = param.asc;
+			this._descIconClasses = param.desc;
+			this._clearIconClasses = param.clear;
+
+			if (!this.isInit) {
+				return;
+			}
+
+			var $menu = this._findMenu();
+			util.forEach(param.asc, function(iconClass) {
+				$menu.find('.gridSortAscIcon > span').addClass(iconClass);
+			});
+			util.forEach(param.desc, function(iconClass) {
+				$menu.find('.gridSortDescIcon > span').addClass(iconClass);
+			});
+			util.forEach(param.clear, function(iconClass) {
+				$menu.find('.gridSortClearIcon > span').addClass(iconClass);
+			});
+		},
+
+		isEnable: function() {
+			return this._isEnable;
+		},
+
+		enable: function() {
+			this._isEnable = true;
+			if (this.isReady) {
+				this.enableListeners();
+			}
+		},
+
+		disable: function() {
+			this._isEnable = false;
+			if (this.isReady) {
+				this.disableListeners();
+			}
+		},
+
+		makeButtonHtml: function() {
+			if (!this._isEnable) {
+				return '';
+			}
+
+			var html = '';
+			html += '<button';
+			html += ' class="gridColumnSortAndFilterButton"';
+			html += ' tabindex="-1"';
+			html += '>';
+
+			html += '<div';
+			html += ' class="gridColumnSortAndFilterButtonIcon"';
+			html += '>';
+			html += '</div>';
+
+			html += '</button>';
+			return html;
+		},
+
+
+		// --- Event Handler --- //
+
+		'.gridColumnSortAndFilterButton click': function(context, $el) {
+			var $frame = $el.closest('.gridCellFrame');
+
+			var row = $frame.data('h5DynGridRow');
+			var column = $frame.data('h5DynGridColumn');
+
+			var cell = this._gridLogic.getGridCell(row, column);
+
+			var frameOffset = $frame.offset();
+			var topPosition = frameOffset.top + $frame.outerHeight();
+			var rightPosition = frameOffset.left + $frame.outerWidth(); // 右端が左から何px目か
+
+			// TODO: 押したボタンのクラス変更
+			// TODO: フォーカスをメニューにあてる?
+			// TODO: メニューの内容を列にあわせて調節
+
+			this._showMenu(cell, topPosition, rightPosition);
+		},
+
+		'{#gridSortAndFilterOverlay} click': function(context, $el) {
+			if (!$el.is(context.event.target)) {
+				return;
+			}
+			this._hideMenu();
+		},
+
+		'{.gridSortAscItem} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// selected の場合は無視する
+			if ($el.is('.selected')) {
+				return;
+			}
+
+			var $menu = this._findMenu();
+			var property = $menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME);
+
+			var sortParam;
+			sortParam = [{
+				property: property,
+				order: 'asc'
+			}];
+
+			var searcher = this._gridLogic.getDataSearcher();
+			var searchParam = searcher.getSearchParam();
+			if (searchParam == null) {
+				searchParam = {};
+			}
+			searchParam.sort = sortParam;
+
+			this._currentSearchParam = searchParam;
+			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		'{.gridSortDescItem} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// selected の場合は無視する
+			if ($el.is('.selected')) {
+				return;
+			}
+
+			var $menu = this._findMenu();
+			var property = $menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME);
+
+			var sortParam;
+			sortParam = [{
+				property: property,
+				order: 'desc'
+			}];
+
+			var searcher = this._gridLogic.getDataSearcher();
+			var searchParam = searcher.getSearchParam();
+			if (searchParam == null) {
+				searchParam = {};
+			}
+			searchParam.sort = sortParam;
+
+			this._currentSearchParam = searchParam;
+			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		'{.gridSortClearItem} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// disabled の場合は無視する
+			if ($el.is('.disabled')) {
+				return;
+			}
+
+			var searcher = this._gridLogic.getDataSearcher();
+			var searchParam = searcher.getSearchParam();
+			if (searchParam == null) {
+				searchParam = {};
+			}
+			searchParam.sort = [];
+
+			this._currentSearchParam = searchParam;
+			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		'{.filterOptionCheckbox} change': function(context, $el) {
+			var $menu = this._findMenu();
+			var $allCheckbox = $menu.find('#gridFilterOptionCheckbox_all');
+
+			// Select All の変更
+			if ($el.is($allCheckbox)) {
+				$('.filterOptionCheckbox').prop('checked', $el.prop('checked'));
+				return;
+			}
+
+			// すべて選択されているかの判定
+			var $checkboxes = $menu.find('.filterOptionCheckbox').not($allCheckbox);
+			var isAllSelected = !$checkboxes.is(':not(:checked)');
+			$allCheckbox.prop('checked', isAllSelected);
+		},
+
+		'{.gridFilterButton} click': function() {
+			var $menu = this._findMenu();
+			var property = $menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME);
+
+			var searcher = this._gridLogic.getDataSearcher();
+			var searchParam = searcher.getSearchParam();
+			if (searchParam == null) {
+				searchParam = {};
+			}
+
+			// 選択式の場合
+			if ($menu.find('.gridFilterOptionsItem').is(':visible')) {
+				var $checkboxes = $menu.find('.filterOptionCheckbox');
+
+				var selected = [];
+				var options = [];
+
+				$checkboxes.each(function(i, checkbox) {
+					var isChecked = checkbox.checked;
+					if (checkbox.id !== 'gridFilterOptionCheckbox_all' && isChecked) {
+						selected.push(checkbox.value);
+					}
+
+					options.push({
+						id: checkbox.id,
+						value: checkbox.value,
+						checked: checkbox.checked
+					});
+				});
+
+				// 選択されているチェックボックスを記憶する
+				this._currentFilter = {
+					property: property,
+					options: options
+				};
+
+				searchParam.filter = [{
+					property: property,
+					predicate: function(value) {
+						return $.inArray(value, selected) !== -1;
+					}
+				}];
+
+				this._currentSearchParam = searchParam;
+				searcher.changeSearchParam(searchParam);
+
+				this._hideMenu();
+				return;
+			}
+
+			// 部分一致の場合
+			var isExclude = $menu.find('.gridPartialMatchTypeSelect').val() === 'excludeText';
+			var text = $menu.find('.gridPartialMatchFilterInput').val();
+
+			this._currentFilter = {
+				property: property,
+				isExclude: isExclude,
+				text: text
+			};
+
+			searchParam.filter = [{
+				property: property,
+				predicate: function(value) {
+					var match = String(value).indexOf(text) !== -1;
+					return isExclude ? !match : match;
+				}
+			}];
+
+			this._currentSearchParam = searchParam;
+			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		'{.gridFilterClearButton} click': function() {
+			this._currentFilter = null;
+
+			var searcher = this._gridLogic.getDataSearcher();
+			var searchParam = searcher.getSearchParam();
+			if (searchParam == null) {
+				searchParam = {};
+			}
+			searchParam.filter = null;
+
+			this._currentSearchParam = searchParam;
+			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		'{rootElement} gridChangeSearchSuccess': function(context) {
+			var searchParam = context.evArg.searchParam;
+			if (!util.deepEquals(searchParam, this._currentSearchParam)) {
+				this._currentFilter = null;
+				this._currentSearchParam = null;
+			}
+		},
+
+
+		// --- Private Property --- //
+
+		_sortPropertySet: null,
+
+		_filterPropertySet: null,
+
+		_ascIconClasses: null,
+
+		_descIconClasses: null,
+
+		_clearIconClasses: null,
+
+		_isEnable: false,
+
+		_currentFilter: null,
+
+		_currentSearchParam: null,
+
+
+		// --- Private Method --- //
+
+		_findOverlay: function() {
+			return $('#' + COLUMN_SORT_AND_FILTER_OVERLAY_ID);
+		},
+
+		_findMenu: function() {
+			var $overlay = this._findOverlay();
+			return $overlay.find('.' + COLUMN_SORT_AND_FILTER_MENU_CLASS);
+		},
+
+		_makeMenu: function() {
+			var idSelector = '#' + COLUMN_SORT_AND_FILTER_OVERLAY_ID;
+			if (0 < $(idSelector).length) {
+				return;
+			}
+
+			var $body = $('body');
+			var ITEM_CLASS = 'gridSortAndFilterMenuItem';
+
+			var $overlay = $('<div></div>');
+			$overlay.attr('id', COLUMN_SORT_AND_FILTER_OVERLAY_ID);
+			$overlay.addClass('gridFilterMenuOverlay');
+			$overlay.css({
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				width: '100%',
+				height: '100%',
+
+				'z-index': 9999
+			});
+			$overlay.hide();
+			$body.append($overlay);
+
+
+			var $menu = $('<div></div>');
+			$menu.attr('tabindex', '-1');
+			$menu.addClass(COLUMN_SORT_AND_FILTER_MENU_CLASS);
+			$menu.css({
+				position: 'absolute',
+				overflow: 'hidden',
+				top: 0,
+				left: 0
+			});
+			$overlay.append($menu);
+
+			var $menuList = $('<ul></ul>');
+			$menuList.addClass('gridSortAndFilterMenuList');
+			$menu.append($menuList);
+
+			// 昇順ソート
+			var $sortAscItem = $('<li></li>');
+			$sortAscItem.addClass(ITEM_CLASS);
+			$sortAscItem.addClass('gridSortItem');
+			$sortAscItem.addClass('gridSortAscItem');
+			$menuList.append($sortAscItem);
+
+			var $sortAscIcon = $('<div></div>');
+			$sortAscIcon.addClass('gridSortIcon');
+			$sortAscIcon.addClass('gridSortAscIcon');
+			$sortAscItem.append($sortAscIcon);
+
+			var $sortAscIconSpan = $('<span></span>');
+			util.forEach(this._ascIconClasses, function(iconClass) {
+				$sortAscIconSpan.addClass(iconClass);
+			});
+			$sortAscIcon.append($sortAscIconSpan);
+
+			var $sortAscText = $('<div></div>');
+			$sortAscText.addClass('gridSortText');
+			$sortAscText.addClass('gridSortAscText');
+			$sortAscText.text('Sort Ascending');
+			$sortAscItem.append($sortAscText);
+
+			// 降順ソート
+			var $sortDescItem = $('<li></li>');
+			$sortDescItem.addClass(ITEM_CLASS);
+			$sortDescItem.addClass('gridSortItem');
+			$sortDescItem.addClass('gridSortDescItem');
+			$menuList.append($sortDescItem);
+
+			var $sortDescIcon = $('<div></div>');
+			$sortDescIcon.addClass('gridSortIcon');
+			$sortDescIcon.addClass('gridSortDescIcon');
+			$sortDescItem.append($sortDescIcon);
+
+			var $sortDescIconSpan = $('<span></span>');
+			util.forEach(this._descIconClasses, function(iconClass) {
+				$sortDescIconSpan.addClass(iconClass);
+			});
+			$sortDescIcon.append($sortDescIconSpan);
+
+			var $sortDescText = $('<div></div>');
+			$sortDescText.addClass('gridSortText');
+			$sortDescText.addClass('gridSortDescText');
+			$sortDescText.text('Sort Descending');
+			$sortDescItem.append($sortDescText);
+
+			// ソートのクリア
+			var $sortClearItem = $('<li></li>');
+			$sortClearItem.addClass(ITEM_CLASS);
+			$sortClearItem.addClass('gridSortItem');
+			$sortClearItem.addClass('gridSortClearItem');
+			$menuList.append($sortClearItem);
+
+			var $sortClearIcon = $('<div></div>');
+			$sortClearIcon.addClass('gridSortIcon');
+			$sortClearIcon.addClass('gridSortClearIcon');
+			$sortClearItem.append($sortClearIcon);
+
+			var $sortClearIconSpan = $('<span></span>');
+			util.forEach(this._clearIconClasses, function(iconClass) {
+				$sortClearIconSpan.addClass(iconClass);
+			});
+			$sortClearIcon.append($sortClearIconSpan);
+
+
+			var $sortClearText = $('<div></div>');
+			$sortClearText.addClass('gridSortText');
+			$sortClearText.addClass('gridSortClearText');
+			$sortClearText.text('Clear Sort');
+			$sortClearItem.append($sortClearText);
+
+			// ソートとフィルタの境界線
+			var $itemBorder = $('<li></li>');
+			$itemBorder.addClass('gridSortItemBorder');
+			$menuList.append($itemBorder);
+
+			// フィルタ条件選択セレクトボックス
+			var $partialMatchTypeSelectItem = $('<li></li>');
+			$partialMatchTypeSelectItem.addClass(ITEM_CLASS);
+			$partialMatchTypeSelectItem.addClass('gridFilterItem');
+			$partialMatchTypeSelectItem.addClass('gridFilterMatchItem');
+			$partialMatchTypeSelectItem.addClass('gridPartialMatchTypeSelectItem');
+			$menuList.append($partialMatchTypeSelectItem);
+
+			var $partialMatchTypeSelect = $('<select></select>');
+			$partialMatchTypeSelect.addClass('gridPartialMatchTypeSelect');
+			$partialMatchTypeSelectItem.append($partialMatchTypeSelect);
+
+			// 条件1: テキストとして含む
+			var $includeTextOption = $('<option></option>');
+			$includeTextOption.attr('value', 'includeText');
+			$includeTextOption.text('Include');
+			$partialMatchTypeSelect.append($includeTextOption);
+
+			// 条件2: テキストとして含まない
+			var $excludeTextOption = $('<option></option>');
+			$excludeTextOption.attr('value', 'excludeText');
+			$excludeTextOption.text('Exclude');
+			$partialMatchTypeSelect.append($excludeTextOption);
+
+			// フィルタ用入力フォーム
+			var $partialMatchFilterItem = $('<li></li>');
+			$partialMatchFilterItem.addClass(ITEM_CLASS);
+			$partialMatchFilterItem.addClass('gridFilterItem');
+			$partialMatchFilterItem.addClass('gridFilterMatchItem');
+			$partialMatchFilterItem.addClass('gridPartialMatchFilterItem');
+			$menuList.append($partialMatchFilterItem);
+
+			var $partialMatchFilterInput = $('<input type="text">');
+			$partialMatchFilterInput.addClass('gridPartialMatchFilterInput');
+			$partialMatchFilterInput.attr('placeholder', 'Search');
+			$partialMatchFilterItem.append($partialMatchFilterInput);
+
+			// フィルタ要素選択
+			var $filterOptionsItem = $('<li></li>');
+			$filterOptionsItem.addClass('gridFilterItem');
+			$filterOptionsItem.addClass('gridFilterOptionsItem');
+			$menuList.append($filterOptionsItem);
+
+			var $filterOptionsList = $('<ul></ul>');
+			$filterOptionsList.addClass('gridFilterOptionsList');
+			$filterOptionsItem.append($filterOptionsList);
+
+			// フィルタ適用ボタン、フィルタクリアボタン
+			var $filterButtonsItem = $('<li></li>');
+			$filterButtonsItem.addClass(ITEM_CLASS);
+			$filterButtonsItem.addClass('gridFilterItem');
+			$filterButtonsItem.addClass('gridFilterButtons');
+			$menuList.append($filterButtonsItem);
+
+			var $filterButton = $('<button></button>');
+			$filterButton.addClass('gridFilterButton');
+			$filterButton.text('Filter');
+			$filterButtonsItem.append($filterButton);
+
+			var $filterClearButton = $('<button></button>');
+			$filterClearButton.addClass('gridFilterClearButton');
+			$filterClearButton.text('Clear Filter');
+			$filterButtonsItem.append($filterClearButton);
+		},
+
+		_showMenu: function(cell, topPosition, rightPosition) {
+			var $overlay = this._findOverlay();
+			var $menu = this._findMenu();
+
+			// 既に見えていたら無視する
+			if ($overlay.is(':visible')) {
+				return;
+			}
+
+			var propertyName = cell.propertyName;
+			var sortSetting = this._sortPropertySet[propertyName];
+			var filterSetting = this._filterPropertySet[propertyName];
+
+			// sort する property 名を $menu の data 属性に入れておく
+			$menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME, sortSetting.property);
+
+			// sort されている場合はそこをハイライト
+			var sortOrder = null;
+
+			var searchParam = this._gridLogic.getSearchParam();
+			var sortParam = {};
+			if (searchParam != null && searchParam.sort != null) {
+				sortParam = searchParam.sort;
+			}
+
+			util.forEach(sortParam, function(sortInfo) {
+				if (sortInfo.property === sortSetting.property) {
+					sortOrder = sortInfo.order;
+					return false;
+				}
+			});
+
+			var selectedClass = 'selected';
+			$menu.find('.gridSortAscItem').toggleClass(selectedClass, sortOrder === 'asc');
+			$menu.find('.gridSortDescItem').toggleClass(selectedClass, sortOrder === 'desc');
+
+			// sort がひとつでもあれば clear を無効にする
+			$menu.find('.gridSortClearItem').toggleClass('disabled', $.isEmptyObject(sortParam));
+
+			var filterType = filterSetting.type;
+
+			if (filterType === 'distinctValues') {
+				var object = {};
+				var references = this._gridLogic.getDataReferences();
+				util.forEach(references, function(reference) {
+					if (!reference.isLoaded) {
+						return;
+					}
+
+					var key = reference.data.edited[propertyName];
+					object[key] = true;
+				});
+
+				var keys = util.map(object, function(v, k) {
+					return k;
+				});
+				this._setFilterOptions(propertyName, keys);
+			} else if (filterType === 'arrayValues') {
+				this._setFilterOptions(propertyName, filterSetting.values);
+			} else {
+				if (this._currentFilter != null && this._currentFilter.property === propertyName) {
+					var currentFilter = this._currentFilter;
+					var selectedValue = currentFilter.isExclude ? 'excludeText' : 'includeText';
+					$menu.find('.gridPartialMatchTypeSelect').val(selectedValue);
+					$menu.find('.gridPartialMatchFilterInput').val(currentFilter.text);
+				} else {
+					$menu.find('.gridPartialMatchTypeSelect').val('includeText');
+					$menu.find('.gridPartialMatchFilterInput').val('');
+				}
+			}
+
+			$overlay.show();
+			var width = $menu.outerWidth();
+
+			var position = {};
+			position.top = topPosition;
+			position.left = rightPosition - width;
+
+			if (position.left < 0) {
+				position.left = 0;
+			}
+
+			// 条件にあわせてメニューの表示を切り替える
+			$menu.find('.gridSortItem').toggle(sortSetting.enable);
+			$menu.find('.gridFilterItem').toggle(filterSetting.enable);
+			$menu.find('.gridSortItemBorder').toggle(sortSetting.enable && filterSetting.enable);
+
+			// filter type にあわせて表示する要素を切り替える
+			if (filterSetting.enable) {
+				$menu.find('.gridFilterMatchItem').toggle(filterType === 'partialMatch');
+				$menu.find('.gridFilterOptionsItem').toggle(filterType !== 'partialMatch');
+			}
+
+			$menu.css(position);
+			$overlay.data(COLUMN_SORT_AND_FILTER_OWNER_DATA_NAME, this);
+
+			$menu.focus();
+		},
+
+		_setFilterOptions: function(property, optionValues) {
+			var options;
+			if (this._currentFilter != null && this._currentFilter.property === property) {
+				options = this._currentFilter.options;
+			} else {
+				options = util.map(optionValues, function(optionValue) {
+					return {
+						value: optionValue,
+						checked: true
+					};
+				});
+
+				options.sort(function(a, b) {
+					if (a.value < b.value) {
+						return -1;
+					}
+					if (a.value === b.value) {
+						return 0;
+					}
+					return 1;
+				});
+
+				options = util.map(options, function(option, i) {
+					option.id = 'gridFilterOptionCheckbox_' + i;
+					return option;
+				});
+
+				options.unshift({
+					id: 'gridFilterOptionCheckbox_all',
+					value: '(Select All)',
+					checked: true
+				});
+			}
+
+			var $menu = this._findMenu();
+			var $list = $menu.find('.gridFilterOptionsList');
+
+			$list.empty();
+			var html = '';
+
+			util.forEach(options, function(option) {
+				html += '<li>';
+				html += '<input type="checkbox"';
+				html += ' id="' + option.id + '"';
+				html += ' class="filterOptionCheckbox"';
+				html += ' value="' + option.value + '"';
+				if (option.checked) {
+					html += ' checked';
+				}
+				html += '>';
+				html += '<label for="' + option.id + '">';
+				html += option.value;
+				html += '</label>';
+				html += '</li>';
+			});
+
+			$list.append(html);
+		},
+
+		_hideMenu: function() {
+			// メニューのオーナーが異なっていたら無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			var $overlay = this._findOverlay();
+
+			// 見えていなかったら無視する
+			if (!$overlay.is(':visible')) {
+				return;
+			}
+
+			$overlay.hide();
+		},
+
+		_isOwner: function() {
+			var $overlay = this._findOverlay();
+			return $overlay.data(COLUMN_SORT_AND_FILTER_OWNER_DATA_NAME) === this;
+		}
+	};
+
+
 	//=============================
 	// TableGridViewController
 	//=============================
@@ -18555,6 +19419,8 @@
 		_resizeColumnUIController: resizeColumnUIController,
 
 		_columnSortUIController: columnSortUIController,
+
+		_columnSortAndFilterUIController: columnSortAndFilterUIController,
 
 
 		// --- Logic --- //
@@ -18706,6 +19572,7 @@
 
 			this._formatterSet = this._makeFormatterSet(param);
 			this._sortSet = this._makeSortSet(param);
+			this._filterSet = this._makeFilterSet(param);
 
 
 			this.readyPromise.then(this.own(function() {
@@ -18726,21 +19593,35 @@
 				this._columnSortUIController.setGridLogic(this._gridLogic);
 				this._columnSortUIController.setSortPropertySet(sortPropertySet);
 
+				// ColumnSortAndFilterUI
+				this._columnSortAndFilterUIController.setGridLogic(this._gridLogic);
+				this._columnSortAndFilterUIController.setSortPropertySet(this._sortSet);
+				this._columnSortAndFilterUIController.setFilterPropertySet(this._filterSet);
+				this._columnSortAndFilterUIController.setSortIconClasses({
+					asc: param.sortAscIconClasses,
+					desc: param.sortDescIconClasses,
+					clear: param.sortClearIconClasses
+				});
+
+
+				// Enable Controllers
 				if (this._param.enableResizeColumnUI) {
 					this._resizeColumnUIController.enable();
 				}
-				if (this._param.enableColumnSortUI) {
-					this._columnSortUIController.enable();
+				if (this._param.enableColumnSortAndFilterUI) {
+					this._columnSortAndFilterUIController.enable();
 				}
+
 
 				var rendererParam = {
 					defaultFormatter: this._param.defaultFormatter,
 					formatterSet: this._formatterSet,
 					sortSet: this._sortSet,
+					filterSet: this._filterSet,
 					cellClassDefinition: this._param.cellClassDefinition,
 					disableInput: this._param.disableInput,
 					resizeColumnUI: this._resizeColumnUIController,
-					columnSortUI: this._columnSortUIController
+					columnSortAndFilterUI: this._columnSortAndFilterUIController
 				};
 
 				var renderer = createTableRenderer(rendererParam);
@@ -18852,7 +19733,7 @@
 
 			context.event.preventDefault();
 
-			var diff = (context.event.wheelDelta < 0) ? 1 : -1;
+			var diff = (context.event.wheelDelta < 0) ? 3 : -3;
 
 			this.trigger('h5scroll', {
 				vertical: {
@@ -19020,8 +19901,23 @@
 				return change.type === 'changeCellSelect';
 			});
 
-			var hasEdit = util.some(changes, function(change) {
-				return change.type === 'edit';
+			var editChanges = [];
+			util.forEach(changes, function(change) {
+				if (change.type === 'edit') {
+					var isUndo = change.changeType === 'undo';
+					editChanges = editChanges.concat(util.map(change.changes, function(c) {
+						return {
+							type: c.type,
+							dataId: c.dataId,
+							index: c.index,
+							propertyName: c.propertyName,
+							originalValue: c.originalValue,
+							oldValue: c.oldValue,
+							newValue: c.newValue,
+							isUndo: isUndo
+						};
+					}));
+				}
 			});
 
 
@@ -19037,10 +19933,11 @@
 				this.trigger('gridChangeCellSelect');
 			}
 
-			if (hasEdit) {
-				this.trigger('gridEdit');
+			if (0 < editChanges.length) {
+				this.trigger('gridEdit', {
+					changes: editChanges
+				});
 			}
-
 
 			if (hasChangeDataFocus || hasChangeCellSelect || hasChangeDataSelect) {
 				$(this.rootElement).focus();
@@ -19062,6 +19959,8 @@
 		_formatterSet: null,
 
 		_sortSet: null,
+
+		_filterSet: null,
 
 
 		_mainHeight: 0,
@@ -19626,19 +20525,48 @@
 			});
 		},
 
+		_makeFilterSet: function(param) {
+			var propertySet = param.propertyUI;
+
+			return util.mapObject(propertySet, function(propertyParam, property) {
+				var value = {
+					enable: false
+				};
+
+				if (propertyParam.filter != null) {
+					value.enable = true;
+
+					var filter = propertyParam.filter;
+
+					if ($.isArray(filter)) {
+						value.type = 'arrayValues';
+						value.values = filter;
+					} else {
+						value.type = filter;
+					}
+				}
+
+				return {
+					key: property,
+					value: value
+				};
+			});
+		},
+
 		_registerCellHandler: function(param) {
 			var propertySet = param.propertyUI;
 
 			util.forEach(propertySet, this.own(function(propertyParam, property) {
+				if (propertyParam.changeHandler == null) {
+					return;
+				}
+
 				var target = format('[data-h5-dyn-grid-property-name="{0}"]', property);
 
 				// MEMO: change 以外は必要ないのか要検討
 				var eventName = 'change';
 
 				var listener = function(context, $el) {
-					if (propertyParam.changeHandler == null) {
-						return;
-					}
 					var row = $el.data('h5DynGridRow');
 					var column = $el.data('h5DynGridColumn');
 
@@ -19658,10 +20586,11 @@
 				defaultFormatter: this._param.defaultFormatter,
 				formatterSet: this._formatterSet,
 				sortSet: this._sortSet,
+				filterSet: this._filterSet,
 				cellClassDefinition: this._param.cellClassDefinition,
 				disableInput: this._param.disableInput,
 				resizeColumnUI: this._resizeColumnUIController,
-				columnSortUI: this._columnSortUIController
+				columnSortAndFilterUI: this._columnSortAndFilterUIController
 			};
 
 			var renderer = createTableRenderer(rendererParam);
@@ -19866,7 +20795,19 @@
 				var _toValue = (toValue == null) ? String : toValue;
 
 				var $target = $(context.event.target);
-				var value = _toValue($target.val());
+
+				var value;
+				try {
+					value = _toValue($target.val());
+				} catch (e) {
+					this.log.error('toValue() throw Error');
+					this.log(e);
+					return;
+				}
+
+				if (typeof value === 'undefined') {
+					return;
+				}
 
 				var oldData = cell.editedData;
 				var propertyName = cell.propertyName;
@@ -19939,7 +20880,11 @@
 		gridWidth: 'css',
 		enableResizeColumnUI: true,
 		enableReorderColumnUI: false,
-		enableColumnSortUI: true,
+		enableColumnSortUI: false, // TODO: 削除
+		enableColumnSortAndFilterUI: true,
+		sortAscIconClasses: [],
+		sortDescIconClasses: [],
+		sortClearIconClasses: [],
 		defaultFormatter: h5.ui.components.datagrid.view.dom.cellFormatter.text()
 	};
 
@@ -20185,6 +21130,15 @@
 		},
 
 		/**
+		 * 指定されたデータを選択します。
+		 * 
+		 * @param {DataId} dataId 選択するデータのID
+		 */
+		selectData: function(dataId) {
+			this._gridLogic.selectData(dataId);
+		},
+
+		/**
 		 * すべてのデータを選択します。
 		 */
 		selectDataAll: function() {
@@ -20196,6 +21150,15 @@
 		 */
 		unselectDataAll: function() {
 			this._gridLogic.unselectDataAll();
+		},
+
+		/**
+		 * 指定されたデータの選択を解除します。
+		 * 
+		 * @param dataId 解除するデータのID
+		 */
+		unselectData: function(dataId) {
+			this._gridLogic.unselectData(dataId);
 		},
 
 		/**
@@ -20322,6 +21285,64 @@
 		 */
 		setDisableInput: function(disableInput) {
 			this._viewController.setDisableInput(disableInput);
+		},
+
+		/**
+		 * @returns {boolean}
+		 */
+		canSetRowHeight: function() {
+			return this._gridLogic.canSetRowHeight();
+		},
+
+		/**
+		 * @returns {PixelSize}
+		 */
+		getRowHeightMin: function() {
+			return this._gridLogic.getRowHeightMin();
+		},
+
+		/**
+		 * @returns {PixelSize}
+		 */
+		getRowHeightMax: function() {
+			return this._gridLogic.getRowHeightMax();
+		},
+
+		/**
+		 * @param {Index} row
+		 * @param {PixelSize} height
+		 */
+		setRowHeight: function(row, height) {
+			this._gridLogic.setRowHeight(row, height);
+		},
+
+		/**
+		 * @returns {boolean}
+		 */
+		canSetColumnWidth: function() {
+			return this._gridLogic.canSetColumnWidth();
+		},
+
+		/**
+		 * @returns {PixelSize}
+		 */
+		getColumnWidthMin: function() {
+			return this._gridLogic.getColumnWidthMin();
+		},
+
+		/**
+		 * @returns {PixelSize}
+		 */
+		getColumnWidthMax: function() {
+			return this._gridLogic.getColumnWidthMax();
+		},
+
+		/**
+		 * @param {Index} column
+		 * @param {PixelSize} width
+		 */
+		setColumnWidth: function(column, width) {
+			this._gridLogic.setColumnWidth(column, width);
 		},
 
 
@@ -20474,6 +21495,30 @@
 							v.nullable();
 							v.type('boolean');
 						});
+						v.property('sortAscIconClasses', function(v) {
+							v.nullable();
+							v.array();
+							v.values(function(v) {
+								v.notNull();
+								v.type('string');
+							});
+						});
+						v.property('sortDescIconClasses', function(v) {
+							v.nullable();
+							v.array();
+							v.values(function(v) {
+								v.notNull();
+								v.type('string');
+							});
+						});
+						v.property('sortClearIconClasses', function(v) {
+							v.nullable();
+							v.array();
+							v.values(function(v) {
+								v.notNull();
+								v.type('string');
+							});
+						});
 
 						v.property('defaultFormatter', function(v) {
 							v.nullable();
@@ -20534,7 +21579,7 @@
 			}
 
 			viewParam.propertyUI = properties;
-			$.extend(viewParam, DEFAULT_VIEW_PARAM);
+			viewParam = $.extend({}, DEFAULT_VIEW_PARAM, viewParam);
 
 			return {
 				logicParam: logicParam,
