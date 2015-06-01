@@ -1424,9 +1424,13 @@
 								continue;
 							}
 
-							// 描画範囲のローソクは座標情報を計算する
+							// 描画範囲の点について座標情報を計算する
 							var item = this.dataSource.dataModel.get(intId);
-							lineData.push(this.toData(item));
+							var chartData = this.toData(item);
+							if (chartData) {
+								// y座標の点があるもののみ表示する
+								lineData.push(chartData);
+							}
 						}
 						this.chartModel.create(lineData);
 					},
@@ -1435,8 +1439,6 @@
 					toData: function(currentItem) {
 						var id = currentItem.get('id');
 						var pre = this.dataSource.dataModel.get(id - 1);
-						// preがnullのときは、データとしても端であり、このときはただの点を表示する
-						var isEdge = pre == null;
 
 						var min = this.chartSetting.get('rangeMin');
 						var max = this.chartSetting.get('rangeMax');
@@ -1444,8 +1446,14 @@
 
 						var yProp = this.dataSource.propNames.y;
 						// var yProp = 'y';
-						var fromY = isEdge ? currentItem.get(yProp) : pre.get(yProp);
 						var toY = currentItem.get(yProp);
+						if (toY == null) {
+							return null;
+						}
+
+						// preがnullのときは、データとしても端であり、このときはただの点を表示する
+						var isPoint = pre == null;
+						var fromY = isPoint ? currentItem.get(yProp) : pre.get(yProp);
 
 						if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
 							fromY += this.dataSource.getStackedData(pre)[yProp];
@@ -1457,7 +1465,7 @@
 
 						return {
 							id: id,
-							fromX: !isEdge ? toX - dx : toX, // 右端はX座標は一定
+							fromX: !isPoint ? toX - dx : toX,
 							toX: toX,
 							fromY: calcYPos(fromY, min, max, height),
 							toY: calcYPos(toY, min, max, height)
