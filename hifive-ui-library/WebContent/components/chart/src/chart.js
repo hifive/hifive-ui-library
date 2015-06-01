@@ -987,7 +987,10 @@
 
 				if (this.xLabelArray == null) {
 					this.xLabelArray = h5.core.data.createObservableArray();
+				} else if (this.xLabelArray.length - 1 != vertLineNum) {
+					this.xLabelArray.copyFrom([]);
 				}
+
 				var rightItemId = this.dataSource.sequence.current() - 1;
 
 				var dispSizeNum = this.chartSetting.get('dispDataSize');
@@ -2354,6 +2357,15 @@
 			}));
 		},
 
+		beginUpdate: function() {
+			this._isInUpdate = true;
+		},
+
+		endUpdate: function() {
+			this._isInUpdate = false;
+			this._redraw();
+		},
+
 		_createChartRenderes: function(settings) {
 			if (this.$seriesGroup == null) {
 				this.$seriesGroup = $(graphicRenderer.createGroupElm({
@@ -2597,6 +2609,19 @@
 
 			if (this.chartSetting.get('keepDataSize') < this.chartSetting.get('dispDataSize')) {
 				this.chartSetting.set('dispDataSize', this.chartSetting.get('keepDataSize'));
+			}
+
+			this._redraw();
+		},
+
+		setAxesSetting: function(axesSettings) {
+			$.extend(true, this.settings.axes, axesSettings);
+			this._redraw();
+		},
+
+		_redraw: function() {
+			if (this._isInUpdate) {
+				return;
 			}
 
 			this.leftEndCandleStickId = Infinity;
