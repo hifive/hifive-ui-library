@@ -149,7 +149,7 @@
 
 	/**
 	 * ローソク表示用データを保持するモ
-	 *
+	 * 
 	 * @name chartModel
 	 */
 	var candleStickSchema = {
@@ -243,7 +243,7 @@
 
 	/**
 	 * グループ内でのY座標の位置を計算します
-	 *
+	 * 
 	 * @param val
 	 * @returns {Number}
 	 */
@@ -254,7 +254,7 @@
 
 	/**
 	 * ２つの値からグループ内でのY座標の位置の差を計算します
-	 *
+	 * 
 	 * @param val1
 	 * @param val2
 	 * @returns {Number}
@@ -308,7 +308,7 @@
 
 		/**
 		 * チャート 行
-		 *
+		 * 
 		 * @memberOf
 		 * @returns Promiseオブジェクト
 		 */
@@ -902,7 +902,7 @@
 
 					/**
 					 * ーソク を生成する
-					 *
+					 * 
 					 * @memberOf candleStickRenderer
 					 */
 					createCandleStickDataItems: function() {
@@ -926,7 +926,7 @@
 
 					/**
 					 * * ロ ータを取得す
-					 *
+					 * 
 					 * @memberOf candleStickRenderer
 					 * @param {object} chart チャート情報
 					 * @returns {object} ローソクの座標情報
@@ -1227,7 +1227,7 @@
 
 	/**
 	 * ラインチャートレンダラ―を生成する。
-	 *
+	 * 
 	 * @private
 	 * @returns LineChartRenderer
 	 */
@@ -1649,7 +1649,7 @@
 
 		_getXLabel: function(xLabelObj, index) {
 			if (!xLabelObj || !xLabelObj.item) {
-			    // 対象となるデータが存在しないときは空文字を表示
+				// 対象となるデータが存在しないときは空文字を表示
 				return '';
 			}
 			return this._xLabelFormatter(xLabelObj.value, xLabelObj.item, index);
@@ -1684,7 +1684,7 @@
 
 		/**
 		 * チャートの横の補助線を引く
-		 *
+		 * 
 		 * @memberOf AxisRenderer
 		 */
 		_drawHorizLines: function() {
@@ -1729,7 +1729,7 @@
 
 		/**
 		 * チャートの縦の補助線を引く
-		 *
+		 * 
 		 * @memberOf AxisRenderer
 		 */
 		_drawVertLines: function(renderer) {
@@ -1798,7 +1798,7 @@
 
 	/**
 	 * 描画を行うコントローラ
-	 *
+	 * 
 	 * @class
 	 * @memberOf h5.ui.components.chart
 	 * @name ChartController
@@ -1867,7 +1867,7 @@
 
 		/**
 		 * * チャートの初期表示を行う
-		 *
+		 * 
 		 * @memberOf h5.ui.components.chart.ChartController
 		 */
 		_initChart: function(firstChartRenderer) {
