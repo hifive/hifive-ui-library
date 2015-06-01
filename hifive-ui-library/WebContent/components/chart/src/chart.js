@@ -26,14 +26,7 @@
 	var TOOLTIP_OPEN_CLOSE_FORMAT = 'Open/Close= {0}/{1}';
 	var TOOLTIP_HIGH_LOW_FORMAT = 'High/Low= {0}/{1}';
 
-	var TOOLTIP_WIDTH = 150;
-	var TOOLTIP_HEIGHT = 50;
-
 	var PATH_LINE_FORMAT = 'L {0} {1} ';
-
-	var SEQUENCE_START_INDEX = 1;
-
-	var REFRESH_SIZE = 2;
 
 	var CHARACTER_HEIGHT = 11; // テキスト要素は下に位置を合わせるため、上に位置を合わせるときにこの定数を足す
 
@@ -68,10 +61,6 @@
 	var DEFAULT_TOOLTIP_PADDING_RIGHT = 8;
 
 	var SERIES_PREFIX = '_series';
-
-	var COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple']; // TODO: デフォルトカラー決める
-
-	var CHART_TYPES = ['line', 'ohlc', 'bar', 'stacked_line', 'stacked_bar'];
 
 	var STACKED_CHART_TYPES = ['stacked_line', 'stacked_bar'];
 
@@ -268,8 +257,11 @@
 	/**
 	 * グループ内でのY座標の位置を計算します
 	 * 
-	 * @param val
-	 * @returns {Number}
+	 * @param val 値
+	 * @param rangeMin 領域の最小値
+	 * @param rangeMax 領域の最大値
+	 * @param height Y軸の高さ
+	 * @returns {Number} 値が対応するY座標
 	 */
 	function calcYPos(val, rangeMin, rangeMax, height) {
 		return -(val * 1000 - rangeMin * 1000) / (rangeMax * 1000 - rangeMin * 1000) * height
@@ -279,9 +271,12 @@
 	/**
 	 * ２つの値からグループ内でのY座標の位置の差を計算します
 	 * 
-	 * @param val1
-	 * @param val2
-	 * @returns {Number}
+	 * @param val1 値1
+	 * @param val2 値2
+	 * @param rangeMin 領域の最小値
+	 * @param rangeMax 領域の最大値
+	 * @param height Y軸の高さ
+	 * @returns {Number} Y座標の位置の差
 	 */
 	function calcYDiff(val1, val2, rangeMin, rangeMax, height) {
 		return Math.abs(val1 * 1000 - val2 * 1000) / (rangeMax * 1000 - rangeMin * 1000) * height;
@@ -636,6 +631,7 @@
 
 	/**
 	 * @class
+	 * @param chartSetting 設定
 	 * @name dataSourceManager
 	 */
 	function DataSourceManager(chartSetting) {
@@ -793,7 +789,7 @@
 				if (setting.paddingTop == null) {
 					setting.paddingTop = DEFAULT_TOOLTIP_PADDING_TOP;
 				}
-				setting.paddingBottom = getMarginOrPadding(tooltip, 'padding', 'Bottom')
+				setting.paddingBottom = getMarginOrPadding(tooltip, 'padding', 'Bottom');
 				if (setting.paddingBottom == null) {
 					setting.paddingBottom = DEFAULT_TOOLTIP_PADDING_BOTTOM;
 				}
@@ -1301,7 +1297,7 @@
 						var rects = shapePaths.rects;
 
 						// fillの種類ごとに開始・終了値の四角形を描画
-						for (rectPaths in rects) {
+						for ( var rectPaths in rects) {
 							if (!rects.hasOwnProperty(rectPaths)) {
 								continue;
 							}
@@ -1373,6 +1369,10 @@
 	 * ラインチャートレンダラ―を生成する。
 	 * 
 	 * @private
+	 * @param {Element} rootElement このラインチャートのルート要素
+	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {Object} chartSetting 設定
+	 * @param {Object} seriesSetting この種別の設定
 	 * @returns LineChartRenderer
 	 */
 	function createLineChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
@@ -1715,7 +1715,7 @@
 					},
 
 					_appendHighLight: function() {
-
+					// ラインチャートではハイライトする対象がない
 					}
 				});
 	}
@@ -1879,7 +1879,7 @@
 				x -= 10;
 			}
 
-			for (i = 0, len = this.xLabelArray.length; i < len; i++) {
+			for (var i = 0, len = this.xLabelArray.length; i < len; i++) {
 				var label = this._getXLabel(this.xLabelArray.get(i), i);
 				var height = this.chartSetting.get('height');
 				var textY = graphicRenderer.isSvg ? height + CHARACTER_HEIGHT : height + 5;
