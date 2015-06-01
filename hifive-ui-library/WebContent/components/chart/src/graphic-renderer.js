@@ -693,11 +693,13 @@
 		 * 
 		 * @param $elem translateを設定するjQuery要素
 		 * @param x x座標
-		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param y y座標
+		 * @memberOf h5.ui.VMLRenderer
 		 */
-		setTranslate: function($elem, x) {
+		setTranslate: function($elem, x, y) {
 			$elem.css({
-				left: x
+				left: x,
+				top: y
 			});
 		},
 

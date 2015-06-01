@@ -585,8 +585,9 @@
 						continue;
 					}
 
-					var high = item.get(this.highProp);
-					var low = item.get(this.lowProp);
+					var high = item.get(this.highProp).toString();
+					var low = item.get(this.lowProp).toString();
+
 
 					if (high != null && high > maxVal) {
 						maxVal = high;
@@ -1875,14 +1876,19 @@
 			var xInterval = (this.chartSetting.get('width') - dx)
 					/ this.chartSetting.get('vertLineNum');
 			var x = dx * 0.5;
-			if (!graphicRenderer.isSvg) {
-				x -= 10;
+
+			var height = this.chartSetting.get('height');
+			var textY = graphicRenderer.isSvg ? height + CHARACTER_HEIGHT : height + 5;
+
+			// ラベルの軸からのマージンを取得
+			var margin = getMarginOrPadding(this._axesSettings.xaxis, 'margin', 'Top');
+			if (margin == null) {
+				margin = DEFAULT_X_LABEL_MARGIN_TOP;
 			}
+			textY += margin;
 
 			for (var i = 0, len = this.xLabelArray.length; i < len; i++) {
 				var label = this._getXLabel(this.xLabelArray.get(i), i);
-				var height = this.chartSetting.get('height');
-				var textY = graphicRenderer.isSvg ? height + CHARACTER_HEIGHT : height + 5;
 				graphicRenderer.appendTextElm(label, x, textY, null, {
 					'class': 'xLabel',
 					'text-anchor': 'middle'
@@ -1968,7 +1974,7 @@
 				var textY = graphicRenderer.isSvg ? y + 2 : y - 7;
 
 				// ラベルの軸からのマージンを取得
-				var margin = getMarginOrPadding(this._axesSettings.yaxis, 'margin', 'right');
+				var margin = getMarginOrPadding(this._axesSettings.yaxis, 'margin', 'Right');
 				if (margin == null) {
 					margin = DEFAULT_Y_LABEL_MARGIN_RIGHT;
 				}
@@ -2191,9 +2197,9 @@
 			}
 
 			this.$chart = $(graphicRenderer.createGroupElm({
-				id: 'h5_chart',
-				transform: 'translate(' + xStart + ', ' + yStart + ')'
+				id: 'h5_chart'
 			}));
+			graphicRenderer.setTranslate(this.$chart, xStart, yStart);
 			$graphicRootElm.append(this.$chart);
 
 			this.$stickingGroups = $(graphicRenderer.createGroupElm({
@@ -2235,6 +2241,25 @@
 			this.$movingGroups.append(this.$tooltip);
 
 			return this.$movingGroups;
+		},
+
+		_updateChartElement: function(chartAreaWidth, chartAreaHeight, xStart, yStart) {
+			var $graphicRootElm = this.$find('#' + this.chartId);
+			$graphicRootElm.attr('width', chartAreaWidth);
+			$graphicRootElm.attr('height', chartAreaHeight);
+
+			graphicRenderer.setTranslate(this.$chart, xStart, yStart);
+
+			// クリッピング
+			if (graphicRenderer.isSvg) {
+				graphicRenderer.attr(this.$find('#moving_area_clip').find('rect')[0], {
+					width: this.chartSetting.get('width'),
+					height: this.chartSetting.get('height')
+				});
+			} else {
+				this.$movingGroups.css('clip', 'rect(0px ' + this.chartSetting.get('width') + 'px '
+						+ this.chartSetting.get('height') + 'px 0px)');
+			}
 		},
 
 		draw: function(settings) {
@@ -2280,7 +2305,7 @@
 				}
 
 				if (axesSetting && axesSetting.xaxis) {
-					xLabeLHeight += getMarginOrPadding(axesSetting.xaxis, 'margin', 'Bottom');
+					xLabeLHeight += getMarginOrPadding(axesSetting.xaxis, 'margin', 'Top');
 				}
 
 				var chartSetting = settings.chartSetting;
@@ -2304,16 +2329,18 @@
 					additionalLineColor: 'yellow'
 				});
 
+				var marginTop = getMarginOrPadding(plotSetting, 'margin', 'Top');
+				if (marginTop == null) {
+					marginTop = DEFAULT_CHART_MARGIN_TOP;
+				}
 				if (this.isFirstDraw) {
-					var marginTop = getMarginOrPadding(plotSetting, 'margin', 'Top');
-					if (marginTop == null) {
-						marginTop = DEFAULT_CHART_MARGIN_TOP;
-					}
 					this._appendChartElement(chartSetting.width, chartSetting.height, yLabeLWidth,
+							marginTop);
+				} else {
+					this._updateChartElement(chartSetting.width, chartSetting.height, yLabeLWidth,
 							marginTop);
 				}
 			}
-
 
 			this._renderers = {};
 			this._removeToolTip();
