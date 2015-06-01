@@ -210,21 +210,27 @@
 					// チャートの幅(ラベルも含む)
 					width: WIDTH,
 					// チャートの高さ(ラベルも含む)
-					height: HEIGHT,
-					paddingRight: 0.5
+					height: HEIGHT
+				},
+				plotSetting: {
+					paddingRight: 0.5,
+					marginRight: 30
 				},
 				axes: {
 					xaxis: {
 						// 縦軸の補助線の数(枠線、両端の線を含まない)
 						lineNum: VERT_PARTITION_NUM - 1,
-						formatter: this.own(this._formateXLabel)
+						formatter: this.own(this._formateXLabel),
+						height: 50
 					},
 					yaxis: {
 						// 横軸の補助線の数(枠線を含まない)
 						lineNum: 7,
 						// オートスケールの戦略
 						autoScale: this._chartBoxLogic.getScaleRange,
-						fontSize: 10
+						fontSize: 10,
+						marginRight: 5,
+						width: 85
 					}
 				},
 				seriesDefault: {

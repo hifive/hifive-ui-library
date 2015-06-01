@@ -35,11 +35,26 @@
 
 	var REFRESH_SIZE = 2;
 
-	var X_LABEL_HEIGHT = 32;
-	var Y_LABEL_WIDTH = 120;
+	var CHARACTER_HEIGHT = 11; // テキスト要素は下に位置を合わせるため、上に位置を合わせるときにこの定数を足す
 
-	/* Y軸のラベルのマージン */
-	var Y_LABEL_MARGIN_RIGHT = 5;
+	/** X軸のラベル領域のデフォルトの高さ */
+	var DEFAULT_X_LABEL_HEIGHT = 32;
+	/** Y軸のラベル領域のデフォルトの幅 */
+	var DEFAULT_Y_LABEL_WIDTH = 120;
+
+	/** Y軸のラベルのマージンのデフォルト */
+	var DEFAULT_Y_LABEL_MARGIN_RIGHT = 5;
+	var DEFAULT_Y_LABEL_MARGIN_LEFT = 0;
+
+	/** X軸のラベルのマージンのデフォルト */
+	var DEFAULT_X_LABEL_MARGIN_TOP = 0;
+	var DEFAULT_X_LABEL_MARGIN_BOTTOM = 0;
+
+	/** チャートのマージンのデフォルト */
+	var DEFAULT_CHART_MARGIN_TOP = 10;
+	var DEFAULT_CHART_MARGIN_BOTTOM = 0;
+	var DEFAULT_CHART_MARGIN_LEFT = 0;
+	var DEFAULT_CHART_MARGIN_RIGHT = 0;
 
 	var TOOLTIP_MARGIN = {
 		TOP: 10,
@@ -285,6 +300,26 @@
 		}
 		return ret;
 	}
+
+	/**
+	 * 指定したマージンの値を取得する
+	 * 
+	 * @param {Object} obj マージンのプロパティを持つオブジェクト
+	 * @param {String} type margin/paddingのいずれか
+	 * @param {String} prop Top/Bottom/Left/Rightのいずれか
+	 * @returns マージンの値
+	 */
+	function getMarginOrPadding(obj, type, prop) {
+		if (obj == null) {
+			return null;
+		}
+		if (obj[type + prop] != null) {
+			return obj[type + prop];
+		}
+
+		return obj[type] || null;
+	}
+
 
 	var dataSourceCounter = 0;
 
@@ -1666,6 +1701,80 @@
 			};
 		},
 
+		/**
+		 * X軸のラベル領域の高さを取得する
+		 * 
+		 * @memberOf AxisRenderer
+		 * @returns X軸のラベル領域の高さ
+		 */
+		getXLabelHeight: function() {
+			if (!this._axesSettings.xaxis && !this._axesSettings.xaxis.height) {
+				return DEFAULT_X_LABEL_HEIGHT;
+			}
+
+			return this._axesSettings.xaxis.height;
+		},
+
+		/**
+		 * Y軸のラベル領域の幅を取得する
+		 * 
+		 * @memberOf AxisRenderer
+		 * @returns Y軸のラベル領域の幅
+		 */
+		getYLabelWidth: function() {
+			if (!this._axesSettings.yaxis && !this._axesSettings.yaxis.width) {
+				return DEFAULT_Y_LABEL_WIDTH;
+			}
+
+			return this._axesSettings.yaxis.width;
+		},
+
+		/**
+		 * X軸のラベル領域のマージンを取得する
+		 * 
+		 * @memberOf AxisRenderer
+		 * @returns marginTopとmarginBottomを持つオブジェクト
+		 */
+		getXLabelMargin: function() {
+			var marginTop = getMarginOrPadding(this._axesSettings.xaxis, 'margin', 'Top');
+			if (marginTop == null) {
+				marginTop = DEFAULT_X_LABEL_MARGIN_TOP;
+			}
+
+			var marginBottom = getMarginOrPadding(this._axesSettings.xaxis, 'margin', 'Bottom');
+			if (marginBottom == null) {
+				marginBottom = DEFAULT_X_LABEL_MARGIN_BOTTOM;
+			}
+
+			return {
+				marginTop: marginTop,
+				marginBottom: marginBottom
+			};
+		},
+
+		/**
+		 * Y軸のラベル領域のマージンを取得する
+		 * 
+		 * @memberOf AxisRenderer
+		 * @returns marginLeftとmarginRightを持つオブジェクト
+		 */
+		getYLabelMargin: function() {
+			var marginLeft = getMarginOrPadding(this._axesSettings.yaxis, 'margin', 'Left');
+			if (marginLeft == null) {
+				marginLeft = DEFAULT_Y_LABEL_MARGIN_LEFT;
+			}
+
+			var marginRight = getMarginOrPadding(this._axesSettings.yaxis, 'margin', 'Right');
+			if (marginRight == null) {
+				marginRight = DEFAULT_Y_LABEL_MARGIN_RIGHT;
+			}
+
+			return {
+				marginLeft: marginLeft,
+				marginRight: marginRight
+			};
+		},
+
 		showAxisLabels: function(xLabelArray) {
 			if (xLabelArray == null) {
 				return;
@@ -1702,7 +1811,7 @@
 			for (i = 0, len = this.xLabelArray.length; i < len; i++) {
 				var label = this._getXLabel(this.xLabelArray.get(i), i);
 				var height = this.chartSetting.get('height');
-				var textY = graphicRenderer.isSvg ? height + 11 : height + 5;
+				var textY = graphicRenderer.isSvg ? height + CHARACTER_HEIGHT : height + 5;
 				graphicRenderer.appendTextElm(label, x, textY, null, {
 					'class': 'xLabel',
 					'text-anchor': 'middle'
@@ -1788,8 +1897,10 @@
 				var textY = graphicRenderer.isSvg ? y + 2 : y - 7;
 
 				// ラベルの軸からのマージンを取得
-				var margin = this._axesSettings.yaxis.labelMargin != null ? this._axesSettings.yaxis.labelMargin
-						: Y_LABEL_MARGIN_RIGHT;
+				var margin = getMarginOrPadding(this._axesSettings.yaxis, 'margin', 'right');
+				if (margin == null) {
+					margin = DEFAULT_Y_LABEL_MARGIN_RIGHT;
+				}
 				var val = yInterval * i + rangeMin;
 				graphicRenderer.appendTextElm(this._yLabelFormatter(val, i), -margin, textY, null,
 						{
@@ -1799,6 +1910,7 @@
 						}, this.$horizLines);
 			}
 		},
+
 		/**
 		 * チャートの縦の補助線を引く
 		 * 
@@ -1945,7 +2057,7 @@
 			this._appendBorder();
 			this._initAxis(firstChartRenderer);
 			var rightId = firstChartRenderer.dataSource.sequence.current() - 1;
-			var paddingRight = this.settings.chartSetting.paddingRight;
+			var paddingRight = this.settings.plotSetting.paddingRight;
 			if (paddingRight == null) {
 				paddingRight = 0;
 			}
@@ -1991,22 +2103,16 @@
 		/**
 		 * @memberOf h5.ui.components.chart.ChartController
 		 */
-		_appendChartElement: function(props) {
-			var w = props.width;
-			var h = props.height;
-
-			var xStart = Y_LABEL_WIDTH / 2;
-			var yStart = 10;
-
+		_appendChartElement: function(chartAreaWidth, chartAreaHeight, xStart, yStart) {
 			var $graphicRootElm = this.$find('#' + this.chartId);
 			if ($graphicRootElm != null && $graphicRootElm.length !== 0) {
 				$graphicRootElm.empty();
-				$graphicRootElm.attr('width', w + Y_LABEL_WIDTH);
-				$graphicRootElm.attr('height', h + X_LABEL_HEIGHT);
+				$graphicRootElm.attr('width', chartAreaWidth);
+				$graphicRootElm.attr('height', chartAreaHeight);
 			} else {
 				$graphicRootElm = $(graphicRenderer.createGraphicRootElm({
-					width: w + Y_LABEL_WIDTH,
-					height: h + X_LABEL_HEIGHT,
+					width: chartAreaWidth,
+					height: chartAreaHeight,
 					id: this.chartId
 				}));
 
@@ -2030,6 +2136,10 @@
 			}));
 			this.$stickingGroups.append(this.$borderGroup);
 
+			this.$chart.append(this._createMovingGroup($graphicRootElm));
+		},
+
+		_createMovingGroup: function($graphicRootElm) {
 			this.$movingGroups = $(graphicRenderer.createGroupElm({
 				id: 'movingGroup',
 				'class': 'vml_absolute'
@@ -2046,14 +2156,14 @@
 						+ this.chartSetting.get('height') + 'px 0px)');
 			}
 
-			this.$chart.append(this.$movingGroups);
-
 			this.$tooltip = $(graphicRenderer.createGroupElm({
 				id: 'tooltip',
 				'font-family': 'Verdana'
 			}));
 
 			this.$movingGroups.append(this.$tooltip);
+
+			return this.$movingGroups;
 		},
 
 		draw: function(settings) {
@@ -2078,10 +2188,43 @@
 					}
 				}
 
+				// TODO: axisRenderの中に移動したい
+				var axesSetting = settings.axes;
+				var yLabeLWidth;
+				if (axesSetting && axesSetting.yaxis && axesSetting.yaxis.width) {
+					yLabeLWidth = axesSetting.yaxis.width;
+				} else {
+					yLabeLWidth = DEFAULT_Y_LABEL_WIDTH;
+				}
+
+				if (axesSetting && axesSetting.yaxis) {
+					yLabeLWidth += getMarginOrPadding(axesSetting.yaxis, 'margin', 'Right');
+				}
+
+				var xLabeLHeight;
+				if (axesSetting && axesSetting.xaxis && axesSetting.xaxis.height) {
+					xLabeLHeight = axesSetting.xaxis.height;
+				} else {
+					xLabeLHeight = DEFAULT_X_LABEL_HEIGHT;
+				}
+
+				if (axesSetting && axesSetting.xaxis) {
+					xLabeLHeight += getMarginOrPadding(axesSetting.xaxis, 'margin', 'Bottom');
+				}
+
+				var chartSetting = settings.chartSetting;
+				var plotSetting = settings.plotSetting;
+				var width = chartSetting.width - yLabeLWidth
+						- getMarginOrPadding(plotSetting, 'margin', 'Right')
+						- getMarginOrPadding(chartSetting, 'margin', 'Left');
+				var height = chartSetting.height - xLabeLHeight
+						- getMarginOrPadding(plotSetting, 'margin', 'Top')
+						- getMarginOrPadding(chartSetting, 'margin', 'Bottom');
+
 				// TODO: 定義し直し(ばらす？)
 				this.chartSetting.set({
-					width: settings.chartSetting.width - Y_LABEL_WIDTH,
-					height: settings.chartSetting.height - X_LABEL_HEIGHT,
+					width: width,
+					height: height,
 					dispDataSize: settings.seriesDefault.dispDataSize,
 					keepDataSize: settings.seriesDefault.keepDataSize,
 					timeInterval: settings.timeInterval || 1,
@@ -2089,12 +2232,19 @@
 					maxVal: maxVal,
 					additionalLineColor: 'yellow'
 				});
+
+				if (this.isFirstDraw) {
+					var marginTop = getMarginOrPadding(plotSetting, 'margin', 'Top');
+					if (marginTop == null) {
+						marginTop = DEFAULT_CHART_MARGIN_TOP;
+					}
+					this._appendChartElement(chartSetting.width, chartSetting.height, yLabeLWidth,
+							marginTop);
+				}
 			}
 
-			if (this.isFirstDraw) {
-				this._appendChartElement(this.chartSetting.get());
-			}
 
+			this._renderers = {};
 			this._removeToolTip();
 
 			// TODO: データ生成はイベントをあげるようにして、ここは同期的な書き方にしたほうがよいかもしれない
@@ -2160,19 +2310,25 @@
 		},
 
 		setChartSetting: function(chartSetting) {
-			var w = chartSetting.width ? chartSetting.width - Y_LABEL_WIDTH : this.chartSetting
-					.get('width');
-			var h = chartSetting.height ? chartSetting.height - X_LABEL_HEIGHT : this.chartSetting
-					.get('height');
+			var obj = {};
+			if (chartSetting.width) {
+				var yLabelMargin = this.axisRenderer.getYLabelMargin();
+				obj.width = chartSetting.width - this.axisRenderer.getYLabelWidth()
+						- yLabelMargin.marginRight - yLabelMargin, marginLeft;
+			}
+			if (chartSetting.height) {
+				var xLabelMargin = this.axisRenderer.getXLabelMargin();
+				obj.height = chartSetting.height - this.axisRenderer.getXLabelHeight()
+						- xLabelMargin.marginTop - xLabelMargin, marginBottom;
+			}
 
-			this.chartSetting.set({
-				width: w,
-				height: h
-			});
+			this.chartSetting.set(obj);
+
 			var firstRenderer = this._renderers[this.settings.series[0].name];
 			this._initChart(firstRenderer); // チャート表示の初期化
 			this._drawChart();// チャート情報の計算
 		},
+
 
 		_addSeriesWithAsync: function(series) {
 			var promises = [];
