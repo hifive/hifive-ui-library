@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ * 
  */
 (function($) {
 
@@ -36,7 +36,10 @@
 	var REFRESH_SIZE = 2;
 
 	var X_LABEL_HEIGHT = 32;
-	var Y_LABEL_WIDTH = 70;
+	var Y_LABEL_WIDTH = 120;
+
+	/* Y軸のラベルのマージン */
+	var Y_LABEL_MARGIN_RIGHT = 5;
 
 	var TOOLTIP_MARGIN = {
 		TOP: 10,
@@ -1712,10 +1715,15 @@
 				// 目盛を付ける
 				var textY = graphicRenderer.isSvg ? y + 2 : y - 7;
 
-				graphicRenderer.appendTextElm(this._yLabelFormatter(val, i), -30, textY, null, {
-					'class': 'added',
-					'font-size': this._axesSettings.yaxis.fontSize
-				}, this.$horizLines);
+				// ラベルの軸からのマージンを取得
+				var margin = this._axesSettings.yaxis.labelMargin != null ? this._axesSettings.yaxis.labelMargin
+						: Y_LABEL_MARGIN_RIGHT;
+				graphicRenderer.appendTextElm(this._yLabelFormatter(val, i), -margin, textY, null,
+						{
+							'class': 'added',
+							'font-size': this._axesSettings.yaxis.fontSize,
+							'text-anchor': 'end'
+						}, this.$horizLines);
 
 				if (val === rangeMin || val === rangeMax) {
 					continue;

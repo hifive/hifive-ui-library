@@ -386,19 +386,77 @@
 			var text = this._createVmlElm('textbox', attrs);
 
 			this.css(text, {
-				left: x,
 				top: y,
 				position: 'absolute',
 				fontSize: fontSize || null
 			});
 			text.innerHTML = str;
-
 			$parent[0].appendChild(text);
+			// text-anchorの値に応じて位置を変更
+			this._setTextPosition(text, attrs['text-anchor'], x);
 		},
 
 		text: function(str, $elm) {
+			var textAnchor = $elm.attr('text-anchor');
+			// 最初に指定した位置を取得
+			var x = this._getTextPosition($elm, textAnchor);
 			$elm[0].innerHTML = str;
+			// textAnchorの値によって位置を設定
+			this._setTextPosition($elm[0], textAnchor, x);
 		},
+
+		_getTextPosition: function($text, textAnchor) {
+			var left = parseInt($text.css('left'));
+			if (textAnchor == null) {
+				return left;
+			}
+
+			switch (textAnchor) {
+			case 'strat':
+				return left;
+				break;
+			case 'middle':
+				return left + $text[0].clientWidth / 2;
+				break;
+			case 'end':
+				return -parseInt($text.css('right'));
+			default:
+				return left;
+			}
+		},
+
+		_setTextPosition: function(text, textAnchor, x) {
+			if (textAnchor == null) {
+				this.css(text, {
+					left: x
+				});
+				return;
+			}
+
+			switch (textAnchor) {
+			case 'strat':
+				this.css(text, {
+					left: x
+				});
+				break;
+			case 'middle':
+				var width = text.clientWidth;
+				this.css(text, {
+					left: x - width / 2
+				});
+				break;
+			case 'end':
+				this.css(text, {
+					right: -x
+				});
+				break;
+			default:
+				this.css(text, {
+					left: x
+				});
+			}
+		},
+
 
 		/**
 		 * FILL要素を生成し、指定された要素に追加します
