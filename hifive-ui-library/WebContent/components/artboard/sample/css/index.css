@@ -86,6 +86,10 @@ h1 {
 	background-color: #fff;
 }
 
+.background-popup  .background-image-list {
+	padding: 4px 0;
+}
+
 .background-popup .background-color-selected {
 	width: 100%;
 	height: 100%;
@@ -93,6 +97,41 @@ h1 {
 
 .background-popup .background-color-slidebar {
 	margin: 5px 40px 0px 0px;
+}
+
+.background-popup .thumbnail {
+	display: inline-block;
+	margin: 4px;
+	width: 120px;
+	height: auto;
+	line-height: 120px;
+	text-align: center;
+	box-shadow: 2px 2px 4px;
+	border: 1px solid #fff;
+	text-align: center;
+	vertical-align: bottom;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.background-popup .thumbnail:hover {
+	position: relative;
+	top: -2px;
+	left: -2px;
+}
+
+.background-popup .thumbnail.selected {
+	border: 2px solid #f8e;
+}
+
+.background-popup .thumbnail.none {
+	height: 120px;
+	box-shadow: 0 0 0;
+}
+
+.background-popup .selected-bg {
+	padding-left: 1em;
+	font-weight: bold;
 }
 
 /** ツールバー設定 **/
@@ -308,6 +347,51 @@ h1 {
 	border: 2px solid #ccc;
 }
 
+/* 保存したイメージ */
 .saved-img-wrapper {
 	float: left;
+}
+
+.saved-img-wrapper>* {
+	position: relative;
+	display: inline-block;
+	margin: 4px;
+}
+
+.saved-img-wrapper .saved-img {
+	margin: 4px;
+	width: 320px;
+	box-shadow: 2px 2px 4px;
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+.saved-img-wrapper label {
+	position: absolute;
+	top: 5px;
+	left: 7px;
+	font-size: 12px;
+	text-shadow: 1px 1px 3px #fff;
+}
+
+.saved-img-wrapper .controls {
+	position: absolute;
+	bottom: 3px;
+	right: 3px;
+}
+
+.saved-img-wrapper .btn {
+	color: #fff;
+	background-color: #c0c0c0;
+	font-size: 15px;
+	text-align: center;
+	padding: 2px 4px;
+	min-width: 90px;
+	line-height: 20px;
+	cursor: pointer;
+	padding: 2px 4px;
+}
+
+.saved-img-wrapper .btn:hover {
+	font-weight: bold;
 }
