@@ -345,15 +345,12 @@
 		convertToModel: function(type, data, propNames) {
 			var modelBaseName = 'dataModel';
 			this._type = type.toLowerCase();
-			var schema;
-			// var schema = rateDataSchema;
 			switch (this._type) {
 			case 'ohlc':
 				this.propNames = propNames || {};
 				this.highProp = this.propNames.high || 'high';
 				this.lowProp = this.propNames.low || 'low';
 				this.xProp = this.propNames.time || 'time';
-				schema = this._createSchema(data[0]);
 				break;
 			case 'stacked_line':
 			case 'line':
@@ -367,13 +364,13 @@
 				this.highProp = 'y';
 				this.lowProp = 'y';
 				// this.xProp = 'x';
-				schema = this._createSchema(data[0]);
 				break;
 			default:
 				modelBaseName = '';
-				schema = '';
 				break;
 			}
+
+			var schema = this._createSchema(data[0]);
 
 			var modelName = modelBaseName + '_' + this.name + '_' + dataSourceCounter;
 			dataSourceCounter++;
@@ -398,7 +395,8 @@
 			var obj = item.get();
 			delete obj.id;
 			for ( var name in obj) {
-				if (this.propNames[name]) {
+				// propNamesに従ってobjのプロパティを書き換える
+				if (this.propNames[name] && this.propNames[name] != name) {
 					obj[this.propNames[name]] = obj[name];
 					delete obj[name];
 				}
@@ -407,10 +405,15 @@
 		},
 
 		createItem: function(data, chartSetting) {
-			// if (chartSetting.get('keepDataSize') != null) {
-			// this.dataModel.remove(this.sequence.current() - chartSetting.get('keepDataSize'));
-			// }
-			return this._calcDataItem([data], this.propNames)[0];
+			var arr = [data];
+
+			if (!this.dataModel || this.dataModel.size === 0) {
+				// データモデルが未生成の場合は新規に作成する
+				this.convertToModel(this._type, arr, this.propNames);
+				return this.dataModel.get(this.sequence.current() - 1);
+			}
+
+			return this._calcDataItem(arr, this.propNames)[0];
 		},
 
 		_createSchema: function(data) {
@@ -446,8 +449,14 @@
 				var obj = this._toData(data[i], prop);
 				arr.push(obj);
 				if (len - dispDataSize <= i) {
-					minVal = Math.min(minVal, this._getStackedVal(obj, this.lowProp));
-					maxVal = Math.max(maxVal, this._getStackedVal(obj, this.highProp));
+					var lowVal = this._getStackedVal(obj, this.lowProp);
+					if (lowVal != null) {
+						minVal = Math.min(minVal, lowVal);
+					}
+					var highVal = this._getStackedVal(obj, this.highProp);
+					if (highVal != null) {
+						maxVal = Math.max(maxVal, highVal);
+					}
 				}
 			}
 
@@ -463,6 +472,11 @@
 		},
 
 		_getStackedVal: function(obj, propName) {
+			if (obj[propName] == null) {
+				// 存在しないプロパティを指定時はnullを返す
+				return null;
+			}
+
 			if ($.inArray(this._type, STACKED_CHART_TYPES) === -1) {
 				return obj[propName];
 			}
