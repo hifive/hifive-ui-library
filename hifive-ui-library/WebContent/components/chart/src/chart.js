@@ -601,6 +601,10 @@
 		this._count = 0;
 		this._map = {};
 		this.chartSetting = chartSetting;
+
+		for ( var modelName in chartDataModelManager.models) {
+			chartDataModelManager.dropModel(modelName);
+		}
 	}
 
 	DataSourceManager.prototype = {
@@ -1904,7 +1908,6 @@
 			chartSequense++;
 
 			this.chartSetting = h5.core.data.createObservableItem(chartSettingsSchema);
-			this.dataSourceManager = new DataSourceManager(this.chartSetting);
 			this.chartSetting
 					.addEventListener('change', this.own(this._chartSettingChangeListener));
 
@@ -2055,6 +2058,8 @@
 
 		draw: function(settings) {
 			this.isInitDraw = true;
+
+			this.dataSourceManager = new DataSourceManager(this.chartSetting);
 
 			// チャートのパラメータの設定
 			if (settings != null) {
