@@ -61,6 +61,12 @@
 		LEFT: 10
 	};
 
+	// ツールチップのpaddingのデフォルト値
+	var DEFAULT_TOOLTIP_PADDING_TOP = 5;
+	var DEFAULT_TOOLTIP_PADDING_BOTTOM = 5;
+	var DEFAULT_TOOLTIP_PADDING_LEFT = 8;
+	var DEFAULT_TOOLTIP_PADDING_RIGHT = 8;
+
 	var SERIES_PREFIX = '_series';
 
 	var COLORS = ['red', 'blue', 'green', 'yellow', 'orange', 'purple']; // TODO: デフォルトカラー決める
@@ -756,9 +762,50 @@
 			});
 
 			this.leftEndCandleStickId = Infinity;
+
+			if (this.seriesSetting.mouseover) {
+				this._setTooltipSetting(this.seriesSetting.mouseover.tooltip);
+			}
 		}
 
 		ChartRendererBase.prototype = {
+			_setTooltipSetting: function(tooltip) {
+				if (tooltip == null) {
+					return;
+				}
+
+				if (tooltip === false) {
+					this._tooltipSetting = false;
+					return;
+				}
+
+				var setting = $.extend({}, tooltip, true);
+
+				setting.paddingLeft = getMarginOrPadding(tooltip, 'padding', 'Left');
+				if (setting.paddingLeft == null) {
+					setting.paddingLeft = DEFAULT_TOOLTIP_PADDING_LEFT;
+				}
+				setting.paddingRight = getMarginOrPadding(tooltip, 'padding', 'Right');
+				if (setting.paddingRight == null) {
+					setting.paddingRight = DEFAULT_TOOLTIP_PADDING_RIGHT;
+				}
+				setting.paddingTop = getMarginOrPadding(tooltip, 'padding', 'Top');
+				if (setting.paddingTop == null) {
+					setting.paddingTop = DEFAULT_TOOLTIP_PADDING_TOP;
+				}
+				setting.paddingBottom = getMarginOrPadding(tooltip, 'padding', 'Bottom')
+				if (setting.paddingBottom == null) {
+					setting.paddingBottom = DEFAULT_TOOLTIP_PADDING_BOTTOM;
+				}
+
+				setting.tooltipWidth = tooltip.width;
+				setting.tooltipHeight = tooltip.height;
+
+				setting.showTooltip = tooltip.content || getDefaultTooltip;
+
+				this._tooltipSetting = setting;
+			},
+
 			addData: function(data) {
 				// this.seriesSetting.data.push(data);
 				var dataSource = this.dataSource;
@@ -824,7 +871,7 @@
 				$root.find('#' + h5format(X_LABEL_ELM_ID_FORMAT, id)).remove();
 			},
 
-			getTargetId: function(context, type) {
+			getTargetId: function(context, type, correction) {
 				if (graphicRenderer.isSvg && type !== 'line') {
 					return context.event.target.id.split('_')[1];
 				}
@@ -835,8 +882,8 @@
 				var left = t.offsetLeft || t.clientLeft;
 
 				if (graphicRenderer.isSvg && !h5.env.ua.isIE) {
-					top -= 10;
-					left -= this.chartSetting.get('translateX') + Y_LABEL_WIDTH / 2;
+					top -= correction.top;
+					left -= correction.left;
 				}
 
 				var oy = ev.offsetY;
@@ -853,11 +900,10 @@
 			},
 
 			showToolTip: function(tooltipId, $tooltip) {
-				if (this.seriesSetting.mouseover && this.seriesSetting.mouseover.tooltip === false) {
+				if (!this._tooltipSetting) {
 					return;
 				}
 
-				var dataItem = this.dataSource.dataModel.get(tooltipId);
 				var chartItem = this.chartModel.get(tooltipId);
 
 				if (chartItem == null) {
@@ -866,36 +912,61 @@
 
 				$tooltip.empty();
 
-				var coord = this._getCentralPos(chartItem);
+				var dataItem = this.dataSource.dataModel.get(tooltipId);
+				var content = this._tooltipSetting.showTooltip(dataItem.get());
 
-				if (coord.x + TOOLTIP_WIDTH + TOOLTIP_MARGIN.LEFT > -this.chartSetting
+				var elem = graphicRenderer.createTextElm(content, null, null, '#000', {
+					'font-size': 11
+				});
+				graphicRenderer.css(elem, {
+					'white-space': 'nowrap'
+				});
+
+				var $elem = $(elem);
+				$tooltip.append($elem);
+
+				var tooltipWidth = this._tooltipSetting.width;
+				if (tooltipWidth == null) {
+					tooltipWidth = graphicRenderer.getWidthOf(elem)
+							+ this._tooltipSetting.paddingLeft + this._tooltipSetting.paddingRight;
+				}
+				var tooltipHeight = this._tooltipSetting.height;
+				if (tooltipHeight == null) {
+					tooltipHeight = graphicRenderer.getHeightOf(elem)
+							+ this._tooltipSetting.paddingTop + this._tooltipSetting.paddingBottom;
+				}
+
+				$elem.remove();
+
+				var coord = this._getCentralPos(chartItem);
+				if (coord.x + tooltipWidth + TOOLTIP_MARGIN.LEFT > -this.chartSetting
 						.get('translateX')
 						+ this.chartSetting.get('width')) {
-					coord.x -= (TOOLTIP_WIDTH + TOOLTIP_MARGIN.LEFT);
+					coord.x -= (tooltipWidth + TOOLTIP_MARGIN.LEFT);
 				} else {
 					coord.x += TOOLTIP_MARGIN.LEFT;
 				}
 
-				if (coord.y + TOOLTIP_HEIGHT + TOOLTIP_MARGIN.TOP > this.chartSetting.get('height')) {
-					coord.y -= (TOOLTIP_HEIGHT + TOOLTIP_MARGIN.TOP);
+				if (coord.y + tooltipHeight + TOOLTIP_MARGIN.TOP > this.chartSetting.get('height')) {
+					coord.y -= (tooltipHeight + TOOLTIP_MARGIN.TOP);
 				} else {
 					coord.y += TOOLTIP_MARGIN.TOP;
 				}
 
-				var showTooltip = this.seriesSetting.mouseover.tooltip.content || getDefaultTooltip;
-				var content = showTooltip(dataItem.get());
-				var rect = graphicRenderer.createRectElm(coord.x, coord.y, TOOLTIP_WIDTH,
-						TOOLTIP_HEIGHT, '#eee', {});
+				graphicRenderer.appendRectElm(coord.x, coord.y, tooltipWidth, tooltipHeight,
+						'#eee', null, $tooltip);
 
-				$tooltip.append(rect);
-				graphicRenderer.appendTextElm(content, coord.x, coord.y + 20, '#000', {
-					'font-size': 11
-				}, graphicRenderer.isSvg ? $tooltip : $(rect)); // VMLの場合はTEXT要素をRECT要素にappendする
+				var textX = coord.x + this._tooltipSetting.paddingLeft;
+				var textY = coord.y + this._tooltipSetting.paddingTop;
+				if (graphicRenderer.isSvg) {
+					textY += CHARACTER_HEIGHT; // textがrectから+11ずれる
+				}
+				graphicRenderer.setTextPosition(elem, textX, textY);
+				$tooltip.append(elem);
 
 				this._appendHighLight(chartItem, $tooltip);
 				this.showAdditionalLine(tooltipId, $tooltip);
 			},
-
 			showAdditionalLine: function(tooltipId, $tooltip) {
 				var chartItem = this.chartModel.get(tooltipId);
 				var pos = this._getCentralPos(chartItem);
@@ -2521,7 +2592,16 @@
 			var seriesName = $el.parent().attr('id').slice(SERIES_PREFIX.length);
 			var renderer = this._renderers[seriesName];
 			var type = renderer.seriesSetting.type;
-			var tooltipId = renderer.getTargetId(context, type);
+
+			var yLabelMargin = this.axisRenderer.getYLabelMargin();
+			// 補正項
+			var correct = {
+				left: this.chartSetting.get('translateX') + this.axisRenderer.getYLabelWidth()
+						+ yLabelMargin.marginRight + yLabelMargin.marginLeft,
+				top: DEFAULT_CHART_MARGIN_TOP
+			};
+			var tooltipId = renderer.getTargetId(context, type, correct);
+
 
 			if (tooltipId == null) {
 				return;
