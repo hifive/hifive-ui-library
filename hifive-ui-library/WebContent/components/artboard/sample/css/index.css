@@ -73,10 +73,12 @@ h1 {
 
 /** 背景画像設定ポップアップ **/
 .background-popup .background-color-palette {
-	width: 238px;
-	height: 102px;
-	margin-bottom: 10px;
-	background-color: #fff;
+	clear: both;
+	min-height: 32px;
+}
+
+.background-popup .background-color-opacity {
+	clear: both;
 }
 
 .background-popup .background-color-selected-wrapper {
@@ -222,6 +224,7 @@ h1 {
 	height: 32px;
 	width: 32px;
 	margin: 1px;
+	cursor: pointer;
 }
 
 .selected-color-wrapper {
