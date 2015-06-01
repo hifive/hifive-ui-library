@@ -370,13 +370,19 @@
 				break;
 			}
 
+			if (!data || data.length === 0) {
+				// 空データを渡された場合は、dataModelの作成を行わない
+				// 次回データがaddされたときに作成を行う
+				return;
+			}
+
 			var schema = this._createSchema(data[0]);
 
 			var modelName = modelBaseName + '_' + this.name + '_' + dataSourceCounter;
 			dataSourceCounter++;
 
 			if (this.dataModel != null) {
-				chartDataModelManager.dropModel(this.dataMode.name);
+				chartDataModelManager.dropModel(this.dataModel.name);
 			}
 
 			this.dataModel = chartDataModelManager.createModel({
@@ -388,6 +394,10 @@
 		},
 
 		getDataObj: function(id) {
+			if (!this.dataModel) {
+				return null;
+			}
+
 			var item = this.dataModel.get(id);
 			if (!item) {
 				return null;
@@ -528,23 +538,26 @@
 			var maxVal = -Infinity;
 			var minVal = Infinity;
 
-			var current = rightEndId || this.sequence.current();
-			var item = null;
-			// 表示対象の中で、最大・最小を求める
-			for (var i = current - dispDataSize + 1; i <= current; i++) {
-				item = this.dataModel.get(i);
-				if (item === null) {
-					continue;
-				}
+			if (this.dataModel) {
 
-				var high = item.get(this.highProp);
-				var low = item.get(this.lowProp);
+				var current = rightEndId || this.sequence.current();
+				var item = null;
+				// 表示対象の中で、最大・最小を求める
+				for (var i = current - dispDataSize + 1; i <= current; i++) {
+					item = this.dataModel.get(i);
+					if (item === null) {
+						continue;
+					}
 
-				if (high > maxVal) {
-					maxVal = high;
-				}
-				if (low < minVal) {
-					minVal = low;
+					var high = item.get(this.highProp);
+					var low = item.get(this.lowProp);
+
+					if (high != null && high > maxVal) {
+						maxVal = high;
+					}
+					if (low != null && low < minVal) {
+						minVal = low;
+					}
 				}
 			}
 			return {
@@ -924,6 +937,10 @@
 					 */
 					createCandleStickDataItems: function() {
 						this.chartModel.removeAll();
+
+						if (!this.dataSource.dataModel) {
+							return;
+						}
 
 						var candleStickData = [];
 						var current = this.dataSource.sequence.current();
@@ -1312,6 +1329,11 @@
 					_appendLinesForSvg: function(lines, preRendererChartModel, rate) {
 						var $root = $(this.rootElement);
 						var chartItems = sortById(lines || this.chartModel.toArray());
+
+						if (!chartItems || !chartItems.length) {
+							return;
+						}
+
 						var item0 = chartItems[0];
 						var d = 'M' + item0.get('fromX') + ' '
 								+ this._calcY(item0, 'fromY', preRendererChartModel, rate) + ' ';
@@ -1422,11 +1444,19 @@
 					},
 
 					createItem: function(dataItem) {
-						return this.chartModel.create(this.toData(dataItem));
+						var chartData = this.toData(dataItem);
+						if (!chartData) {
+							return null;
+						}
+						return this.chartModel.create(chartData);
 					},
 
 					createLineDataItems: function(preRendererChartModel) {
 						this.chartModel.removeAll();
+
+						if (!this.dataSource.dataModel) {
+							return;
+						}
 
 						var lineData = [];
 						var current = this.dataSource.sequence.current()
@@ -1591,6 +1621,14 @@
 
 		var that = this;
 		function scaling(min, max) {
+			if (min === Infinity || max === -Infinity) {
+				// 点が存在しない場合は、rangeにnullを設定
+				chartSetting.set({
+					rangeMax: null,
+					rangeMin: null
+				});
+				return;
+			}
 			var range;
 			if (that.autoScale) {
 				range = that.autoScale(min, max);
@@ -1606,9 +1644,6 @@
 			if (ev.props.minVal != null || ev.props.maxVal != null) {
 				var minVal = ev.target.get('minVal');
 				var maxVal = ev.target.get('maxVal');
-				if (minVal === Infinity || maxVal === -Infinity) {
-					return;
-				}
 				scaling(minVal, maxVal);
 			}
 			if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
@@ -1731,8 +1766,19 @@
 			var yInterval = (rangeMax - rangeMin) / horizLineNum;
 
 			for (var i = 0; i <= horizLineNum; i++) {
-				var val = yInterval * i + rangeMin;
-				var y = calcYPos(val, rangeMin, rangeMax, this.chartSetting.get('height'));
+				var height = this.chartSetting.get('height');
+				var y = height - i * height / horizLineNum;
+
+				if (i !== 0 && i !== horizLineNum) {
+					graphicRenderer.appendLineElm(0, y, width, y, '#ccc', {
+						'class': 'added'
+					}, this.$horizLines);
+				}
+
+				if (rangeMax == null || rangeMin == null) {
+					// 表示する点がない場合は、以下のラベルを表示する処理は行わない
+					continue;
+				}
 
 				// 目盛を付ける
 				var textY = graphicRenderer.isSvg ? y + 2 : y - 7;
@@ -1740,23 +1786,15 @@
 				// ラベルの軸からのマージンを取得
 				var margin = this._axesSettings.yaxis.labelMargin != null ? this._axesSettings.yaxis.labelMargin
 						: Y_LABEL_MARGIN_RIGHT;
+				var val = yInterval * i + rangeMin;
 				graphicRenderer.appendTextElm(this._yLabelFormatter(val, i), -margin, textY, null,
 						{
 							'class': 'added',
 							'font-size': this._axesSettings.yaxis.fontSize,
 							'text-anchor': 'end'
 						}, this.$horizLines);
-
-				if (val === rangeMin || val === rangeMax) {
-					continue;
-				}
-
-				graphicRenderer.appendLineElm(0, y, width, y, '#ccc', {
-					'class': 'added'
-				}, this.$horizLines);
 			}
 		},
-
 		/**
 		 * チャートの縦の補助線を引く
 		 * 
@@ -2052,7 +2090,7 @@
 				this._appendChartElement(this.chartSetting.get());
 			}
 
-			this.$tooltip.empty();
+			this._removeToolTip();
 
 			// TODO: データ生成はイベントをあげるようにして、ここは同期的な書き方にしたほうがよいかもしれない
 			this._createChartRenderes(this.settings).done(this.own(function() {
@@ -2335,10 +2373,14 @@
 
 		'#movingGroup removeTooltip': function(context) {
 			if (context.evArg == this.tooltip.id) {
-				this.$tooltip.empty();
-				this.tooltip.id = null;
-				this.tooltip.renderer = null;
+				this._removeToolTip();
 			}
+		},
+
+		_removeToolTip: function() {
+			this.$tooltip.empty();
+			this.tooltip.id = null;
+			this.tooltip.renderer = null;
 		},
 
 		'{rootElement} click': function() {
