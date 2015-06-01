@@ -331,8 +331,8 @@
 				var len = series.data.length;
 
 				var keepDataSize = this.manager.chartSetting.get('keepDataSize');
-				var _data = keepDataSize == null ? series.data : series.data.slice(len
-						- keepDataSize);
+				var _data = keepDataSize == null ? series.data : series.data.slice(Math.max(0, len
+						- keepDataSize));
 
 				if (this.manager.chartSetting.get('dispDataSize') == null) {
 					this.manager.chartSetting.set('dispDataSize', _data.length);
