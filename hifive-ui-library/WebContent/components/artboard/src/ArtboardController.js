@@ -1951,6 +1951,7 @@
 		 */
 		_trackstartSelectedShape: function(event, $el) {
 			event.stopPropagation();
+
 			var selectedShapes = this.selectionLogic.getSelected();
 			if (selectedShapes.length === 0) {
 				return;
@@ -2036,6 +2037,18 @@
 			event.stopPropagation();
 			var trackingData = this._trackingData;
 			if (!trackingData.moved) {
+				if (event.ctrlKey) {
+					// ctrlキーが押されていたらその図形の選択を解除
+					var id = $el.data('target-shape-id');
+					var selectedShapes = this.getSelectedShapes();
+					for (var i = 0, l = selectedShapes.length; i < l; i++) {
+						var shape = selectedShapes[i];
+						if (this.getShapeID(shape) == id) {
+							this.unselect(shape);
+							break;
+						}
+					}
+				}
 				// 動いていないなら何もしない
 				return;
 			}
