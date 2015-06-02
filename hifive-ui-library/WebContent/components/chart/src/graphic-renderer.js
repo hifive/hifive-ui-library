@@ -172,7 +172,7 @@
 		/**
 		 * TEXT要素を作成します
 		 * 
-		 * @memberOf h5.ui.SVGRenderer
+		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param str 表示する文字列
 		 * @param x x属性
 		 * @param y y属性
@@ -211,7 +211,7 @@
 		/**
 		 * TEXT要素の位置を設定する
 		 * 
-		 * @memberOf h5.ui.SVGRenderer
+		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param elem TEXT要素
 		 * @param x x座標
 		 * @param y y座標
@@ -303,7 +303,7 @@
 		/**
 		 * 要素に属性をセットする
 		 * 
-		 * @memberOf h5.ui.SVGRenderer
+		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param elem {Element} 属性をセットする要素
 		 * @param attrs {Object} 属性とその値
 		 */
@@ -323,7 +323,7 @@
 		/**
 		 * 要素の幅を取得します
 		 * 
-		 * @memberOf h5.ui.SVGRenderer
+		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param elem {Element} SVG要素
 		 * @returns {Number} 要素の幅
 		 */
@@ -337,7 +337,7 @@
 		/**
 		 * 要素の高さを取得します
 		 * 
-		 * @memberOf h5.ui.SVGRenderer
+		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param elem {Element} SVG要素
 		 * @returns {Number} 要素の高さ
 		 */
@@ -443,7 +443,7 @@
 		/**
 		 * テキストを作成する
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param str 表示する文字列
 		 * @param x x属性
 		 * @param y y属性
@@ -510,7 +510,7 @@
 		/**
 		 * TEXT要素の位置を設定する
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem TEXT要素
 		 * @param x x座標
 		 * @param y y座標
@@ -694,7 +694,7 @@
 		 * @param $elem translateを設定するjQuery要素
 		 * @param x x座標
 		 * @param y y座標
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 */
 		setTranslate: function($elem, x, y) {
 			$elem.css({
@@ -706,7 +706,7 @@
 		/**
 		 * 要素に属性をセットする
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem {Element} 属性をセットする要素
 		 * @param attrs {Object} 属性とその値
 		 */
@@ -731,7 +731,7 @@
 		/**
 		 * 要素の幅を取得します
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem {Element} VML要素
 		 * @returns {Number} 要素の幅
 		 */
@@ -742,7 +742,7 @@
 		/**
 		 * 要素の高さを取得します
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem {Element} VML要素
 		 * @returns {Number} 要素の高さ
 		 */
@@ -753,7 +753,7 @@
 		/**
 		 * 要素の高さまたは幅を取得します
 		 * 
-		 * @memberOf h5.ui.VMLRenderer
+		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param elem {Element} VML要素
 		 * @param type 'Height' or 'Width'
 		 * @returns {Number} 要素の高さ
