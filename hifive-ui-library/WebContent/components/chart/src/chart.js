@@ -964,19 +964,42 @@
 				this._appendHighLight(chartItem, $tooltip);
 				this.showAdditionalLine(tooltipId, $tooltip);
 			},
+
 			showAdditionalLine: function(tooltipId, $tooltip) {
+				var chartItem = this.chartModel.get(tooltipId);
+				var pos = this._getCentralPos(chartItem);
+				var lineColor = this.chartSetting.get('additionalLineColor');
+
+				// Y軸に補助線を引く
+				$tooltip.prepend(this._createTooltipHorizeLine(tooltipId));
+				// X軸に補助線を引く
+				$tooltip.prepend(graphicRenderer.createLineElm(pos.x, 0, pos.x, this.chartSetting
+						.get('height'), lineColor, {
+					'class': 'tooltipVertLine'
+				}));
+			},
+
+			updateTooltip: function(tooltipId, $tooltip) {
+				if (!this._tooltipSetting) {
+					return;
+				}
+
+				// Y軸の補助線を更新
+				$tooltip.find('.tooltipHorizeLine').replaceWith(
+						this._createTooltipHorizeLine(tooltipId));
+			},
+
+			_createTooltipHorizeLine: function(tooltipId) {
 				var chartItem = this.chartModel.get(tooltipId);
 				var pos = this._getCentralPos(chartItem);
 				var startX = Math.abs(this.chartSetting.get('translateX'));
 				var lineColor = this.chartSetting.get('additionalLineColor');
-
-				// Y軸に補助線を引く
-				$tooltip.prepend(graphicRenderer.createLineElm(startX, pos.y, startX
-						+ (this.chartSetting.get('width') * 2), pos.y, lineColor, null));
-				// X軸に補助線を引く
-				$tooltip.prepend(graphicRenderer.createLineElm(pos.x, 0, pos.x, this.chartSetting
-						.get('height'), lineColor, null));
+				return graphicRenderer.createLineElm(startX, pos.y, startX
+						+ this.chartSetting.get('width'), pos.y, lineColor, {
+					'class': 'tooltipHorizeLine'
+				});
 			},
+
 
 			getXLabelArray: function() {
 				var vertLineNum = this.chartSetting.get('vertLineNum');
@@ -2113,6 +2136,7 @@
 			if (ev.props.translateX != null) {
 				graphicRenderer.setTranslate(this.$seriesGroup, ev.props.translateX.newValue, 0);
 				graphicRenderer.setTranslate(this.$tooltip, ev.props.translateX.newValue, 0);
+				this._updateTooltip();
 			}
 
 			if (ev.props.width != null || ev.props.height != null) {
@@ -2662,6 +2686,13 @@
 			this.tooltip.id = tooltipId;
 			this.tooltip.renderer = renderer;
 			renderer.showToolTip(tooltipId, this.$tooltip);
+		},
+
+		_updateTooltip: function() {
+			if (!this.tooltip.renderer) {
+				return;
+			}
+			this.tooltip.renderer.updateTooltip(this.tooltip.id, this.$tooltip);
 		},
 
 		'#movingGroup removeTooltip': function(context) {
