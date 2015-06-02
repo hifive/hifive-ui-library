@@ -394,12 +394,9 @@
 					x: 'x',
 					y: 'y'
 				};
-				// this.highProp = this.propNames.y || 'y';
-				// this.lowProp = this.propNames.y || 'y';
 				this.xProp = this.propNames.x || 'x';
 				this.highProp = 'y';
 				this.lowProp = 'y';
-				// this.xProp = 'x';
 				break;
 			default:
 				modelBaseName = '';
@@ -469,7 +466,6 @@
 					var propName = name;
 					for ( var key in this.propNames) {
 						if (this.propNames[key] === name) {
-							// propName = key;
 							schema[key] = null;
 						}
 					}
@@ -531,14 +527,6 @@
 		},
 
 		_toData: function(data, prop) {
-			// switch (this._type) {
-			// case 'line':
-			// return {
-			// id: this.sequence.next(),
-			// x: data[prop.x],
-			// y: data[prop.y]
-			// };
-			// case 'candlestick':
 			var ret = {
 				id: this.sequence.next()
 			};
@@ -559,11 +547,6 @@
 				}
 			}
 			return ret;
-
-			// return $.extend({}, data, {
-			// id: this.sequence.next()
-			// });
-			// }
 		},
 
 		getStackedData: function(item) {
@@ -804,7 +787,6 @@
 			},
 
 			addData: function(data) {
-				// this.seriesSetting.data.push(data);
 				var dataSource = this.dataSource;
 
 				// データを1つ分受け取って、チャートを更新する
@@ -1445,7 +1427,6 @@
 					},
 
 					_appendChart: function(elms) {
-						// this.appendLines(elms);
 						this.appendLines();
 					},
 
@@ -1517,11 +1498,6 @@
 							position: 'absolute'
 						});
 						var fill = this._getFill();
-						// if (!fill) {
-						// fill = {
-						// color: '#000'
-						// };
-						// }
 						graphicRenderer.stroke(lineShape, {
 							on: true,
 							color: this.seriesSetting.color || '#000'
@@ -1626,7 +1602,6 @@
 						var height = this.chartSetting.get('height');
 
 						var yProp = this.dataSource.propNames.y;
-						// var yProp = 'y';
 						var toY = currentItem.get(yProp);
 						if (toY == null) {
 							return null;
@@ -1683,22 +1658,6 @@
 						if (ev.changed.length > 0) {
 							this.appendLines();
 						}
-
-						// var $root = $(this.rootElement);
-						// for ( var i = 0, len = ev.changed.length; i < len; i++) {
-						// var changed = ev.changed[i];
-						// if (changed.props.fromY == null && changed.props.toY == null) {
-						// return;
-						// }
-						//
-						// var item = changed.target;
-						// var $line = $root.find('#'
-						// + h5format(LINE_ELM_ID_FORMAT, item.get('id')));
-						// $line.attr({
-						// y1: item.get('fromY'),
-						// y2: item.get('toY')
-						// });
-						// }
 					},
 
 					getRectPos: function(item) {
@@ -1936,28 +1895,6 @@
 			this._drawVertLines();
 		},
 
-		// _appendVertLine: function(dataItem, chartItem, id, renderer) {
-		// var $vertLines = this.$vertLines;
-		//
-		// if ((id + 1) % (this.chartSetting.get('dispDataSize') /
-		// this.chartSetting.get('vertLineNum')) === 0) { //
-
-		// TODO: idでなく時間によって線を表示するように変更する
-		// var x = renderer.getXCoord(chartItem);
-		// var text = renderer.getXVal(dataItem);
-		//
-		// graphicRenderer.appendLineElm(x, 0, x, this.chartSetting.get('height'), '#CCC', {
-		// id: h5format(VERT_LINE_ELM_ID_FORMAT, id)
-		// }, $vertLines);
-		//
-		// graphicRenderer.appendTextElm(text, x, this.chartSetting.get('height') + 10, null, {
-		// 'text-anchor': 'middle',
-		// 'font-size': 9,
-		// id: h5format(X_LABEL_ELM_ID_FORMAT, id)
-		// }, $vertLines);
-		// }
-		//
-
 		/**
 		 * チャートの横の補助線を引く
 		 * 
@@ -2050,15 +1987,6 @@
 
 				return;
 			}
-
-
-			// rendererが指定されているとき
-			// this.$movingGroups.append(this.$vertLines);
-			// for ( var id in renderer.chartModel.items) {
-			// var dataItem = renderer.dataSource.dataModel.get(id);
-			// var chartItem = renderer.chartModel.get(id);
-			// this._appendVertLine(dataItem, chartItem, parseInt(id), renderer);
-			// }
 		},
 
 		setAxesSetting: function(axesSettings) {
@@ -2400,7 +2328,6 @@
 				this.$seriesGroup.empty();
 			}
 
-			// this._renderers = {};
 			return this._addSeriesWithAsync(settings.series);
 		},
 
@@ -2476,7 +2403,6 @@
 				} else {
 					this.$seriesGroup.prepend(g);
 				}
-				// this.$seriesGroup.prepend(g);
 				var dataSource = this.dataSourceManager.createDataSource(seriesSettings);
 				this._createChartRenderer(g, dataSource, seriesSettings);
 				promises.push(dataSource.getData(seriesSettings, this.chartSetting
@@ -2526,7 +2452,6 @@
 			for ( var name in this._renderers) {
 				this._renderers[name].draw();
 			}
-			// this._startUpdate(settings);
 		},
 
 		_startUpdate: function(settings) {
@@ -2549,24 +2474,11 @@
 		},
 
 		addData: function(data, commonData) {
-			// if (this._addedCount >= REFRESH_SIZE) {
-			// this.draw(); // メモリリーク回避のため、再描画する
-			// this._addedCount = 0;
-			// }
-
 			var individualSeries = [];
 
 			for (var i = 0, len = data.length; i < len; i++) {
 				var name = data[i].name;
 				individualSeries.push(name);
-				// var series = this.settings.series;
-				// for (var j=0, len=series.length; j<len; j++) {
-				// if(series[j].name === name) {
-				// series[j].data.push(data[i].data);
-				// series[j].data.pop();
-				// break;
-				// }
-				// }
 				this._renderers[name].addData(data[i].data);
 			}
 

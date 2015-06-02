@@ -768,7 +768,6 @@
 	};
 
 	var graphicRenderer;
-	// if (h5.env.ua.isIE && h5.env.ua.browserVersion <= 8) {
 	if (!document.createElementNS
 			|| !document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect) {
 		graphicRenderer = vmlRenderer;
