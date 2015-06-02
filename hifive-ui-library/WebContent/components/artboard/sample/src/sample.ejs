@@ -3,12 +3,10 @@
 	<div class="toolbar-operation">
 		<div class="menu-wrapper border1" data-menu-side="left"><img class="menu-button icon48" src="res/img/toolicon/up.png">
 			<ul class="menu-list display-none">
-				<li class="export">export</li>
-				<li class="save">save</li>
-				<li class="popup-open disabled" data-popup-name="load-popup">load...</li>
-				<li class="select-all">select all</li>
-				<li class="remove-all">remove all</li>
-				<li class="popup-open" data-popup-name="background-popup">background...</li>
+				<li class="save">保存</li>
+				<li class="select-all">すべて選択</li>
+				<li class="remove-all">全て削除</li>
+				<li class="popup-open" data-popup-name="background-popup">背景の設定…</li>
 			</ul>
 		</div>
 		<div class="undo border1 disabled"><img class="icon48" src="res/img/toolicon/undo.png"></div>
@@ -47,7 +45,7 @@
 	</div>
 	
 	<div class="stroke-width-slider-wrapper stroke-width">
-		<label class="slider-label"><span>線の幅</span><span class="slider-value">5px</span></label>
+		<label class="slider-label"><span>線の幅</span><span class="slider-value">5</span>px</label>
 		<div class="stroke-width-slidebar"></div>
 	</div>
 
@@ -81,23 +79,20 @@
 	
 	[%# ポップアップ %]
 	<div class="display-none popup-contents-wrapper">
-		<div class="load-popup">
-			<select class="load-data-list"></select>
-			<div class="popupBtn-wrapper">
-				<div class="popupCloseBtn border1 clear-both">close</div>
-				<div class="load border1 clear-both">load</div>
-			</div>
-		</div>
 		<div class="background-popup">
 			<div class="background-image-list-wrapper">
-				<label>背景画像</label>
-				<select class="background-image-list">
-					<option value="none">なし</option>
-					<option value="0">春</option>
-					<option value="1">夏</option>
-					<option value="2">秋</option>
-					<option value="3">冬</option>
-				</select>
+				<label>背景画像</label><span class="selected-bg">なし</span>
+				<div class="background-image-list">
+					<input type="hidden"  name="background-image"/>
+					<div class="thumbnail none selected">なし</div>
+					<img class="drawing-image background thumbnail" title="フロアマップ" src="res/img/background/floorMap.png">
+					<img class="drawing-image background thumbnail" title="PC1" src="res/img/background/pc1.jpg">
+					<img class="drawing-image background thumbnail" title="PC2" src="res/img/background/pc2.jpg">
+					<img class="drawing-image background thumbnail" title="春" src="res/img/background/sakura.jpg">
+					<img class="drawing-image background thumbnail" title="夏" src="res/img/background/hanabi.jpg">
+					<img class="drawing-image background thumbnail" title="秋" src="res/img/background/momiji.jpg">
+					<img class="drawing-image background thumbnail" title="冬" src="res/img/background/yuki.jpg">
+				</div>
 			</div>
 			<div class="background-fillmode-wrapper display-none">
 				<label>fillMode</label>
@@ -105,6 +100,7 @@
 					<option value="none">none</option>
 					<option value="none-center">none(中央配置)</option>
 					<option value="contain">contain</option>
+					<option value="contain-center">contain(中央配置)</option>
 					<option value="cover">cover</option>
 					<option value="stretch">stretch</option>
 				</select>
@@ -129,23 +125,24 @@
 				<div class="background-color-slidebar"></div>
 			</div>
 			<div class="popupBtn-wrapper">
-				<div class="popupCloseBtn border1 clear-both">close</div>
-				<div class="set-background border1 clear-both">set</div>
+				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+				<div class="set-background border1 clear-both">設定</div>
 			</div>
 		</div>
 	</div>
-
-	[%# 背景画像 %]
-	<div class="background-image-list">
-		<img class="drawing-image background display-none" src="res/img/background/sakura.jpg">
-		<img class="drawing-image background display-none" src="res/img/background/hanabi.jpg">
-		<img class="drawing-image background display-none" src="res/img/background/momiji.jpg">
-		<img class="drawing-image background display-none" src="res/img/background/yuki.jpg">
-	</div>
-	
 </div>
 </script>
 
 <script type="text/ejs" id="saved-img-wrapper">
 	<div class="saved-img-wrapper"></div>
 </script>
+
+<script type="text/ejs" id="saved-img">
+	<div>
+		<img class="saved-img" src="[%= dataUrl %]">
+		<div class="info">
+			<label>[%= dateStr %]</label>
+			<div class="btn border1 load-btn" data-save-no="[%= saveNo %]">読み込み</div>
+		</div>
+	</div>
+</div>

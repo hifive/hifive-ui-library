@@ -3108,12 +3108,11 @@
 			var y = data.y ? Math.round(parseFloat(data.y)) : 0;
 			// 現在の設定と同じかどうかチェック
 			// 現在の背景画像がid指定ならid、src指定されているならsrcで比較し、fillModeが同じかどうかもチェックする
-			// fillModeが'none'ならx,yも同じかどうかチェックする
+			// x,yも同じかどうかチェックする
 			var current = this._getCurrentBackgroundData();
 			if (current && (current.id ? (current.id === id) : (current.src === src))
-					&& current.fillMode === fillMode
-					&& (fillMode !== 'none' || current.x === x && current.y === y)) {
-				// 同じなら何もしない
+					&& current.fillMode === fillMode && current.x === x && current.y === y) {
+				// 設定が全て現在の設定と同じなら何もしない
 				return;
 			}
 
@@ -3134,22 +3133,20 @@
 			// fillModeとidと画像パスを要素に持たせておく
 			$element.data('fillmode', fillMode);
 			$element.data(DATA_IMAGE_SOURCE_ID, src);
-			if (fillMode === 'none') {
-				$element.css({
-					left: x || 0,
-					top: y || 0,
-					position: 'absolute'
-				});
+			$element.css({
+				left: x || 0,
+				top: y || 0,
+				position: 'absolute'
+			});
 
-				if (x < 0 || y < 0) {
-					// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
-					var w = $layer.width();
-					var h = $layer.height();
-					$element.css({
-						width: w - x,
-						height: h - y
-					});
-				}
+			if (x < 0 || y < 0) {
+				// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
+				var w = $layer.width();
+				var h = $layer.height();
+				$element.css({
+					width: w - x,
+					height: h - y
+				});
 			}
 			if (id) {
 				$element.data(DATA_IMAGE_SOURCE_ID, id);
@@ -3305,11 +3302,9 @@
 			} else {
 				ret.src = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			}
-			if (ret.fillMode === 'none') {
-				// noneならx,yも返す(四捨五入したint)
-				ret.x = Math.round(parseFloat($bgElement.css('left')));
-				ret.y = Math.round(parseFloat($bgElement.css('top')));
-			}
+			// x,yも返す(四捨五入したint)
+			ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
+			ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
 			return ret;
 		},
 
@@ -3438,6 +3433,8 @@
 					var fillMode = background.fillMode;
 					var tmpImg = document.createElement('img');
 					tmpImg.onload = function() {
+						var x = background.x;
+						var y = background.y;
 						switch (fillMode) {
 						case 'contain':
 							var canvasRate = canvas.width / canvas.height;
@@ -3450,7 +3447,7 @@
 								h = canvas.height;
 								w = h * imgRate;
 							}
-							ctx.drawImage(this, 0, 0, w, h);
+							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
 							var canvasRate = canvas.width / canvas.height;
@@ -3463,14 +3460,14 @@
 								w = canvas.width;
 								h = w / imgRate;
 							}
-							ctx.drawImage(this, 0, 0, w, h);
+							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
-							ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+							ctx.drawImage(this, x, y, canvas.width, canvas.height);
 							break;
 						default:
 							// none
-							ctx.drawImage(this, background.x, background.y);
+							ctx.drawImage(this, x, y);
 							break;
 						}
 						backgroundDfd.resolve();
