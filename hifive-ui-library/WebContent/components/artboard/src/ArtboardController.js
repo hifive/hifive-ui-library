@@ -2037,8 +2037,10 @@
 			event.stopPropagation();
 			var trackingData = this._trackingData;
 			if (!trackingData.moved) {
-				if (event.ctrlKey) {
-					// ctrlキーが押されていたらその図形の選択を解除
+				if (event.ctrlKey && !trackingData.selectedWhenTrackstart) {
+					// ctrlキーが押されていてかつドラッグされていない(ctrl+クリック)
+					// かつ、クリックした図形が今選択されたものでなかった場合は、
+					// その図形の選択を解除
 					var id = $el.data('target-shape-id');
 					var selectedShapes = this.getSelectedShapes();
 					for (var i = 0, l = selectedShapes.length; i < l; i++) {
@@ -2050,6 +2052,7 @@
 					}
 				}
 				// 動いていないなら何もしない
+				this._trackingData = null;
 				return;
 			}
 			var sessions = trackingData.sessions;
