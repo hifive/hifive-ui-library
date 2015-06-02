@@ -651,7 +651,7 @@
 		//--------------------------------------------------------
 		'.stroke-width-slider-wrapper slide': function(context, $el) {
 			var $target = $(context.event.target);
-			var val = parseInt($target.val() + 'px');
+			var val = parseInt($target.val());
 			$el.find('.slider-value').text(val);
 			this.trigger(EVENT_STROKE_WIDTH_CHANGE, val);
 		},
@@ -1047,7 +1047,7 @@
 			var $strokeWidthLabel = $strokeWidth.parent().find('.slider-value');
 			width = parseInt(width);
 			$strokeWidth.val(width);
-			$strokeWidthLabel.text(width + 'px');
+			$strokeWidthLabel.text(width);
 		},
 
 		setTextSettings: function(textSettings) {
