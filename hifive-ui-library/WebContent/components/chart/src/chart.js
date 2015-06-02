@@ -1633,7 +1633,7 @@
 						}
 
 						// preがnullのときは、データとしても端であり、このときはただの点を表示する
-						var isPoint = pre == null;
+						var isPoint = pre == null || pre.get(yProp) == null;
 						var fromY = isPoint ? currentItem.get(yProp) : pre.get(yProp);
 
 						if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
