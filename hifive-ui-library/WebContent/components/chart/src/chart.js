@@ -2448,12 +2448,12 @@
 			if (chartSetting.width) {
 				var yLabelMargin = this.axisRenderer.getYLabelMargin();
 				obj.width = chartSetting.width - this.axisRenderer.getYLabelWidth()
-						- yLabelMargin.marginRight - yLabelMargin, marginLeft;
+						- yLabelMargin.marginRight - yLabelMargin.marginLeft;
 			}
 			if (chartSetting.height) {
 				var xLabelMargin = this.axisRenderer.getXLabelMargin();
 				obj.height = chartSetting.height - this.axisRenderer.getXLabelHeight()
-						- xLabelMargin.marginTop - xLabelMargin, marginBottom;
+						- xLabelMargin.marginTop - xLabelMargin.marginBottom;
 			}
 
 			this.chartSetting.set(obj);
