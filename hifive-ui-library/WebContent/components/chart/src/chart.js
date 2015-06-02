@@ -2090,7 +2090,7 @@
 	 * @memberOf h5.ui.components.chart
 	 * @name ChartController
 	 */
-	chartController = {
+	var chartController = {
 
 		__name: 'h5.ui.components.chart.ChartController',
 
