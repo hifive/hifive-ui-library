@@ -389,7 +389,6 @@
 					saveNo: saveNo
 				});
 			}));
-			alert('保存しました\n' + label);
 		},
 
 		/**

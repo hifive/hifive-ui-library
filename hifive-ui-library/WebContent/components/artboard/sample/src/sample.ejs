@@ -4,9 +4,9 @@
 		<div class="menu-wrapper border1" data-menu-side="left"><img class="menu-button icon48" src="res/img/toolicon/up.png">
 			<ul class="menu-list display-none">
 				<li class="save">保存</li>
-				<li class="select-all">select all</li>
-				<li class="remove-all">remove all</li>
-				<li class="popup-open" data-popup-name="background-popup">background...</li>
+				<li class="select-all">すべて選択</li>
+				<li class="remove-all">全て削除</li>
+				<li class="popup-open" data-popup-name="background-popup">背景の設定…</li>
 			</ul>
 		</div>
 		<div class="undo border1 disabled"><img class="icon48" src="res/img/toolicon/undo.png"></div>
@@ -100,6 +100,7 @@
 					<option value="none">none</option>
 					<option value="none-center">none(中央配置)</option>
 					<option value="contain">contain</option>
+					<option value="contain-center">contain(中央配置)</option>
 					<option value="cover">cover</option>
 					<option value="stretch">stretch</option>
 				</select>
@@ -124,8 +125,8 @@
 				<div class="background-color-slidebar"></div>
 			</div>
 			<div class="popupBtn-wrapper">
-				<div class="popupCloseBtn border1 clear-both">close</div>
-				<div class="set-background border1 clear-both">set</div>
+				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+				<div class="set-background border1 clear-both">設定</div>
 			</div>
 		</div>
 	</div>
@@ -138,9 +139,9 @@
 
 <script type="text/ejs" id="saved-img">
 	<div>
-		<label>[%= dateStr %]</label>
 		<img class="saved-img" src="[%= dataUrl %]">
-		<div class="controls">
+		<div class="info">
+			<label>[%= dateStr %]</label>
 			<div class="btn border1 load-btn" data-save-no="[%= saveNo %]">読み込み</div>
 		</div>
 	</div>

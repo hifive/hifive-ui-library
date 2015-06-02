@@ -98,7 +98,9 @@
 		 * @param $el
 		 */
 		'.menu-wrapper .menu-list h5trackstart': function(context, $el) {
-			if ($(context.event.target).hasClass('disabled')) {
+			var event = context.event;
+			event.stopImmediatePropagation();
+			if ($(event.target).hasClass('disabled')) {
 				// disabledだったら何もしない
 				return;
 			}
@@ -140,7 +142,7 @@
 	};
 
 	//-------------------------------------------------------------
-	//  sample.TextSettingsController
+	// sample.TextSettingsController
 	//-------------------------------------------------------------
 	/**
 	 * テキストの設定コントローラ
@@ -455,15 +457,8 @@
 				header: false
 			});
 
-			// ロードデータ選択ポップアップ
-			this._loadPopup = h5.ui.popupManager.createPopup('loadPopup', '', this.$find(
-					'.popup-contents-wrapper').find('.load-popup'), null, {
-				header: false
-			});
-
 			this.popupMap = {
 				'background-popup': this._backgroundPopup,
-				'load-popup': this._loadPopup
 			};
 
 			// テキスト入力要素
@@ -831,12 +826,34 @@
 				};
 				if (fillMode === 'none-center') {
 					// 中央配置
+					var $artboardRoot = $(targetArtboard.rootElement);
 					var w = selectedElement.naturalWidth;
 					var h = selectedElement.naturalHeight;
-					var $artboardRoot = $(targetArtboard.rootElement);
 					backgroundData.x = ($artboardRoot.innerWidth() - w) / 2;
 					backgroundData.y = ($artboardRoot.innerHeight() - h) / 2;
 					backgroundData.fillMode = 'none';
+				} else if (fillMode === 'contain-center') {
+					// containでかつ中央配置
+					var $artboardRoot = $(targetArtboard.rootElement);
+					var w = selectedElement.naturalWidth;
+					var h = selectedElement.naturalHeight;
+					var artboardW = $artboardRoot.innerWidth();
+					var artboardH = $artboardRoot.innerHeight();
+					var imgRate = w / h;
+					var canvasRate = artboardW / artboardH;
+					var drawW, drawH;
+					if (canvasRate < imgRate) {
+						drawW = artboardW;
+						drawH = drawW * imgRate;
+						backgroundData.x = 0;
+						backgroundData.y = (artboardH - drawH) / 2;
+					} else {
+						drawH = artboardH;
+						drawW = drawH * imgRate;
+						backgroundData.x = (artboardW - drawW) / 2;
+						backgroundData.y = 0;
+					}
+					backgroundData.fillMode = 'contain';
 				}
 			}
 			// 背景色設定
@@ -847,6 +864,9 @@
 
 			this.trigger(EVENT_UNSELECT_ALL);
 			targetArtboard.setBackground(rgbaColor, backgroundData);
+
+			// 設定したらpopupを閉じる
+			this._hidePopup();
 		},
 
 		/**
@@ -1115,7 +1135,6 @@
 				return;
 			}
 			this.trigger(EVENT_LOAD, saveNo);
-			this._loadPopup.hide();
 		},
 
 		//-----------------------------------
@@ -1143,7 +1162,6 @@
 		 */
 		_hidePopup: function() {
 			this._backgroundPopup.hide();
-			this._loadPopup.hide();
 		}
 	};
 	h5.core.expose(controller);

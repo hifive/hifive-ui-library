@@ -51,8 +51,17 @@ h1 {
 }
 
 /** ポップアップ **/
+.h5Popup {
+	display: none;
+}
+
+.h5Popup.current {
+	display: block;
+}
+
 .popupContents {
-	padding: 10px;
+	padding: 5px 5px 10px 5px;
+	box-sizing: border-box;
 }
 
 .popupBtn-wrapper {
@@ -72,16 +81,31 @@ h1 {
 }
 
 /** 背景画像設定ポップアップ **/
+.background-popup>* {
+	font-size: 1.2em;
+}
+
+.background-popup select {
+	font-size: 100%;
+}
+
+.background-popup>* {
+	margin-top: 1em;
+	font-size: 1.2em;
+}
+
 .background-popup .background-color-palette {
 	clear: both;
 	min-height: 32px;
 }
 
 .background-popup .background-color-opacity {
+	margin-top: 1em;
 	clear: both;
 }
 
 .background-popup .background-color-selected-wrapper {
+	margin-top: 1em;
 	width: 80px;
 	height: 20px;
 	display: inline-block;
@@ -89,7 +113,8 @@ h1 {
 }
 
 .background-popup  .background-image-list {
-	padding: 4px 0;
+	width: 90%;
+	margin: auto;
 }
 
 .background-popup .background-color-selected {
@@ -156,6 +181,7 @@ h1 {
 	background-color: rgba(255, 255, 255, 0.8);
 	margin: 0;
 	padding: 0;
+	width: 150px;
 	list-style: none;
 }
 
@@ -353,48 +379,47 @@ h1 {
 /* 保存したイメージ */
 .saved-img-wrapper {
 	float: left;
+	clear: both;
 }
 
 .saved-img-wrapper>* {
 	position: relative;
 	display: inline-block;
 	margin: 4px;
-}
-
-.saved-img-wrapper .saved-img {
-	margin: 4px;
-	width: 320px;
 	box-shadow: 2px 2px 4px;
 	border: 1px solid #ccc;
 	box-sizing: border-box;
 }
 
+.saved-img-wrapper .saved-img {
+	width: 320px;
+	float: left;
+}
+
 .saved-img-wrapper label {
-	position: absolute;
-	top: 5px;
-	left: 5px;
-	font-size: 12px;
-	text-shadow: 1px 1px 3px #fff;
-	background-color: rgba(255, 255, 255, 0.8);
+	font-size: 14px;
+	font-weight: bold;
 	padding: 1px 2px;
 }
 
-.saved-img-wrapper .controls {
-	position: absolute;
-	bottom: 3px;
-	right: 3px;
+.saved-img-wrapper .info {
+	float: left;
+	height: 100%;
 }
 
 .saved-img-wrapper .btn {
 	color: #fff;
 	background-color: #c0c0c0;
-	font-size: 15px;
+	font-size: 18px;
+	line-height: 25px;
 	text-align: center;
-	padding: 2px 4px;
+	padding: 6px 18px;
 	min-width: 90px;
-	line-height: 20px;
 	cursor: pointer;
-	padding: 2px 4px;
+	position: absolute;
+	bottom: -1px;
+	right: -1px;
+	display: block;
 }
 
 .saved-img-wrapper .btn:hover {
