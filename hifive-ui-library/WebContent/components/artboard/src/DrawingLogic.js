@@ -3302,11 +3302,9 @@
 			} else {
 				ret.src = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 			}
-			if (ret.fillMode === 'none') {
-				// noneならx,yも返す(四捨五入したint)
-				ret.x = Math.round(parseFloat($bgElement.css('left')));
-				ret.y = Math.round(parseFloat($bgElement.css('top')));
-			}
+			// x,yも返す(四捨五入したint)
+			ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
+			ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
 			return ret;
 		},
 
@@ -3435,6 +3433,8 @@
 					var fillMode = background.fillMode;
 					var tmpImg = document.createElement('img');
 					tmpImg.onload = function() {
+						var x = background.x;
+						var y = background.y;
 						switch (fillMode) {
 						case 'contain':
 							var canvasRate = canvas.width / canvas.height;
@@ -3447,7 +3447,7 @@
 								h = canvas.height;
 								w = h * imgRate;
 							}
-							ctx.drawImage(this, 0, 0, w, h);
+							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
 							var canvasRate = canvas.width / canvas.height;
@@ -3460,14 +3460,14 @@
 								w = canvas.width;
 								h = w / imgRate;
 							}
-							ctx.drawImage(this, 0, 0, w, h);
+							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
-							ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+							ctx.drawImage(this, x, y, canvas.width, canvas.height);
 							break;
 						default:
 							// none
-							ctx.drawImage(this, background.x, background.y);
+							ctx.drawImage(this, x, y);
 							break;
 						}
 						backgroundDfd.resolve();
