@@ -38,7 +38,6 @@ $(function() {
 			var last = dividedBox.find('.box:last').width('-=100px;');
 			var addDiv = $('<div class="box" style="width:100px;background-color:orange;"></div>')
 					.css({
-						position: 'absolute',
 						left: last.position().left + last.width()
 					});
 			dividedBox.append(addDiv);

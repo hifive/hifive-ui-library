@@ -27,6 +27,10 @@ body {
 	/*border-color : #888;*/
 }
 
+#grid td.grid-marked {
+	background-color: #B2E0FF;
+}
+
 .grid-header-top-left-cells .dummy-cell {
 	border: solid 1px #888;
 }

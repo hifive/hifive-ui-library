@@ -1,0 +1,6 @@
+/**
+ * EventDispatcher
+ *
+ * @mixin
+ */
+function EventDispatcher() {}
