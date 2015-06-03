@@ -85,6 +85,11 @@
 				<div class="background-image-list">
 					<input type="hidden"  name="background-image"/>
 					<div class="thumbnail none selected">なし</div>
+					<div class="img-input-wrap thumbnail">
+						<div><label>画像を追加</label></div>
+						<img src="res/img/camera.png">
+						<input class="" accept="image/*" name="img" type="file" data-action="getPicture"/>
+					</div>
 					<img class="drawing-image background thumbnail" title="フロアマップ" src="res/img/background/floorMap.png">
 					<img class="drawing-image background thumbnail" title="PC1" src="res/img/background/pc1.jpg">
 					<img class="drawing-image background thumbnail" title="PC2" src="res/img/background/pc2.jpg">
@@ -131,6 +136,29 @@
 		</div>
 	</div>
 </div>
+</script>
+
+<script type="text/ejs" id="previewContainer">
+	<div class="previewContainer">
+		<div class="canvasContainer">
+			<canvas width="550px" height="412.5px"></canvas>
+			<div class="btnContainer">
+				<div class="angle-btn-wrap">
+					<button class="btn-angle btn-0">0度</button>
+					<button class="btn-angle btn-90">90度</button>
+					<button class="btn-angle btn-180">180度</button>
+					<button class="btn-angle btn-270">270度</button>
+					<button class="btn-angle btn-90-con">90度ずつ</button></div>
+					<div class="handle-btn-wrap"><button class="btn-angle setAngle">決定</button>
+					<button class="btn-angle cancel">キャンセル</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/ejs" id="backgroundThumbnail">
+	<img class="drawing-image background thumbnail" title="追加した画像" src="[%= imageData %]">
 </script>
 
 <script type="text/ejs" id="saved-img-wrapper">

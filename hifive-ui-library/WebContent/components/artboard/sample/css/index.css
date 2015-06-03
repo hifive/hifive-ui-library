@@ -141,10 +141,16 @@ h1 {
 	box-sizing: border-box;
 }
 
-.background-popup .thumbnail:hover {
+.background-popup .drawing-image:hover,.background-popup .thumbnail.none:hover
+	{
 	position: relative;
 	top: -2px;
 	left: -2px;
+}
+
+.background-popup .selected-bg {
+	padding-left: 1em;
+	font-weight: bold;
 }
 
 .background-popup .thumbnail.selected {
@@ -156,9 +162,29 @@ h1 {
 	box-shadow: 0 0 0;
 }
 
-.background-popup .selected-bg {
-	padding-left: 1em;
-	font-weight: bold;
+/* 背景を写真から読み込む部分 */
+.background-popup .thumbnail.img-input-wrap {
+	position: relative;
+	height: 100px;
+	box-shadow: 0 0 0;
+	border: 0;
+	font-size: 0.8em;
+	line-height: 1em;
+}
+
+.background-popup .img-input-wrap input[type="file"] {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	opacity: 0.01;
+	margin: 0;
+	top: 0;
+	left: 0;
+	cursor: pointer;
+}
+
+.background-popup .img-input-wrap img {
+	margin: auto;
 }
 
 /** ツールバー設定 **/
@@ -424,4 +450,54 @@ h1 {
 
 .saved-img-wrapper .btn:hover {
 	font-weight: bold;
+}
+
+.previewContainer {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 99999;
+	margin: auto;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(256, 256, 256, 0.5);
+	width: 100%;
+}
+
+.previewContainer .canvasContainer {
+	width: 600px;
+	margin: auto;
+	background-color: #fff;
+	padding: 5px 0 10px 0;
+	text-align: center;
+	box-shadow: 2px 2px 4px #fff;
+}
+
+.previewContainer .canvasContainer canvas {
+	border: 1px solid #000;
+	max-height: 300px;
+}
+
+.previewContainer .angle-btn-wrap {
+	display: -webkit-box;
+	-webkit-box-pack: center;
+	margin: 20px auto;
+}
+
+.previewContainer .handle-btn-wrap {
+	display: -webkit-box;
+	-webkit-box-pack: center;
+}
+
+.previewContainer button {
+	cursor: pointer;
+	display: inline-block;
+	padding: 5px;
+	width: 80px;
+	text-align: center;
+	padding: 5px;
+	box-sizing: border-box;
+	border: 1px solid #ccc;
+	background-color: #eee;
+	color: #000;
 }
