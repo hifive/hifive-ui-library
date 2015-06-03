@@ -87,6 +87,11 @@
 		_saveDataSequence: h5.core.data.createSequence(),
 
 		/**
+		 * イメージマップの採番用シーケンス
+		 */
+		_imageSourceMapSeq: h5.core.data.createSequence(),
+
+		/**
 		 * __initイベント
 		 *
 		 * @memberOf sample.PageController
@@ -139,18 +144,9 @@
 		 * @param {Object} context コンテキスト
 		 */
 		__ready: function() {
-			// 画像にIDを振り、ソースファイルとの対応付けを行う
-			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
-			var srcMap = this._artboardController.imageSourceMap;
-			var seq = h5.core.data.createSequence();
+			// imageSourceMapにdrawing-imageクラス要素の画像を登録
 			// ページ全体のdrawing-imageを扱うため、this.$findではなく$()を使用している
-			$('.drawing-image').each(function() {
-				var id = seq.next();
-				var $this = $(this);
-				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
-				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
-				srcMap[id] = $this.attr('src');
-			});
+			this._registImageSourceMap($('.drawing-image'));
 		},
 
 		//---------------------------------------------------------------
@@ -476,6 +472,35 @@
 			this._artboardController.unselectAll();
 			var saveNo = $el.data('save-no');
 			this._load(saveNo);
+		},
+
+		/**
+		 * 画像の追加。動的に画像をimageSourceMapに登録したい時に呼ぶイベント
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'{rootElement} registDrawingImage': function(ctx) {
+			var $img = $(ctx.evArg.img);
+			this._registImageSourceMap($img);
+		},
+
+		/**
+		 * 画像をimageSourceMapに登録
+		 *
+		 * @param $img
+		 */
+		_registImageSourceMap: function($img) {// 画像にIDを振り、ソースファイルとの対応付けを行う
+			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
+			var srcMap = this._artboardController.imageSourceMap;
+			var seq = this._imageSourceMapSeq;
+			$img.each(function() {
+				var id = seq.next();
+				var $this = $(this);
+				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
+				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
+				srcMap[id] = $this.attr('src');
+			});
 		},
 
 		_setToolbarForSelectedShape: function() {

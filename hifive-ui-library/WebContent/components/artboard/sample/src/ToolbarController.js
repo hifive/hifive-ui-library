@@ -330,7 +330,15 @@
 		 * @memberOf sample.ToolbarController
 		 * @private
 		 */
-		textSettingsController: textSettingsController,
+		_textSettingsController: textSettingsController,
+
+		/**
+		 * 背景画像追加コントローラ
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_pictureController: sample.PictureController,
 
 		/**
 		 * コントローラのメタ定義
@@ -339,8 +347,11 @@
 		 * @private
 		 */
 		__meta: {
-			textSettingsController: {
+			_textSettingsController: {
 				rootElement: '.text-settings-box'
+			},
+			_pictureController: {
+				rootElement: '{.background-popup}'
 			}
 		},
 
@@ -784,7 +795,7 @@
 			var $artboardRoot = $(targetArtboard.rootElement);
 			if (0 < x && 0 < y && x < $artboardRoot.innerWidth() && y < $artboardRoot.innerHeight()) {
 				// 範囲内なら描画
-				var settings = this.textSettingsController;
+				var settings = this._textSettingsController;
 				var fontSize = settings.getFontSize();
 				var fontFamily = settings.getFontFamily();
 				var style = settings.getFontStyle();
@@ -875,22 +886,8 @@
 		 * @param context
 		 * @param $el
 		 */
-		'{.background-popup .thumbnail} h5trackstart': function(context, $el) {
-			if ($el.hasClass('selected')) {
-				return;
-			}
-			var $popup = $el.parents('.background-popup');
-			var $fillModeWrapper = $popup.find('.background-fillmode-wrapper');
-			$popup.find('.thumbnail.selected').removeClass('selected');
-			$el.addClass('selected');
-			$fillModeWrapper.removeClass('display-none');
-			if ($el.hasClass('none')) {
-				$popup.find('.selected-bg').text($el.text());
-				$fillModeWrapper.addClass('display-none');
-				return;
-			}
-			$fillModeWrapper.removeClass('display-none');
-			$popup.find('.selected-bg').text($el.attr('title'));
+		'{.background-popup .thumbnail:not(.img-input-wrap)} h5trackstart': function(context, $el) {
+			this._selectBackgroundThumbnail($el);
 		},
 
 		/**
@@ -949,9 +946,45 @@
 			});
 		},
 
+		/**
+		 * 画像の追加(ファイル・カメラ)
+		 *
+		 * @param ctx
+		 */
+		'{.background-popup} addPicture': function(ctx) {
+			var imageData = ctx.evArg.imageData;
+			var $img = $(this.view.get('backgroundThumbnail', {
+				imageData: imageData
+			}));
+			$(this._backgroundPopup.rootElement).find('.img-input-wrap').after($img);
+			// 追加された画像をimageMapに登録
+			this.trigger('registDrawingImage', {
+				img: $img[0]
+			});
+			// 追加された画像を選択状態にする
+			this._selectBackgroundThumbnail($img);
+		},
 
 		'.remove-selected-shape h5trackstart': function() {
 			this.trigger(EVENT_REMOVE_SELECTED_SHAPE);
+		},
+
+		_selectBackgroundThumbnail: function($el) {
+			if ($el.hasClass('selected') || $el.hasClass('img-input-wrap')) {
+				return;
+			}
+			var $popup = $el.parents('.background-popup');
+			var $fillModeWrapper = $popup.find('.background-fillmode-wrapper');
+			$popup.find('.thumbnail.selected').removeClass('selected');
+			$el.addClass('selected');
+			$fillModeWrapper.removeClass('display-none');
+			if ($el.hasClass('none')) {
+				$popup.find('.selected-bg').text($el.text());
+				$fillModeWrapper.addClass('display-none');
+				return;
+			}
+			$fillModeWrapper.removeClass('display-none');
+			$popup.find('.selected-bg').text($el.attr('title'));
 		},
 
 		_showStampList: function(position) {
@@ -971,12 +1004,12 @@
 		_showTextSettings: function(position) {
 			var $textIcon = $('[data-tool-name="text"]');
 			var offset = $textIcon.offset();
-			this.textSettingsController.show();
-			var $textSettingsRoot = $(this.textSettingsController.rootElement);
+			this._textSettingsController.show();
+			var $textSettingsRoot = $(this._textSettingsController.rootElement);
 		},
 
 		_hideTextSettings: function() {
-			this.textSettingsController.hide();
+			this._textSettingsController.hide();
 		},
 
 		_hideOpacitySlideBar: function() {
@@ -1051,7 +1084,7 @@
 		},
 
 		setTextSettings: function(textSettings) {
-			this.textSettingsController.setTextSettings(textSettings);
+			this._textSettingsController.setTextSettings(textSettings);
 		},
 
 		disableStrokeColor: function() {
@@ -1161,7 +1194,10 @@
 		 * @param cls
 		 */
 		_hidePopup: function() {
+			// close()はしないけどdisplay:noneにしたいのでcurrentを外す
+			// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
 			this._backgroundPopup.hide();
+			$(this._backgroundPopup.rootElement).removeClass('current');
 		}
 	};
 	h5.core.expose(controller);
