@@ -131,7 +131,6 @@ h1 {
 	margin: 4px;
 	width: 120px;
 	height: auto;
-	line-height: 120px;
 	text-align: center;
 	box-shadow: 2px 2px 4px;
 	border: 1px solid #fff;
@@ -158,14 +157,16 @@ h1 {
 }
 
 .background-popup .thumbnail.none {
-	height: 120px;
+	height: 80px;
+	width: 80px;
+	line-height: 80px;
 	box-shadow: 0 0 0;
 }
 
 /* 背景を写真から読み込む部分 */
 .background-popup .thumbnail.img-input-wrap {
 	position: relative;
-	height: 100px;
+	height: 85px;
 	box-shadow: 0 0 0;
 	border: 0;
 	font-size: 0.8em;
@@ -187,6 +188,11 @@ h1 {
 	margin: auto;
 }
 
+.sample-picture-wrapper {
+	border-top: 1px solid #ccc;
+	padding-top: 10px;
+	margin-top: 10px;
+}
 /** ツールバー設定 **/
 .drawing-toolbar .icon48 {
 	width: 48px;
