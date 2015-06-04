@@ -371,8 +371,6 @@
 			var artboardSaveData = this._artboardController.save();
 			var saveNo = this._saveDataSequence.next();
 			this._saveDataMap[saveNo] = artboardSaveData;
-			this._saveDataMap = h5.u.obj.serialize(this._saveDataMap);
-			this._saveDataMap = h5.u.obj.deserialize(this._saveDataMap);
 
 			// imgとしてエクスポート
 			var label = sample.util.dateFormat(new Date());
