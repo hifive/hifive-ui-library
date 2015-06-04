@@ -29,7 +29,7 @@
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="DRShapeCommand.html">DRShapeCommand</a></li><li><a href="DRText.html">DRText</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li><li><a href="DRTextShape.html">DRTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
@@ -97,7 +97,7 @@
             
             
             
-            <td class="description last">コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。<pre class="sh_javascript"><code>{	shape: スタイルを適用するDRShape	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれの値を持つオブジェクト)の配列}</code></pre></td>
+            <td class="description last">コマンドデータオブジェクト。AttrCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。<pre class="sh_javascript"><code>{	shape: スタイルを適用するArtShape	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれの値を持つオブジェクト)の配列}</code></pre></td>
         </tr>
 	
 	
@@ -152,7 +152,7 @@
                 <h3 class="subsection-title">Extends</h3>
 
                 <ul>
-                    <li><a href="DRShapeCommand.html">DRShapeCommand</a></li>
+                    <li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li>
                 </ul>
             
 
@@ -179,7 +179,7 @@
     
     
     <p class="description">
-        コマンドと紐づくDRShapeオブジェクトを取得する
+        コマンドと紐づくArtShapeオブジェクトを取得する
     </p>
     
     
@@ -235,7 +235,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type"><a href="DRShape.html">DRShape</a></span> 
+		<span class="param-type"><a href="ArtShape.html">ArtShape</a></span> 
 		
 	</dd>
 </dl>

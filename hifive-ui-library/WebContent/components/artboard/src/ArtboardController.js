@@ -463,7 +463,7 @@
 				// 受け取ったイベントオブジェクトをコマンドマネージャから上げる
 				this._commandManager.dispatchEvent(r);
 			}
-		},
+		}
 	};
 	h5.core.expose(artboardCommandLogic);
 })();
@@ -980,7 +980,7 @@
 		/**
 		 * canvasをクリア
 		 * <p>
-		 * DRShapeの生成された確定済みの図形はcanvas上には無いので削除されません。
+		 * ArtShapeの生成された確定済みの図形はcanvas上には無いので削除されません。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
@@ -1251,7 +1251,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
-		 * @returns {DRShape[]}
+		 * @returns {ArtShape[]}
 		 */
 		getAllShapes: function(exceptAlone) {
 			return this.drawingLogic.getAllShapes(exceptAlone);
@@ -1262,7 +1262,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 * @returns {String}
 		 */
 		getShapeID: function(shape) {
@@ -1282,7 +1282,7 @@
 		 * @param {Number} width 正方形の幅
 		 * @param {Number} height 正方形の高さ
 		 * @param {Boolean} isFill 塗りつぶすかどうか
-		 * @returns {DRRect}
+		 * @returns {ArtRect}
 		 */
 		drawRect: function(x, y, width, height, isFill) {
 			return this.drawingLogic.drawRect(x, y, width, height, {
@@ -1305,7 +1305,7 @@
 		 * @param {Number} rx 楕円の水平方向の半径
 		 * @param {Number} ry 楕円の垂直方向の半径
 		 * @param {Boolean} isFill 塗りつぶすかどうか
-		 * @returns {DREllipse}
+		 * @returns {ArtEllipse}
 		 */
 		drawEllipse: function(cx, cy, rx, ry, isFill) {
 			return this.drawingLogic.drawEllipse(cx, cy, rx, ry, {
@@ -1331,7 +1331,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {String} pathData
-		 * @returns {DRPath}
+		 * @returns {ArtPath}
 		 */
 		drawPath: function(pathData) {
 			return this.drawingLogic.drawPath({
@@ -1369,7 +1369,7 @@
 		 * }
 		 * </code></pre>
 		 *
-		 * @returns {DRImage}
+		 * @returns {ArtImage}
 		 */
 		drawImage: function(data) {
 			return this.drawingLogic.drawImage(data);
@@ -1395,7 +1395,7 @@
 		 * }
 		 * </code></pre>
 		 *
-		 * @returns {DRImage}
+		 * @returns {ArtImage}
 		 */
 		drawText: function(data) {
 			// strokeの色でテキストを描画
@@ -1502,7 +1502,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 */
 		append: function(shape) {
 			this.drawingLogic.append(shape);
@@ -1513,7 +1513,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 */
 		remove: function(shape) {
 			this.drawingLogic.remove(shape);
