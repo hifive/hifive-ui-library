@@ -322,7 +322,7 @@
 		 * ボックスの追加
 		 *
 		 * @memberOf h5.ui.container.DividedBox
-		 * @param {Integer} index 何番目に追加するか
+		 * @param {Integer} index 何番目に追加するか(追加した要素が何番目に来るか)
 		 * @param {DOM|jQuery} box
 		 */
 		insert: function(index, box) {
@@ -335,7 +335,7 @@
 
 			var $target = this._getBoxElement(index);
 			var $boxes = this._getBoxes();
-			if ($target.length) {
+			if (!$target.length) {
 				// 範囲外の場合は一番最後に追加
 				$target = $boxes.eq($boxes.length - 1);
 			}
@@ -345,7 +345,7 @@
 			$box.addClass(CLASS_MANAGED);
 
 			if ($target.length) {
-				$target.after($box);
+				$target.before($box);
 			} else {
 				// 既存のboxが一つもない場合は追加して終了
 				root.append($box);
@@ -374,11 +374,9 @@
 			}
 			//jQueryが古いと以下のようにする必要があるかもしれない。1.8.3だと以下で動作しない。何かのオブジェクトが返ってくる。
 			//divider.css(l_t, target.position()[l_t] + target[outerW_H]({margin:true}));
-			$divider.css(l_t, $target.length ? $target.position()[l_t] + $target[outerW_H](true)
-					: 0);
-			$divider.css(t_l, $divider.position()[t_l]);
+			$divider.css(l_t, $target.length ? $target.position()[l_t] : 0);
 			$divider.css('position', 'absolute');
-			$box.before($divider);
+			$box.after($divider);
 
 			var targetWH = $target[w_h](true) - $divider[outerW_H](true) - $box[outerW_H](true);
 
@@ -844,33 +842,54 @@
 		_adjust: function() {
 			var l_t = this._l_t;
 			var w_h = this._w_h;
-			var root = this._$root;
+			var $root = this._$root;
 			var outerW_H = this._outerW_H;
-
-			var adjustAreaWH = root[w_h]();
+			var adjustAreaWH = $root[w_h]();
+			// dividedBoxのサイズの差分
+			var divSize = adjustAreaWH - this._lastAdjustAreaWH;
+			this._lastAdjustAreaWH = adjustAreaWH;
 
 			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
-			var $dividers = this._getDividers();
-			$dividers.each(this.ownWithOrg(function(orgThis) {
-				var $divider = $(orgThis);
-				var isDisplayNone = $divider.css('display') === 'none';
-				$divider.css('display', 'block');
-				var $next = this._getNextBoxByDivider($divider);
-				if ($next.length) {
-					var dividerLT = $divider.position()[l_t];
-					var per = dividerLT / this._lastAdjustAreaWH;
-					var nextDivideLT = Math.round(adjustAreaWH * per);
-					var move = nextDivideLT - dividerLT;
 
-					$divider.css(l_t, '+=' + move);
-					$next.css(l_t, ($next.position()[l_t] + move));
+			// 固定(fixed)でないボックスを拡大・縮小する
+			var $boxes = this._getBoxes();
+			var $unfixedBoxes = $boxes.not('.' + CLASS_FIXED_BOX);
+
+			var move = 0;
+			// 固定でないボックスのトータルサイズ
+			var unfixedBoxesTotalSize = 0;
+			$unfixedBoxes.each(function() {
+				unfixedBoxesTotalSize += $(this)[w_h]();
+			});
+			$unfixedBoxes.each(this.ownWithOrg(function(orgThis) {
+				var $box = $(orgThis);
+				if (move) {
+					// dividerの移動量に合わせてボックスも移動
+					$box.css(l_t, '+=' + move);
 				}
+				var $divider = this._getNextDividerByBox($box);
+				if (!$divider.length) {
+					return;
+				}
+				var isDisplayNone = $divider.css('display') === 'none';
+				if (isDisplayNone) {
+					$divider.css('display', 'block');
+				}
+				// 各ボックスのサイズの比率で拡縮した時の位置にdividerを動かす
+				move += divSize * ($box[w_h]() / unfixedBoxesTotalSize);
+
+				// グループ化されている(連動して動く)divider全て動かす
+				var $group = this._getDividerGroup($divider);
+				if (move) {
+					$group.css(l_t, '+=' + move);
+				}
+
 				if (isDisplayNone) {
 					$divider.css('display', 'none');
 				}
 			}));
 
-			var $boxes = this._getBoxes();
+			// dividerの位置は設定済みなので、それに合わせてボックスを動かす
 			$boxes.each(this.ownWithOrg(function(orgThis, index) {
 				var $box = $(orgThis);
 				if ($box.data(DATA_HIDDEN)) {
@@ -882,8 +901,13 @@
 				// 非表示の場合はいったん表示する(位置取得のため)
 				var isPrevDisplayNone = $prev.css('display') === 'none';
 				var isNextDisplayNone = $next.css('display') === 'none';
-				$prev.css('display', 'block');
-				$next.css('display', 'block');
+				if (isPrevDisplayNone) {
+					$prev.css('display', 'block');
+				}
+				if (isNextDisplayNone) {
+					$next.css('display', 'block');
+				}
+
 				if (!$prev.length) {
 					outerSize = $next.length ? $next.position()[l_t] : adjustAreaWH;
 				} else if (!$next.length) {
@@ -903,7 +927,6 @@
 				// 計算したサイズを設定
 				this._setOuterSize($box, w_h, outerSize);
 			}));
-			this._lastAdjustAreaWH = adjustAreaWH;
 		},
 
 		/**
