@@ -1161,13 +1161,27 @@
 		//
 		/**
 		 * 描画されている図形からセーブデータを作成します
+		 * <p>
+		 * useSrcオプションがtrueの場合、背景画像について画像IDではなくパス(srcの値)で保存します。
+		 * </p>
+		 * <p>
+		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSrcMapの登録が必要です。
+		 * 別ページで保存データを利用する場合などで同一のimageSrcMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
+		 * @param {Boolean} true指定の場合useSrc 画像IDではなくパス(srcの値)で保存します
 		 * @returns {DrawingSaveData}
 		 */
-		save: function() {
-			return this.drawingLogic.save();
+		save: function(useSrc) {
+			var saveData = this.drawingLogic.save(useSrc);
+			// 保存時のcanvasのサイズを覚えさせておく
+			saveData.size = {
+				width: this._canvas.getAttribute('width'),
+				height: this._canvas.getAttribute('height')
+			};
+			return saveData;
 		},
 
 		/**

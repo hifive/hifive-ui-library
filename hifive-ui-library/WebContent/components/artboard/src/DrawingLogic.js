@@ -315,6 +315,7 @@
 	var AppendCommand = h5.ui.components.artboard.AppendCommand;
 	var RemoveCommand = h5.ui.components.artboard.RemoveCommand;
 	var DATA_IMAGE_SOURCE_ID = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_ID;
+	var DATA_IMAGE_SOURCE_SRC = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_SRC;
 
 	// ArtShape実装クラスコンストラクタ
 	var constructor = h5.ui.components.artboard.ArtShapeConstructor;
@@ -890,16 +891,19 @@
 				$element = $('<img style="width:100%;height:100%">');
 				$element.attr('src', src);
 			} else {
-				// stretch出なければbackgroundを指定したdivを作る
+				// stretchでなければbackgroundを指定したdivを作る
 				$element = $('<div></div>');
 				$element.css({
 					backgroundImage: 'url("' + src + '")',
 					backgroundSize: fillMode
 				});
 			}
-			// fillModeとidと画像パスを要素に持たせておく
+			// fillModeとidまたは画像パスを要素に持たせておく
 			$element.data('fillmode', fillMode);
-			$element.data(DATA_IMAGE_SOURCE_ID, src);
+			if (id) {
+				$element.data(DATA_IMAGE_SOURCE_ID, id);
+			}
+			$element.data(DATA_IMAGE_SOURCE_SRC, src);
 			$element.css({
 				left: x || 0,
 				top: y || 0,
@@ -914,9 +918,6 @@
 					width: w - x,
 					height: h - y
 				});
-			}
-			if (id) {
-				$element.data(DATA_IMAGE_SOURCE_ID, id);
 			}
 
 			// コマンドの作成
@@ -1039,19 +1040,21 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
+		 * @param {Boolean} useSrc
+		 * @param {Boolean} true指定の場合useSrc 画像IDではなくパス(srcの値)を取得します
 		 * @instance
 		 * @returns {Object}
 		 *
 		 * <pre>
 		 * {
 		 * 	id: id,
-		 * 	src: src(idのない場合),
+		 * 	src: src, (idがない場合または、useSrcがtrueの場合)
 		 * 	fillMode: fillMode,
 		 * 	color: 背景色
 		 * }
 		 * </pre>
 		 */
-		_getCurrentBackgroundData: function() {
+		_getCurrentBackgroundData: function(useSrc) {
 			var $layer = $(this._backgroundLayer);
 			var $bgElement = $layer.children().eq(0);
 			var ret = {};
@@ -1062,16 +1065,18 @@
 				return null;
 			}
 			ret.color = color;
-			ret.fillMode = $bgElement.data('fillmode');
-			var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
-			if (id) {
-				ret.id = id;
-			} else {
-				ret.src = $bgElement.data(DATA_IMAGE_SOURCE_ID);
+			if ($bgElement.length) {
+				ret.fillMode = $bgElement.data('fillmode');
+				var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
+				if (!useSrc && id) {
+					ret.id = id;
+				} else {
+					ret.src = $bgElement.data(DATA_IMAGE_SOURCE_SRC);
+				}
+				// x,yも返す(四捨五入したint)
+				ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
+				ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
 			}
-			// x,yも返す(四捨五入したint)
-			ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
-			ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
 			return ret;
 		},
 
@@ -1080,16 +1085,24 @@
 		//--------------------------------------------------------------
 		/**
 		 * 描画されている図形からセーブデータを作成します
+		 * <p>
+		 * useSrcオプションがtrueの場合、背景画像について画像IDではなくパス(srcの値)で保存します。
+		 * </p>
+		 * <p>
+		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSrcMapの登録が必要です。
+		 * 別ページで保存データを利用する場合などで同一のimageSrcMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
+		 * @param {Boolean} true指定の場合useSrc 画像IDではなくパス(srcの値)で保存します
 		 * @returns {DrawingSaveData}
 		 */
-		save: function() {
+		save: function(useSrc) {
 			// 描画されている図形要素を取得
 			var shapes = this.getAllShapes(true);
 			// 図形と背景のセーブデータを作って返す
-			return new DrawingSaveData(shapes, this._getCurrentBackgroundData());
+			return new DrawingSaveData(shapes, this._getCurrentBackgroundData(useSrc));
 		},
 
 		/**
