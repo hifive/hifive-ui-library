@@ -22,7 +22,7 @@
 <link rel="stylesheet" href="../src/drawing.css">
 <script src="../src/consts.js"></script>
 <script src="../src/ArtShape.js"></script>
-<script src="../src/SimpleLoadController.js"></script>
+<script src="../src/ArtboardViewerController.js"></script>
 
 <script>
 	$(function() {
@@ -30,14 +30,14 @@
 		var $root = $('body');
 		h5.core.controller('body', {
 			__name: 'sample.PageController',
-			simpleLoadController: h5.ui.components.artboard.controller.SimpleLoadController,
+			artboardViewerController: h5.ui.components.artboard.controller.ArtboardViewerController,
 			__meta: {
-				simpleLoadController: {
+				artboardViewerController: {
 					rootElement: '.loadView'
 				}
 			},
 			'.load click': function() {
-				this.simpleLoadController.load(this.$find('.saveData').val());
+				this.artboardViewerController.load(this.$find('.saveData').val());
 			}
 		});
 	});
