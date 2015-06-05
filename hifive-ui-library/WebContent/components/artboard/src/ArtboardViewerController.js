@@ -16,7 +16,7 @@
  */
 
 //----------------------------------------------------------------------------
-// h5.ui.components.artboard.controller.SimpleLoadController
+// h5.ui.components.artboard.controller.ArtboardViewerController
 //----------------------------------------------------------------------------
 (function() {
 	//------------------------------------------------------------
@@ -31,17 +31,17 @@
 	 * Artboard部品で生成される保存データ(DrawingSaveData)を復元して表示するコントローラ
 	 *
 	 * @class
-	 * @name h5.ui.components.artboard.controller.SimpleLoadController
+	 * @name h5.ui.components.artboard.controller.ArtboardViewerController
 	 */
 	var controller = {
 		/**
-		 * @memberOf h5.ui.components.artboard.controller.SimpleLoadController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 * @private
 		 */
-		__name: 'h5.ui.components.artboard.controller.SimpleLoadController',
+		__name: 'h5.ui.components.artboard.controller.ArtboardViewerController',
 
 		/**
-		 * @memberOf h5.ui.components.artboard.controller.SimpleLoadController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 * @private
 		 */
 		__init: function() {
@@ -63,7 +63,7 @@
 		 * 保存データから復元
 		 *
 		 * @param {DrawingSaveData|String} artboardSaveData 保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列
-		 * @memberOf h5.ui.components.artboard.controller.SimpleLoadController
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 */
 		load: function(artboardSaveData) {
 			if (typeof artboardSaveData === 'string') {
