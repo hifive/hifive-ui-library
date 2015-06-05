@@ -47,6 +47,9 @@
 	/** imageSourceMapと対応付けるために要素に持たせるデータ属性名 */
 	var DATA_IMAGE_SOURCE_ID = 'h5-artboard-image-id';
 
+	/** 画像設定時にIDと紐付かない画像を指定した時に要素にsrcパス覚えさせておくための属性名 */
+	var DATA_IMAGE_SOURCE_SRC = 'h5-artboard-image-src';
+
 	/** 要素に、要素の位置とサイズを持たせるときのデータ属性名 */
 	var DATA_BOUNDS_OBJECT = 'bounds-object';
 
@@ -79,6 +82,7 @@
 			XMLNS: XMLNS,
 			XLINKNS: XLINKNS,
 			DATA_IMAGE_SOURCE_ID: DATA_IMAGE_SOURCE_ID,
+			DATA_IMAGE_SOURCE_SRC: DATA_IMAGE_SOURCE_SRC,
 			DATA_BOUNDS_OBJECT: DATA_BOUNDS_OBJECT
 		},
 		message: {

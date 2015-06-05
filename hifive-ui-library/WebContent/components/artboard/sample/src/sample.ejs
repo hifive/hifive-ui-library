@@ -119,21 +119,28 @@
 					<option value="color">塗りつぶし</option>
 				</select>
 				<div class="background-color-selected-wrapper display-none">
-					<div class="background-color-selected">
+					<div class="background-color-selected"></div>
+				</div>
+				<div class="background-color-palette display-none">
+					[% for(var i = 0, l = colors.length; i < l; i++){ var color= colors[i]; %]
+					<div class="pallete-color" style="background-color:[%= color %]"></div>
+					[% } %]
+				</div>
+				<div class="background-color-opacity display-none">
+					<label class="slider-label"><span>透明度</span><span class="opacity-value">100</span></label>
+					<div class="background-color-slidebar"></div>
+				</div>
+				<div class="popupBtn-wrapper">
+					<div class="popupCloseBtn border1 clear-both">閉じる</div>
+					<div class="set-background border1 clear-both">設定</div>
 				</div>
 			</div>
-			<div class="background-color-palette display-none">
-				[% for(var i = 0, l = colors.length; i < l; i++){ var color= colors[i]; %]
-				<div class="pallete-color" style="background-color:[%= color %]"></div>
-				[% } %]
-			</div>
-			<div class="background-color-opacity display-none">
-				<label class="slider-label"><span>透明度</span><span class="opacity-value">100</span></label>
-				<div class="background-color-slidebar"></div>
-			</div>
+		</div>
+		<div class="saveData-popup">
+			<p><a href="load.html" style="color:#fff" target="_blank">ロードUIサンプル</a>で使用できるデータです。</p>
+			<textarea class="saveDataText" value="" style="width:100%"></textarea>
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
-				<div class="set-background border1 clear-both">設定</div>
 			</div>
 		</div>
 	</div>
@@ -171,7 +178,8 @@
 	<div>
 		<img class="saved-img" src="[%= dataUrl %]">
 		<div class="info">
-			<label>[%= dateStr %]</label>
+			<label>[%= dateStr %]</label><br>
+			<span class="popup-open" data-popup-name="saveData-popup" style="font-size:0.8em; text-decoration:underline; cursor:pointer;">シリアライズしたデータを表示</span>
 			<div class="btn border1 load-btn" data-save-no="[%= saveNo %]">読み込み</div>
 		</div>
 	</div>
