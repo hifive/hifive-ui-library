@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: DrawingSaveData</title>
+	<title>JSDoc: Class: SimpleLoadController</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: DrawingSaveData</h1>
+        <h1 class="page-title">Class: SimpleLoadController</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DrawingSaveData</h2>
+            <h2>SimpleLoadController</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="DrawingSaveData"><span class="type-signature"></span>new DrawingSaveData</h4>
+    <h4 class="name" id="SimpleLoadController"><span class="type-signature"></span>new SimpleLoadController</h4>
     
     
 </dt>
@@ -56,71 +56,13 @@
     
     
     <p class="description">
-        セーブデータ
+        Artboard部品で生成される保存データ(DrawingSaveData)を復元して表示するコントローラ
     </p>
     
     
     
     
-    <h5>Parameters:</h5>
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>shapes</code></td>
-            
-            
-            <td class="type">
-            <a href="ArtShape.html">ArtShape[]</a>
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">保存するShapeの配列</td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>backgroundData</code></td>
-            
-            
-            <td class="type">
-            Object
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">背景情報</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
+    
     
     <dl class="details">
     
@@ -142,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 336</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>SimpleLoadController.js, line 30</li></ul></dd>
 	
 	-->
 
@@ -178,20 +120,66 @@
 
             
 
-                <h3 class="subsection-title">Members</h3>
+            
 
-                <dl>
-<dt>
-    <h4 class="name" id="saveData"><span class="type-signature">&lt;static> </span>saveData<span class="type-signature"> :Object</span></h4>
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="load"><span class="type-signature">&lt;static> </span>load</h4>
     
     
 </dt>
 <dd>
     
+    
     <p class="description">
-        セーブされたデータ<p>以下のようなデータを持つオブジェクトです<pre>{	version: セーブデータのバージョン,	shapes: [shapeデータの配列]}</pre>shapeデータは、以下のようなデータです<pre>{	type: ['path' | 'rect' | 'ellipse' | 'image' | 'text'],	data: (typeごとに異なります)}</pre></p>
+        保存データから復元
     </p>
     
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>artboardSaveData</code></td>
+            
+            
+            <td class="type">
+            <a href="DrawingSaveData.html">DrawingSaveData</a> | String
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
     
     <dl class="details">
     
@@ -213,7 +201,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 349</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>SimpleLoadController.js, line 68</li></ul></dd>
 	
 	-->
 
@@ -226,57 +214,15 @@
 
     
     
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="version"><span class="type-signature">&lt;static> </span>version<span class="type-signature"></span></h4>
     
     
-</dt>
-<dd>
-    
-    <p class="description">
-        セーブデータ形式のバージョン
-    </p>
     
     
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 388</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
     
     
+
 </dd>
 <hr></dl>
-
-            
 
             
 
