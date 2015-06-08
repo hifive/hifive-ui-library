@@ -24,7 +24,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		__templates: ['../src/drawing.ejs', 'src/sample.ejs'],
+		__templates: ['../src/artboard.ejs', 'src/sample.ejs'],
 
 		/**
 		 * 子コントローラ設定
@@ -103,8 +103,8 @@
 			var size = context.args.canvasSize;
 
 			// カンバス(svg,canvas)の配置
-			this.view.append(this.rootElement, 'h5drawing-canvas-wrapper', size);
-			this._$canvasWrapper = this.$find('.h5drawing-canvas-wrapper');
+			this.view.append(this.rootElement, 'h5artboard-canvas-wrapper', size);
+			this._$canvasWrapper = this.$find('.h5artboard-canvas-wrapper');
 
 			// ラッパーのサイズ指定
 			this._$canvasWrapper.css(size);

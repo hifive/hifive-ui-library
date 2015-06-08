@@ -41,12 +41,12 @@ h1 {
 }
 
 /** カンバスの設定 **/
-.h5drawing-canvas-wrapper {
+.h5artboard-canvas-wrapper {
 	border: 1px solid #ccc;
 	box-sizing: border-box;
 }
 
-.h5drawing-canvas-wrapper.mode-text-input {
+.h5artboard-canvas-wrapper.mode-text-input {
 	cursor: text
 }
 
