@@ -110,15 +110,39 @@
 		</cssfiles>
 	</module>
 
-	<module name="drawing" description="drawing">
+	<module name="artboard-core" description="artboard-core">
 		<dependencies>
 		</dependencies>
 		<files>
-			<file name="drawing/src/DrawingController.js" />
-			<file name="drawing/src/DrawingOperationController.js" />
+			<file name="artboard/src/consts.js" />
+			<file name="artboard/src/ArtShape.js" />
 		</files>
 		<cssfiles>
-			<file name="drawing/src/drawing.css" />
+		</cssfiles>
+	</module>
+
+	<module name="artboard" description="artboard">
+		<dependencies>
+			<dependency name="artboard-core" />
+		</dependencies>
+		<files>
+			<file name="artboard/src/Command.js" />
+			<file name="artboard/src/DrawingLogic.js" />
+			<file name="artboard/src/ArtboardController.js" />
+		</files>
+		<cssfiles>
+			<file name="artboard/src/artboard.css" />
+		</cssfiles>
+	</module>
+
+	<module name="artboardViewer" description="artboardViewer">
+		<dependencies>
+			<dependency name="artboard-core" />
+		</dependencies>
+		<files>
+			<file name="artboard/src/ArtboardViewerController.js" />
+		</files>
+		<cssfiles>
 		</cssfiles>
 	</module>
 
