@@ -46,16 +46,14 @@
 		 */
 		__init: function() {
 			// 表示エリアの作成
-			this._$view = $('<div style="position:relative">');
-			this._$bg = $('<div style="position:absolute; top:0; left:0; width:100%; height: 100%; z-index:-1; overflow: hidden;">');
+			this._$view = $('<div class="h5-artboard-canvas-wrapper" style="position:relative">');
+			this._$layerWrapper = $('<div class="h5-artboard-layers"></div>');
+			this._$bg = $('<div class="background-layer"></div>');
 			this._$svg = $(document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
-			this._$svg.css({
-				posotion: 'absolute',
-				top: 0,
-				left: 0
-			});
-			this._$view.append(this._$bg);
-			this._$view.append(this._$svg);
+			this._$svg.addClass('svg-layer');
+			this._$layerWrapper.append(this._$bg);
+			this._$layerWrapper.append(this._$svg);
+			this._$view.append(this._$layerWrapper);
 			$(this.rootElement).append(this._$view);
 		},
 

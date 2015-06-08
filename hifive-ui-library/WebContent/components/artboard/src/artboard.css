@@ -27,6 +27,11 @@
 }
 
 /* 背景画像のdiv */
+.h5-artboard-canvas-wrapper .background-layer {
+	width: 100%;
+	height: 100%;
+}
+
 .h5-artboard-canvas-wrapper .background-layer>* {
 	background-repeat: no-repeat;
 	width: 100%;

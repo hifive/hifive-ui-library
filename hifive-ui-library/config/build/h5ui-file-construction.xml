@@ -118,6 +118,7 @@
 			<file name="artboard/src/ArtShape.js" />
 		</files>
 		<cssfiles>
+			<file name="artboard/src/artboard.css" />
 		</cssfiles>
 	</module>
 
@@ -131,7 +132,6 @@
 			<file name="artboard/src/ArtboardController.js" />
 		</files>
 		<cssfiles>
-			<file name="artboard/src/artboard.css" />
 		</cssfiles>
 	</module>
 

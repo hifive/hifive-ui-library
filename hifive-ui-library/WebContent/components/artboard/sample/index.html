@@ -48,7 +48,7 @@
 		h5.core.controller($root, sample.PageController, {
 			canvasSize: {
 				height: 300,
-				width: $root.innerWidth()
+				width: $('.artboard').innerWidth()
 			}
 		});
 	});
@@ -58,6 +58,8 @@
 </head>
 <body>
 	<h1>お絵かきボード</h1>
-	<div class="sketch-canvas"></div>
+	<div class="sketch-canvas">
+		<div class="artboard"></div>
+	</div>
 </body>
 </html>
