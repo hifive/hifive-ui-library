@@ -103,8 +103,8 @@
 			var size = context.args.canvasSize;
 
 			// カンバス(svg,canvas)の配置
-			this.view.append(this.rootElement, 'h5artboard-canvas-wrapper', size);
-			this._$canvasWrapper = this.$find('.h5artboard-canvas-wrapper');
+			this.view.append(this.rootElement, 'h5-artboard-canvas-wrapper', size);
+			this._$canvasWrapper = this.$find('.h5-artboard-canvas-wrapper');
 
 			// ラッパーのサイズ指定
 			this._$canvasWrapper.css(size);

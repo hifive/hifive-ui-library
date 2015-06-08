@@ -944,7 +944,7 @@
 
 			// drawingLogicのセットアップ
 			// レイヤ領域を取得
-			var $layers = this.$find('.h5artboard-layers');
+			var $layers = this.$find('.h5-artboard-layers');
 			this._layers = $layers[0];
 			var svgLayerElement = $layers.find('.svg-layer')[0];
 			var backgroundLayerElement = $layers.find('.background-layer')[0];
