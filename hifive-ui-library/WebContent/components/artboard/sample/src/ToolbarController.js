@@ -468,8 +468,14 @@
 				header: false
 			});
 
+			this._saveDataPopup = h5.ui.popupManager.createPopup('saveDataPopup', '', this.$find(
+					'.popup-contents-wrapper').find('.saveData-popup'), null, {
+				header: false
+			});
+
 			this.popupMap = {
 				'background-popup': this._backgroundPopup,
+				'saveData-popup': this._saveDataPopup
 			};
 
 			// テキスト入力要素
@@ -492,6 +498,12 @@
 				return;
 			}
 			var popupCls = $el.data('popup-name');
+			if (popupCls === 'saveData-popup') {
+				// セーブデータの表示
+				var saveNo = $el.parents('.saved-img-wrapper>*').find('[data-save-no]').data(
+						'save-no');
+				this.trigger('showSaveData', saveNo);
+			}
 			this._showPopup(popupCls);
 		},
 
@@ -1176,7 +1188,7 @@
 		/**
 		 * ポップアップ
 		 */
-		'{.popupCloseBtn} h5trackstart': function() {
+		'{.popupCloseBtn} click': function() {
 			this._hidePopup();
 		},
 		/**
@@ -1197,7 +1209,10 @@
 			// close()はしないけどdisplay:noneにしたいのでcurrentを外す
 			// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
 			this._backgroundPopup.hide();
+			this._saveDataPopup.hide();
 			$(this._backgroundPopup.rootElement).removeClass('current');
+			;
+			$(this._saveDataPopup.rootElement).removeClass('current');
 		}
 	};
 	h5.core.expose(controller);

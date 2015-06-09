@@ -24,7 +24,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		__templates: ['../src/drawing.ejs', 'src/sample.ejs'],
+		__templates: ['../src/artboard.ejs', 'src/sample.ejs'],
 
 		/**
 		 * 子コントローラ設定
@@ -103,8 +103,8 @@
 			var size = context.args.canvasSize;
 
 			// カンバス(svg,canvas)の配置
-			this.view.append(this.rootElement, 'h5drawing-canvas-wrapper', size);
-			this._$canvasWrapper = this.$find('.h5drawing-canvas-wrapper');
+			this.view.append('.artboard', 'h5-artboard-canvas-wrapper', size);
+			this._$canvasWrapper = this.$find('.h5-artboard-canvas-wrapper');
 
 			// ラッパーのサイズ指定
 			this._$canvasWrapper.css(size);
@@ -119,7 +119,7 @@
 			this._$toolbar = this.$find('.drawing-toolbar');
 
 			// 保存画像表示領域の配置
-			this.view.append(this.rootElement, 'saved-img-wrapper');
+			this.view.append(this._$toolbar, 'saved-img-wrapper');
 			this._$savedImgWrapper = this.$find('.saved-img-wrapper');
 
 			// 子コントローラのメタ設定
@@ -368,11 +368,9 @@
 		'{this._$toolbar} save': function() {
 			// 保存
 			this._artboardController.unselectAll();
-			var artboardSaveData = this._artboardController.save();
+			var artboardSaveData = this._artboardController.save(true);
 			var saveNo = this._saveDataSequence.next();
 			this._saveDataMap[saveNo] = artboardSaveData;
-			this._saveDataMap = h5.u.obj.serialize(this._saveDataMap);
-			this._saveDataMap = h5.u.obj.deserialize(this._saveDataMap);
 
 			// imgとしてエクスポート
 			var label = sample.util.dateFormat(new Date());
@@ -422,6 +420,41 @@
 			this._artboardController.unselectAll();
 		},
 
+		/**
+		 * セーブデータを表示
+		 */
+		'{this._$toolbar} showSaveData': function(ctx) {
+			var index = ctx.evArg;
+			var saveData = this._saveDataMap[index];
+			var $saveDataText = $('.saveDataText');
+			$saveDataText.val(h5.u.obj.serialize(saveData));
+			setTimeout(function() {
+				$saveDataText.focus().select();
+			}, 0);
+		},
+
+		/**
+		 * テキストエリアのキー操作が有効になるようにする
+		 */
+		'{.saveDataText} keydown': function(ctx) {
+			ctx.event.stopPropagation();
+		},
+
+		/**
+		 * ロードボタン
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'.saved-img-wrapper .load-btn click': function(ctx, $el) {
+			if (!confirm('ボードに保存したデータを読み込みます')) {
+				return;
+			}
+			this._artboardController.unselectAll();
+			var saveNo = $el.data('save-no');
+			this._load(saveNo);
+		},
+
 		'{this._$canvasWrapper} enableUndo': function() {
 			this.$find('.undo').removeClass('disabled');
 		},
@@ -457,21 +490,6 @@
 			toolCtrl.restoreSettings();
 			toolCtrl.disableRemove();
 			this._existSelectedShape = false;
-		},
-
-		/**
-		 * ロードボタン
-		 *
-		 * @memberOf sample.PageController
-		 * @param context.evArg saveNo
-		 */
-		'.saved-img-wrapper .load-btn click': function(ctx, $el) {
-			if (!confirm('ボードに保存したデータを読み込みます')) {
-				return;
-			}
-			this._artboardController.unselectAll();
-			var saveNo = $el.data('save-no');
-			this._load(saveNo);
 		},
 
 		/**
