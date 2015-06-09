@@ -1772,7 +1772,7 @@
 		 * @returns X軸のラベル領域の高さ
 		 */
 		getXLabelHeight: function() {
-			if (!this._axesSettings.xaxis && !this._axesSettings.xaxis.height) {
+			if (!this._axesSettings.xaxis || !this._axesSettings.xaxis.height) {
 				return DEFAULT_X_LABEL_HEIGHT;
 			}
 
@@ -1786,7 +1786,7 @@
 		 * @returns Y軸のラベル領域の幅
 		 */
 		getYLabelWidth: function() {
-			if (!this._axesSettings.yaxis && !this._axesSettings.yaxis.width) {
+			if (!this._axesSettings.yaxis || !this._axesSettings.yaxis.width) {
 				return DEFAULT_Y_LABEL_WIDTH;
 			}
 
