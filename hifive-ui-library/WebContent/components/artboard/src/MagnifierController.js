@@ -119,8 +119,8 @@
 			this._refresh();
 			var use = this._use;
 			var scale = this._scale;
-			use.setAttribute('x', -x + this._rootW / scale);
-			use.setAttribute('y', -y + this._rootH / scale);
+			use.setAttribute('x', -x + this._rootW / 2);
+			use.setAttribute('y', -y + this._rootH / 2);
 		},
 
 		/**
