@@ -1187,7 +1187,8 @@
 		 */
 		getImage: function(returnType, processParameter) {
 			returnType = returnType || 'image/png';
-			var svg = this._shapeLayer;
+			// _shapeLayerはg要素なので親のsvgを取得してviewBoxを求める
+			var svg = $(this._shapeLayer).parents('svg')[0];
 			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
