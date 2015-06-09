@@ -23,6 +23,7 @@
 	// Cache
 	//------------------------------------------------------------
 	var ArtShape = h5.ui.components.artboard.ArtShapeConstructor.ArtShape;
+	var XMLNS = h5.ui.components.artboard.consts.XMLNS;
 
 	//------------------------------------------------------------
 	// Body
@@ -46,11 +47,16 @@
 		 */
 		__init: function() {
 			// 表示エリアの作成
+			// TODO 共通のテンプレートを使用するようにする
 			this._$view = $('<div class="h5-artboard-canvas-wrapper" style="position:relative">');
 			this._$layerWrapper = $('<div class="h5-artboard-layers"></div>');
 			this._$bg = $('<div class="background-layer"></div>');
-			this._$svg = $(document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
-			this._$svg.addClass('svg-layer');
+			this._$svg = $(document.createElementNS(XMLNS, 'svg'));
+			this._$svg.attr('class', 'svg-layer');
+			this._g = document.createElementNS(XMLNS, 'g');
+			this._g.setAttribute('id', 'h5-artboard-id-' + new Date().getTime() + '-'
+					+ parseInt(Math.random() * 10000));
+			this._$svg.append(this._g);
 			this._$layerWrapper.append(this._$bg);
 			this._$layerWrapper.append(this._$svg);
 			this._$view.append(this._$layerWrapper);
@@ -118,12 +124,13 @@
 			}
 
 			// Shapeの復元
-			this._$svg.empty();
+			var $g = $(this._g);
+			$g.empty();
 			var shapes = saveData.shapes;
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				// 図形の登録と追加
 				var shape = ArtShape.deserialize(shapes[i]);
-				this._$svg.append(shape.getElement());
+				$g.append(shape.getElement());
 			}
 		}
 	};
