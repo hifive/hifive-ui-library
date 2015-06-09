@@ -217,6 +217,13 @@
 			this._chartController.addSeries(newSeries);
 			this._series.concat(newSeries);
 		},
+		
+		'#removeSeries click': function() {
+		    var series = this._series.pop();
+		    if (series != null) {
+		    	this._chartController.removeSeries(series.name);		    	
+		    }
+		},
 
 		'#start click': function() {
 			if (this.interval != null) {
