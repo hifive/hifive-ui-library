@@ -2089,9 +2089,9 @@
 			this._appendBorder();
 			this._initAxis(firstChartRenderer);
 			var rightId = firstChartRenderer.dataSource.sequence.current() - 1;
-			var paddingRight = this.settings.plotSetting.paddingRight;
-			if (paddingRight == null) {
-				paddingRight = 0;
+			var paddingRight = 0;
+			if (this.settings.plotSetting && this.settings.plotSetting.paddingRight) {
+				paddingRight = this.settings.plotSetting.paddingRight;
 			}
 			// TODO: translateXの計算は共通化すべき
 			this.chartSetting.set('translateX', -this.chartSetting.get('dx')
