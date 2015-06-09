@@ -87,6 +87,11 @@
 		_saveDataSequence: h5.core.data.createSequence(),
 
 		/**
+		 * イメージマップの採番用シーケンス
+		 */
+		_imageSourceMapSeq: h5.core.data.createSequence(),
+
+		/**
 		 * __initイベント
 		 *
 		 * @memberOf sample.PageController
@@ -139,17 +144,9 @@
 		 * @param {Object} context コンテキスト
 		 */
 		__ready: function() {
-			// 画像にIDを振り、ソースファイルとの対応付けを行う
-			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
-			var srcMap = this._artboardController.imageSourceMap;
-			var seq = h5.core.data.createSequence();
-			this.$find('.drawing-image').each(function() {
-				var id = seq.next();
-				var $this = $(this);
-				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
-				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
-				srcMap[id] = $this.attr('src');
-			});
+			// imageSourceMapにdrawing-imageクラス要素の画像を登録
+			// ページ全体のdrawing-imageを扱うため、this.$findではなく$()を使用している
+			this._registImageSourceMap($('.drawing-image'));
 		},
 
 		//---------------------------------------------------------------
@@ -361,48 +358,33 @@
 		},
 
 		/**
-		 * img要素に画像としてエクスポート
-		 *
-		 * @memberOf sample.PageController
-		 */
-		'{this._$toolbar} export': function() {
-			this._artboardController.getImage('imgage/png', {
-				simulateItalic: true//h5.env.ua.isFirefox
-			}).done(
-					this.own(function(dataUrl) {
-						this._$savedImgWrapper
-								.prepend('<div><label>' + sample.util.dateFormat(new Date())
-										+ '</label><br><img class="saved-img" src="' + dataUrl
-										+ '"></div>');
-					}));
-		},
-
-		/**
-		 * セーブ
+		 * 保存
+		 * <p>
+		 * 作業内容を保存してかつimgとして出力も行う
+		 * </p>
 		 *
 		 * @memberOf sample.PageController
 		 */
 		'{this._$toolbar} save': function() {
+			// 保存
 			this._artboardController.unselectAll();
 			var artboardSaveData = this._artboardController.save();
 			var saveNo = this._saveDataSequence.next();
 			this._saveDataMap[saveNo] = artboardSaveData;
 			this._saveDataMap = h5.u.obj.serialize(this._saveDataMap);
 			this._saveDataMap = h5.u.obj.deserialize(this._saveDataMap);
-			this._toolbarController.appendSaveDataList(saveNo);
-		},
 
-		/**
-		 * ロード
-		 *
-		 * @memberOf sample.PageController
-		 * @param context.evArg saveNo
-		 */
-		'{this._$toolbar} load': function(context) {
-			this._artboardController.unselectAll();
-			var saveNo = context.evArg;
-			var artboardSaveData = this._saveDataMap[saveNo];
-			this._artboardController.load(artboardSaveData);
+			// imgとしてエクスポート
+			var label = sample.util.dateFormat(new Date());
+			this._artboardController.getImage('imgage/png', {
+				simulateItalic: true
+			}).done(this.own(function(dataUrl) {
+				this.view.prepend(this._$savedImgWrapper, 'saved-img', {
+					dateStr: label,
+					dataUrl: dataUrl,
+					saveNo: saveNo
+				});
+			}));
 		},
 
 		/**
@@ -475,6 +457,50 @@
 			toolCtrl.restoreSettings();
 			toolCtrl.disableRemove();
 			this._existSelectedShape = false;
+		},
+
+		/**
+		 * ロードボタン
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'.saved-img-wrapper .load-btn click': function(ctx, $el) {
+			if (!confirm('ボードに保存したデータを読み込みます')) {
+				return;
+			}
+			this._artboardController.unselectAll();
+			var saveNo = $el.data('save-no');
+			this._load(saveNo);
+		},
+
+		/**
+		 * 画像の追加。動的に画像をimageSourceMapに登録したい時に呼ぶイベント
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'{rootElement} registDrawingImage': function(ctx) {
+			var $img = $(ctx.evArg.img);
+			this._registImageSourceMap($img);
+		},
+
+		/**
+		 * 画像をimageSourceMapに登録
+		 *
+		 * @param $img
+		 */
+		_registImageSourceMap: function($img) {// 画像にIDを振り、ソースファイルとの対応付けを行う
+			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
+			var srcMap = this._artboardController.imageSourceMap;
+			var seq = this._imageSourceMapSeq;
+			$img.each(function() {
+				var id = seq.next();
+				var $this = $(this);
+				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
+				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
+				srcMap[id] = $this.attr('src');
+			});
 		},
 
 		_setToolbarForSelectedShape: function() {
@@ -566,7 +592,19 @@
 		_selectAll: function() {
 			this._artboardController.selectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
+			this._toolbarController.hideOptionView();
+			this._toolbarController.setSelectMode();
 		},
+
+		/**
+		 * ロード
+		 *
+		 * @param saveNo
+		 */
+		_load: function(saveNo) {
+			this._artboardController.clearBackgroundImage();
+			this._artboardController.load(this._saveDataMap[saveNo]);
+		}
 	};
 	h5.core.expose(controller);
 })();

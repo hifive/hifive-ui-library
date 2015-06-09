@@ -98,7 +98,9 @@
 		 * @param $el
 		 */
 		'.menu-wrapper .menu-list h5trackstart': function(context, $el) {
-			if ($(context.event.target).hasClass('disabled')) {
+			var event = context.event;
+			event.stopImmediatePropagation();
+			if ($(event.target).hasClass('disabled')) {
 				// disabledだったら何もしない
 				return;
 			}
@@ -140,7 +142,7 @@
 	};
 
 	//-------------------------------------------------------------
-	//  sample.TextSettingsController
+	// sample.TextSettingsController
 	//-------------------------------------------------------------
 	/**
 	 * テキストの設定コントローラ
@@ -328,7 +330,15 @@
 		 * @memberOf sample.ToolbarController
 		 * @private
 		 */
-		textSettingsController: textSettingsController,
+		_textSettingsController: textSettingsController,
+
+		/**
+		 * 背景画像追加コントローラ
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_pictureController: sample.PictureController,
 
 		/**
 		 * コントローラのメタ定義
@@ -337,8 +347,11 @@
 		 * @private
 		 */
 		__meta: {
-			textSettingsController: {
+			_textSettingsController: {
 				rootElement: '.text-settings-box'
+			},
+			_pictureController: {
+				rootElement: '{.background-popup}'
 			}
 		},
 
@@ -455,15 +468,8 @@
 				header: false
 			});
 
-			// ロードデータ選択ポップアップ
-			this._loadPopup = h5.ui.popupManager.createPopup('loadPopup', '', this.$find(
-					'.popup-contents-wrapper').find('.load-popup'), null, {
-				header: false
-			});
-
 			this.popupMap = {
 				'background-popup': this._backgroundPopup,
-				'load-popup': this._loadPopup
 			};
 
 			// テキスト入力要素
@@ -543,11 +549,7 @@
 			context.event.preventDefault();
 			this.hideOptionView();
 			this.trigger(EVENT_SELECT_MODE);
-			this.$find('.toolbar-icon').removeClass('selected');
-			$el.addClass('selected');
-			// テキスト入力モードの終了
-			this._isTextStampMode = false;
-			$(this.targetArtboard.rootElement).removeClass('mode-text-input');
+			this.setSelectMode();
 		},
 
 		/**
@@ -660,7 +662,7 @@
 		//--------------------------------------------------------
 		'.stroke-width-slider-wrapper slide': function(context, $el) {
 			var $target = $(context.event.target);
-			var val = parseInt($target.val() + 'px');
+			var val = parseInt($target.val());
 			$el.find('.slider-value').text(val);
 			this.trigger(EVENT_STROKE_WIDTH_CHANGE, val);
 		},
@@ -793,7 +795,7 @@
 			var $artboardRoot = $(targetArtboard.rootElement);
 			if (0 < x && 0 < y && x < $artboardRoot.innerWidth() && y < $artboardRoot.innerHeight()) {
 				// 範囲内なら描画
-				var settings = this.textSettingsController;
+				var settings = this._textSettingsController;
 				var fontSize = settings.getFontSize();
 				var fontFamily = settings.getFontFamily();
 				var style = settings.getFontStyle();
@@ -821,36 +823,61 @@
 		 */
 		'{.background-popup .set-background} h5trackstart': function(context, $el) {
 			var targetArtboard = this.targetArtboard;
-			var $parent = $el.parents('.background-popup');
-			var imageListVal = $parent.find('.background-image-list').val();
+			var $popup = $el.parents('.background-popup');
+			var $selected = $popup.find('.thumbnail.background.selected');
+
 			var backgroundData = null;
-			if (imageListVal !== 'none') {
-				var element = this.$find('.drawing-image.background')[parseInt(imageListVal)];
-				var fillMode = $parent.find('.background-fillmode-list').val();
+			if ($selected.length) {
+				var selectedElement = $selected[0];
+				var fillMode = $popup.find('.background-fillmode-list').val();
 
 				backgroundData = {
-					id: $(element).data(DATA_DRAWING_IMAGE_ID),
+					id: $selected.data(DATA_DRAWING_IMAGE_ID),
 					fillMode: fillMode
 				};
 				if (fillMode === 'none-center') {
 					// 中央配置
-					var w = element.naturalWidth;
-					var h = element.naturalHeight;
 					var $artboardRoot = $(targetArtboard.rootElement);
+					var w = selectedElement.naturalWidth;
+					var h = selectedElement.naturalHeight;
 					backgroundData.x = ($artboardRoot.innerWidth() - w) / 2;
 					backgroundData.y = ($artboardRoot.innerHeight() - h) / 2;
 					backgroundData.fillMode = 'none';
+				} else if (fillMode === 'contain-center') {
+					// containでかつ中央配置
+					var $artboardRoot = $(targetArtboard.rootElement);
+					var w = selectedElement.naturalWidth;
+					var h = selectedElement.naturalHeight;
+					var artboardW = $artboardRoot.innerWidth();
+					var artboardH = $artboardRoot.innerHeight();
+					var imgRate = w / h;
+					var canvasRate = artboardW / artboardH;
+					var drawW, drawH;
+					if (canvasRate < imgRate) {
+						drawW = artboardW;
+						drawH = drawW * imgRate;
+						backgroundData.x = 0;
+						backgroundData.y = (artboardH - drawH) / 2;
+					} else {
+						drawH = artboardH;
+						drawW = drawH * imgRate;
+						backgroundData.x = (artboardW - drawW) / 2;
+						backgroundData.y = 0;
+					}
+					backgroundData.fillMode = 'contain';
 				}
 			}
+			// 背景色設定
 			var rgbaColor = null;
-			if ($parent.find('.background-color-list').val() !== 'none') {
-				var color = $parent.find('.background-color-selected').css('background-color');
-				var opacity = $parent.find('.background-color-selected').css('opacity');
-				rgbaColor = sample.util.rgbToRgba(color, opacity);
-			}
+			var color = $popup.find('.background-color-selected').css('background-color');
+			var opacity = $popup.find('.background-color-selected').css('opacity');
+			rgbaColor = sample.util.rgbToRgba(color, opacity);
 
 			this.trigger(EVENT_UNSELECT_ALL);
 			targetArtboard.setBackground(rgbaColor, backgroundData);
+
+			// 設定したらpopupを閉じる
+			this._hidePopup();
 		},
 
 		/**
@@ -859,14 +886,8 @@
 		 * @param context
 		 * @param $el
 		 */
-		'{.background-popup .background-image-list} change': function(context, $el) {
-			var $fillModeWrapper = $el.parents('.background-popup').find(
-					'.background-fillmode-wrapper');
-			if ($el.val() === 'none') {
-				$fillModeWrapper.addClass('display-none');
-			} else {
-				$fillModeWrapper.removeClass('display-none');
-			}
+		'{.background-popup .thumbnail:not(.img-input-wrap)} h5trackstart': function(context, $el) {
+			this._selectBackgroundThumbnail($el);
 		},
 
 		/**
@@ -925,9 +946,45 @@
 			});
 		},
 
+		/**
+		 * 画像の追加(ファイル・カメラ)
+		 *
+		 * @param ctx
+		 */
+		'{.background-popup} addPicture': function(ctx) {
+			var imageData = ctx.evArg.imageData;
+			var $img = $(this.view.get('backgroundThumbnail', {
+				imageData: imageData
+			}));
+			$(this._backgroundPopup.rootElement).find('.img-input-wrap').after($img);
+			// 追加された画像をimageMapに登録
+			this.trigger('registDrawingImage', {
+				img: $img[0]
+			});
+			// 追加された画像を選択状態にする
+			this._selectBackgroundThumbnail($img);
+		},
 
 		'.remove-selected-shape h5trackstart': function() {
 			this.trigger(EVENT_REMOVE_SELECTED_SHAPE);
+		},
+
+		_selectBackgroundThumbnail: function($el) {
+			if ($el.hasClass('selected') || $el.hasClass('img-input-wrap')) {
+				return;
+			}
+			var $popup = $el.parents('.background-popup');
+			var $fillModeWrapper = $popup.find('.background-fillmode-wrapper');
+			$popup.find('.thumbnail.selected').removeClass('selected');
+			$el.addClass('selected');
+			$fillModeWrapper.removeClass('display-none');
+			if ($el.hasClass('none')) {
+				$popup.find('.selected-bg').text($el.text());
+				$fillModeWrapper.addClass('display-none');
+				return;
+			}
+			$fillModeWrapper.removeClass('display-none');
+			$popup.find('.selected-bg').text($el.attr('title'));
 		},
 
 		_showStampList: function(position) {
@@ -947,12 +1004,12 @@
 		_showTextSettings: function(position) {
 			var $textIcon = $('[data-tool-name="text"]');
 			var offset = $textIcon.offset();
-			this.textSettingsController.show();
-			var $textSettingsRoot = $(this.textSettingsController.rootElement);
+			this._textSettingsController.show();
+			var $textSettingsRoot = $(this._textSettingsController.rootElement);
 		},
 
 		_hideTextSettings: function() {
-			this.textSettingsController.hide();
+			this._textSettingsController.hide();
 		},
 
 		_hideOpacitySlideBar: function() {
@@ -1023,11 +1080,11 @@
 			var $strokeWidthLabel = $strokeWidth.parent().find('.slider-value');
 			width = parseInt(width);
 			$strokeWidth.val(width);
-			$strokeWidthLabel.text(width + 'px');
+			$strokeWidthLabel.text(width);
 		},
 
 		setTextSettings: function(textSettings) {
-			this.textSettingsController.setTextSettings(textSettings);
+			this._textSettingsController.setTextSettings(textSettings);
 		},
 
 		disableStrokeColor: function() {
@@ -1078,6 +1135,15 @@
 			this._hideTextSettings();
 		},
 
+		setSelectMode: function() {
+			this.$find('.toolbar-icon').removeClass('selected');
+			this.$find('.mode-select').addClass('selected');
+
+			// テキスト入力モードの終了
+			this._isTextStampMode = false;
+			$(this.targetArtboard.rootElement).removeClass('mode-text-input');
+		},
+
 		//---------------------------
 		// セーブ/ロード
 		//---------------------------
@@ -1102,20 +1168,6 @@
 				return;
 			}
 			this.trigger(EVENT_LOAD, saveNo);
-			this._loadPopup.hide();
-		},
-
-		/**
-		 * セーブデータを追加
-		 *
-		 * @param saveNo
-		 */
-		appendSaveDataList: function(saveNo) {
-			var label = h5.u.str.format('[{0}] {1}', saveNo, sample.util.dateFormat(new Date()));
-			var $option = $(h5.u.str.format('<option value="{0}">{1}</option>', saveNo, label));
-			$('.load-data-list').prepend($option);
-			$option.prop('selected', true);
-			alert('セーブしました\n' + label);
 		},
 
 		//-----------------------------------
@@ -1142,8 +1194,10 @@
 		 * @param cls
 		 */
 		_hidePopup: function() {
+			// close()はしないけどdisplay:noneにしたいのでcurrentを外す
+			// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
 			this._backgroundPopup.hide();
-			this._loadPopup.hide();
+			$(this._backgroundPopup.rootElement).removeClass('current');
 		}
 	};
 	h5.core.expose(controller);
