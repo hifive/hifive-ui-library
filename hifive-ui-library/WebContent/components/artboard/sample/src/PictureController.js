@@ -281,6 +281,7 @@
 				dy = 0;
 			}
 
+			ctx.clearRect(0, 0, w, h);
 			ctx.drawImage(img, 0, 0, sw, sh, dx, dy, dw, dh);
 		},
 

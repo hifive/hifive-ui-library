@@ -26,8 +26,11 @@
 <link rel="stylesheet" href="../../popup/src/popup.css">
 <script src="../../popup/src/popup.js"></script>
 
-<!-- drawing部品 -->
-<link rel="stylesheet" href="../src/drawing.css">
+<!-- artboard部品 -->
+<link rel="stylesheet" href="../src/artboard.css">
+<script src="../src/consts.js"></script>
+<script src="../src/Command.js"></script>
+<script src="../src/ArtShape.js"></script>
 <script src="../src/DrawingLogic.js"></script>
 <script src="../src/ArtboardController.js"></script>
 
@@ -45,7 +48,7 @@
 		h5.core.controller($root, sample.PageController, {
 			canvasSize: {
 				height: 300,
-				width: $root.innerWidth()
+				width: $('.artboard').innerWidth()
 			}
 		});
 	});
@@ -55,6 +58,8 @@
 </head>
 <body>
 	<h1>お絵かきボード</h1>
-	<div class="sketch-canvas"></div>
+	<div class="sketch-canvas">
+		<div class="artboard"></div>
+	</div>
 </body>
 </html>

@@ -15,19 +15,24 @@
  * limitations under the License.
  *
  */
-.h5drawing-canvas-wrapper {
+.h5-artboard-canvas-wrapper {
 	position: relative;
 	overflow: hidden;
 }
 
-.h5drawing-canvas-wrapper canvas,.h5drawing-canvas-wrapper .h5drawing-layers>* {
+.h5-artboard-canvas-wrapper canvas,.h5-artboard-canvas-wrapper .h5-artboard-layers>* {
 	position: absolute;
 	top: 0;
 	left: 0;
 }
 
 /* 背景画像のdiv */
-.h5drawing-canvas-wrapper .background-layer>* {
+.h5-artboard-canvas-wrapper .background-layer {
+	width: 100%;
+	height: 100%;
+}
+
+.h5-artboard-canvas-wrapper .background-layer>* {
 	background-repeat: no-repeat;
 	width: 100%;
 	height: 100%;
@@ -35,7 +40,7 @@
 }
 
 /** 選択された図形を表すための要素 **/
-.h5drawing-canvas-wrapper .selection-rectangle {
+.h5-artboard-canvas-wrapper .selection-rectangle {
 	position: absolute;
 	box-sizing: border-box;
 	border: 2px dashed #f0f;
@@ -45,7 +50,7 @@
 }
 
 /** 範囲選択時のトラック操作中に表示する要素 **/
-.h5drawing-canvas-wrapper .selection-scope-rectangle {
+.h5-artboard-canvas-wrapper .selection-scope-rectangle {
 	position: absolute;
 	box-sizing: border-box;
 	border: 1px dashed #333;

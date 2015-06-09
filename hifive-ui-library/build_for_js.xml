@@ -35,7 +35,7 @@
 		<fail unless="isNotEmpty" message="空でないコンポーネント名を指定してください" />
 		-->
 		<!-- コンポーネント名列挙 -->
-		<property name="targetComponents" value="animate,appContainer,arrowbox,calendar,carousel,chart,combobox,contextMenu,datagrid,dividedBox,drawing,graph,magnetContainer,popup,replaceBox,screen,tabbable,tileContainer,virtualScroll" />
+		<property name="targetComponents" value="animate,appContainer,arrowbox,calendar,carousel,chart,combobox,contextMenu,datagrid,dividedBox,artboard,artboardViewer,graph,magnetContainer,popup,replaceBox,screen,tabbable,tileContainer,virtualScroll" />
 	</target>
 
 	<target name="build" depends="getComponentNames,getVersion,getGitHash">
