@@ -59,9 +59,6 @@
 		this._$orgG = this._$orgSvg.find('>g');
 		this._scale = settings.scale || DEFAULT_SCALE;
 
-		this._rootW = settings.width;
-		this._rootH = settings.height;
-
 		this._$root = $('<div></div>').addClass(CLASS_MAGNIFIER);
 		this._$view = $('<div></div>').addClass(CLASS_CANVAS_WRAPPER);
 		this._$layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
@@ -72,13 +69,16 @@
 		this._$view.append(this._$layerWrapper);
 		this._$root.append(this._$view);
 
-		/** useタグの生成 * */
+		// useタグの生成
 		this._use = document.createElementNS(XMLNS, 'use');
 		this._use.setAttributeNS(XMLNS, 'xlink', XMLNS);
 		this._use.setAttributeNS(XLINKNS, 'href', '#' + this._$orgG.attr('id'));
 		this._$svg.append(this._use);
 
-		/** 指定されたスケールを適用 */
+		this._rootW = settings.width;
+		this._rootH = settings.height;
+
+		// 指定されたスケールとサイズを適用
 		this._refresh();
 	}
 
@@ -118,7 +118,6 @@
 			}
 			this._refresh();
 			var use = this._use;
-			var scale = this._scale;
 			use.setAttribute('x', -x + this._rootW / 2);
 			use.setAttribute('y', -y + this._rootH / 2);
 		},
@@ -133,8 +132,9 @@
 				throw new Error(ERR_MSG_DISPOSED);
 			}
 			if (center) {
-				x -= this._rootW / 2;
-				y -= this._rootH / 2;
+				// outerWidth/Heightでやらないとボーダー分ずれる
+				x -= this._$root.outerWidth() / 2;
+				y -= this._$root.outerHeight() / 2;
 			}
 			this._$root.css({
 				left: x,
@@ -312,7 +312,7 @@
 		_removeMouseoverFocusHandler: function() {
 			this.off(this._$board, 'mousemove h5trackstart h5trackmove',
 					this._mouseoverFocusHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
+			this.off(this._mag.getElement(), 'mousemove h5trackstart h5trackmove',
 					this._overMagEventFocusHandler);
 		},
 
@@ -320,7 +320,7 @@
 			this
 					.off(this._$board, 'mousemove h5trackstart h5trackmove',
 							this._mouseoverMoveHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
+			this.off(this._mag.getElement(), 'mousemove h5trackstart h5trackmove',
 					this._overMagEventMoveHandler);
 		}
 	};

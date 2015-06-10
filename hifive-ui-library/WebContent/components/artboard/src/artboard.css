@@ -64,7 +64,6 @@
 .h5-artboard-magnifier {
 	position: absolute;
 	overflow: hidden;
-	border: 1px solid #ccc;
 	background-color: #fff;
 	border: 1px solid #ccc;
 }
