@@ -29,6 +29,7 @@ v\:shape, v\:line, v\:fill, v\:stroke,
 
 v\:group#h5_chart {
 	left: 0px;
+	position: relative;
 }
 
 svg {
