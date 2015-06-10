@@ -1031,347 +1031,355 @@
 
 	// ローソクチャートのレンダラ―
 	function createCandleStickChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+		var candleStickChartRenderer = {
+				
+				/**
+				 * @memberOf CandleStickRenderer
+				 * @param chartItem
+				 * @returns {___anonymous25233_25376}
+				 */
+				_getCentralPos: function(chartItem) {
+					return {
+						x: chartItem.get('rectX') + (chartItem.get('rectWidth') / 2),
+						y: chartItem.get('rectY') + (chartItem.get('rectHeight') / 2)
+					};
+				},
+
+				/**
+				 * ーソク を生成する
+				 * 
+				 * @memberOf candleStickRenderer
+				 */
+				createCandleStickDataItems: function() {
+					this.chartModel.removeAll();
+
+					if (!this.dataSource.dataModel) {
+						return;
+					}
+
+					var candleStickData = [];
+					var current = this.dataSource.sequence.current();
+					for ( var id in this.dataSource.dataModel.items) {
+						if (id >= current - this.chartSetting.get('dispDataSize')) {
+							// 描画範囲のローソクは座標情報を計算する
+							var dataItem = this.dataSource.dataModel.items[id];
+							candleStickData.push(this.toData(dataItem));
+						}
+					}
+					this.chartModel.create(candleStickData);
+				},
+
+				createItem: function(dataItem) {
+					return this.chartModel.create(this.toData(dataItem));
+				},
+
+				/**
+				 * * ロ ータを取得す
+				 * 
+				 * @memberOf candleStickRenderer
+				 * @param {object} chart チャート情報
+				 * @returns {object} ローソクの座標情報
+				 */
+				toData: function(chartDataItem) {
+					var id = chartDataItem.get('id');
+					var open = chartDataItem.get('open');
+					var close = chartDataItem.get('close');
+					var time = chartDataItem.get(this.dataSource.xProp);
+
+					return $.extend(this._calcCandleYValues(chartDataItem), {
+						id: id,
+						rectWidth: this.chartSetting.get('dx') * 0.8,
+						fill: open > close ? 'blue' : open === close ? 'black' : 'red',
+						lineX: id * this.chartSetting.get('dx')
+								+ this.chartSetting.get('width'),
+						time: time
+					});
+				},
+
+				_calcCandleYValues: function(chartDataItem) {
+					var open = chartDataItem.get('open');
+					var close = chartDataItem.get('close');
+					var min = this.chartSetting.get('rangeMin');
+					var max = this.chartSetting.get('rangeMax');
+					var height = this.chartSetting.get('height');
+
+					return {
+						rectY: calcYPos(Math.max(open, close), min, max, height),
+						rectHeight: open !== close ? calcYDiff(open, close, min, max, height)
+								: 1,
+						lineY1: calcYPos(chartDataItem.get('low'), min, max, height),
+						lineY2: calcYPos(chartDataItem.get('high'), min, max, height)
+					};
+				},
+
+				draw: function() {
+					$(this.rootElement).empty();
+					this.createCandleStickDataItems();
+					if (graphicRenderer.isSvg) {
+						this._showSVGCandleSticks(); // ローソクを描画
+					} else {
+						this._showVMLCandleSticks(); // ローソクを描画
+					}
+				},
+
+				_showSVGCandleSticks: function() {
+					var candleSticks = this.chartModel.toArray();
+					for (var i = 0, len = candleSticks.length; i < len; i++) {
+						this.appendCandleStick(candleSticks[i], this.rootElement);
+					}
+				},
+
+				_appendChart: function(items) {
+					if (graphicRenderer.isSvg) {
+						this.appendCandleStick(items[0], this.rootElement);
+					} else {
+						this.updateCandleStick();
+					}
+				},
+
+				appendCandleStick: function(candleStickItem, parent) {
+					var $parent = $(parent);
+
+					this._appendCandleStick(candleStickItem, $parent, '#000', {
+						id: h5format(LINE_ELM_ID_FORMAT, candleStickItem.get('id')),
+						'class': 'candleStickChart chartElm'
+					}, candleStickItem.get('fill'), {
+						id: h5format(RECT_ELM_ID_FORMAT, candleStickItem.get('id')),
+						'class': 'candleStickChart chartElm'
+					});
+				},
+
+				_appendHighLight: function(candleStickItem, $tooltip) {
+					if (graphicRenderer.isSvg) {
+						this._appendCandleStick(candleStickItem, $tooltip, 'yellow', {
+							'class': 'highlight_candle',
+							'stroke-width': '1px'
+						}, candleStickItem.get('fill'), {
+							'class': 'highlight_candle',
+							stroke: 'yellow',
+							'stroke-width': '2px'
+						});
+					} else {
+						// ハイライト
+						var highlightShape = graphicRenderer.createShapeElm({
+							coordsize: this.COORDSIZE,
+							path: this._rectPath(this._dataToRect(candleStickItem)),
+							'class': 'candleStickChart'
+						});
+						graphicRenderer.css(highlightShape, {
+							zoom: '1',
+							width: this.chartSetting.get('width'),
+							height: this.chartSetting.get('height')
+						});
+
+						// 塗りつぶし
+						graphicRenderer.fill(highlightShape, {
+							color: candleStickItem.get('fill')
+						});
+
+						// 枠線
+						graphicRenderer.stroke(highlightShape, {
+							color: 'yellow',
+							weight: 2,
+							on: true
+						});
+
+						$tooltip[0].appendChild(highlightShape);
+					}
+				},
+
+				_appendCandleStick: function(candleStickItem, $parent, lineColor, lineProp,
+						rectColor, rectProp) {
+					graphicRenderer.appendLineElm(candleStickItem.get('lineX'), candleStickItem
+							.get('lineY1'), candleStickItem.get('lineX'), candleStickItem
+							.get('lineY2'), lineColor, lineProp, $parent);
+
+					graphicRenderer.appendRectElm(candleStickItem.get('rectX'), candleStickItem
+							.get('rectY'), candleStickItem.get('rectWidth'), candleStickItem
+							.get('rectHeight'), rectColor, rectProp, $parent);
+				},
+
+				_chartModelChangeListener: function(ev) {
+					var $root = $(this.rootElement);
+
+					// 表示範囲が広がった時に、左端のidを探す
+					for (var i = 0, len = ev.created.length; i < len; i++) {
+						if (ev.created[i].get('id') < this.leftEndCandleStickId) {
+							this.leftEndCandleStickId = ev.created[i].get('id');
+						}
+					}
+
+					// 座標情報が変更されたときに、表示に反映する
+					for (var i = 0, len = ev.changed.length; i < len; i++) {
+						var changed = ev.changed[i];
+						if (changed.props.rectY == null && changed.props.rectHeight == null
+								&& changed.props.lineY1 == null && changed.props.lineY2 == null) {
+							return;
+						}
+
+						var item = changed.target;
+						var $line = $root.find('#'
+								+ h5format(LINE_ELM_ID_FORMAT, item.get('id')));
+						$line.attr({
+							y1: item.get('lineY1'),
+							y2: item.get('lineY2')
+						});
+						var $rect = $root.find('#'
+								+ h5format(RECT_ELM_ID_FORMAT, item.get('id')));
+						$rect.attr({
+							y: item.get('rectY'),
+							height: item.get('rectHeight')
+						});
+					}
+				},
+
+				// VML用
+
+				_showVMLCandleSticks: function() {
+					this.updateCandleStick();
+				},
+
+				updateCandleStick: function(newCandleStick, removeId) {
+					var data = this._getShapePaths();
+					this._updateHighLowShape(data);
+					this._updateOpenCloseShape(data);
+				},
+
+				_getShapePaths: function() {
+					var lines = [];
+					var rects = {}; // fillの種類ごとに配列を持つ(1shapeにつき1色しか持てないため)
+					var cdata = {};
+
+					for ( var id in this.chartModel.items) {
+						var data = this.chartModel.get(id);
+
+						var lineSubpath = this._linePath(data); // path (m始まり, e終わり)を指定
+						lines.push(lineSubpath);
+
+						var rectType = this._getRectType(data);
+						if (!rects[rectType]) {
+							rects[rectType] = [];
+							cdata[rectType] = [];
+						}
+
+						var pos = this._dataToRect(data); // left, top, width, height, fillを指定
+						var rectSubpath = this._rectPath(pos); // rect表示のpathを取得
+						rects[rectType].push(rectSubpath);
+						cdata[rectType].push(pos);
+					}
+
+					return {
+						lines: lines,
+						rects: rects,
+						data: cdata
+					};
+				},
+
+				_updateHighLowShape: function(shapePaths) {
+					var highlowLineShape = $(this.rootElement).find(
+							'.candleStickChart.chartElm')[0];
+
+					if (highlowLineShape == null) {
+						highlowLineShape = graphicRenderer.createShapeElm({
+							'class': 'candleStickChart chartElm',
+							coordsize: this.COORDSIZE
+						});
+
+						graphicRenderer.css(highlowLineShape, {
+							zoom: '1',
+							width: this.chartSetting.get('width'),
+							height: this.chartSetting.get('height')
+						});
+
+						graphicRenderer.stroke(highlowLineShape, {
+							on: true,
+							weight: 1
+						});
+
+						this.rootElement.appendChild(highlowLineShape);
+					}
+
+					highlowLineShape.path = shapePaths.lines.join(',');
+				},
+
+				_updateOpenCloseShape: function(shapePaths) {
+					var rects = shapePaths.rects;
+
+					// fillの種類ごとに開始・終了値の四角形を描画
+					for ( var rectPaths in rects) {
+						if (!rects.hasOwnProperty(rectPaths)) {
+							continue;
+						}
+
+						var rectShape = $(this.rootElement).find(
+								'.candleStickChart.' + rectPaths)[0];
+						if (rectShape == null) {
+							var rectShape = graphicRenderer.createShapeElm({
+								coordsize: this.COORDSIZE,
+								'class': 'candleStickChart chartElm ' + rectPaths
+							});
+
+							graphicRenderer.css(rectShape, {
+								zoom: '1',
+								width: this.chartSetting.get('width'),
+								height: this.chartSetting.get('height')
+							});
+
+							graphicRenderer.fill(rectShape, {
+								color: rectPaths
+							});
+
+							graphicRenderer.stroke(rectShape, {
+								opacity: 0.01,
+								on: true
+							});
+							this.rootElement.appendChild(rectShape);
+						}
+						rectShape.path = rects[rectPaths].join(' ');
+					}
+				},
+
+				_getRectType: function(data) {
+					return data.get('fill');
+				},
+
+
+				_dataToRect: function(data) {
+					return {
+						id: data.get('id'),
+						left: data.get('rectX'),
+						top: data.get('rectY'),
+						width: data.get('rectWidth'),
+						height: data.get('rectHeight'),
+						fill: data.get('fill')
+					};
+				},
+
+				_linePath: function(line) {
+					var x = parseInt(line.get('lineX'));
+					var y1 = parseInt(line.get('lineY1'));
+					var y2 = parseInt(line.get('lineY2'));
+
+					return h5format('m {0} {1} l {0} {2} e', x, y1, y2);
+				},
+
+				getRectPos: function(item) {
+					return {
+						sx: parseInt(item.get('rectX')),
+						sy: parseInt(item.get('rectY')),
+						ex: parseInt(item.get('rectX') + item.get('rectWidth')),
+						ey: parseInt(item.get('rectY') + item.get('rectHeight'))
+					};
+				}
+		};
+		
 		return createChartRenderer(
 				rootElement,
 				dataSource,
 				chartSetting,
 				seriesSetting,
 				candleStickSchema,
-				{
-					_getCentralPos: function(chartItem) {
-						return {
-							x: chartItem.get('rectX') + (chartItem.get('rectWidth') / 2),
-							y: chartItem.get('rectY') + (chartItem.get('rectHeight') / 2)
-						};
-					},
-
-					/**
-					 * ーソク を生成する
-					 * 
-					 * @memberOf candleStickRenderer
-					 */
-					createCandleStickDataItems: function() {
-						this.chartModel.removeAll();
-
-						if (!this.dataSource.dataModel) {
-							return;
-						}
-
-						var candleStickData = [];
-						var current = this.dataSource.sequence.current();
-						for ( var id in this.dataSource.dataModel.items) {
-							if (id >= current - this.chartSetting.get('dispDataSize')) {
-								// 描画範囲のローソクは座標情報を計算する
-								var dataItem = this.dataSource.dataModel.items[id];
-								candleStickData.push(this.toData(dataItem));
-							}
-						}
-						this.chartModel.create(candleStickData);
-					},
-
-					createItem: function(dataItem) {
-						return this.chartModel.create(this.toData(dataItem));
-					},
-
-					/**
-					 * * ロ ータを取得す
-					 * 
-					 * @memberOf candleStickRenderer
-					 * @param {object} chart チャート情報
-					 * @returns {object} ローソクの座標情報
-					 */
-					toData: function(chartDataItem) {
-						var id = chartDataItem.get('id');
-						var open = chartDataItem.get('open');
-						var close = chartDataItem.get('close');
-						var time = chartDataItem.get(this.dataSource.xProp);
-
-						return $.extend(this._calcCandleYValues(chartDataItem), {
-							id: id,
-							rectWidth: this.chartSetting.get('dx') * 0.8,
-							fill: open > close ? 'blue' : open === close ? 'black' : 'red',
-							lineX: id * this.chartSetting.get('dx')
-									+ this.chartSetting.get('width'),
-							time: time
-						});
-					},
-
-					_calcCandleYValues: function(chartDataItem) {
-						var open = chartDataItem.get('open');
-						var close = chartDataItem.get('close');
-						var min = this.chartSetting.get('rangeMin');
-						var max = this.chartSetting.get('rangeMax');
-						var height = this.chartSetting.get('height');
-
-						return {
-							rectY: calcYPos(Math.max(open, close), min, max, height),
-							rectHeight: open !== close ? calcYDiff(open, close, min, max, height)
-									: 1,
-							lineY1: calcYPos(chartDataItem.get('low'), min, max, height),
-							lineY2: calcYPos(chartDataItem.get('high'), min, max, height)
-						};
-					},
-
-					draw: function() {
-						$(this.rootElement).empty();
-						this.createCandleStickDataItems();
-						if (graphicRenderer.isSvg) {
-							this._showSVGCandleSticks(); // ローソクを描画
-						} else {
-							this._showVMLCandleSticks(); // ローソクを描画
-						}
-					},
-
-					_showSVGCandleSticks: function() {
-						var candleSticks = this.chartModel.toArray();
-						for (var i = 0, len = candleSticks.length; i < len; i++) {
-							this.appendCandleStick(candleSticks[i], this.rootElement);
-						}
-					},
-
-					_appendChart: function(items) {
-						if (graphicRenderer.isSvg) {
-							this.appendCandleStick(items[0], this.rootElement);
-						} else {
-							this.updateCandleStick();
-						}
-					},
-
-					appendCandleStick: function(candleStickItem, parent) {
-						var $parent = $(parent);
-
-						this._appendCandleStick(candleStickItem, $parent, '#000', {
-							id: h5format(LINE_ELM_ID_FORMAT, candleStickItem.get('id')),
-							'class': 'candleStickChart chartElm'
-						}, candleStickItem.get('fill'), {
-							id: h5format(RECT_ELM_ID_FORMAT, candleStickItem.get('id')),
-							'class': 'candleStickChart chartElm'
-						});
-					},
-
-					_appendHighLight: function(candleStickItem, $tooltip) {
-						if (graphicRenderer.isSvg) {
-							this._appendCandleStick(candleStickItem, $tooltip, 'yellow', {
-								'class': 'highlight_candle',
-								'stroke-width': '1px'
-							}, candleStickItem.get('fill'), {
-								'class': 'highlight_candle',
-								stroke: 'yellow',
-								'stroke-width': '2px'
-							});
-						} else {
-							// ハイライト
-							var highlightShape = graphicRenderer.createShapeElm({
-								coordsize: this.COORDSIZE,
-								path: this._rectPath(this._dataToRect(candleStickItem)),
-								'class': 'candleStickChart'
-							});
-							graphicRenderer.css(highlightShape, {
-								zoom: '1',
-								width: this.chartSetting.get('width'),
-								height: this.chartSetting.get('height')
-							});
-
-							// 塗りつぶし
-							graphicRenderer.fill(highlightShape, {
-								color: candleStickItem.get('fill')
-							});
-
-							// 枠線
-							graphicRenderer.stroke(highlightShape, {
-								color: 'yellow',
-								weight: 2,
-								on: true
-							});
-
-							$tooltip[0].appendChild(highlightShape);
-						}
-					},
-
-					_appendCandleStick: function(candleStickItem, $parent, lineColor, lineProp,
-							rectColor, rectProp) {
-						graphicRenderer.appendLineElm(candleStickItem.get('lineX'), candleStickItem
-								.get('lineY1'), candleStickItem.get('lineX'), candleStickItem
-								.get('lineY2'), lineColor, lineProp, $parent);
-
-						graphicRenderer.appendRectElm(candleStickItem.get('rectX'), candleStickItem
-								.get('rectY'), candleStickItem.get('rectWidth'), candleStickItem
-								.get('rectHeight'), rectColor, rectProp, $parent);
-					},
-
-					_chartModelChangeListener: function(ev) {
-						var $root = $(this.rootElement);
-
-						// 表示範囲が広がった時に、左端のidを探す
-						for (var i = 0, len = ev.created.length; i < len; i++) {
-							if (ev.created[i].get('id') < this.leftEndCandleStickId) {
-								this.leftEndCandleStickId = ev.created[i].get('id');
-							}
-						}
-
-						// 座標情報が変更されたときに、表示に反映する
-						for (var i = 0, len = ev.changed.length; i < len; i++) {
-							var changed = ev.changed[i];
-							if (changed.props.rectY == null && changed.props.rectHeight == null
-									&& changed.props.lineY1 == null && changed.props.lineY2 == null) {
-								return;
-							}
-
-							var item = changed.target;
-							var $line = $root.find('#'
-									+ h5format(LINE_ELM_ID_FORMAT, item.get('id')));
-							$line.attr({
-								y1: item.get('lineY1'),
-								y2: item.get('lineY2')
-							});
-							var $rect = $root.find('#'
-									+ h5format(RECT_ELM_ID_FORMAT, item.get('id')));
-							$rect.attr({
-								y: item.get('rectY'),
-								height: item.get('rectHeight')
-							});
-						}
-					},
-
-					// VML用
-
-					_showVMLCandleSticks: function() {
-						this.updateCandleStick();
-					},
-
-					updateCandleStick: function(newCandleStick, removeId) {
-						var data = this._getShapePaths();
-						this._updateHighLowShape(data);
-						this._updateOpenCloseShape(data);
-					},
-
-					_getShapePaths: function() {
-						var lines = [];
-						var rects = {}; // fillの種類ごとに配列を持つ(1shapeにつき1色しか持てないため)
-						var cdata = {};
-
-						for ( var id in this.chartModel.items) {
-							var data = this.chartModel.get(id);
-
-							var lineSubpath = this._linePath(data); // path (m始まり, e終わり)を指定
-							lines.push(lineSubpath);
-
-							var rectType = this._getRectType(data);
-							if (!rects[rectType]) {
-								rects[rectType] = [];
-								cdata[rectType] = [];
-							}
-
-							var pos = this._dataToRect(data); // left, top, width, height, fillを指定
-							var rectSubpath = this._rectPath(pos); // rect表示のpathを取得
-							rects[rectType].push(rectSubpath);
-							cdata[rectType].push(pos);
-						}
-
-						return {
-							lines: lines,
-							rects: rects,
-							data: cdata
-						};
-					},
-
-					_updateHighLowShape: function(shapePaths) {
-						var highlowLineShape = $(this.rootElement).find(
-								'.candleStickChart.chartElm')[0];
-
-						if (highlowLineShape == null) {
-							highlowLineShape = graphicRenderer.createShapeElm({
-								'class': 'candleStickChart chartElm',
-								coordsize: this.COORDSIZE
-							});
-
-							graphicRenderer.css(highlowLineShape, {
-								zoom: '1',
-								width: this.chartSetting.get('width'),
-								height: this.chartSetting.get('height')
-							});
-
-							graphicRenderer.stroke(highlowLineShape, {
-								on: true,
-								weight: 1
-							});
-
-							this.rootElement.appendChild(highlowLineShape);
-						}
-
-						highlowLineShape.path = shapePaths.lines.join(',');
-					},
-
-					_updateOpenCloseShape: function(shapePaths) {
-						var rects = shapePaths.rects;
-
-						// fillの種類ごとに開始・終了値の四角形を描画
-						for ( var rectPaths in rects) {
-							if (!rects.hasOwnProperty(rectPaths)) {
-								continue;
-							}
-
-							var rectShape = $(this.rootElement).find(
-									'.candleStickChart.' + rectPaths)[0];
-							if (rectShape == null) {
-								var rectShape = graphicRenderer.createShapeElm({
-									coordsize: this.COORDSIZE,
-									'class': 'candleStickChart chartElm ' + rectPaths
-								});
-
-								graphicRenderer.css(rectShape, {
-									zoom: '1',
-									width: this.chartSetting.get('width'),
-									height: this.chartSetting.get('height')
-								});
-
-								graphicRenderer.fill(rectShape, {
-									color: rectPaths
-								});
-
-								graphicRenderer.stroke(rectShape, {
-									opacity: 0.01,
-									on: true
-								});
-								this.rootElement.appendChild(rectShape);
-							}
-							rectShape.path = rects[rectPaths].join(' ');
-						}
-					},
-
-					_getRectType: function(data) {
-						return data.get('fill');
-					},
-
-
-					_dataToRect: function(data) {
-						return {
-							id: data.get('id'),
-							left: data.get('rectX'),
-							top: data.get('rectY'),
-							width: data.get('rectWidth'),
-							height: data.get('rectHeight'),
-							fill: data.get('fill')
-						};
-					},
-
-					_linePath: function(line) {
-						var x = parseInt(line.get('lineX'));
-						var y1 = parseInt(line.get('lineY1'));
-						var y2 = parseInt(line.get('lineY2'));
-
-						return h5format('m {0} {1} l {0} {2} e', x, y1, y2);
-					},
-
-					getRectPos: function(item) {
-						return {
-							sx: parseInt(item.get('rectX')),
-							sy: parseInt(item.get('rectY')),
-							ex: parseInt(item.get('rectX') + item.get('rectWidth')),
-							ey: parseInt(item.get('rectY') + item.get('rectHeight'))
-						};
-					}
-				});
+				candleStickChartRenderer);
 	}
 
 	/**
@@ -1385,332 +1393,337 @@
 	 * @returns LineChartRenderer
 	 */
 	function createLineChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
-		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
-				lineSchema, {
+		
+		var lineChartRenderer = {
 
-					_getCentralPos: function(chartItem) {
-						return {
-							x: chartItem.get('toX'),
-							y: chartItem.get('toY')
-						};
-					},
+				/**
+				 * @memberOf LineChartRenderer
+				 */
+				_getCentralPos: function(chartItem) {
+					return {
+						x: chartItem.get('toX'),
+						y: chartItem.get('toY')
+					};
+				},
 
-					getLeftEndItemId: function() {
-						return this.leftEndCandleStickId;
-					},
+				getLeftEndItemId: function() {
+					return this.leftEndCandleStickId;
+				},
 
-					draw: function(animate, preRendererChartModel) {
-						$(this.rootElement).empty();
-						this.$path = null;
+				draw: function(animate, preRendererChartModel) {
+					$(this.rootElement).empty();
+					this.$path = null;
 
-						this.createLineDataItems(preRendererChartModel);
+					this.createLineDataItems(preRendererChartModel);
 
-						var count = 0;
-						var animateNum = this.seriesSetting.animateNum;
-						if (!animate || animateNum < 1) {
-							count = 1;
-							animateNum = 1;
-						}
-
-						var that = this;
-						function doAnimation() {
-							that.appendLines(that.chartModel.toArray(), preRendererChartModel,
-									count / animateNum);
-							count++;
-							if (count <= animateNum) {
-								requestAnimationFrame(doAnimation);
-							} else {
-								// 描画完了時にイベントをあげる
-								$(that.rootElement).trigger('finishDrawing');
-							}
-						}
-						requestAnimationFrame(doAnimation);
-					},
-
-					_appendChart: function(elms) {
-						this.appendLines();
-					},
-
-					_calcY: function(item, prop, preRendererChartModel, rate) {
-						if (rate == null) {
-							rate = 1;
-						}
-						
-						var preY;
-						if (!preRendererChartModel) {
-							preY = this.chartSetting.get('height');
-						} else {
-							preY = preRendererChartModel.get(item.get('id')).get(prop);
-						}
-
-						return (1 - rate) * preY + rate * item.get(prop);
-					},
-
-					appendLines: function(lines, preRendererChartModel, rate) {
-						graphicRenderer.isSvg ? this._appendLinesForSvg(lines,
-								preRendererChartModel, rate) : this._appendLinesForVml();
-					},
-
-					_appendLinesForSvg: function(lines, preRendererChartModel, rate) {
-						var $root = $(this.rootElement);
-						var chartItems = sortById(lines || this.chartModel.toArray());
-
-						if (!chartItems || !chartItems.length) {
-							return;
-						}
-
-						var item0 = chartItems[0];
-						var d = 'M' + item0.get('fromX') + ' '
-								+ this._calcY(item0, 'fromY', preRendererChartModel, rate) + ' ';
-						var len = chartItems.length;
-						for (var i = 0; i < len; i++) {
-							d += h5format(PATH_LINE_FORMAT, chartItems[i].get('toX'), this._calcY(
-									chartItems[i], 'toY', preRendererChartModel, rate));
-						}
-						var fill = this._getFill();
-						if (fill != null) {
-							d += h5format(PATH_LINE_FORMAT, chartItems[len - 1].get('toX'),
-									this.chartSetting.get('height'))
-									+ h5format(PATH_LINE_FORMAT, item0.get('fromX'),
-											this.chartSetting.get('height')) + ' Z';
-						}
-
-						if (this.$path != null) {
-							this.$path.attr('d', d);
-						} else {
-							var attrs = {
-								stroke: this.seriesSetting.color || '#000',
-								'class': 'LineChart chartElm',
-								'stroke-width': this.seriesSetting['stroke-width'],
-								fill: fill || 'none'
-							};
-							var $path = $(graphicRenderer.createPathElm(d, attrs));
-							// iOS7対応
-							window.scrollTo(window.scrollX, window.scrollY);
-							$root.append($path);
-							this.$path = $path;
-						}
-					},
-
-					// TODO: きっとSVG版と統合できるはず(svg/vmlレイヤーで吸収できるはず)
-					_appendLinesForVml: function() {
-						var $root = $(this.rootElement);
-						$root.empty();
-
-						var lineData = this.chartModel.toArray();
-						var lineShape = graphicRenderer.createShapeElm();
-						graphicRenderer.css(lineShape, {
-							width: this.chartSetting.get('width'),
-							height: this.chartSetting.get('height'),
-							position: 'absolute'
-						});
-						var fill = this._getFill();
-						graphicRenderer.stroke(lineShape, {
-							on: true,
-							color: this.seriesSetting.color || '#000'
-						});
-						if (fill) {
-							graphicRenderer.fill(lineShape, fill);
-						} else {
-							graphicRenderer.fill(lineShape, {
-								on: false
-							});
-						}
-						lineShape.className = 'LineChart chartElm';
-						lineShape.coordsize = this.COORDSIZE;
-
-						var lineShapePath = '';
-
-						var len = lineData.length;
-						for (var i = 0; i < len; i++) {
-							if (i === 0) {
-								var x1 = parseInt(lineData[i].get('fromX'));
-								var y1 = parseInt(lineData[i].get('fromY'));
-								lineShapePath += h5format('m {0},{1} l{0}, {1}', x1, y1);
-							}
-							var x2 = parseInt(lineData[i].get('toX'));
-							var y2 = parseInt(lineData[i].get('toY'));
-
-							lineShapePath += h5format(',{0},{1}', x2, y2);
-						}
-						if (fill) {
-							var firstX = parseInt(lineData[0].get('fromX'));
-							var lastX = parseInt(lineData[len - 1].get('toX'));
-							var height = this.chartSetting.get('height');
-							lineShapePath += h5format(',{0},{1}', lastX, height);
-							lineShapePath += h5format(',{0},{1}', firstX, height);
-							lineShapePath += h5format(',{0},{1}', firstX, parseInt(lineData[0]
-									.get('fromY')));
-						}
-						lineShape.path = lineShapePath + 'e';
-						$root[0].appendChild(lineShape);
-					},
-
-					_getFill: function() {
-						var color = this.seriesSetting.fillColor;
-						if (!color) {
-							return null;
-						}
-
-						if (typeof color === 'object') {
-							// グラデーションの定義オブジェクト
-							return graphicRenderer.gradient(color.id, color, $(this.rootElement));
-						}
-						if (typeof color === 'string') {
-							return color;
-						}
-						// TODO: エラー
-						return null;
-					},
-
-					createItem: function(dataItem) {
-						var chartData = this.toData(dataItem);
-						if (!chartData) {
-							return null;
-						}
-						return this.chartModel.create(chartData);
-					},
-
-					createLineDataItems: function(preRendererChartModel) {
-						this.chartModel.removeAll();
-
-						if (!this.dataSource.dataModel) {
-							return;
-						}
-
-						var lineData = [];
-						var current = this.dataSource.sequence.current()
-								- chartSetting.get('movedNum');
-						var dispDataSize = this.chartSetting.get('dispDataSize');
-						for ( var id in this.dataSource.dataModel.items) {
-							var intId = parseInt(id);
-							if (intId < current - dispDataSize || intId >= current) {
-								continue;
-							}
-
-							// 描画範囲の点について座標情報を計算する
-							var item = this.dataSource.dataModel.get(intId);
-							var chartData = this.toData(item);
-							if (chartData) {
-								// y座標の点があるもののみ表示する
-								lineData.push(chartData);
-							}
-						}
-						this.chartModel.create(lineData);
-					},
-
-					// TODO: xの位置がデータに依存しない
-					toData: function(currentItem) {
-						var id = currentItem.get('id');
-						var pre = this.dataSource.dataModel.get(id - 1);
-
-						var min = this.chartSetting.get('rangeMin');
-						var max = this.chartSetting.get('rangeMax');
-						var height = this.chartSetting.get('height');
-
-						var yProp = this.dataSource.propNames.y;
-						var toY = currentItem.get(yProp);
-						if (toY == null) {
-							return null;
-						}
-
-						// preがnullのときは、データとしても端であり、このときはただの点を表示する
-						var isPoint = pre == null || pre.get(yProp) == null;
-						var fromY = isPoint ? currentItem.get(yProp) : pre.get(yProp);
-
-						if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
-							fromY += this.dataSource.getStackedData(pre)[yProp];
-							toY += this.dataSource.getStackedData(currentItem)[yProp];
-						}
-
-						var dx = this.chartSetting.get('dx');
-						var toX = id * dx + this.chartSetting.get('width');
-
-						return {
-							id: id,
-							fromX: !isPoint ? toX - dx : toX,
-							toX: toX,
-							fromY: calcYPos(fromY, min, max, height),
-							toY: calcYPos(toY, min, max, height)
-						};
-					},
-
-					getXCoord: function(idOrItem) {
-						if (idOrItem == null) {
-							return null;
-						}
-						var item;
-						if (typeof (idOrItem.getModel) === 'function'
-								&& idOrItem.getModel() === this.chartModel) {
-							item = idOrItem;
-						} else {
-							item = this.chartModel.get(idOrItem);
-						}
-						return item.get('toX');
-					},
-
-					getXVal: function(idOrItem) {
-						return this.dataSource.getXVal(idOrItem);
-					},
-
-					_chartModelChangeListener: function(ev) {
-						// 表示範囲が広がった時に、左端のidを探す
-						for (var i = 0, len = ev.created.length; i < len; i++) {
-							if (ev.created[i].get('id') < this.leftEndCandleStickId) {
-								this.leftEndCandleStickId = ev.created[i].get('id');
-							}
-						}
-
-						// // 座標情報が変更されたときに、表示に反映する
-						if (ev.changed.length > 0) {
-							this.appendLines();
-						}
-					},
-
-					getRectPos: function(item) {
-						var sx = 0;
-						var sy = 0;
-						var ex = 0;
-						var ey = 0;
-
-						if (item.get('fromX') < item.get('toX')) {
-							sx = item.get('fromX');
-							ex = item.get('toX');
-						} else {
-							sx = item.get('toX');
-							ex = item.get('fromX');
-						}
-
-						if (item.get('fromY') < item.get('toY')) {
-							sy = item.get('fromY');
-							ey = item.get('toY');
-						} else {
-							sy = item.get('toY');
-							ey = item.get('fromY');
-						}
-
-						return {
-							sx: sx,
-							sy: sy,
-							ex: ex,
-							ey: ey
-						};
-					},
-
-					_dataToRect: function(data) {
-						return {
-							id: data.get('id'),
-							left: parseInt(data.get('fromX')),
-							top: parseInt(data.get('fromY')),
-							width: parseInt(data.get('toX') - data.get('fromX')),
-							height: parseInt(data.get('toY') - data.get('fromY'))
-						};
-					},
-
-					_appendHighLight: function() {
-					// ラインチャートではハイライトする対象がない
+					var count = 0;
+					var animateNum = this.seriesSetting.animateNum;
+					if (!animate || animateNum < 1) {
+						count = 1;
+						animateNum = 1;
 					}
-				});
+
+					var that = this;
+					function doAnimation() {
+						that.appendLines(that.chartModel.toArray(), preRendererChartModel,
+								count / animateNum);
+						count++;
+						if (count <= animateNum) {
+							requestAnimationFrame(doAnimation);
+						} else {
+							// 描画完了時にイベントをあげる
+							$(that.rootElement).trigger('finishDrawing');
+						}
+					}
+					requestAnimationFrame(doAnimation);
+				},
+
+				_appendChart: function(elms) {
+					this.appendLines();
+				},
+
+				_calcY: function(item, prop, preRendererChartModel, rate) {
+					if (rate == null) {
+						rate = 1;
+					}
+					
+					var preY;
+					if (!preRendererChartModel) {
+						preY = this.chartSetting.get('height');
+					} else {
+						preY = preRendererChartModel.get(item.get('id')).get(prop);
+					}
+
+					return (1 - rate) * preY + rate * item.get(prop);
+				},
+
+				appendLines: function(lines, preRendererChartModel, rate) {
+					graphicRenderer.isSvg ? this._appendLinesForSvg(lines,
+							preRendererChartModel, rate) : this._appendLinesForVml();
+				},
+
+				_appendLinesForSvg: function(lines, preRendererChartModel, rate) {
+					var $root = $(this.rootElement);
+					var chartItems = sortById(lines || this.chartModel.toArray());
+
+					if (!chartItems || !chartItems.length) {
+						return;
+					}
+
+					var item0 = chartItems[0];
+					var d = 'M' + item0.get('fromX') + ' '
+							+ this._calcY(item0, 'fromY', preRendererChartModel, rate) + ' ';
+					var len = chartItems.length;
+					for (var i = 0; i < len; i++) {
+						d += h5format(PATH_LINE_FORMAT, chartItems[i].get('toX'), this._calcY(
+								chartItems[i], 'toY', preRendererChartModel, rate));
+					}
+					var fill = this._getFill();
+					if (fill != null) {
+						d += h5format(PATH_LINE_FORMAT, chartItems[len - 1].get('toX'),
+								this.chartSetting.get('height'))
+								+ h5format(PATH_LINE_FORMAT, item0.get('fromX'),
+										this.chartSetting.get('height')) + ' Z';
+					}
+
+					if (this.$path != null) {
+						this.$path.attr('d', d);
+					} else {
+						var attrs = {
+							stroke: this.seriesSetting.color || '#000',
+							'class': 'LineChart chartElm',
+							'stroke-width': this.seriesSetting['stroke-width'],
+							fill: fill || 'none'
+						};
+						var $path = $(graphicRenderer.createPathElm(d, attrs));
+						// iOS7対応
+						window.scrollTo(window.scrollX, window.scrollY);
+						$root.append($path);
+						this.$path = $path;
+					}
+				},
+
+				// TODO: きっとSVG版と統合できるはず(svg/vmlレイヤーで吸収できるはず)
+				_appendLinesForVml: function() {
+					var $root = $(this.rootElement);
+					$root.empty();
+
+					var lineData = this.chartModel.toArray();
+					var lineShape = graphicRenderer.createShapeElm();
+					graphicRenderer.css(lineShape, {
+						width: this.chartSetting.get('width'),
+						height: this.chartSetting.get('height'),
+						position: 'absolute'
+					});
+					var fill = this._getFill();
+					graphicRenderer.stroke(lineShape, {
+						on: true,
+						color: this.seriesSetting.color || '#000'
+					});
+					if (fill) {
+						graphicRenderer.fill(lineShape, fill);
+					} else {
+						graphicRenderer.fill(lineShape, {
+							on: false
+						});
+					}
+					lineShape.className = 'LineChart chartElm';
+					lineShape.coordsize = this.COORDSIZE;
+
+					var lineShapePath = '';
+
+					var len = lineData.length;
+					for (var i = 0; i < len; i++) {
+						if (i === 0) {
+							var x1 = parseInt(lineData[i].get('fromX'));
+							var y1 = parseInt(lineData[i].get('fromY'));
+							lineShapePath += h5format('m {0},{1} l{0}, {1}', x1, y1);
+						}
+						var x2 = parseInt(lineData[i].get('toX'));
+						var y2 = parseInt(lineData[i].get('toY'));
+
+						lineShapePath += h5format(',{0},{1}', x2, y2);
+					}
+					if (fill) {
+						var firstX = parseInt(lineData[0].get('fromX'));
+						var lastX = parseInt(lineData[len - 1].get('toX'));
+						var height = this.chartSetting.get('height');
+						lineShapePath += h5format(',{0},{1}', lastX, height);
+						lineShapePath += h5format(',{0},{1}', firstX, height);
+						lineShapePath += h5format(',{0},{1}', firstX, parseInt(lineData[0]
+								.get('fromY')));
+					}
+					lineShape.path = lineShapePath + 'e';
+					$root[0].appendChild(lineShape);
+				},
+
+				_getFill: function() {
+					var color = this.seriesSetting.fillColor;
+					if (!color) {
+						return null;
+					}
+
+					if (typeof color === 'object') {
+						// グラデーションの定義オブジェクト
+						return graphicRenderer.gradient(color.id, color, $(this.rootElement));
+					}
+					if (typeof color === 'string') {
+						return color;
+					}
+					// TODO: エラー
+					return null;
+				},
+
+				createItem: function(dataItem) {
+					var chartData = this.toData(dataItem);
+					if (!chartData) {
+						return null;
+					}
+					return this.chartModel.create(chartData);
+				},
+
+				createLineDataItems: function(preRendererChartModel) {
+					this.chartModel.removeAll();
+
+					if (!this.dataSource.dataModel) {
+						return;
+					}
+
+					var lineData = [];
+					var current = this.dataSource.sequence.current()
+							- chartSetting.get('movedNum');
+					var dispDataSize = this.chartSetting.get('dispDataSize');
+					for ( var id in this.dataSource.dataModel.items) {
+						var intId = parseInt(id);
+						if (intId < current - dispDataSize || intId >= current) {
+							continue;
+						}
+
+						// 描画範囲の点について座標情報を計算する
+						var item = this.dataSource.dataModel.get(intId);
+						var chartData = this.toData(item);
+						if (chartData) {
+							// y座標の点があるもののみ表示する
+							lineData.push(chartData);
+						}
+					}
+					this.chartModel.create(lineData);
+				},
+
+				// TODO: xの位置がデータに依存しない
+				toData: function(currentItem) {
+					var id = currentItem.get('id');
+					var pre = this.dataSource.dataModel.get(id - 1);
+
+					var min = this.chartSetting.get('rangeMin');
+					var max = this.chartSetting.get('rangeMax');
+					var height = this.chartSetting.get('height');
+
+					var yProp = this.dataSource.propNames.y;
+					var toY = currentItem.get(yProp);
+					if (toY == null) {
+						return null;
+					}
+
+					// preがnullのときは、データとしても端であり、このときはただの点を表示する
+					var isPoint = pre == null || pre.get(yProp) == null;
+					var fromY = isPoint ? currentItem.get(yProp) : pre.get(yProp);
+
+					if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
+						fromY += this.dataSource.getStackedData(pre)[yProp];
+						toY += this.dataSource.getStackedData(currentItem)[yProp];
+					}
+
+					var dx = this.chartSetting.get('dx');
+					var toX = id * dx + this.chartSetting.get('width');
+
+					return {
+						id: id,
+						fromX: !isPoint ? toX - dx : toX,
+						toX: toX,
+						fromY: calcYPos(fromY, min, max, height),
+						toY: calcYPos(toY, min, max, height)
+					};
+				},
+
+				getXCoord: function(idOrItem) {
+					if (idOrItem == null) {
+						return null;
+					}
+					var item;
+					if (typeof (idOrItem.getModel) === 'function'
+							&& idOrItem.getModel() === this.chartModel) {
+						item = idOrItem;
+					} else {
+						item = this.chartModel.get(idOrItem);
+					}
+					return item.get('toX');
+				},
+
+				getXVal: function(idOrItem) {
+					return this.dataSource.getXVal(idOrItem);
+				},
+
+				_chartModelChangeListener: function(ev) {
+					// 表示範囲が広がった時に、左端のidを探す
+					for (var i = 0, len = ev.created.length; i < len; i++) {
+						if (ev.created[i].get('id') < this.leftEndCandleStickId) {
+							this.leftEndCandleStickId = ev.created[i].get('id');
+						}
+					}
+
+					// // 座標情報が変更されたときに、表示に反映する
+					if (ev.changed.length > 0) {
+						this.appendLines();
+					}
+				},
+
+				getRectPos: function(item) {
+					var sx = 0;
+					var sy = 0;
+					var ex = 0;
+					var ey = 0;
+
+					if (item.get('fromX') < item.get('toX')) {
+						sx = item.get('fromX');
+						ex = item.get('toX');
+					} else {
+						sx = item.get('toX');
+						ex = item.get('fromX');
+					}
+
+					if (item.get('fromY') < item.get('toY')) {
+						sy = item.get('fromY');
+						ey = item.get('toY');
+					} else {
+						sy = item.get('toY');
+						ey = item.get('fromY');
+					}
+
+					return {
+						sx: sx,
+						sy: sy,
+						ex: ex,
+						ey: ey
+					};
+				},
+
+				_dataToRect: function(data) {
+					return {
+						id: data.get('id'),
+						left: parseInt(data.get('fromX')),
+						top: parseInt(data.get('fromY')),
+						width: parseInt(data.get('toX') - data.get('fromX')),
+						height: parseInt(data.get('toY') - data.get('fromY'))
+					};
+				},
+
+				_appendHighLight: function() {
+				// ラインチャートではハイライトする対象がない
+				}
+			};
+		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
+				lineSchema, lineChartRenderer);
 	}
 
 	function AxisRenderer(axesElm, chartSetting, axesSettings) {
