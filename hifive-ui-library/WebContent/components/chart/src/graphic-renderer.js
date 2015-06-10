@@ -38,7 +38,7 @@
 		 * SVG用描画コントローラであるか
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @returns {Boolean}
+		 * @type {Boolean}
 		 */
 		isSvg: true,
 
@@ -46,37 +46,52 @@
 		 * SVG要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param props
-		 * @returns
+		 * @param {Object} props 属性オブジェクト
+		 * @returns {Element} SVG要素
 		 */
 		createGraphicRootElm: function(props) {
 			return this._createSvgElm('svg', props);
-		},
-
-		createGraphicElm: function(name, attrs) {
-			return this._createSvgElm(name, attrs);
 		},
 
 		/**
 		 * SVG要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param attrs
-		 * @returns
+		 * @param {Object} props 属性オブジェクト
+		 * @returns {Element} SVG要素
+		 */
+		createGraphicElm: function(name, attrs) {
+			return this._createSvgElm(name, attrs);
+		},
+
+		/**
+		 * g要素を生成します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {Object} attrs 属性オブジェクト
+		 * @returns {Element} g要素
 		 */
 		createGroupElm: function(attrs) {
 			return this._createSvgElm('g', attrs);
 		},
 
+		/**
+		 * g要素を追加します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {Object} attrs 属性オブジェクト
+		 */
 		appendGroupElm: function(attrs, $elem) {
 			return $elem.append(this._createSvgElm('g', attrs));
 		},
 
 
 		/**
-		 * @param $elem translateを設定するjQuery要素
-		 * @param x x座標
-		 * @param y y座標
+		 * translateを設定します
+		 * 
+		 * @param {jQuery} $elem translateを設定するjQuery要素
+		 * @param {Number} x x座標
+		 * @param {Number} y y座標
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 */
 		setTranslate: function($elem, x, y) {
@@ -90,7 +105,7 @@
 		 * 指定したタグ名の要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param name SVG要素名
+		 * @param {String} name SVG要素名
 		 * @returns 指定したSVG要素のオブジェクト
 		 */
 		_createSvgElm: function(name, attrs) {
@@ -105,15 +120,16 @@
 		},
 
 		/**
-		 * LINE要素を追加します
+		 * line要素を追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param x1 x1属性
-		 * @param y1 y1属性
-		 * @param x2 x2属性
-		 * @param y2 y2属性
-		 * @param stroke stroke属性
-		 * @param attrs その他の属性を持つオブジェクト
+		 * @param {Number} x1 x1属性
+		 * @param {Number} y1 y1属性
+		 * @param {Number} x2 x2属性
+		 * @param {Number} y2 y2属性
+		 * @param {String} stroke stroke属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @return {Element} line要素
 		 */
 		createLineElm: function(x1, y1, x2, y2, stroke, attrs) {
 			var attributes = attrs != null ? attrs : {};
@@ -127,16 +143,16 @@
 		},
 
 		/**
-		 * RECT要素を追加します
+		 * line要素を追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param x x属性
-		 * @param y y属性
-		 * @param width width属性
-		 * @param height height属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
-		 * @param $parent 追加する親属性
+		 * @param {Number} x1 x1属性
+		 * @param {Number} y1 y1属性
+		 * @param {Number} x2 x2属性
+		 * @param {Number} y2 y2属性
+		 * @param {String} stroke stroke属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @param {jQuery} $parent 追加する親属性
 		 */
 		appendLineElm: function(x1, y1, x2, y2, stroke, attrs, $parent) {
 			var elem = this.createLineElm(x1, y1, x2, y2, stroke, attrs);
@@ -156,13 +172,13 @@
 		},
 		/**
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param x x属性
-		 * @param y y属性
-		 * @param width width属性
-		 * @param height height属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
-		 * @param $parent 追加する親属性
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {Number} width width属性
+		 * @param {Number} height height属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @param {jQuery} $parent 追加する親属性
 		 */
 		appendRectElm: function(x, y, width, height, fill, attrs, $parent) {
 			var elem = this.createRectElm(x, y, width, height, fill, attrs);
@@ -170,15 +186,15 @@
 		},
 
 		/**
-		 * TEXT要素を作成します
+		 * text要素を作成します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param str 表示する文字列
-		 * @param x x属性
-		 * @param y y属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
-		 * @returns TEXT要素
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @returns text要素
 		 */
 		createTextElm: function(str, x, y, fill, attrs) {
 			var attributes = attrs != null ? attrs : {};
@@ -193,15 +209,15 @@
 		},
 
 		/**
-		 * TEXT要素を追加します
+		 * text要素を追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param str 表示する文字列
-		 * @param x x属性
-		 * @param y y属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
-		 * @param $parent 追加する親属性
+		 * @param {String} str 表示する文字列
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @param {jQuery} $parent 追加する親属性
 		 */
 		appendTextElm: function(str, x, y, fill, attrs, $parent) {
 			var elem = this.createTextElm(str, x, y, fill, attrs);
@@ -209,12 +225,12 @@
 		},
 
 		/**
-		 * TEXT要素の位置を設定する
+		 * text要素の位置を設定します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param elem TEXT要素
-		 * @param x x座標
-		 * @param y y座標
+		 * @param {Element} elem text要素
+		 * @param {Number} x x座標
+		 * @param {Number} y y座標
 		 */
 		setTextPosition: function(elem, x, y, attrs) {
 			this.attr(elem, $.extend(attrs, {
@@ -226,6 +242,13 @@
 			});
 		},
 
+		/**
+		 * 指定した要素のテキストを設定します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {String} 設定するテキスト
+		 * @param {jQuery} $ele jQuery要素
+		 */
 		text: function(str, $elm) {
 			$elm.empty();
 			this._appendTextSpans(str, $elm, $elm.attr('x'));
@@ -248,6 +271,14 @@
 			}
 		},
 
+		/**
+		 * パス要素を生成します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {String} d パス
+		 * @param {Object} attrs 属性
+		 * @return {Element} パス要素
+		 */
 		createPathElm: function(d, attrs) {
 			var attributes = attrs != null ? attrs : {};
 
@@ -256,11 +287,28 @@
 			}));
 		},
 
+		/**
+		 * パス要素を追加します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {String} d パス
+		 * @param {Object} attrs 属性
+		 * @param {jQuery} $parent パスを追加する要素
+		 */
 		appendPathElm: function(d, attrs, $parent) {
 			var elem = this.createPathElm(d, attrs);
 			$parent.append(elem);
 		},
 
+		/**
+		 * 要素をclipします
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {jQuery} $elm clip対象の要素
+		 * @param {Element} clipElm クリップする形を表す要素
+		 * @param {String} id クリップするID
+		 * @param {jQuery} $root SVG要素のjQueryオブジェクト
+		 */
 		clip: function($elm, clipElm, id, $root) {
 			var clipPath = this._createSvgElm('clipPath', {
 				id: id
@@ -268,9 +316,18 @@
 			clipPath.appendChild(clipElm);
 			var $defs = this._getOrCreateDefElm($root);
 			$defs.append(clipPath);
-			$elm.css('clip-path', h5format(CLIP_PATH_URL_FORMAT, id))
+			$elm.css('clip-path', h5format(CLIP_PATH_URL_FORMAT, id));
 		},
 
+		/**
+		 * 色の勾配を指定するURLを取得します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {String} id 設定するID
+		 * @param {Object} attrs 設定する属性
+		 * @param {jQuery} $root SVG要素のjQueryオブジェクト
+		 * @returns {String} 色の勾配を指定するURL
+		 */
 		gradient: function(id, attrs, $root) {
 			var $defs = this._getOrCreateDefElm($root);
 			var $linearGradient = $(this._createSvgElm('linearGradient', {
@@ -301,11 +358,11 @@
 		},
 
 		/**
-		 * 要素に属性をセットする
+		 * 要素に属性をセットします
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param elem {Element} 属性をセットする要素
-		 * @param attrs {Object} 属性とその値
+		 * @param {Element} elem 属性をセットする要素
+		 * @param {Object} attrs 属性とその値
 		 */
 		attr: function(elem, attrs) {
 			for ( var name in attrs) {
@@ -314,6 +371,13 @@
 		},
 
 
+		/**
+		 * styleを設定します
+		 * 
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {Element} elem 設定する要素
+		 * @param {Object} styles 設定するstyle
+		 */
 		css: function(elem, styles) {
 			for ( var name in styles) {
 				elem.style[name] = styles[name];
@@ -324,7 +388,7 @@
 		 * 要素の幅を取得します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param elem {Element} SVG要素
+		 * @param {Element} elem SVG要素
 		 * @returns {Number} 要素の幅
 		 */
 		getWidthOf: function(elem) {
@@ -338,7 +402,7 @@
 		 * 要素の高さを取得します
 		 * 
 		 * @memberOf h5.ui.components.chart.SVGRenderer
-		 * @param elem {Element} SVG要素
+		 * @param {Element} elem SVG要素
 		 * @returns {Number} 要素の高さ
 		 */
 		getHeightOf: function(elem) {
@@ -365,7 +429,7 @@
 		/**
 		 * VMLのルート要素(DIV)を生成します
 		 * 
-		 * @param props
+		 * @param {Object} props 属性を持つオブジェクト
 		 */
 		createGraphicRootElm: function(props) {
 			var elem = document.createElement('div');
@@ -380,16 +444,28 @@
 		},
 
 		/**
-		 * GROUP要素を生成します
+		 * group要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param attrs
+		 * @param {Object} attrs 属性を持つオブジェクト
 		 * @returns
 		 */
 		createGroupElm: function(attrs) {
 			return this._createVmlElm('group', attrs);
 		},
 
+		/**
+		 * line要素を生成します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {Number} x1 x1属性
+		 * @param {Number} y1 y1属性
+		 * @param {Number} x2 x2属性
+		 * @param {Number} y2 y2属性
+		 * @param {String} stroke stroke属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @returns {Element} line要素
+		 */
 		createLineElm: function(x1, y1, x2, y2, stroke, attrs) {
 			var attributes = attrs != null ? attrs : {};
 
@@ -401,20 +477,32 @@
 		},
 
 		/**
-		 * LINE要素を追加する
+		 * line要素を追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param x1 x1属性
-		 * @param y1 y1属性
-		 * @param x2 x2属性
-		 * @param y2 y2属性
-		 * @param stroke stroke属性
-		 * @param attrs その他の属性を持つオブジェクト
+		 * @param {Number} x1 x1属性
+		 * @param {Number} y1 y1属性
+		 * @param {Number} x2 x2属性
+		 * @param {Number} y2 y2属性
+		 * @param {String} stroke stroke属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
 		 */
 		appendLineElm: function(x1, y1, x2, y2, stroke, attrs, $parent) {
 			$parent[0].appendChild(this.createLineElm(x1, y1, x2, y2, stroke, attrs));
 		},
 
+		/**
+		 * rect要素を生成します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {Number} width width属性
+		 * @param {Number} height height属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @returns {Element} rect要素
+		 */
 		createRectElm: function(x, y, width, height, fill, attrs) {
 			var attributes = attrs != null ? attrs : {};
 
@@ -432,23 +520,41 @@
 			});
 		},
 
+		/**
+		 * rect要素を生成します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {Number} width width属性
+		 * @param {Number} height height属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @returns {Element} rect要素
+		 */
 		appendRectElm: function(x, y, width, height, fill, attrs, $parent) {
 			$parent[0].appendChild(this.createRectElm(x, y, width, height, fill, attrs));
 		},
 
+		/**
+		 * shape要素を生成します
+		 * 
+		 * @param {Object} attrs 属性を持つオブジェクト
+		 * @returns shape要素
+		 */
 		createShapeElm: function(attrs) {
 			return this._createVmlElm('shape', attrs);
 		},
 
 		/**
-		 * テキストを作成する
+		 * テキスト要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param str 表示する文字列
-		 * @param x x属性
-		 * @param y y属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
+		 * @param {String} str 表示する文字列
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
 		 * @returns テキスト要素
 		 */
 		createTextElm: function(str, x, y, fill, attrs) {
@@ -478,15 +584,15 @@
 		},
 
 		/**
-		 * 追加する
+		 * テキスト要素を追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param str 表示する文字列
-		 * @param x x属性
-		 * @param y y属性
-		 * @param fill fill属性
-		 * @param attrs その他の属性を持つオブジェクト
-		 * @param $parent 追加する親属性
+		 * @param {String} str 表示する文字列
+		 * @param {Number} x x属性
+		 * @param {Number} y y属性
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @param {jQuery} $parent 追加する親属性
 		 */
 		appendTextElm: function(str, x, y, fill, attrs, $parent) {
 			var text = this.createTextElm(str, x, y, fill, attrs);
@@ -498,6 +604,13 @@
 
 		},
 
+		/**
+		 * 指定した要素のテキストを設定します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {String} 設定するテキスト
+		 * @param {jQuery} $ele jQuery要素
+		 */
 		text: function(str, $elm) {
 			var textAnchor = $elm.attr('text-anchor');
 			// 最初に指定した位置を取得
@@ -508,12 +621,12 @@
 		},
 
 		/**
-		 * TEXT要素の位置を設定する
+		 * text要素の位置を設定します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem TEXT要素
-		 * @param x x座標
-		 * @param y y座標
+		 * @param {Element} elem text要素
+		 * @param {Number} x x座標
+		 * @param {Number} y y座標
 		 * @parms attrs 属性
 		 */
 		setTextPosition: function(elem, x, y, attrs) {
@@ -578,12 +691,11 @@
 
 
 		/**
-		 * FILL要素を生成し、指定された要素に追加します
+		 * fill要素を生成し、指定された要素に追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem
-		 * @param props
-		 * @returns
+		 * @param {Element} elem
+		 * @param {Object} props
 		 */
 		fill: function(elem, props) {
 			var fill = this._createVmlElm('fill');
@@ -592,12 +704,11 @@
 		},
 
 		/**
-		 * STROKE要 指定された要素に追加します
+		 * stroke要素を指定された要素に追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem
-		 * @param props
-		 * @returns
+		 * @param {Element} elem
+		 * @param {Object} props
 		 */
 		stroke: function(elem, props) {
 			var stroke = this._createVmlElm('stroke');
@@ -605,6 +716,15 @@
 			$.extend(stroke, props);
 		},
 
+		/**
+		 * 色の勾配を指定するURLを取得します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {String} id 設定するID
+		 * @param {Object} attrs 設定する属性
+		 * @param {jQuery} $root SVG要素のjQueryオブジェクト
+		 * @returns {String} 色の勾配を指定するURL
+		 */
 		gradient: function(id, attrs) {
 			var color = null;
 			var color2 = null;
@@ -647,8 +767,8 @@
 		 * 指定されたタグ名の要素を生成します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param name
-		 * @param attrs
+		 * @param {String} name
+		 * @param {Object} attrs
 		 * @returns {DOM} DOM要素
 		 */
 		_createVmlElm: function(name, attrs) {
@@ -661,8 +781,8 @@
 		 * ルート要素を生成し、指定された要素に追加します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param name
-		 * @param attrs
+		 * @param {String} name
+		 * @param {Object} attrs
 		 * @param parent
 		 * @returns {DOM} ルート要素
 		 */
@@ -673,27 +793,11 @@
 		},
 
 		/**
-		 * LINE要素の生成に必要な情報を持つDataItemまたはObservableItemからLINE要素を生成し、 指定されたGROUP要素に追加します
+		 * translateを設定します
 		 * 
-		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param lines {DataItem|ObservableItem} LINE要素の生成に必要な情報を持つDataItemまたはObservableItemオブジェクト
-		 * @param g {DOM} GROUP要素
-		 */
-		appendLines: function(lines, g) {
-			for (var i = 0, len = lines.length; i < len; i++) {
-				this._appendLineElm(lines[i].get('fromX'), lines[i].get('fromY'), lines[i]
-						.get('toX'), lines[i].get('toY'), '#000', {
-					id: h5format(LINE_ELM_ID_FORMAT, lines[i].get('id'))
-				}, g);
-			}
-		},
-
-		/**
-		 * LEFTプロパティに値を設定します
-		 * 
-		 * @param $elem translateを設定するjQuery要素
-		 * @param x x座標
-		 * @param y y座標
+		 * @param {jQuery} $elem translateを設定するjQuery要素
+		 * @param {Number} x x座標
+		 * @param {Number} y y座標
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 */
 		setTranslate: function($elem, x, y) {
@@ -704,11 +808,11 @@
 		},
 
 		/**
-		 * 要素に属性をセットする
+		 * 要素に属性をセットします
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem {Element} 属性をセットする要素
-		 * @param attrs {Object} 属性とその値
+		 * @param {Element} elem 属性をセットする要素
+		 * @param {Object} attrs 属性とその値
 		 */
 		attr: function(elem, attrs) {
 			for ( var name in attrs) {
@@ -721,6 +825,13 @@
 			}
 		},
 
+		/**
+		 * styleを設定します
+		 * 
+		 * @memberOf h5.ui.components.chart.VMLRenderer
+		 * @param {Element} elem 設定する要素
+		 * @param {Object} styles 設定するstyle
+		 */
 		css: function(elem, styles) {
 			for ( var name in styles) {
 				elem.style[name] = styles[name];
@@ -732,7 +843,7 @@
 		 * 要素の幅を取得します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem {Element} VML要素
+		 * @param {Element} elem VML要素
 		 * @returns {Number} 要素の幅
 		 */
 		getWidthOf: function(elem) {
@@ -743,7 +854,7 @@
 		 * 要素の高さを取得します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem {Element} VML要素
+		 * @param {Element} elem VML要素
 		 * @returns {Number} 要素の高さ
 		 */
 		getHeightOf: function(elem) {
@@ -754,8 +865,8 @@
 		 * 要素の高さまたは幅を取得します
 		 * 
 		 * @memberOf h5.ui.components.chart.VMLRenderer
-		 * @param elem {Element} VML要素
-		 * @param type 'Height' or 'Width'
+		 * @param {Element} elem VML要素
+		 * @param type {String} 'Height' or 'Width'
 		 * @returns {Number} 要素の高さ
 		 */
 		_getWidthOrHeightOf: function(elem, type) {
