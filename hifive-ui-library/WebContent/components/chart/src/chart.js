@@ -1399,7 +1399,7 @@
 						return this.leftEndCandleStickId;
 					},
 
-					draw: function(preRendererChartModel) {
+					draw: function(animate, preRendererChartModel) {
 						$(this.rootElement).empty();
 						this.$path = null;
 
@@ -1407,7 +1407,8 @@
 
 						var count = 0;
 						var animateNum = this.seriesSetting.animateNum;
-						if (preRendererChartModel == null || animateNum < 1) {
+						if (!animate || animateNum < 1) {
+							count = 1;
 							animateNum = 1;
 						}
 
@@ -1416,7 +1417,7 @@
 							that.appendLines(that.chartModel.toArray(), preRendererChartModel,
 									count / animateNum);
 							count++;
-							if (count < animateNum) {
+							if (count <= animateNum) {
 								requestAnimationFrame(doAnimation);
 							} else {
 								// 描画完了時にイベントをあげる
@@ -1431,12 +1432,18 @@
 					},
 
 					_calcY: function(item, prop, preRendererChartModel, rate) {
-						if (!preRendererChartModel || rate === 1) {
-							return item.get(prop);
+						if (rate == null) {
+							rate = 1;
+						}
+						
+						var preY;
+						if (!preRendererChartModel) {
+							preY = this.chartSetting.get('height');
+						} else {
+							preY = preRendererChartModel.get(item.get('id')).get(prop);
 						}
 
-						return (1 - rate) * preRendererChartModel.get(item.get('id')).get(prop)
-								+ rate * item.get(prop);
+						return (1 - rate) * preY + rate * item.get(prop);
 					},
 
 					appendLines: function(lines, preRendererChartModel, rate) {
@@ -1765,7 +1772,7 @@
 		 * @returns X軸のラベル領域の高さ
 		 */
 		getXLabelHeight: function() {
-			if (!this._axesSettings.xaxis && !this._axesSettings.xaxis.height) {
+			if (!this._axesSettings.xaxis || !this._axesSettings.xaxis.height) {
 				return DEFAULT_X_LABEL_HEIGHT;
 			}
 
@@ -1779,7 +1786,7 @@
 		 * @returns Y軸のラベル領域の幅
 		 */
 		getYLabelWidth: function() {
-			if (!this._axesSettings.yaxis && !this._axesSettings.yaxis.width) {
+			if (!this._axesSettings.yaxis || !this._axesSettings.yaxis.width) {
 				return DEFAULT_Y_LABEL_WIDTH;
 			}
 
@@ -2089,9 +2096,9 @@
 			this._appendBorder();
 			this._initAxis(firstChartRenderer);
 			var rightId = firstChartRenderer.dataSource.sequence.current() - 1;
-			var paddingRight = this.settings.plotSetting.paddingRight;
-			if (paddingRight == null) {
-				paddingRight = 0;
+			var paddingRight = 0;
+			if (this.settings.plotSetting && this.settings.plotSetting.paddingRight) {
+				paddingRight = this.settings.plotSetting.paddingRight;
 			}
 			// TODO: translateXの計算は共通化すべき
 			this.chartSetting.set('translateX', -this.chartSetting.get('dx')
@@ -2350,8 +2357,12 @@
 		},
 
 		_getPreRenderer: function(currentRenderer) {
-			var name = currentRenderer.name;
 			var series = this.settings.series;
+			if (!series || series.length == 1) {
+				return null;
+			}
+			
+			var name = currentRenderer.name;
 			for (var i = 0, len = series.length; i < len; i++) {
 				if (name === series[i].name) {
 					return this._renderers[series[i - 1].name];
@@ -2362,8 +2373,8 @@
 
 		_drawByRenderer: function(renderer) {
 			var preRenderer = this._getPreRenderer(renderer);
-			var preChartModel = preRenderer.chartModel;
-			renderer.draw(preChartModel);
+			var preChartModel = preRenderer ? preRenderer.chartModel : null;
+			renderer.draw(true, preChartModel);
 		},
 
 		getSettings: function() {
