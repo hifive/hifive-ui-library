@@ -312,7 +312,7 @@
 		_removeMouseoverFocusHandler: function() {
 			this.off(this._$board, 'mousemove h5trackstart h5trackmove',
 					this._mouseoverFocusHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
+			this.off(this._mag.getElement(), 'mousemove h5trackstart h5trackmove',
 					this._overMagEventFocusHandler);
 		},
 
@@ -320,7 +320,7 @@
 			this
 					.off(this._$board, 'mousemove h5trackstart h5trackmove',
 							this._mouseoverMoveHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
+			this.off(this._mag.getElement(), 'mousemove h5trackstart h5trackmove',
 					this._overMagEventMoveHandler);
 		}
 	};
