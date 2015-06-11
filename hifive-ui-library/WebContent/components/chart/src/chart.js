@@ -398,7 +398,7 @@
 			for ( var name in this._map) {
 				var dataSource = this._map[name];
 				if (dataSource.number < number) {
-					stackedVal += dataSource.dataModel.get(id).get(yProp);
+					stackedVal += dataSource.get(id)[yProp];
 				}
 			}
 
@@ -417,7 +417,7 @@
 		 */
 		createDataSource: function(seriesSetting) {
 			var name = seriesSetting.name;
-			this._map[name] = new DataSource(name, seriesSetting, this._count);
+			this._map[name] = new DataSource(name, this._count, seriesSetting.keepDataSize);
 			this._map[name].manager = this;
 			this._count++;
 			return this._map[name];
@@ -470,27 +470,21 @@
 		}
 	};
 
-	var dataSourceCounter = 0;
-
 	/**
-	 * 指定したマージンの値を取得します
+	 * データソース
 	 * 
 	 * @param {String} name 系列名
-	 * @param {Object} seriesSetting 系列の設定
 	 * @param {Number} number 系列にシーケンシャルに渡される番号
+	 * @param {Number} maxSize データソースが保存する最大データ数
 	 * @class DataSource
 	 */
-	function DataSource(name, seriesSetting, number) {
+	function DataSource(name, number, maxSize) {
 		this.name = name;
-		this.seriesSetting = seriesSetting;
 		this.number = number;
-
-		// 右端がkeepDataSizeで指定したIDになるようにシーケンスを作成する
-		// 指定されていなければ、単純に左端が１からになるようにする
-		var keepDataSize = seriesSetting.keepDataSize || 0;
-		var startIndex = Math.max(keepDataSize - seriesSetting.data.length, 0) + 1;
-		this.sequence = h5.core.data.createSequence(startIndex);
-		this.xLabelArray = null;
+		this._maxSize = maxSize;
+		this.dataMap = {};
+		this.length = 0;
+		this.sequence = 0;
 	}
 
 	DataSource.prototype = {
@@ -498,58 +492,206 @@
 		 * データを読み込む。系列の設定で指定されている場合はそれを利用します
 		 * 
 		 * @param series {Object} 系列の設定オブジェクト
-		 * @memberOf h5.ui.components.chart.DataSource
+		 * @memberOf DataSource
 		 */
 		loadData: function(series) {
-			var that = this;
-			this._loadData(series).done(function(data) {
-				that.convertToModel(series.type, data, series.propNames);
-			});
-		},
-
-		/**
-		 * チャートを読み込む
-		 * 
-		 * @memberOf DataSource
-		 * @returns Promiseオブジェクト
-		 */
-		_loadData: function(series) {
 			var dfd = $.Deferred();
 
 			if (series.data == null) {
 				// 初期表示データの取得
+				var that = this;
 				h5.ajax({
 					type: 'GET',
 					dataType: 'text',
 					url: series.url
 				}).done(function(data) {
-					dfd.resolve();
+					that._initData(data);
+					dfd.resolve(that.toArray());
 				});
 			} else {
-				var len = series.data.length;
-
-				var keepDataSize = this.manager.chartSetting.get('keepDataSize');
-				var _data = keepDataSize == null ? series.data : series.data.slice(Math.max(0, len
-						- keepDataSize));
-
-				if (this.manager.chartSetting.get('dispDataSize') == null) {
-					this.manager.chartSetting.set('dispDataSize', _data.length);
-				}
-				dfd.resolve(_data);
+				this._initData(series.data);
+				dfd.resolve(this.toArray());
 			}
 			return dfd.promise();
+		},
+
+		_initData: function(data) {
+			var newData = this._sliceAtMaxSize(data);
+			this.sequence = h5.core.data
+					.createSequence(Math.max(newData.length - data.length, 0) + 1);
+			var len = data.length;
+			while (this.sequence.current() <= len) {
+				this.add(newData[this.sequence.current() - 1]);
+			}
+		},
+
+		_sliceAtMaxSize: function(data) {
+			if (!this._maxSize) {
+				return data;
+			}
+			return data.slice(Math.max(0, data.length - this._maxSize));
+		},
+
+		/**
+		 * 指定したIDのデータを取得します
+		 * 
+		 * @param {Number} id 取得するデータのID
+		 * @param {Number} 指定したIDのデータ
+		 * @memberOf DataSource
+		 */
+		get: function(id) {
+			return this.dataMap[id];
+		},
+
+		/**
+		 * データを追加します
+		 * 
+		 * @param {Object} 追加するデータ
+		 * @memberOf DataSource
+		 */
+		add: function(data) {
+			var id = this.sequence.next();
+			var d = $.extend(true, {}, data);
+			d.id = id;
+			this.dataMap[id] = d;
+			this.length++;
+
+			if (this.length > this.dataSize) {
+				this.remove(id - this.dataSize);
+			}
+
+			return id;
+		},
+
+		/**
+		 * 指定したIDのデータを削除します
+		 * 
+		 * @param {Number} 削除するデータのID
+		 * @memberOf DataSource
+		 */
+		remove: function(id) {
+			var data = this.dataMap[id];
+			if (!data) {
+				delete this.dataMap[id];
+				this.length--;
+			}
+		},
+
+		/**
+		 * データソースが持つデータを配列の形式で取得します
+		 * 
+		 * @memberOf DataSource
+		 * @returns {Array} 配列形式のデータ
+		 */
+		toArray: function() {
+			var arr = [];
+			var current = this.sequence.current();
+			for (var i = current - this.length; i < current; i++) {
+				arr.push(this.dataMap[i]);
+			}
+			return arr;
+		},
+
+		/**
+		 * 積み上げでの対応するデータオブジェクトを取得します
+		 * 
+		 * @param {DataItem} item 対応するデータアイテム
+		 * @returns {Object} 積み上げた結果のデータオブジェクト
+		 * @memberOf DataSource
+		 */
+		getStackedData: function(id, yProp) {
+			return this.manager.getStackedData(id, yProp, this.number);
+		},
+
+		/**
+		 * 描画範囲内の最大値と最小値を取得します
+		 * 
+		 * @param {Number} rightEndId 描画範囲の右端のID
+		 * @param {Number} dispDataSize 表示数
+		 * @returns {Object} [obj] {Number} [obj.maxVal] 最大値 {Number} [obj.minVal] 最小値
+		 * @memberOf DataSource
+		 */
+		getMaxAndMinVals: function(highProp, lowProp, dispDataSize, movedNum) {
+			var maxVal = -Infinity;
+			var minVal = Infinity;
+
+			var current = this.sequence.current() - movedNum;
+			var obj = null;
+			// 表示対象の中で、最大・最小を求める
+			for (var i = current - dispDataSize + 1; i <= current; i++) {
+				obj = this.dataMap[i];
+				if (obj == null) {
+					continue;
+				}
+
+				var high = obj[highProp];
+				var low = obj[lowProp];
+
+
+				if (high != null && high > maxVal) {
+					maxVal = high;
+				}
+				if (low != null && low < minVal) {
+					minVal = low;
+				}
+			}
+
+			if (maxVal == -Infinity || minVal == Infinity) {
+				throw new Error('最大値と最小値の計算結果が不正です');
+			}
+
+			return {
+				maxVal: maxVal,
+				minVal: minVal
+			};
+		}
+	};
+
+	/**
+	 * チャート描画用のデータソース
+	 * 
+	 * @param {DataSource} dataSource データソース
+	 * @param {Object} seriesSetting 系列の設定
+	 * @param {ChartSetting} chartSetting チャート全体の設定
+	 * @class ChartDataSource
+	 */
+	function ChartDataSource(dataSource, seriesSetting, chartSetting) {
+		this.dataSource = dataSource;
+		this.name = dataSource.name;
+		this.seriesSetting = seriesSetting;
+		this._chartSetting = chartSetting;
+
+		this.xLabelArray = null;
+		this._chartDataMap = {};
+	}
+
+	ChartDataSource.prototype = {
+		/**
+		 * データを読み込む。系列の設定で指定されている場合はそれを利用します
+		 * 
+		 * @param series {Object} 系列の設定オブジェクト
+		 * @memberOf DataSource
+		 */
+		loadData: function(series) {
+			// TODO: ロジック化すべきか？
+			var that = this;
+			this.dataSource.loadData(series).done(function(data) {
+				if (that._chartSetting.get('dispDataSize') == null) {
+					that._chartSetting.set('dispDataSize', this._dataSource.length);
+				}
+
+				that.convertToModel(series.type, series.propNames);
+			});
 		},
 
 		/**
 		 * データオブジェクトをデータアイテムに変換します
 		 * 
 		 * @param {String} type チャートの種別
-		 * @param {Array} data データ
 		 * @param {Object} propNames 使用するプロパティの対応マップ
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
-		convertToModel: function(type, data, propNames) {
-			var modelBaseName = 'dataModel';
+		convertToModel: function(type, propNames) {
 			this._type = type.toLowerCase();
 			switch (this._type) {
 			case 'ohlc':
@@ -569,31 +711,16 @@
 				this.lowProp = 'y';
 				break;
 			default:
-				modelBaseName = '';
 				break;
 			}
 
-			if (!data || data.length === 0) {
+			if (this.dataSource.length === 0) {
 				// 空データを渡された場合は、dataModelの作成を行わない
 				// 次回データがaddされたときに作成を行う
 				return;
 			}
 
-			var schema = this._createSchema(data[0]);
-
-			var modelName = modelBaseName + '_' + this.name + '_' + dataSourceCounter;
-			dataSourceCounter++;
-
-			if (this.dataModel != null) {
-				chartDataModelManager.dropModel(this.dataModel.name);
-			}
-
-			this.dataModel = chartDataModelManager.createModel({
-				name: modelName,
-				schema: schema
-			});
-
-			this._calcDataItem(data, propNames);
+			this._calcDataObj(this.dataSource.toArray(), propNames);
 		},
 
 		/**
@@ -601,19 +728,13 @@
 		 * 
 		 * @param {Number} id データID
 		 * @return {Object} データオブジェクト
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
 		getDataObj: function(id) {
-			if (!this.dataModel) {
+			var obj = this.dataSource.get(id);
+			if (!obj) {
 				return null;
 			}
-
-			var item = this.dataModel.get(id);
-			if (!item) {
-				return null;
-			}
-			var obj = item.get();
-			delete obj.id;
 			for ( var name in obj) {
 				// propNamesに従ってobjのプロパティを書き換える
 				if (this.propNames[name] && this.propNames[name] != name) {
@@ -629,18 +750,10 @@
 		 * 
 		 * @param {Object} data 生成元のデータオブジェクト
 		 * @returns {DataItem} データアイテム
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
-		createItem: function(data) {
-			var arr = [data];
-
-			if (!this.dataModel || this.dataModel.size === 0) {
-				// データモデルが未生成の場合は新規に作成する
-				this.convertToModel(this._type, arr, this.propNames);
-				return this.dataModel.get(this.sequence.current() - 1);
-			}
-
-			return this._calcDataItem(arr, this.propNames)[0];
+		createDataObj: function(data) {
+			return this._calcDataObj([data], this.propNames)[data.id];
 		},
 
 		_createSchema: function(data) {
@@ -663,23 +776,24 @@
 			return schema;
 		},
 
-		_calcDataItem: function(data, prop) {
-			var arr = [];
-
-			var chartSetting = this.manager.chartSetting;
+		_calcDataObj: function(data, prop) {
+			var chartSetting = this._chartSetting;
 			var dispDataSize = chartSetting.get('dispDataSize');
 			var minVal = Infinity;
 			var maxVal = -Infinity;
 
 			for (var i = 0, len = data.length; i < len; i++) {
 				var obj = this._toData(data[i], prop);
-				arr.push(obj);
-				if (len - dispDataSize <= i) {
-					var lowVal = this._getStackedVal(obj, this.lowProp);
+				var id = data[i].id;
+				this._chartDataMap[id] = obj;
+				if (len - dispDataSize <= id) {
+					var lowVal = this._getStackedVal(obj, this.propNames[this.lowProp]
+							|| this.lowProp);
 					if (lowVal != null) {
 						minVal = Math.min(minVal, lowVal);
 					}
-					var highVal = this._getStackedVal(obj, this.highProp);
+					var highVal = this._getStackedVal(obj, this.propNames[this.highProp]
+							|| this.highProp);
 					if (highVal != null) {
 						maxVal = Math.max(maxVal, highVal);
 					}
@@ -694,7 +808,7 @@
 				});
 			}
 
-			return this.dataModel.create(arr);
+			return this._chartDataMap;
 		},
 
 		_getStackedVal: function(obj, propName) {
@@ -706,13 +820,13 @@
 			if ($.inArray(this._type, STACKED_CHART_TYPES) === -1) {
 				return obj[propName];
 			}
-			return obj[propName]
-					+ this.manager.getStackedData(obj.id, propName, this.number)[propName];
+			var stackedData = this.dataSource.getStackedData(obj.id, propName);
+			return obj[propName] + stackedData[propName];
 		},
 
 		_toData: function(data, prop) {
 			var ret = {
-				id: this.sequence.next()
+				id: data.id
 			};
 
 			if (!prop) {
@@ -734,97 +848,59 @@
 		},
 
 		/**
-		 * 積み上げでの対応するデータオブジェクトを取得します
-		 * 
-		 * @param {DataItem} item 対応するデータアイテム
-		 * @returns {Object} 積み上げた結果のデータオブジェクト
-		 * @memberOf DataSource
-		 */
-		getStackedData: function(item) {
-			return this.manager.getStackedData(item.get('id'), this.propNames.y, this.number);
-		},
-
-		/**
-		 * 描画範囲内の最大値と最小値を取得します
-		 * 
-		 * @param {Number} rightEndId 描画範囲の右端のID
-		 * @param {Number} dispDataSize 表示数
-		 * @returns {Object} [obj] {Number} [obj.maxVal] 最大値 {Number} [obj.minVal] 最小値
-		 * @memberOf DataSource
-		 */
-		getMaxAndMinVals: function(rightEndId, dispDataSize) {
-			var maxVal = -Infinity;
-			var minVal = Infinity;
-
-			if (this.dataModel) {
-
-				var current = rightEndId || this.sequence.current();
-				var item = null;
-				// 表示対象の中で、最大・最小を求める
-				for (var i = current - dispDataSize + 1; i <= current; i++) {
-					item = this.dataModel.get(i);
-					if (item === null) {
-						continue;
-					}
-
-					var high = item.get(this.highProp).toString();
-					var low = item.get(this.lowProp).toString();
-
-
-					if (high != null && high > maxVal) {
-						maxVal = high;
-					}
-					if (low != null && low < minVal) {
-						minVal = low;
-					}
-				}
-			}
-			return {
-				maxVal: maxVal,
-				minVal: minVal
-			};
-		},
-
-		/**
-		 * 指定したアイテムのx軸のデータの値を取得します
+		 * 指定したデータオブジェクトのx軸のデータの値を取得します
 		 * 
 		 * @param {Number|DataItem} idOrItem アイテムまたはそのID
 		 * @returns {Any} x軸のデータの値
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
-		getXVal: function(idOrItem) {
+		getXVal: function(idOrObj) {
 			if (idOrItem == null) {
 				return null;
 			}
-			var item;
-			if (typeof (idOrItem.getModel) === 'function' && idOrItem.getModel() === this.dataModel) {
-				item = idOrItem;
+			var obj;
+			if (idOrObj instanceof Object) {
+				obj = idOrObj;
 			} else {
-				item = this.dataModel.get(idOrItem);
+				obj = this.getDataObj(idOrItem);
 			}
-			return item.get(this.xProp);
+			return obj[this.xProp];
 		},
 
 		/**
 		 * レンジに変更がないかをチェックします
 		 * 
-		 * @param {DataItem} addedItem 追加したデータアイテム
-		 * @param {DataItem} removedItem 削除したデータアイテム
+		 * @param {DataItem} addedData 追加したデータ
+		 * @param {DataItem} removedData 削除したデータ
 		 * @param {Number} dispDataSize 表示数
 		 * @param {Number} rightEndId 表示データの右端のID
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
-		checkRange: function(addedItem, removedItem, dispDataSize, rightEndId) {
+		checkRange: function(addedData, removedData, dispDataSize, rightEndId) {
 			if (this.seriesSetting.axis && this.seriesSetting.axis.yaixs
 					&& this.seriesSetting.axis.yaxis.autoScale === false) {
 				return;
 			}
 
-			var removedHigh = removedItem ? removedItem.get(this.highProp) : null;
-			var removedLow = removedItem ? removedItem.get(this.lowProp) : null;
+			var removedHigh = removedData ? removedData[this.highProp] : null;
+			var removedLow = removedData ? removedData[this.lowProp] : null;
 
-			this.manager.checkRange(addedItem.get(this.highProp), addedItem.get(this.lowProp),
+			this.dataSource.manager.checkRange(addedData[this.highProp], addedData[this.lowProp],
 					removedHigh, removedLow, rightEndId, dispDataSize);
+		},
+
+		/**
+		 * 描画範囲内の最大値と最小値を取得します
+		 * 
+		 * @param {Number} dispDataSize 表示数
+		 * @param {Number} moveNum 右端からのチャートの移動数
+		 * @memberOf ChartDataSource
+		 */
+		getMaxAndMinVals: function(dispDataSize, movedNum) {
+			var highProp = this.propNames[this.highProp] || this.highProp;
+			var lowProp = this.propNames[this.lowProp] || this.lowProp;
+
+			return this.dataSource.getMaxAndMinVals(highProp, lowProp, dispDataSize, movedNum);
 		}
 	};
 
@@ -845,22 +921,23 @@
 	 * 
 	 * @private
 	 * @param {Element} rootElement このラインチャートのルート要素
-	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {DataSource} chartDataSource このラインチャートのデータソース
 	 * @param {Object} chartSetting 設定
 	 * @param {Object} seriesSetting この種別の設定
 	 * @param {Object} schema 各種別ごとのスキーマ
 	 * @param {Object} prototype 系列ごとに拡張するプロトタイプ
 	 * @returns {ChartRenderer}
 	 */
-	function createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting, schema,
+	function createChartRenderer(rootElement, chartDataSource, chartSetting, seriesSetting, schema,
 			prototype) {
 
 		/**
 		 * チャートレンダラ―の基底クラス
 		 */
-		function ChartRendererBase(rootElement, dataSource, chartSetting, seriesSetting, schema) {
-			this.dataSource = dataSource;
-			this.name = dataSource.name;
+		function ChartRendererBase(rootElement, chartDataSource, chartSetting, seriesSetting,
+				schema) {
+			this.chartDataSource = chartDataSource;
+			this.name = chartDataSource.name;
 			this.chartSetting = chartSetting;
 			this.rootElement = rootElement;
 			this.seriesSetting = seriesSetting;
@@ -935,27 +1012,28 @@
 			 * @memberOf ChartRendererBase
 			 */
 			addData: function(data) {
-				var dataSource = this.dataSource;
-
 				// データを1つ分受け取って、チャートを更新する
-				var item = dataSource.createItem(data);
+				var id = this.chartDataSource.dataSource.add(data);
+				data.id = id;
+				var obj = this.chartDataSource.createDataObj(data);
 
-				this.updateChart(item);
+				this.updateChart(obj);
 
-				dataSource.dataModel.remove(item.get('id') - this.chartSetting.get('keepDataSize'));
+				this.chartDataSource.dataSource.remove(obj.id
+						- this.chartSetting.get('keepDataSize'));
 			},
 
 			/**
 			 * チャートを更新します
 			 * 
-			 * @param {DataItem} addedItem 追加されたデータアイテム
+			 * @param {Object} addedData 追加されたデータ
 			 * @param {Number} removedItemId 削除されたアイテムのID
 			 * @param {Boolean} isRightEndRemove 右端のデータが削除されたか
 			 * @memberOf ChartRendererBase
 			 */
-			updateChart: function(addedItem, removedItemId, isRightEndRemove) {
+			updateChart: function(addedData, removedItemId, isRightEndRemove) {
 				// ローソク情報を計算する
-				var chartItem = this.createItem(addedItem);
+				var chartItem = this.createChartDataItem(addedData);
 
 				this.getXLabelArray();
 
@@ -963,16 +1041,15 @@
 				var dispDataSize = this.chartSetting.get('dispDataSize');
 				if (removedItemId == null) {
 					// 表示範囲の左端のIDを取得
-					removedItemId = addedItem.get('id') - dispDataSize
-							- this.chartSetting.get('movedNum');
+					removedItemId = addedData.id - dispDataSize - this.chartSetting.get('movedNum');
 					isRightEndRemove = false;
 				}
 				this._removeChartElm(removedItemId);
 
-				var removedItem = this.dataSource.dataModel.get(removedItemId);
+				var removedData = this.chartDataSource.getDataObj(removedItemId);
 
-				var rightEndId = isRightEndRemove ? removedItemId - 1 : addedItem.get('id');
-				this.dataSource.checkRange(addedItem, removedItem, dispDataSize, rightEndId);
+				var rightEndId = isRightEndRemove ? removedItemId - 1 : addedData.id;
+				this.chartDataSource.checkRange(addedData, removedData, dispDataSize, rightEndId);
 
 				this._appendChart([chartItem]);
 			},
@@ -988,10 +1065,10 @@
 				for ( var id in this.chartModel.items) {
 					var intId = parseInt(id);
 					// 描画範囲のローソクは座標情報を計算する
-					var item = this.dataSource.dataModel.get(intId);
-					var chartItem = this.chartModel.get(intId);
+					var obj = this.chartDataSource.getDataObj(intId);
+					var chartItem = this.chartModel.get(obj);
 					if (chartItem != null) {
-						chartItem.set(this.toData(item));
+						chartItem.set(this.toData(item, id));
 					}
 				}
 				chartDataModelManager.endUpdate();
@@ -1068,8 +1145,8 @@
 
 				$tooltip.empty();
 
-				var dataItem = this.dataSource.dataModel.get(tooltipId);
-				var content = this._tooltipSetting.showTooltip(dataItem.get());
+				var obj = this.chartDataSource.getDataObj(tooltipId);
+				var content = this._tooltipSetting.showTooltip(obj);
 
 				var elem = graphicRenderer.createTextElm(content, null, null, '#000', {
 					'font-size': 11
@@ -1187,17 +1264,17 @@
 					this.xLabelArray.copyFrom([]);
 				}
 
-				var rightItemId = this.dataSource.sequence.current() - 1;
+				var rightItemId = this.chartDataSource.dataSource.sequence.current() - 1;
 
 				var dispSizeNum = this.chartSetting.get('dispDataSize');
 
 				var itemInterval = (dispSizeNum - 1) / vertLineNum;
 				var id = rightItemId - dispSizeNum + 1;
 				for (var i = 0; i <= vertLineNum; i++) {
-					var item = this.dataSource.getDataObj(id);
+					var item = this.chartDataSource.getDataObj(id);
 					id += itemInterval;
 					this.xLabelArray.set(i, {
-						value: item ? item[this.dataSource.xProp] : '', // 表示するデータがなければ空文字
+						value: item ? item[this.chartDataSource.xProp] : '', // 表示するデータがなければ空文字
 						item: item
 					});
 				}
@@ -1217,7 +1294,8 @@
 		};
 
 		$.extend(ChartRendererBase.prototype, prototype);
-		return new ChartRendererBase(rootElement, dataSource, chartSetting, seriesSetting, schema);
+		return new ChartRendererBase(rootElement, chartDataSource, chartSetting, seriesSetting,
+				schema);
 	}
 
 	/**
@@ -1225,12 +1303,13 @@
 	 * 
 	 * @private
 	 * @param {Element} rootElement このラインチャートのルート要素
-	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {DataSource} chartDataSource このラインチャートのデータソース
 	 * @param {Object} chartSetting 設定
 	 * @param {Object} seriesSetting この種別の設定
 	 * @returns CandleStickChartRenderer
 	 */
-	function createCandleStickChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+	function createCandleStickChartRenderer(rootElement, chartDataSource, chartSetting,
+			seriesSetting) {
 		/**
 		 * ローソクチャートのレンダラ―
 		 */
@@ -1246,17 +1325,19 @@
 			_createCandleStickDataItems: function() {
 				this.chartModel.removeAll();
 
-				if (!this.dataSource.dataModel) {
+				if (!this.chartDataSource.dataSource) {
 					return;
 				}
 
 				var candleStickData = [];
-				var current = this.dataSource.sequence.current();
-				for ( var id in this.dataSource.dataModel.items) {
+				var current = this.chartDataSource.dataSource.sequence.current();
+				for ( var id in this.chartDataSource.dataSource.dataMap) {
 					if (id >= current - this.chartSetting.get('dispDataSize')) {
 						// 描画範囲のローソクは座標情報を計算する
-						var dataItem = this.dataSource.dataModel.items[id];
-						candleStickData.push(this.toData(dataItem));
+						var obj = this.chartDataSource.getDataObj(id);
+						//						var obj = this.dataSource.dataModel.dataMap[id];
+						var data = this.toData(obj);
+						candleStickData.push(data);
 					}
 				}
 				return this.chartModel.create(candleStickData);
@@ -1265,27 +1346,28 @@
 			/**
 			 * ローソクを描画するためのチャートアイテムを生成します
 			 * 
+			 * @pararm {Object} data 元データオブジェクトの配列
 			 * @return {ChartItem[]} 描画用のチャートアイテムの配列
 			 * @memberOf CandleStickRenderer
 			 */
-			createItem: function(dataItem) {
-				return this.chartModel.create(this.toData(dataItem));
+			createChartDataItem: function(data) {
+				return this.chartModel.create(this.toData(data));
 			},
 
 			/**
 			 * DataItemをチャート描画用のオブジェクトをを取得します
 			 * 
-			 * @param {ChartItem} dataItem データアイテム
+			 * @param {Object} data データ
 			 * @returns {Object} 描画用のオブジェクト
 			 * @memberOf CandleStickChartRenderer
 			 */
-			toData: function(chartDataItem) {
-				var id = chartDataItem.get('id');
-				var open = chartDataItem.get('open');
-				var close = chartDataItem.get('close');
-				var time = chartDataItem.get(this.dataSource.xProp);
+			toData: function(data) {
+				var id = data.id;
+				var open = data.open;
+				var close = data.close;
+				var time = data[this.chartDataSource.xProp];
 
-				return $.extend(this._calcCandleYValues(chartDataItem), {
+				return $.extend(this._calcCandleYValues(data), {
 					id: id,
 					rectWidth: this.chartSetting.get('dx') * 0.8,
 					fill: open > close ? 'blue' : open === close ? 'black' : 'red',
@@ -1294,9 +1376,9 @@
 				});
 			},
 
-			_calcCandleYValues: function(chartDataItem) {
-				var open = chartDataItem.get('open');
-				var close = chartDataItem.get('close');
+			_calcCandleYValues: function(data) {
+				var open = data.open;
+				var close = data.close;
 				var min = this.chartSetting.get('rangeMin');
 				var max = this.chartSetting.get('rangeMax');
 				var height = this.chartSetting.get('height');
@@ -1304,8 +1386,8 @@
 				return {
 					rectY: calcYPos(Math.max(open, close), min, max, height),
 					rectHeight: open !== close ? calcYDiff(open, close, min, max, height) : 1,
-					lineY1: calcYPos(chartDataItem.get('low'), min, max, height),
-					lineY2: calcYPos(chartDataItem.get('high'), min, max, height)
+					lineY1: calcYPos(data.low, min, max, height),
+					lineY2: calcYPos(data.high, min, max, height)
 				};
 			},
 
@@ -1571,7 +1653,7 @@
 			}
 		};
 
-		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
+		return createChartRenderer(rootElement, chartDataSource, chartSetting, seriesSetting,
 				candleStickSchema, CandleStickChartRenderer);
 	}
 
@@ -1580,12 +1662,12 @@
 	 * 
 	 * @private
 	 * @param {Element} rootElement このラインチャートのルート要素
-	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {DataSource} chartDataSource このラインチャートのデータソース
 	 * @param {Object} chartSetting 設定
 	 * @param {Object} seriesSetting この種別の設定
 	 * @returns LineChartRenderer
 	 */
-	function createLineChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+	function createLineChartRenderer(rootElement, chartDataSource, chartSetting, seriesSetting) {
 
 		/**
 		 * ラインチャートレンダラ―
@@ -1791,7 +1873,7 @@
 			 * @returns {ChartItem} 変換後のChartItem
 			 * @memberOf LineChartRenderer
 			 */
-			createItem: function(dataItem) {
+			createChartDataItem: function(dataItem) {
 				var chartData = this.toData(dataItem);
 				if (!chartData) {
 					return null;
@@ -1802,21 +1884,22 @@
 			_createLineDataItems: function(preRendererChartModel) {
 				this.chartModel.removeAll();
 
-				if (!this.dataSource.dataModel) {
+				if (!this.chartDataSource) {
 					return;
 				}
 
 				var lineData = [];
-				var current = this.dataSource.sequence.current() - chartSetting.get('movedNum');
+				var current = this.chartDataSource.dataSource.sequence.current()
+						- chartSetting.get('movedNum');
 				var dispDataSize = this.chartSetting.get('dispDataSize');
-				for ( var id in this.dataSource.dataModel.items) {
+				for ( var id in this.chartDataSource._chartDataMap) {
 					var intId = parseInt(id);
 					if (intId < current - dispDataSize || intId >= current) {
 						continue;
 					}
 
 					// 描画範囲の点について座標情報を計算する
-					var item = this.dataSource.dataModel.get(intId);
+					var item = this.chartDataSource.getDataObj(intId);
 					var chartData = this.toData(item);
 					if (chartData) {
 						// y座標の点があるもののみ表示する
@@ -1835,26 +1918,26 @@
 			 */
 			toData: function(dataItem) {
 				// TODO: xの位置がデータに依存しない
-				var id = dataItem.get('id');
-				var pre = this.dataSource.dataModel.get(id - 1);
+				var id = dataItem.id;
+				var pre = this.chartDataSource.getDataObj(id - 1);
 
 				var min = this.chartSetting.get('rangeMin');
 				var max = this.chartSetting.get('rangeMax');
 				var height = this.chartSetting.get('height');
 
-				var yProp = this.dataSource.propNames.y;
-				var toY = dataItem.get(yProp);
+				var yProp = this.chartDataSource.propNames.y;
+				var toY = dataItem[yProp];
 				if (toY == null) {
 					return null;
 				}
 
 				// preがnullのときは、データとしても端であり、このときはただの点を表示する
-				var isPoint = pre == null || pre.get(yProp) == null;
-				var fromY = isPoint ? dataItem.get(yProp) : pre.get(yProp);
+				var isPoint = pre == null || pre[yProp] == null;
+				var fromY = isPoint ? dataItem[yProp] : pre[yProp];
 
 				if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
-					fromY += this.dataSource.getStackedData(pre)[yProp];
-					toY += this.dataSource.getStackedData(dataItem)[yProp];
+					fromY += this.chartDataSource.dataSource.getStackedData(pre.id, yProp)[yProp];
+					toY += this.chartDataSource.dataSource.getStackedData(dataItem.id, yProp)[yProp];
 				}
 
 				var dx = this.chartSetting.get('dx');
@@ -1898,7 +1981,7 @@
 			 * @memberOf LineChartRenderer
 			 */
 			getXVal: function(idOrItem) {
-				return this.dataSource.getXVal(idOrItem);
+				return this.chartDataSource.getXVal(idOrItem);
 			},
 
 			_chartModelChangeListener: function(ev) {
@@ -1959,7 +2042,7 @@
 			// ラインチャートではハイライトする対象がない
 			}
 		};
-		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
+		return createChartRenderer(rootElement, chartDataSource, chartSetting, seriesSetting,
 				lineSchema, lineChartRenderer);
 	}
 
@@ -2368,7 +2451,7 @@
 		_initChart: function(firstChartRenderer) {
 			this._appendBorder();
 			this._initAxis(firstChartRenderer);
-			var rightId = firstChartRenderer.dataSource.sequence.current() - 1;
+			var rightId = firstChartRenderer.chartDataSource.dataSource.sequence.current() - 1;
 			var paddingRight = 0;
 			if (this.settings.plotSetting && this.settings.plotSetting.paddingRight) {
 				paddingRight = this.settings.plotSetting.paddingRight;
@@ -2627,17 +2710,17 @@
 			return this._addSeriesWithAsync(settings.series);
 		},
 
-		_createChartRenderer: function(g, dataSource, seriesOption) {
+		_createChartRenderer: function(g, chartDataSource, seriesOption) {
 			var name = seriesOption.name;
 			switch (seriesOption.type.toLowerCase()) {
 			case 'ohlc':
-				this._renderers[name] = createCandleStickChartRenderer(g, dataSource,
+				this._renderers[name] = createCandleStickChartRenderer(g, chartDataSource,
 						this.chartSetting, seriesOption);
 				break;
 			case 'stacked_line':
 			case 'line':
-				this._renderers[name] = createLineChartRenderer(g, dataSource, this.chartSetting,
-						seriesOption);
+				this._renderers[name] = createLineChartRenderer(g, chartDataSource,
+						this.chartSetting, seriesOption);
 				break;
 			default:
 				break;
@@ -2716,8 +2799,10 @@
 					this.$seriesGroup.prepend(g);
 				}
 				var dataSource = this.dataSourceManager.createDataSource(seriesSettings);
-				this._createChartRenderer(g, dataSource, seriesSettings);
-				promises.push(dataSource.loadData(seriesSettings));
+				var chartDataSource = new ChartDataSource(dataSource, seriesSettings,
+						this.chartSetting);
+				this._createChartRenderer(g, chartDataSource, seriesSettings);
+				promises.push(chartDataSource.loadData(seriesSettings));
 			}
 			return $.when.apply($, promises);
 		},
@@ -2819,11 +2904,11 @@
 			var movedNum = this.chartSetting.get('movedNum');
 			var move = Math.min(movedNum, num);
 			for ( var name in this._renderers) {
-				var dataSource = this._renderers[name].dataSource;
-				var rightEndId = dataSource.sequence.current() - movedNum;
+				var chartDataSource = this._renderers[name].chartDataSource;
+				var rightEndId = chartDataSource.dataSource.sequence.current() - movedNum;
 				var leftEndId = rightEndId - this.chartSetting.get('dispDataSize');
 				for (var i = 0; i < move; i++) {
-					var item = dataSource.dataModel.get(rightEndId + i);
+					var item = chartDataSource.getDataObj(rightEndId + i);
 					this._renderers[name].updateChart(item, leftEndId, false);
 				}
 			}
@@ -2842,11 +2927,11 @@
 		back: function(num) {
 			var movedNum = this.chartSetting.get('movedNum');
 			for ( var name in this._renderers) {
-				var dataSource = this._renderers[name].dataSource;
-				var rightEndId = dataSource.sequence.current() - movedNum - 1;
+				var chartDataSource = this._renderers[name].chartDataSource;
+				var rightEndId = chartDataSource.dataSource.sequence.current() - movedNum - 1;
 				var leftEndId = rightEndId - this.chartSetting.get('dispDataSize');
 				for (var i = 0; i < num; i++) {
-					var item = dataSource.dataModel.get(leftEndId - i);
+					var item = chartDataSource.getDataObj(leftEndId - i);
 					this._renderers[name].updateChart(item, rightEndId, true);
 				}
 			}
@@ -2894,11 +2979,30 @@
 			}
 
 			this._leftEndChartItemId = Infinity;
+			this.isInitDraw = true;
 
 			var firstRenderer = this._renderers[this.settings.series[0].name];
-			this.dataSourceManager.setRange(firstRenderer.dataSource.sequence.current());
+			this._setRange();
+			this.isInitDraw = false;
 			this._initChart(firstRenderer); // チャート表示の初期化
 			this._drawChart();// チャート情報の計算
+		},
+
+		_setRange: function() {
+			var maxAndMinVals = {
+				maxVal: -Infinity,
+				minVal: Infinity
+			};
+			for ( var name in this._renderers) {
+				var renderer = this._renderers[name];
+				var vals = renderer.chartDataSource.getMaxAndMinVals(this.chartSetting
+						.get('dispDataSize'), this.chartSetting.get('movedNum'));
+				maxAndMinVals = {
+					maxVal: Math.max(vals.maxVal, maxAndMinVals.maxVal),
+					minVal: Math.min(vals.minVal, maxAndMinVals.minVal)
+				};
+			}
+			this.chartSetting.set(maxAndMinVals);
 		},
 
 		// １系列の描画が完了するごとに上がるイベント。次の系列の描画を開始する
