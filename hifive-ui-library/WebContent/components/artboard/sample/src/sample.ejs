@@ -11,18 +11,19 @@
 		</div>
 		<div class="undo border1 disabled"><img class="icon48" src="res/img/toolicon/undo.png"></div>
 		<div class="redo border1 disabled"><img class="icon48" src="res/img/toolicon/redo.png"></div>
-		<div class="mode-select border1"><img class="icon48" src="res/img/toolicon/select.png"></div>
+		<div class="mode-icon mode-select border1"><img class="icon48" src="res/img/toolicon/select.png"></div>
 		<div class="remove-selected-shape border1 disabled"><img class="icon48" src="res/img/toolicon/delete.png"></div>
+		<div class="mode-icon mode-magnifier border1"><img class="icon48" src="res/img/toolicon/magnifier.png"></div>
 	</div>
 	<div class="toolbar-drawing-tool">
-		<img class="toolbar-icon icon48 border1 selected" data-tool-name="pen" src="res/img/toolicon/pen.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="line" src="res/img/toolicon/line.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="rect" src="res/img/toolicon/rect.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="fillrect" src="res/img/toolicon/fillrect.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="circle" src="res/img/toolicon/circle.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="fillcircle" src="res/img/toolicon/fillcircle.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="stamp" src="res/img/toolicon/stamp.png">
-		<img class="toolbar-icon icon48 border1" data-tool-name="text" src="res/img/toolicon/text.png">
+		<img class="mode-icon toolbar-icon icon48 border1 selected" data-tool-name="pen" src="res/img/toolicon/pen.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="line" src="res/img/toolicon/line.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="rect" src="res/img/toolicon/rect.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="fillrect" src="res/img/toolicon/fillrect.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="circle" src="res/img/toolicon/circle.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="fillcircle" src="res/img/toolicon/fillcircle.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="stamp" src="res/img/toolicon/stamp.png">
+		<img class="mode-icon toolbar-icon icon48 border1" data-tool-name="text" src="res/img/toolicon/text.png">
 	</div>
 	<div class="color-pallete">
 		<div class="selected-color-wrapper stroke selected">
@@ -168,6 +169,10 @@
 
 <script type="text/ejs" id="backgroundThumbnail">
 	<img class="drawing-image background thumbnail" title="追加した画像" src="[%= imageData %]">
+</script>
+
+<script type="text/ejs" id="tool-footer">
+	<div style="clear:both;margin:10px 0">拡大表示機能(Magnifier)のサンプルは<a href="magnifier.html">こちら</a></div>
 </script>
 
 <script type="text/ejs" id="saved-img-wrapper">

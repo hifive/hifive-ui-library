@@ -42,11 +42,10 @@
 		},
 
 		/**
-		 * SVGCanvasController
+		 * ArtboardController
 		 *
 		 * @memberOf sample.PageController
 		 */
-
 		_artboardController: h5.ui.components.artboard.controller.ArtboardController,
 
 		/**
@@ -118,6 +117,9 @@
 			});
 			this._$toolbar = this.$find('.drawing-toolbar');
 
+			// ツール下部分の配置
+			this.view.append(this._$toolbar, 'tool-footer');
+
 			// 保存画像表示領域の配置
 			this.view.append(this._$toolbar, 'saved-img-wrapper');
 			this._$savedImgWrapper = this.$find('.saved-img-wrapper');
@@ -181,6 +183,11 @@
 		'{this._$toolbar} selectMode': function() {
 			this._artboardController.unselectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
+		},
+
+		'{this._$toolbar} magnifierMode': function() {
+			this._artboardController.unselectAll();
+			this._artboardController.setMode(this._artboardController.MODE_DISABLE);
 		},
 
 		'{this._$toolbar} drawMode': function(context) {

@@ -86,6 +86,7 @@ WebContent/components/artboard/res/img/toolicon/select.png
 WebContent/components/artboard/res/img/toolicon/stamp.png
 WebContent/components/artboard/res/img/toolicon/undo.png
 WebContent/components/artboard/res/img/toolicon/up.png
+WebContent/components/artboard/res/img/toolicon/magnifier.png
 
 Typeicons by Stephen Hutchings
 URL: http://typicons.com/

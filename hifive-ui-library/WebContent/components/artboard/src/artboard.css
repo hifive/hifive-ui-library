@@ -18,6 +18,8 @@
 .h5-artboard-canvas-wrapper {
 	position: relative;
 	overflow: hidden;
+	touch-action: none;
+	-webkit-user-select: none;
 }
 
 .h5-artboard-canvas-wrapper canvas,.h5-artboard-canvas-wrapper .h5-artboard-layers,.h5-artboard-canvas-wrapper .h5-artboard-layers>*

@@ -13,6 +13,9 @@
 	/** 選択モードに切り替え */
 	var EVENT_SELECT_MODE = 'selectMode';
 
+	/** 拡縮モードに切り替え */
+	var EVENT_MAGNIFIER_MODE = 'magnifierMode';
+
 	/** 描画モードに切り替え */
 	var EVENT_DRAW_MODE = 'drawMode';
 
@@ -341,6 +344,13 @@
 		_pictureController: sample.PictureController,
 
 		/**
+		 * 拡縮表示コントローラ
+		 *
+		 * @memberOf sample.ToolbarController
+		 */
+		_magnifierController: h5.ui.components.artboard.controller.MagnifierController,
+
+		/**
 		 * コントローラのメタ定義
 		 *
 		 * @memberOf sample.ToolbarController
@@ -417,6 +427,14 @@
 		 * @type {Object}
 		 */
 		popupMap: {},
+
+		/**
+		 * 拡大鏡Magnifierインスタンス
+		 *
+		 * @memberOf sample.ToolbarController
+		 * @private
+		 */
+		_mag: null,
 
 		/**
 		 * __initイベント
@@ -565,6 +583,19 @@
 		},
 
 		/**
+		 * モード選択：magnifier
+		 *
+		 * @param context
+		 * @param $el
+		 */
+		'.mode-magnifier h5trackstart': function(context, $el) {
+			context.event.preventDefault();
+			this.hideOptionView();
+			this.trigger(EVENT_MAGNIFIER_MODE);
+			this.setMagnifierMode();
+		},
+
+		/**
 		 * 画像にexport
 		 *
 		 * @param context
@@ -606,11 +637,15 @@
 				$(this.targetArtboard.rootElement).removeClass('mode-text-input');
 			}
 
-			this.$find('.toolbar-icon').removeClass('selected');
-			this.$find('.mode-select').removeClass('selected');
+			this.$find('.mode-icon.selected').removeClass('selected');
 			$el.addClass('selected');
 
 			this.trigger(EVENT_DRAW_MODE, toolName);
+
+			if (this._mag) {
+				this._mag.dispose();
+				this._mag = null;
+			}
 		},
 
 		'.stamp-img h5trackstart': function(context, $el) {
@@ -1148,12 +1183,28 @@
 		},
 
 		setSelectMode: function() {
-			this.$find('.toolbar-icon').removeClass('selected');
+			if (this._mag) {
+				this._mag.dispose();
+				this._mag = null;
+			}
+			this.$find('.mode-icon.selected').removeClass('selected');
 			this.$find('.mode-select').addClass('selected');
 
 			// テキスト入力モードの終了
 			this._isTextStampMode = false;
 			$(this.targetArtboard.rootElement).removeClass('mode-text-input');
+		},
+
+		setMagnifierMode: function() {
+			this._mag = this._magnifierController.createMagnifier(this.targetArtboard.rootElement,
+					{
+						mouseover: true,
+						width: 200,
+						height: 200,
+						scale: 2
+					});
+			this.$find('.mode-icon.selected').removeClass('selected');
+			this.$find('.mode-magnifier').addClass('selected');
 		},
 
 		//---------------------------
