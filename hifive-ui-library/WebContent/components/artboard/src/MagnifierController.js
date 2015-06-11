@@ -363,10 +363,7 @@
 							mouseoverFocus: mouseoverFocus,
 							mouseoverMove: mouseoverMove
 						});
-				// FIXME readyPromiseが終わった状態じゃないとmanageChildでイベントハンドラがバインドされない
-				this._mouseoverController.readyPromise.done(this.own(function() {
-					this.manageChild(this._mouseoverController);
-				}));
+				this.manageChild(this._mouseoverController);
 			}
 			return mag;
 		}

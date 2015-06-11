@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  * hifive css
- *   version 1.2.0
- *   gitCommitId : 07e269546ea24ade0249619fc5ac11bd5c33a1dc
- *   build at 2015/05/14 16:27:58.280 (+0900)
- *   (util,async,resource,controller,dataModel,modelWithBinding,view,ui,api.geo,api.sqldb,api.storage,scene)
+ *   version Nightly_2015-06-12_13-35-04-211
+ *   gitCommitId : ed64d650c3771d580b8c26368c0fb96a25dab9f2
+ *   build at 2015/06/12 13:35:10.658 (+0900)
+ *   (scopedglobals,util,async,resource,controller,dataModel,view,modelWithBinding,ui,api.geo,api.sqldb,api.storage,scene)
  */
 /* インジケータ オーバーレイDIV,メッセージDIV 共通設定 */
 .h5-indicator {
