@@ -117,6 +117,9 @@
 			});
 			this._$toolbar = this.$find('.drawing-toolbar');
 
+			// ツール下部分の配置
+			this.view.append(this._$toolbar, 'tool-footer');
+
 			// 保存画像表示領域の配置
 			this.view.append(this._$toolbar, 'saved-img-wrapper');
 			this._$savedImgWrapper = this.$find('.saved-img-wrapper');
