@@ -42,11 +42,10 @@
 		},
 
 		/**
-		 * SVGCanvasController
+		 * ArtboardController
 		 *
 		 * @memberOf sample.PageController
 		 */
-
 		_artboardController: h5.ui.components.artboard.controller.ArtboardController,
 
 		/**
@@ -181,6 +180,11 @@
 		'{this._$toolbar} selectMode': function() {
 			this._artboardController.unselectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
+		},
+
+		'{this._$toolbar} magnifierMode': function() {
+			this._artboardController.unselectAll();
+			this._artboardController.setMode(this._artboardController.MODE_DISABLE);
 		},
 
 		'{this._$toolbar} drawMode': function(context) {
