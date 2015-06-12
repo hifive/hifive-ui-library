@@ -160,100 +160,6 @@
 	};
 
 
-	/**
-	 * ローソク表示用データを保持するモデル
-	 * 
-	 * @name chartModel
-	 */
-	var candleStickSchema = {
-		id: {
-			id: true,
-			type: 'integer'
-		},
-		rectX: {
-			type: 'number',
-			depend: {
-				on: ['rectWidth', 'lineX'],
-				calc: function() {
-					return this.get('lineX') - this.get('rectWidth') / 2;
-				}
-			}
-		},
-		rectY: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		rectWidth: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		rectHeight: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		fill: {
-			type: 'string'
-		},
-		lineX: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		lineY1: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		lineY2: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		time: {
-			type: 'string'
-		}
-	};
-
-	var lineSchema = {
-		id: {
-			id: true,
-			type: 'integer'
-		},
-		fromX: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		toX: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		fromY: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		},
-		toY: {
-			type: 'number',
-			constraint: {
-				notNull: true
-			}
-		}
-	};
-
 	// DataSourceから発生するイベント内で持つ更新情報のプロパティ名
 	var EVENT_PROP_NAMES = ['add', 'remove', 'change'];
 
@@ -1440,6 +1346,69 @@
 	}
 
 	/**
+	 * ローソク表示用データを保持するモデル
+	 * 
+	 * @name chartModel
+	 */
+	var candleStickSchema = {
+		id: {
+			id: true,
+			type: 'integer'
+		},
+		rectX: {
+			type: 'number',
+			depend: {
+				on: ['rectWidth', 'lineX'],
+				calc: function() {
+					return this.get('lineX') - this.get('rectWidth') / 2;
+				}
+			}
+		},
+		rectY: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		rectWidth: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		rectHeight: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		fill: {
+			type: 'string'
+		},
+		lineX: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		lineY1: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		lineY2: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		time: {
+			type: 'string'
+		}
+	};
+
+	/**
 	 * ローソクチャートレンダラ―を生成します。
 	 * 
 	 * @private
@@ -1796,6 +1765,37 @@
 		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
 				candleStickSchema, CandleStickChartRenderer);
 	}
+
+	var lineSchema = {
+		id: {
+			id: true,
+			type: 'integer'
+		},
+		fromX: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		toX: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		fromY: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		toY: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		}
+	};
 
 	/**
 	 * ラインチャートレンダラ―を生成します。
