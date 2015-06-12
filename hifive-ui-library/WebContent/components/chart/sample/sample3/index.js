@@ -93,6 +93,8 @@
 		 * @memberOf ui.sample.chart.pageController
 		 */
 		_height: 480,
+		
+		_series: [],
 
 		_chartController: h5.ui.components.chart.ChartController, // チャートライブラリ
 
@@ -104,6 +106,8 @@
 
 		__ready: function(context) {
 			// 取得したデータをもとにチャートを表示
+			this._series.push(this._createNewSeries());
+
 			this._chartController.draw({
 				chartSetting: {
 					width: this._width,
@@ -137,9 +141,10 @@
 					// 表示データ数
 					mouseover: {
 						tooltip: false
-					}
+					},
+					animateNum: 20
 				},
-				series: this._createNewSeries()
+				series: this._series
 			// 系列データ
 			});
 		},
@@ -153,18 +158,34 @@
 		_createNewSeries: function() {
 			var data = createChartDummyData(400, 100); // ダミーデータを生成
 
-			var name = 'bar_series';
+			var name = 'bar_series' + this._series.length;
 			// 系列定義
-			return [{
+			return {
 				name: name, //系列名(キーとして使用する)
-				type: 'bar',
+				type: 'stacked_bar',
 				data: data, // データ
 				propNames: { // チャートに表示するときに使用するプロパティ名
 					y: 'val' 
 				},
 				color: getRandomColor()
-			}];
-		}
+			};
+		},
+		
+		/**
+		 * 系列追加ボタンを押下すると、系列を追加する
+		 */
+		'#addSeries click': function() {
+			var newSeries = [this._createNewSeries()];
+			this._chartController.addSeries(newSeries);
+			this._series.concat(newSeries);
+		},
+		
+		'#removeSeries click': function() {
+		    var series = this._series.pop();
+		    if (series != null) {
+		    	this._chartController.removeSeries(series.name);		    	
+		    }
+		},
 	};
 
 	h5.core.expose(pageController);

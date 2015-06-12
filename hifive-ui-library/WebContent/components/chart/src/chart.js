@@ -722,6 +722,7 @@
 				this.highProp = 'y';
 				this.lowProp = 'y';
 				break;
+			case 'stacked_bar':
 			case 'bar':
 				this.propNames = propNames || {};
 				this.xProp = this.propNames.x || 'x';
@@ -960,6 +961,21 @@
 		var open_close = h5format(TOOLTIP_OPEN_CLOSE_FORMAT, data.open, data.close);
 		var high_low = h5format(TOOLTIP_HIGH_LOW_FORMAT, data.high, data.low);
 		return time + '<br>' + open_close + '<br>' + high_low;
+	}
+
+	function calcY(item, prop, preRendererChartModel, height, rate) {
+		if (rate == null) {
+			rate = 1;
+		}
+
+		var preY;
+		if (!preRendererChartModel) {
+			preY = height;
+		} else {
+			preY = preRendererChartModel.get(item.get('id')).get(prop);
+		}
+
+		return (1 - rate) * preY + rate * item.get(prop);
 	}
 
 
@@ -1879,21 +1895,6 @@
 				this._appendLines();
 			},
 
-			_calcY: function(item, prop, preRendererChartModel, rate) {
-				if (rate == null) {
-					rate = 1;
-				}
-
-				var preY;
-				if (!preRendererChartModel) {
-					preY = this.chartSetting.get('height');
-				} else {
-					preY = preRendererChartModel.get(item.get('id')).get(prop);
-				}
-
-				return (1 - rate) * preY + rate * item.get(prop);
-			},
-
 			_appendLines: function(lines, preRendererChartModel, rate) {
 				graphicRenderer.isSvg ? this._appendLinesForSvg(lines, preRendererChartModel, rate)
 						: this._appendLinesForVml();
@@ -1908,12 +1909,13 @@
 				}
 
 				var item0 = chartItems[0];
+				var height = this.chartSetting.get('height')
 				var d = 'M' + item0.get('fromX') + ' '
-						+ this._calcY(item0, 'fromY', preRendererChartModel, rate) + ' ';
+						+ calcY(item0, 'fromY', preRendererChartModel, height, rate) + ' ';
 				var len = chartItems.length;
 				for (var i = 0; i < len; i++) {
-					d += h5format(PATH_LINE_FORMAT, chartItems[i].get('toX'), this._calcY(
-							chartItems[i], 'toY', preRendererChartModel, rate));
+					d += h5format(PATH_LINE_FORMAT, chartItems[i].get('toX'), calcY(chartItems[i],
+							'toY', preRendererChartModel, height, rate));
 				}
 				var fill = graphicRenderer.getFill(this.seriesSetting.fillColor, this.rootElement);
 				if (fill != null) {
@@ -2244,16 +2246,24 @@
 
 				this._createBarDataItems(preRendererChartModel);
 
-				var count = 0;
+				var count = 1;
 				var animateNum = this.seriesSetting.animateNum;
-				if (!animate || animateNum < 1) {
-					count = 1;
+				if (!animate || !animateNum) {
 					animateNum = 1;
 				}
 
 				function doAnimation() {
-					this._appendBars(this.chartDataSource.toArray(), count / animateNum);
+					var rate = count / animateNum;
+					if (count == 1) {
+						this._appendBars(this.chartDataSource.toArray(), preRendererChartModel,
+								rate);
+					} else if (count > 1) {
+						this._updateBars(this.chartDataSource.toArray(), preRendererChartModel,
+								rate);
+					}
+
 					count++;
+
 					if (count <= animateNum) {
 						requestAnimationFrame(this.own(doAnimation));
 					} else {
@@ -2308,9 +2318,10 @@
 					return null;
 				}
 
-				var base = 0;
 				if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
-					base = this.chartDataSource.dataSource.getStackedData(dataObj.id, yProp)[yProp];
+					var stackedVal = this.chartDataSource.dataSource.getStackedData(dataObj.id,
+							yProp)[yProp];
+					y += stackedVal;
 				}
 
 				var dx = this.chartSetting.get('dx');
@@ -2319,26 +2330,64 @@
 					id: id,
 					x: id * dx + this.chartSetting.get('width') - dx / 2,
 					upperBase: calcYPos(y, 0, max, height),
-					rectHeight: calcYDiff(y, base, 0, max, height),
+					rectHeight: calcYDiff(y, 0, 0, max, height),
 					fill: graphicRenderer.getFill(this.seriesSetting.color, this.rootElement)
 							|| 'none'
 				};
 			},
 
-			_appendBars: function(chartItems, rate) {
+			_appendBars: function(chartItems, preRendererChartModel, rate) {
 				for (var i = 0, len = chartItems.length; i < len; i++) {
 					var chartItem = chartItems[i];
+					var height = this.chartSetting.get('height');
 					var width = this.chartSetting.get('dx') * 0.5;
-					graphicRenderer.appendRectElm(chartItem.get('x'), chartItem.get('upperBase'),
-							width, chartItem.get('rectHeight'), chartItem.get('fill'), {
-								id: h5format(RECT_ELM_ID_FORMAT, chartItem.get('id'), this.name),
-								'class': 'candleStickChart chartElm'
-							}, $(this.rootElement));
+					graphicRenderer.appendRectElm(chartItem.get('x'), calcY(chartItem, 'upperBase',
+							preRendererChartModel, height, rate), width, chartItem
+							.get('rectHeight')
+							* rate, chartItem.get('fill'), {
+						id: h5format(RECT_ELM_ID_FORMAT, chartItem.get('id'), this.name),
+						'class': 'barChart chartElm'
+					}, $(this.rootElement));
 				}
 			},
 
-			_chartModelChangeListener: function(ev) {
+			_updateBars: function(chartItems, preRendererChartModel, rate) {
+				for (var i = 0, len = chartItems.length; i < len; i++) {
+					var chartItem = chartItems[i];
+					var height = this.chartSetting.get('height');
+					var width = this.chartSetting.get('dx') * 0.5;
+					this._updateBar(chartItem.get('id'), calcY(chartItem, 'upperBase',
+							preRendererChartModel, height, rate), chartItem.get('rectHeight'));
+				}
+			},
 
+			_updateBar: function(id, y, height) {
+				var $rect = $(this.rootElement).find(
+						'#' + h5format(RECT_ELM_ID_FORMAT, id, this.name));
+				$rect.attr({
+					y: y,
+					height: height
+				});
+			},
+
+			_chartModelChangeListener: function(ev) {
+				// 表示範囲が広がった時に、左端のidを探す
+				for (var i = 0, len = ev.created.length; i < len; i++) {
+					if (ev.created[i].get('id') < this._leftEndChartItemId) {
+						this._leftEndChartItemId = ev.created[i].get('id');
+					}
+				}
+
+				// 座標情報が変更されたときに、表示に反映する
+				for (var i = 0, len = ev.changed.length; i < len; i++) {
+					var changed = ev.changed[i];
+					if (changed.props.upperBase == null && changed.props.rectHeight == null) {
+						return;
+					}
+
+					var item = changed.target;
+					this._updateBar(item.get('id'), item.get('upperBase'), item.get('rectHeight'));
+				}
 			}
 		};
 
@@ -3104,6 +3153,7 @@
 						seriesOption);
 				break;
 			case 'bar':
+			case 'stacked_bar':
 				this._renderers[name] = createBarChartRenderer(g, dataSource, this.chartSetting,
 						seriesOption);
 				break;
