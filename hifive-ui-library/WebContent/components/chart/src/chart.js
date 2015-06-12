@@ -254,7 +254,7 @@
 		}
 	};
 
-    // DataSourceから発生するイベント内で持つ更新情報のプロパティ名
+	// DataSourceから発生するイベント内で持つ更新情報のプロパティ名
 	var EVENT_PROP_NAMES = ['add', 'remove', 'change'];
 
 	/**
@@ -363,7 +363,7 @@
 		 * コンテキストを自分自身にした関数を取得します
 		 * 
 		 * @param {Function} func 関数
-		 * @returns コンテキストを自分自身にした関数
+		 * @returns {Function} コンテキストを自分自身にした関数
 		 * @memberOf DataSourceManager
 		 */
 		own: own,
@@ -592,7 +592,7 @@
 		 * 
 		 * @memberOf DataSource
 		 * @param {Function} func 関数
-		 * @returns コンテキストを自分自身にした関数
+		 * @returns {Function} コンテキストを自分自身にした関数
 		 */
 		own: own,
 
@@ -797,7 +797,7 @@
 		 * 
 		 * @memberOf ChartDataSource
 		 * @param {Function} func 関数
-		 * @returns コンテキストを自分自身にした関数
+		 * @returns {Function} コンテキストを自分自身にした関数
 		 */
 		own: own,
 
