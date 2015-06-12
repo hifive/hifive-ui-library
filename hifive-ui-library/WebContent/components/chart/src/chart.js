@@ -647,6 +647,8 @@
 		}
 	};
 
+	h5.mixin.eventDispatcher.mix(DataSource.prototype);
+
 	/**
 	 * チャート描画用のデータソース
 	 * 
@@ -903,6 +905,8 @@
 			return this.dataSource.getMaxAndMinVals(highProp, lowProp, dispDataSize, movedNum);
 		}
 	};
+
+	h5.mixin.eventDispatcher.mix(ChartDataSource.prototype);
 
 	// チャートレンダラ―の定義
 
@@ -2915,6 +2919,9 @@
 			var translateX = this.chartSetting.get('translateX');
 			this.chartSetting.set('translateX', translateX - this.chartSetting.get('dx') * move);
 			this.chartSetting.set('movedNum', movedNum - move);
+
+			this.checkRange();
+
 			return move;
 		},
 
