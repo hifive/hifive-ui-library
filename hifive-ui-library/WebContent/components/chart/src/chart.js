@@ -448,7 +448,7 @@
 			var dataSource = new DataSource(name, this._count, seriesSetting.keepDataSize);
 			dataSource.manager = this;
 			dataSource.addEventListener('dataChange', this.own(this._addUpdateEventListener));
-			this._map[name] = dataSoruce;
+			this._map[name] = dataSource;
 			this._count++;
 			return dataSource;
 		},
