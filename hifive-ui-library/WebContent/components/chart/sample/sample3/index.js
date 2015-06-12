@@ -140,7 +140,9 @@
 					dispDataSize: 10,
 					// 表示データ数
 					mouseover: {
-						tooltip: false
+						tooltip: {
+							content: this.own(this._getTooltipContent)
+						}
 					},
 					animateNum: 20
 				},
@@ -186,6 +188,10 @@
 		    	this._chartController.removeSeries(series.name);		    	
 		    }
 		},
+		
+		_getTooltipContent: function(data) {
+			return data.val.toString();
+		}
 	};
 
 	h5.core.expose(pageController);
