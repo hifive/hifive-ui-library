@@ -2636,7 +2636,17 @@
 				var width = this.chartSetting.get('width') - dx; // 両脇にdx/2ずつ余白を取る
 				var xInterval = width / vertLineNum;
 
-				var x = dx * 0.5;
+				var paddingRight = this._axesSettings.yaxis.paddingRight;
+				var x;
+				if (typeof paddingRight == 'string') {
+					x = parseInt(paddingRight, 10);
+				} else {
+					if (paddingRight == null) {
+						paddingRight = 0.5;
+					}
+					x = dx * paddingRight;
+				}
+
 				for (var i = 0; i <= vertLineNum; i++) {
 					graphicRenderer.appendLineElm(x, 0, x, height, '#CCC', null, this.$vertLines);
 					x += xInterval;

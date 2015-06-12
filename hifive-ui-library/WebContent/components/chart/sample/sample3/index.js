@@ -119,7 +119,7 @@
 					yaxis: { // y軸
 						lineNum: 5, // y軸の補助線の数(上部は含む)
 						fontSize: '7pt', // ラベルのフォントサイズ
-						paddingRight: '200px', //0,
+						paddingRight: 0,
 						autoScale: function(min, max) { // オートスケールの定義
 							return {
 								rangeMax: Math.ceil(max / 500) * 500,
