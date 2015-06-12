@@ -2191,7 +2191,7 @@
 				lineSchema, lineChartRenderer);
 	}
 
-	var lineSchema = {
+	var barSchema = {
 		id: {
 			id: true,
 			type: 'integer'
@@ -2342,8 +2342,8 @@
 			}
 		};
 
-		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
-				lineSchema, barChartRenderer);
+		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting, barSchema,
+				barChartRenderer);
 	}
 
 	/**
