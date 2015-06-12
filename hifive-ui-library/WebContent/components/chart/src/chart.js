@@ -17,7 +17,7 @@
 (function($) {
 
 	var LINE_ELM_ID_FORMAT = 'line_{0}';
-	var RECT_ELM_ID_FORMAT = 'rect_{0}';
+	var RECT_ELM_ID_FORMAT = 'rect_{0}_{1}';
 
 	var VERT_LINE_ELM_ID_FORMAT = 'vert_line_{0}';
 	var X_LABEL_ELM_ID_FORMAT = 'x_label_{0}';
@@ -722,6 +722,11 @@
 				this.highProp = 'y';
 				this.lowProp = 'y';
 				break;
+			case 'bar':
+				this.propNames = propNames || {};
+				this.xProp = this.propNames.x || 'x';
+				this.highProp = 'y';
+				break;
 			default:
 				break;
 			}
@@ -1131,7 +1136,7 @@
 
 				// TODO: ID体系、DOM構成見直し. ローソクには同じクラス名あてたほうがよいかも。
 				$root.find('#' + h5format(LINE_ELM_ID_FORMAT, id)).remove();
-				$root.find('#' + h5format(RECT_ELM_ID_FORMAT, id)).remove();
+				$root.find('#' + h5format(RECT_ELM_ID_FORMAT, id, this.name)).remove();
 				$root.find('#' + h5format(VERT_LINE_ELM_ID_FORMAT, id)).remove();
 				$root.find('#' + h5format(X_LABEL_ELM_ID_FORMAT, id)).remove();
 			},
@@ -1537,7 +1542,7 @@
 					id: h5format(LINE_ELM_ID_FORMAT, candleStickItem.get('id')),
 					'class': 'candleStickChart chartElm'
 				}, candleStickItem.get('fill'), {
-					id: h5format(RECT_ELM_ID_FORMAT, candleStickItem.get('id')),
+					id: h5format(RECT_ELM_ID_FORMAT, candleStickItem.get('id'), this.name),
 					'class': 'candleStickChart chartElm'
 				});
 			},
@@ -1910,7 +1915,7 @@
 					d += h5format(PATH_LINE_FORMAT, chartItems[i].get('toX'), this._calcY(
 							chartItems[i], 'toY', preRendererChartModel, rate));
 				}
-				var fill = this._getFill();
+				var fill = graphicRenderer.getFill(this.seriesSetting.fillColor, this.rootElement);
 				if (fill != null) {
 					d += h5format(PATH_LINE_FORMAT, chartItems[len - 1].get('toX'),
 							this.chartSetting.get('height'))
@@ -1947,7 +1952,8 @@
 					height: this.chartSetting.get('height'),
 					position: 'absolute'
 				});
-				var fill = this._getFill();
+				var fill = this.graphicRenderer.getFill(this.seriesSetting.fillColor,
+						this.rootElement);
 				graphicRenderer.stroke(lineShape, {
 					on: true,
 					color: this.seriesSetting.color || '#000'
@@ -2185,6 +2191,161 @@
 				lineSchema, lineChartRenderer);
 	}
 
+	var lineSchema = {
+		id: {
+			id: true,
+			type: 'integer'
+		},
+		x: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		upperBase: {
+			type: 'number'
+		},
+		rectHeight: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		fill: {
+			type: 'string'
+		}
+	};
+
+	/**
+	 * バーチャートレンダラ―を生成します。
+	 * 
+	 * @private
+	 * @param {Element} rootElement このラインチャートのルート要素
+	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {Object} chartSetting 設定
+	 * @param {Object} seriesSetting この種別の設定
+	 * @returns BarChartRenderer
+	 */
+	function createBarChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+		/**
+		 * バーチャートのレンダラ―
+		 */
+		var barChartRenderer = {
+			/**
+			 * この系列の描画をします
+			 * 
+			 * @param {Boolean} animate アニメーションするか
+			 * @param {ChartModel} preRendererChartModel この系列より１つ前の系列のChartModel
+			 * @memberOf BarChartRenderer
+			 */
+			draw: function(animate, preRendererChartModel) {
+				$(this.rootElement).empty();
+				this.$path = null;
+
+				this._createBarDataItems(preRendererChartModel);
+
+				var count = 0;
+				var animateNum = this.seriesSetting.animateNum;
+				if (!animate || animateNum < 1) {
+					count = 1;
+					animateNum = 1;
+				}
+
+				function doAnimation() {
+					this._appendBars(this.chartDataSource.toArray(), count / animateNum);
+					count++;
+					if (count <= animateNum) {
+						requestAnimationFrame(this.own(doAnimation));
+					} else {
+						// 描画完了時にイベントをあげる
+						$(this.rootElement).trigger('finishDrawing');
+					}
+				}
+				requestAnimationFrame(this.own(doAnimation));
+			},
+
+			_createBarDataItems: function(preRendererChartModel) {
+				this.chartDataSource.removeAll();
+
+				var barData = [];
+				var current = this.chartDataSource.dataSource.sequence.current()
+						- chartSetting.get('movedNum');
+				var dispDataSize = this.chartSetting.get('dispDataSize');
+				for ( var id in this.chartDataSource.dataSource.dataMap) {
+					var intId = parseInt(id);
+					if (intId < current - dispDataSize || intId >= current) {
+						continue;
+					}
+
+					// 描画範囲の点について座標情報を計算する
+					var item = this.chartDataSource.getDataObj(intId);
+					var chartData = this.toData(item);
+					if (chartData) {
+						// y座標の点があるもののみ表示する
+						barData.push(chartData);
+					}
+				}
+				this.chartDataSource.create(barData);
+			},
+
+			// TODO: ChartDataSourceを拡張したクラスに移動する
+
+			/**
+			 * データオブジェクトをチャート描画用のオブジェクトに変換する
+			 * 
+			 * @param {Object} dataObj データオブジェクト
+			 * @returns {Object} チャート描画用のオブジェクト
+			 */
+			toData: function(dataObj) {
+				var id = dataObj.id;
+
+				var max = this.chartSetting.get('rangeMax');
+				var height = this.chartSetting.get('height');
+
+				var yProp = this.chartDataSource.propNames.y;
+				var y = dataObj[yProp];
+				if (y == null) {
+					return null;
+				}
+
+				var base = 0;
+				if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
+					base = this.chartDataSource.dataSource.getStackedData(dataObj.id, yProp)[yProp];
+				}
+
+				var dx = this.chartSetting.get('dx');
+
+				return {
+					id: id,
+					x: id * dx + this.chartSetting.get('width') - dx / 2,
+					upperBase: calcYPos(y, 0, max, height),
+					rectHeight: calcYDiff(y, base, 0, max, height),
+					fill: graphicRenderer.getFill(this.seriesSetting.color, this.rootElement)
+							|| 'none'
+				};
+			},
+
+			_appendBars: function(chartItems, rate) {
+				for (var i = 0, len = chartItems.length; i < len; i++) {
+					var chartItem = chartItems[i];
+					var width = this.chartSetting.get('dx') * 0.5;
+					graphicRenderer.appendRectElm(chartItem.get('x'), chartItem.get('upperBase'),
+							width, chartItem.get('rectHeight'), chartItem.get('fill'), {
+								id: h5format(RECT_ELM_ID_FORMAT, chartItem.get('id'), this.name),
+								'class': 'candleStickChart chartElm'
+							}, $(this.rootElement));
+				}
+			},
+
+			_chartModelChangeListener: function(ev) {
+
+			}
+		};
+
+		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting,
+				lineSchema, barChartRenderer);
+	}
+
 	/**
 	 * 軸を描画するレンダラ―
 	 * 
@@ -2203,7 +2364,7 @@
 
 		var that = this;
 		function scaling(min, max) {
-			if (min === Infinity || max === -Infinity) {
+			if (min === Infinity && max === -Infinity) {
 				// 点が存在しない場合は、rangeにnullを設定
 				chartSetting.set({
 					rangeMax: null,
@@ -2503,7 +2664,7 @@
 		},
 
 		_xLabelDefaultFormatter: function(value, data, index) {
-			return value.toString();
+			return !value ? '' : value.toString();
 		},
 
 		_yLabelDefaultFormatter: function(value, index) {
@@ -2930,6 +3091,10 @@
 			case 'stacked_line':
 			case 'line':
 				this._renderers[name] = createLineChartRenderer(g, dataSource, this.chartSetting,
+						seriesOption);
+				break;
+			case 'bar':
+				this._renderers[name] = createBarChartRenderer(g, dataSource, this.chartSetting,
 						seriesOption);
 				break;
 			default:
