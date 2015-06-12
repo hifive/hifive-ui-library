@@ -878,13 +878,46 @@
 		}
 	};
 
-	var graphicRenderer;
+	/**
+	 * 図形描画レンダラ―
+	 * 
+	 * @class
+	 * @memberOf h5.ui.components.chart
+	 * @name GraphicRenderer
+	 */
+	var graphicRenderer = {
+
+		/**
+		 * 塗りつぶしのためのオブジェクトを取得します
+		 * 
+		 * @param {Object | String} 色定義
+		 * @param {Element} 図形領域のルート要素
+		 * @returns {Object | String} 塗りつぶしプロパティオブジェクトまたは色の指定文字列
+		 * @memberOf h5.ui.components.chart.GraphicRenderer
+		 */
+		getFill: function(color, rootElement) {
+			if (!color) {
+				return null;
+			}
+
+			if (typeof color === 'object') {
+				// グラデーションの定義オブジェクト
+				return this.gradient(color.id, color, $(rootElement));
+			}
+			if (typeof color === 'string') {
+				return color;
+			}
+			// TODO: エラー
+			return null;
+		}
+	};
+
 	if (!document.createElementNS
 			|| !document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect) {
-		graphicRenderer = vmlRenderer;
+		graphicRenderer = $.extend(vmlRenderer, graphicRenderer);
 		document.namespaces.add("v", "urn:schemas-microsoft-com:vml");
 	} else {
-		graphicRenderer = svgRenderer;
+		graphicRenderer = $.extend(svgRenderer, graphicRenderer);
 	}
 
 	h5.u.obj.expose('h5.ui.components.chart', {
