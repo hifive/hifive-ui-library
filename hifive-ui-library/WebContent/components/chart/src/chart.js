@@ -254,6 +254,9 @@
 		}
 	};
 
+    // DataSourceから発生するイベント内で持つ更新情報のプロパティ名
+	var EVENT_PROP_NAMES = ['add', 'remove', 'change'];
+
 	/**
 	 * グループ内でのY座標の位置を計算します
 	 * 
@@ -321,6 +324,19 @@
 		return obj[type] || null;
 	}
 
+	/**
+	 * コンテキストを自分自身にした関数を取得します
+	 * 
+	 * @param {Function} func 関数
+	 * @returns コンテキストを自分自身にした関数
+	 */
+	function own(func) {
+		var that = this;
+		return function(/* var_args */) {
+			return func.apply(that, arguments);
+		};
+	}
+
 
 	/**
 	 * データソースを管理するクラス
@@ -337,9 +353,21 @@
 		for ( var modelName in chartDataModelManager.models) {
 			chartDataModelManager.dropModel(modelName);
 		}
+
+		this._isInUpdate = false;
+		this._updateLog = {};
 	}
 
 	DataSourceManager.prototype = {
+		/**
+		 * コンテキストを自分自身にした関数を取得します
+		 * 
+		 * @param {Function} func 関数
+		 * @returns コンテキストを自分自身にした関数
+		 * @memberOf DataSourceManager
+		 */
+		own: own,
+
 		/**
 		 * レンジに変更がないかチェックします
 		 * 
@@ -417,10 +445,12 @@
 		 */
 		createDataSource: function(seriesSetting) {
 			var name = seriesSetting.name;
-			this._map[name] = new DataSource(name, this._count, seriesSetting.keepDataSize);
-			this._map[name].manager = this;
+			var dataSource = new DataSource(name, this._count, seriesSetting.keepDataSize);
+			dataSource.manager = this;
+			dataSource.addEventListener('dataChange', this.own(this._addUpdateEventListener));
+			this._map[name] = dataSoruce;
 			this._count++;
-			return this._map[name];
+			return dataSource;
 		},
 
 		/**
@@ -439,6 +469,7 @@
 		 * 
 		 * @param {String} name 取得するデータソースの系列名
 		 * @returns {DataSource} データソース
+		 * @memberOf DataSourceManager
 		 */
 		getDataSource: function(name) {
 			return this._map[name];
@@ -467,6 +498,74 @@
 				};
 			}
 			return maxAndMinVals;
+		},
+
+		/**
+		 * アップデートセッションを開始します
+		 * 
+		 * @memberOf DataSourceManager
+		 */
+		beginUpdate: function() {
+			this._isInUpdate = true;
+		},
+
+		/**
+		 * アップデートセッション中にアップデートイベントを登録する
+		 * 
+		 * @param {Event} イベントオブジェクト
+		 * @memberOf DataSourceManager
+		 */
+		_addUpdateEventListener: function(ev) {
+			if (!this._isInUpdate) {
+				return;
+			}
+
+			if (!this._updateLog[ev.target.name]) {
+				this._updateLog[ev.target.name] = {
+					type: 'dataChange',
+					target: ev.target
+				};
+			}
+			for (var i = 0, len = EVENT_PROP_NAMES.length; i < len; i++) {
+				var type = EVENT_PROP_NAMES[i];
+				if (!this._updateLog[ev.target.name][type]) {
+					this._updateLog[ev.target.name][type] = [];
+				}
+				var data = ev[type];
+				for (var i = 0, len = data.length; i < len; i++) {
+					this._updateLog[ev.target.name][type].push(data[i]);
+				}
+			}
+			ev.stopImmediatePropagation();
+		},
+
+		/**
+		 * アップデートセッション中であるかを返します
+		 * 
+		 * @memberOf DataSourceManager
+		 * @returns {Boolean} アップデートセッション中であるか
+		 */
+		isInUpdate: function() {
+			return this._isInUpdate;
+		},
+
+		/**
+		 * アップデートセッション中に起こったイベントを一斉に発火します
+		 * 
+		 * @memberOf DataSourceManager
+		 */
+		endUpdate: function() {
+			if (!this._isInUpdate) {
+				return;
+			}
+
+			this._isInUpdate = false;
+
+			for ( var name in this._updateLog) {
+				this._map[name].dispatchEvent(this._updateLog[name]);
+			}
+
+			this._updateLog = {};
 		}
 	};
 
@@ -488,6 +587,15 @@
 	}
 
 	DataSource.prototype = {
+		/**
+		 * コンテキストを自分自身にした関数を取得します
+		 * 
+		 * @memberOf DataSource
+		 * @param {Function} func 関数
+		 * @returns コンテキストを自分自身にした関数
+		 */
+		own: own,
+
 		/**
 		 * データを読み込む。系列の設定で指定されている場合はそれを利用します
 		 * 
@@ -520,9 +628,12 @@
 			this.sequence = h5.core.data
 					.createSequence(Math.max(newData.length - data.length, 0) + 1);
 			var len = data.length;
+
+			this.manager.beginUpdate();
 			while (this.sequence.current() <= len) {
 				this.add(newData[this.sequence.current() - 1]);
 			}
+			this.manager.endUpdate();
 		},
 
 		_sliceAtMaxSize: function(data) {
@@ -559,6 +670,14 @@
 			if (this.length > this.dataSize) {
 				this.remove(id - this.dataSize);
 			}
+
+			var event = {
+				type: 'dataChange',
+				add: [d],
+				target: this
+			};
+
+			this.dispatchEvent(event);
 
 			return id;
 		},
@@ -665,35 +784,47 @@
 
 		this.xLabelArray = null;
 		this._chartDataMap = {};
+
+		this.setPropNames(seriesSetting.type, seriesSetting.propNames);
+
+		// イベントリスナの追加
+		dataSource.addEventListener('dataChange', this.own(this._addEventListener));
 	}
 
 	ChartDataSource.prototype = {
 		/**
+		 * コンテキストを自分自身にした関数を取得します
+		 * 
+		 * @memberOf ChartDataSource
+		 * @param {Function} func 関数
+		 * @returns コンテキストを自分自身にした関数
+		 */
+		own: own,
+
+		/**
 		 * データを読み込む。系列の設定で指定されている場合はそれを利用します
 		 * 
 		 * @param series {Object} 系列の設定オブジェクト
-		 * @memberOf DataSource
+		 * @memberOf ChartDataSource
 		 */
 		loadData: function(series) {
 			// TODO: ロジック化すべきか？
 			var that = this;
 			this.dataSource.loadData(series).done(function(data) {
 				if (that._chartSetting.get('dispDataSize') == null) {
-					that._chartSetting.set('dispDataSize', this._dataSource.length);
+					that._chartSetting.set('dispDataSize', that.dataSource.length);
 				}
-
-				that.convertToModel(series.type, series.propNames);
 			});
 		},
 
 		/**
-		 * データオブジェクトをデータアイテムに変換します
+		 * 種別ごとにプロパティマップをセットします
 		 * 
 		 * @param {String} type チャートの種別
 		 * @param {Object} propNames 使用するプロパティの対応マップ
 		 * @memberOf ChartDataSource
 		 */
-		convertToModel: function(type, propNames) {
+		setPropNames: function(type, propNames) {
 			this._type = type.toLowerCase();
 			switch (this._type) {
 			case 'ohlc':
@@ -715,14 +846,6 @@
 			default:
 				break;
 			}
-
-			if (this.dataSource.length === 0) {
-				// 空データを渡された場合は、dataModelの作成を行わない
-				// 次回データがaddされたときに作成を行う
-				return;
-			}
-
-			this._calcDataObj(this.dataSource.toArray(), propNames);
 		},
 
 		/**
@@ -747,17 +870,6 @@
 			return obj;
 		},
 
-		/**
-		 * データアイテムを生成します
-		 * 
-		 * @param {Object} data 生成元のデータオブジェクト
-		 * @returns {DataItem} データアイテム
-		 * @memberOf ChartDataSource
-		 */
-		createDataObj: function(data) {
-			return this._calcDataObj([data], this.propNames)[data.id];
-		},
-
 		_createSchema: function(data) {
 			var schema = {};
 			for ( var name in data) {
@@ -779,6 +891,8 @@
 		},
 
 		_calcDataObj: function(data, prop) {
+			var ret = [];
+
 			var chartSetting = this._chartSetting;
 			var dispDataSize = chartSetting.get('dispDataSize');
 			var minVal = Infinity;
@@ -788,6 +902,7 @@
 				var obj = this._toData(data[i], prop);
 				var id = data[i].id;
 				this._chartDataMap[id] = obj;
+				ret.push(obj);
 				if (len - dispDataSize <= id) {
 					var lowVal = this._getStackedVal(obj, this.propNames[this.lowProp]
 							|| this.lowProp);
@@ -810,7 +925,7 @@
 				});
 			}
 
-			return this._chartDataMap;
+			return ret;
 		},
 
 		_getStackedVal: function(obj, propName) {
@@ -847,6 +962,16 @@
 				}
 			}
 			return ret;
+		},
+
+		_addEventListener: function(ev) {
+			var arr = this._calcDataObj(ev.add, this.propNames);
+
+			this.dispatchEvent({
+				type: 'add',
+				add: arr,
+				target: this
+			});
 		},
 
 		/**
@@ -969,9 +1094,21 @@
 			if (this.seriesSetting.mouseover) {
 				this._setTooltipSetting(this.seriesSetting.mouseover.tooltip);
 			}
+
+			// イベントリスナの追加
+			this.chartDataSource.addEventListener('add', this.own(this._addEventListener));
 		}
 
 		ChartRendererBase.prototype = {
+			/**
+			 * コンテキストを自分自身にした関数を取得します
+			 * 
+			 * @memberOf ChartRenderer
+			 * @param {Function} func 関数
+			 * @returns コンテキストを自分自身にした関数
+			 */
+			own: own,
+
 			_setTooltipSetting: function(tooltip) {
 				if (tooltip == null) {
 					return;
@@ -1017,10 +1154,15 @@
 			 */
 			addData: function(data) {
 				// データを1つ分受け取って、チャートを更新する
-				var id = this.chartDataSource.dataSource.add(data);
-				data.id = id;
-				var obj = this.chartDataSource.createDataObj(data);
+				this.chartDataSource.dataSource.add(data);
+			},
 
+			_addEventListener: function(ev) {
+				if (!ev.add || ev.add.length != 1) {
+					return;
+				}
+
+				var obj = ev.add[0];
 				this.updateChart(obj);
 
 				this.chartDataSource.dataSource.remove(obj.id
@@ -2805,6 +2947,8 @@
 				var dataSource = this.dataSourceManager.createDataSource(seriesSettings);
 				var chartDataSource = new ChartDataSource(dataSource, seriesSettings,
 						this.chartSetting);
+				//				var chartDataSource = new ChartDataSource(dataSource, seriesSettings,
+				//						this.chartSetting);
 				this._createChartRenderer(g, chartDataSource, seriesSettings);
 				promises.push(chartDataSource.loadData(seriesSettings));
 			}
@@ -2919,8 +3063,6 @@
 			var translateX = this.chartSetting.get('translateX');
 			this.chartSetting.set('translateX', translateX - this.chartSetting.get('dx') * move);
 			this.chartSetting.set('movedNum', movedNum - move);
-
-			this.checkRange();
 
 			return move;
 		},
