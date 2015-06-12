@@ -2337,18 +2337,22 @@
 			},
 
 			_appendBars: function(chartItems, preRendererChartModel, rate) {
+				var height = this.chartSetting.get('height');
 				for (var i = 0, len = chartItems.length; i < len; i++) {
 					var chartItem = chartItems[i];
-					var height = this.chartSetting.get('height');
-					var width = this.chartSetting.get('dx') * 0.5;
-					graphicRenderer.appendRectElm(chartItem.get('x'), calcY(chartItem, 'upperBase',
-							preRendererChartModel, height, rate), width, chartItem
-							.get('rectHeight')
-							* rate, chartItem.get('fill'), {
+					var chartObj = chartItem.get();
+					chartObj.y = calcY(chartItem, 'upperBase', preRendererChartModel, height, rate);
+					this._appendBar(chartObj, $(this.rootElement), chartItem.get('fill'), {
 						id: h5format(RECT_ELM_ID_FORMAT, chartItem.get('id'), this.name),
 						'class': 'barChart chartElm'
-					}, $(this.rootElement));
+					});
 				}
+			},
+
+			_appendBar: function(chartObj, $elm, color, prop) {
+				var width = this.chartSetting.get('dx') * 0.5;
+				graphicRenderer.appendRectElm(chartObj.x, chartObj.upperBase, width,
+						chartObj.rectHeight, color, prop, $elm);
 			},
 
 			_updateBars: function(chartItems, preRendererChartModel, rate) {
@@ -2388,6 +2392,25 @@
 					var item = changed.target;
 					this._updateBar(item.get('id'), item.get('upperBase'), item.get('rectHeight'));
 				}
+			},
+
+			_getCentralPos: function(chartItem) {
+				return {
+					x: chartItem.get('x'),
+					y: chartItem.get('upperBase') + (chartItem.get('rectHeight') / 2)
+				};
+			},
+
+			_appendHighLight: function(chartItem, $tooltip) {
+				// FIXME: ツールチップの色の出し方
+				this._appendBar(chartItem.get(), $tooltip, /*chartItem.get('fill')*/'yellow', {
+					'class': 'highlight_bar',
+					stroke: 'yellow',
+					'stroke-width': '2px'
+				});
+			},
+			_showAdditionalLine: function() {
+			// do nothing
 			}
 		};
 
