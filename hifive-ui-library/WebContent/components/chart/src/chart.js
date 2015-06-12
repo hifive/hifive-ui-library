@@ -342,13 +342,11 @@
 	 * データソースを管理するクラス
 	 * 
 	 * @class
-	 * @param {ChartSettingItem} chartSetting 設定
 	 * @name DataSourceManager
 	 */
-	function DataSourceManager(chartSetting) {
+	function DataSourceManager() {
 		this._count = 0;
 		this._map = {};
-		this.chartSetting = chartSetting;
 
 		for ( var modelName in chartDataModelManager.models) {
 			chartDataModelManager.dropModel(modelName);
@@ -367,40 +365,6 @@
 		 * @memberOf DataSourceManager
 		 */
 		own: own,
-
-		/**
-		 * レンジに変更がないかチェックします
-		 * 
-		 * @param {Number} adderdMax 追加した要素の最大値
-		 * @param {Number} addedMin 追加した要素の最小値
-		 * @param {Number} removedMax 削除した要素の最大値
-		 * @param {Number} removedMin 削除した要素の最小値
-		 * @param {Number} rightEndId 表示データの右端のID
-		 * @memberOf DataSourceManager
-		 */
-		checkRange: function(adderdMax, addedMin, removedMax, removedMin, rightEndId) {
-			if (this._isUpdateRange(adderdMax, addedMin, removedMax, removedMin)) {
-				this.setRange(rightEndId);
-			}
-		},
-
-		/**
-		 * レンジの設定をされます
-		 * 
-		 * @param {Number} rightEndId 表示データの右端のID
-		 * @memberOf DataSourceManager
-		 */
-		setRange: function(rightEndId) {
-			this.chartSetting.set(this.getMaxAndMinVals(rightEndId, this.chartSetting
-					.get('dispDataSize')));
-		},
-
-		_isUpdateRange: function(adderdMax, addedMin, removedMax, removedMin) {
-			var maxVal = this.chartSetting.get('maxVal');
-			var minVal = this.chartSetting.get('minVal');
-			return adderdMax > maxVal || addedMin < minVal || removedMax === maxVal
-					|| removedMin === minVal;
-		},
 
 		/**
 		 * データソースの一覧を取得します
@@ -755,9 +719,9 @@
 				}
 			}
 
-			if (maxVal == -Infinity || minVal == Infinity) {
-				throw new Error('最大値と最小値の計算結果が不正です');
-			}
+			// 			if (maxVal == -Infinity || minVal == Infinity) {
+			// 				throw new Error('最大値と最小値の計算結果が不正です');
+			// 			}
 
 			return {
 				maxVal: maxVal,
@@ -870,24 +834,36 @@
 			return obj;
 		},
 
-		_createSchema: function(data) {
-			var schema = {};
-			for ( var name in data) {
-				if (data.hasOwnProperty(name)) {
-					var propName = name;
-					for ( var key in this.propNames) {
-						if (this.propNames[key] === name) {
-							schema[key] = null;
-						}
-					}
-					schema[propName] = null;
-				}
+		/**
+		 * データオブジェクトを追加します
+		 * 
+		 * @return {Object} データオブジェクト
+		 * @memberOf ChartDataSource
+		 */
+		add: function(obj) {
+			var chartObj = this._toData(obj);
+			this.dispatchEvent({
+				type: 'dataChange',
+				add: [chartObj],
+				target: this
+			});
+		},
+
+		/**
+		 * 指定したIDのデータオブジェクトを削除します
+		 * 
+		 * @param {Number} id データID
+		 * @memberOf ChartDataSource
+		 */
+		remove: function(id) {
+			if (this._chartDataMap[id]) {
+				this.dispatchEvent({
+					type: 'dataChange',
+					remove: [this.getDataObj(id)],
+					target: this
+				});
+				delete this._chartDataMap[id];
 			}
-			schema.id = {
-				id: true,
-				type: 'integer'
-			};
-			return schema;
 		},
 
 		_calcDataObj: function(data, prop) {
@@ -968,7 +944,7 @@
 			var arr = this._calcDataObj(ev.add, this.propNames);
 
 			this.dispatchEvent({
-				type: 'add',
+				type: 'dataChange',
 				add: arr,
 				target: this
 			});
@@ -995,28 +971,6 @@
 		},
 
 		/**
-		 * レンジに変更がないかをチェックします
-		 * 
-		 * @param {DataItem} addedData 追加したデータ
-		 * @param {DataItem} removedData 削除したデータ
-		 * @param {Number} dispDataSize 表示数
-		 * @param {Number} rightEndId 表示データの右端のID
-		 * @memberOf ChartDataSource
-		 */
-		checkRange: function(addedData, removedData, dispDataSize, rightEndId) {
-			if (this.seriesSetting.axis && this.seriesSetting.axis.yaixs
-					&& this.seriesSetting.axis.yaxis.autoScale === false) {
-				return;
-			}
-
-			var removedHigh = removedData ? removedData[this.highProp] : null;
-			var removedLow = removedData ? removedData[this.lowProp] : null;
-
-			this.dataSource.manager.checkRange(addedData[this.highProp], addedData[this.lowProp],
-					removedHigh, removedLow, rightEndId, dispDataSize);
-		},
-
-		/**
 		 * 描画範囲内の最大値と最小値を取得します
 		 * 
 		 * @param {Number} dispDataSize 表示数
@@ -1028,6 +982,16 @@
 			var lowProp = this.propNames[this.lowProp] || this.lowProp;
 
 			return this.dataSource.getMaxAndMinVals(highProp, lowProp, dispDataSize, movedNum);
+		},
+
+		getMaxAndMinValsOf: function(obj) {
+			var highProp = this.propNames[this.highProp] || this.highProp;
+			var lowProp = this.propNames[this.lowProp] || this.lowProp;
+
+			return {
+				maxVal: obj[highProp],
+				minVal: obj[lowProp]
+			};
 		}
 	};
 
@@ -1096,7 +1060,7 @@
 			}
 
 			// イベントリスナの追加
-			this.chartDataSource.addEventListener('add', this.own(this._addEventListener));
+			this.chartDataSource.addEventListener('dataChange', this.own(this._addEventListener));
 		}
 
 		ChartRendererBase.prototype = {
@@ -1190,13 +1154,11 @@
 					removedItemId = addedData.id - dispDataSize - this.chartSetting.get('movedNum');
 					isRightEndRemove = false;
 				}
-				this._removeChartElm(removedItemId);
 
-				var removedData = this.chartDataSource.getDataObj(removedItemId);
-
-				var rightEndId = isRightEndRemove ? removedItemId - 1 : addedData.id;
-				this.chartDataSource.checkRange(addedData, removedData, dispDataSize, rightEndId);
-
+				if (removedItemId >= 0) {
+					this.chartDataSource.remove(removedItemId);
+					this._removeChartElm(removedItemId);
+				}
 				this._appendChart([chartItem]);
 			},
 
@@ -1212,9 +1174,9 @@
 					var intId = parseInt(id);
 					// 描画範囲のローソクは座標情報を計算する
 					var obj = this.chartDataSource.getDataObj(intId);
-					var chartItem = this.chartModel.get(obj);
+					var chartItem = this.chartModel.get(obj.id);
 					if (chartItem != null) {
-						chartItem.set(this.toData(item, id));
+						chartItem.set(this.toData(obj, id));
 					}
 				}
 				chartDataModelManager.endUpdate();
@@ -2058,13 +2020,13 @@
 			/**
 			 * DataItemをチャート描画用のオブジェクトをを取得します
 			 * 
-			 * @param {ChartItem} dataItem データアイテム
+			 * @param {Object} dataObj データアイテム
 			 * @returns {Object} 描画用のオブジェクト
 			 * @memberOf LineChartRenderer
 			 */
-			toData: function(dataItem) {
+			toData: function(dataObj) {
 				// TODO: xの位置がデータに依存しない
-				var id = dataItem.id;
+				var id = dataObj.id;
 				var pre = this.chartDataSource.getDataObj(id - 1);
 
 				var min = this.chartSetting.get('rangeMin');
@@ -2072,18 +2034,18 @@
 				var height = this.chartSetting.get('height');
 
 				var yProp = this.chartDataSource.propNames.y;
-				var toY = dataItem[yProp];
+				var toY = dataObj[yProp];
 				if (toY == null) {
 					return null;
 				}
 
 				// preがnullのときは、データとしても端であり、このときはただの点を表示する
 				var isPoint = pre == null || pre[yProp] == null;
-				var fromY = isPoint ? dataItem[yProp] : pre[yProp];
+				var fromY = isPoint ? dataObj[yProp] : pre[yProp];
 
 				if ($.inArray(this.seriesSetting.type, STACKED_CHART_TYPES) !== -1) {
 					fromY += this.chartDataSource.dataSource.getStackedData(pre.id, yProp)[yProp];
-					toY += this.chartDataSource.dataSource.getStackedData(dataItem.id, yProp)[yProp];
+					toY += this.chartDataSource.dataSource.getStackedData(dataObj.id, yProp)[yProp];
 				}
 
 				var dx = this.chartSetting.get('dx');
@@ -2555,6 +2517,10 @@
 
 		_addedCount: 0,
 
+		_updateLog: {},
+
+		_isInInnerUpdate: false,
+
 		__ready: function() {
 			this.chartId = '__h5_chart' + chartSequense;
 			chartSequense++;
@@ -2824,6 +2790,73 @@
 			}));
 		},
 
+		_beginUpdateInner: function() {
+			// 内部的なアップデートセッションを開始するメソッド
+			// TODO: publicなものと統合
+			this._isInInnerUpdate = true;
+		},
+
+		_endUpdateInner: function() {
+			var addedMax = -Infinity;
+			var addedMin = Infinity;
+			var removedMax = -Infinity;
+			var removedMin = Infinity;
+
+			for ( var name in this._updateLog) {
+				var renderer = this._renderers[name];
+
+				var addedData = this._updateLog[name].add[0];
+				var maxAndMinVals = renderer.chartDataSource.getMaxAndMinValsOf(addedData);
+				addedMax = Math.max(addedMax, maxAndMinVals.maxVal);
+				addedMin = Math.min(addedMin, maxAndMinVals.minVal);
+
+				if (this._updateLog[name].remove.length != 0) {
+					var removedData = this._updateLog[name].remove[0];
+					var maxAndMinVals = renderer.chartDataSource.getMaxAndMinValsOf(removedData);
+					removedMax = Math.max(removedMax, maxAndMinVals.maxVal);
+					removedMin = Math.min(removedMin, maxAndMinVals.minVal);
+				}
+			}
+
+			if (this._isUpdateRange(addedMax, addedMin, removedMax, removedMin)) {
+				this._setRange();
+			}
+
+			this._isInInnerUpdate = false;
+			this._updateLog = {};
+		},
+
+		_chartDataChangeListener: function(ev) {
+			var name = ev.target.name;
+			if (this._isInInnerUpdate) {
+				// 内部アップデートセッション中はchartDataの変更をためておく
+				if (!this._updateLog[name]) {
+					this._updateLog[name] = {
+						add: [],
+						remove: []
+					};
+				}
+
+				if (ev.add) {
+					for (var i = 0, len = ev.add.length; i < len; i++) {
+						this._updateLog[name].add.push(ev.add[i]);
+					}
+				}
+				if (ev.remove) {
+					for (var i = 0, len = ev.remove.length; i < len; i++) {
+						this._updateLog[name].remove.push(ev.remove[i]);
+					}
+				}
+			}
+		},
+
+		_isUpdateRange: function(adderdMax, addedMin, removedMax, removedMin) {
+			var maxVal = this.chartSetting.get('maxVal');
+			var minVal = this.chartSetting.get('minVal');
+			return adderdMax > maxVal || addedMin < minVal || removedMax === maxVal
+					|| removedMin === minVal;
+		},
+
 		/**
 		 * アップデートセッションを開始します
 		 * 
@@ -2947,9 +2980,11 @@
 				var dataSource = this.dataSourceManager.createDataSource(seriesSettings);
 				var chartDataSource = new ChartDataSource(dataSource, seriesSettings,
 						this.chartSetting);
-				//				var chartDataSource = new ChartDataSource(dataSource, seriesSettings,
-				//						this.chartSetting);
+				chartDataSource.addEventListener('dataChange', this
+						.own(this._chartDataChangeListener));
+
 				this._createChartRenderer(g, chartDataSource, seriesSettings);
+
 				promises.push(chartDataSource.loadData(seriesSettings));
 			}
 			return $.when.apply($, promises);
@@ -3021,6 +3056,8 @@
 		addData: function(data, commonData) {
 			var individualSeries = [];
 
+			this._beginUpdateInner();
+
 			for (var i = 0, len = data.length; i < len; i++) {
 				var name = data[i].name;
 				individualSeries.push(name);
@@ -3034,6 +3071,8 @@
 				}
 				renderers[name].addData(commonData);
 			}
+
+			this._endUpdateInner();
 
 			// チャートを左にスライドする
 			var translateX = this.chartSetting.get('translateX');
@@ -3051,15 +3090,22 @@
 		go: function(num) {
 			var movedNum = this.chartSetting.get('movedNum');
 			var move = Math.min(movedNum, num);
+
+			this._beginUpdateInner();
+
 			for ( var name in this._renderers) {
 				var chartDataSource = this._renderers[name].chartDataSource;
 				var rightEndId = chartDataSource.dataSource.sequence.current() - movedNum;
 				var leftEndId = rightEndId - this.chartSetting.get('dispDataSize');
 				for (var i = 0; i < move; i++) {
 					var item = chartDataSource.getDataObj(rightEndId + i);
+					chartDataSource.add(item);
 					this._renderers[name].updateChart(item, leftEndId, false);
 				}
 			}
+
+			this._endUpdateInner();
+
 			var translateX = this.chartSetting.get('translateX');
 			this.chartSetting.set('translateX', translateX - this.chartSetting.get('dx') * move);
 			this.chartSetting.set('movedNum', movedNum - move);
@@ -3075,15 +3121,22 @@
 		 */
 		back: function(num) {
 			var movedNum = this.chartSetting.get('movedNum');
+
+			this._beginUpdateInner();
+
 			for ( var name in this._renderers) {
 				var chartDataSource = this._renderers[name].chartDataSource;
 				var rightEndId = chartDataSource.dataSource.sequence.current() - movedNum - 1;
 				var leftEndId = rightEndId - this.chartSetting.get('dispDataSize');
 				for (var i = 0; i < num; i++) {
 					var item = chartDataSource.getDataObj(leftEndId - i);
+					chartDataSource.add(item);
 					this._renderers[name].updateChart(item, rightEndId, true);
 				}
 			}
+
+			this._endUpdateInner();
+
 			var translateX = this.chartSetting.get('translateX');
 			this.chartSetting.set('translateX', translateX + this.chartSetting.get('dx') * num);
 			this.chartSetting.set('movedNum', movedNum + num);
