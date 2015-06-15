@@ -69,6 +69,15 @@
 		this._$layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
 		this._$bg = $('<div></div>').addClass(CLASS_BG_LAYER);
 		this._$svg = $(document.createElementNS(XMLNS, 'svg')).attr('class', CLASS_SVG_LAYER); //svg要素はattr()でクラスを当てる必要あり
+		// 背景はこの時点で固定。動的に変更された場合は対応していない。
+		this._$bgElement = this._$orgBg.children().clone();
+		this._$bgElement.css('transform-origin', '0 0');
+		this._orgBgElementTop = parseFloat(this._$bgElement.css('top'));
+		this._orgBgElementLeft = parseFloat(this._$bgElement.css('left'));
+		this._boardW = $board.width();
+		this._boardH = $board.height();
+
+		this._$bg.append(this._$bgElement);
 		this._$layerWrapper.append(this._$bg);
 		this._$layerWrapper.append(this._$svg);
 		this._$view.append(this._$layerWrapper);
@@ -80,8 +89,8 @@
 		this._use.setAttributeNS(XLINKNS, 'href', '#' + this._$orgG.attr('id'));
 		this._$svg.append(this._use);
 
-		this._rootW = settings.width;
-		this._rootH = settings.height;
+		this._rootW = parseFloat(settings.width);
+		this._rootH = parseFloat(settings.height);
 
 		// 指定されたスケールとサイズを適用
 		this._refresh();
@@ -121,10 +130,9 @@
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
 			}
+			this._x = x;
+			this._y = y;
 			this._refresh();
-			var use = this._use;
-			use.setAttribute('x', -x + this._rootW / 2);
-			use.setAttribute('y', -y + this._rootH / 2);
 		},
 
 		/**
@@ -183,16 +191,56 @@
 			this._disposed = true;
 		},
 		_refresh: function() {
+			// 表示位置設定
 			var w = this._rootW;
 			var h = this._rootH;
-			var scale = this._scale;
+			var x = this._x || 0;
+			var y = this._y || 0;
+			// svg
+			var use = this._use;
+			use.setAttribute('x', -x + w / 2);
+			use.setAttribute('y', -y + h / 2);
+
 			this._$root.css({
 				width: this._rootW,
 				height: this._rootH
 			});
+
+			// svg
+			var scale = this._scale;
 			var value = h5.u.str.format('matrix({0},0,0,{0},{1},{2})', scale, (1 - scale) * w / 2,
 					(1 - scale) * h / 2);
 			this._use.setAttribute('transform', value);
+
+
+			// カンバス範囲外は表示しないようにclip
+			// 全て表示する場合はrect(0 {w}px {h}px 0)
+			// x,yの位置がカンバスをはみ出す位置にいる場合は削る
+			var xMin = x * scale > w / 2 ? 0 : w / 2 - x * scale;
+			var yMin = y * scale > h / 2 ? 0 : h / 2 - y * scale;
+			var xMax = x * scale < this._boardW - w / 2 ? w : w
+					- (x + w / 2 / scale - this._boardW) * scale;
+			var yMax = y * scale < this._boardH - h / 2 ? h : h
+					- (y + h / 2 / scale - this._boardH) * scale;
+			var svgClipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax,
+					xMin);
+			this._$svg.css('clip', svgClipValue);
+
+			// 背景
+			var scaleValue = 'scale(' + scale + ')';
+			var orgLeft = this._orgBgElementLeft;
+			var orgTop = this._orgBgElementTop;
+			// 範囲外は表示しないようにclip
+			var bgClipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)',
+					-this._orgBgElementTop, scale * (this._boardW - this._orgBgElementLeft), scale
+							* (this._boardH - this._orgBgElementTop), -this._orgBgElementLeft);
+			this._$bgElement.css({
+				left: orgLeft * scale - x * scale + w / 2,
+				top: orgTop * scale - y * scale + h / 2,
+				transform: scaleValue,
+				'-webkit-transform': scaleValue,
+				clip: bgClipValue
+			});
 		}
 	});
 
@@ -206,7 +254,6 @@
 		$board: null,
 		mouseoverMove: null,
 		mouseoverFocus: null,
-		_boardOffset: null,
 		__name: 'h5.ui.components.artboard.controller.MagnifierMouseoverController',
 		__construct: function(ctx) {
 			var args = ctx.args;
@@ -219,11 +266,6 @@
 			this.mag.addDisposeHandler(this.own(function() {
 				this.parentController.unmanageChild(this);
 			}));
-			var boardOffset = this.$board.offset();
-			this._boardOffset = {
-				left: boardOffset.left,
-				top: boardOffset.top
-			};
 		},
 		'{this.$board} h5trackstart': function(ctx, $el) {
 			this._execute(ctx, $el);
@@ -290,8 +332,9 @@
 			this.mag.move(x, y, true);
 		},
 		_focus: function(event) {
-			var x = event.pageX - this._boardOffset.left;
-			var y = event.pageY - this._boardOffset.top;
+			var boardOffset = this.$board.offset();
+			var x = event.pageX - boardOffset.left;
+			var y = event.pageY - boardOffset.top;
 			this.mag.focus(x, y);
 		}
 	};
@@ -309,15 +352,6 @@
 		 * @private
 		 */
 		__name: 'h5.ui.components.artboard.controller.MagnifierController',
-
-		/**
-		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
-		 * @private
-		 */
-		__init: function() {
-		// 表示エリアの作成
-
-		},
 
 		/**
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
