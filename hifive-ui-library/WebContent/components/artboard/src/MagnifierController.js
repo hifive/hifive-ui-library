@@ -183,15 +183,16 @@
 			this._disposed = true;
 		},
 		_refresh: function() {
+			var w = this._rootW;
+			var h = this._rootH;
+			var scale = this._scale;
 			this._$root.css({
 				width: this._rootW,
 				height: this._rootH
 			});
-			var scaleVal = 'scale(' + this._scale + ')';
-			this._$svg.css({
-				'-webkit-transform': scaleVal,
-				transform: scaleVal
-			});
+			var value = h5.u.str.format('matrix({0},0,0,{0},{1},{2})', scale, (1 - scale) * w / 2,
+					(1 - scale) * h / 2);
+			this._use.setAttribute('transform', value);
 		}
 	});
 
