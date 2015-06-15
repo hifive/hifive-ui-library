@@ -42,8 +42,10 @@ h1 {
 
 /** カンバスの設定 **/
 .artboard {
-	border: 1px solid #ccc;
 	box-sizing: border-box;
+}
+.artboard .h5-artboard-canvas-wrapper{
+	border: 1px solid #ccc;
 }
 
 .artboard .mode-text-input {

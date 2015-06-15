@@ -50,7 +50,7 @@
 		h5.core.controller($root, sample.PageController, {
 			canvasSize: {
 				height: 300,
-				width: $('.artboard').innerWidth()
+				width: $('.artboard').innerWidth() - 2 // borderの分引いている
 			}
 		});
 	});
