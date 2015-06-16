@@ -3,7 +3,7 @@
 	<div class="toolbar-operation">
 		<div class="menu-wrapper border1" data-menu-side="left"><img class="menu-button icon48" src="res/img/toolicon/up.png">
 			<ul class="menu-list display-none">
-				<li class="save">保存</li>
+				<li  class="popup-open" data-popup-name="save-popup">保存</li>
 				<li class="select-all">すべて選択</li>
 				<li class="remove-all">全て削除</li>
 				<li class="popup-open" data-popup-name="background-popup">背景の設定…</li>
@@ -142,6 +142,16 @@
 			<textarea class="saveDataText" value="" style="width:100%"></textarea>
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+			</div>
+		</div>
+		<div class="save-popup">
+			<p>サイズ設定</p>
+			<label>幅<input type="text" name="save-width"/></label>
+			<label>高さ<input type="text"  name="save-height"/></label>
+			<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked/>比率を保持</label>
+			<div class="popupBtn-wrapper">
+				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+				<div class="save popupCloseBtn border1 clear-both">保存</div>
 			</div>
 		</div>
 	</div>

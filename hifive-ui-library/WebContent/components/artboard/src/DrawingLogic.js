@@ -1183,6 +1183,8 @@
 		 *            <p>
 		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
 		 *            </p>
+		 * @param {number} [processParameter.width] 出力する画像の幅(px)
+		 * @param {number} [processParameter.height] 出力する画像の高さ(px)
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
@@ -1192,8 +1194,8 @@
 			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
-			var canvasWidth = viewBoxValues[2];
-			var canvasHeight = viewBoxValues[3];
+			var canvasWidth = parseInt(viewBoxValues[2]);
+			var canvasHeight = parseInt(viewBoxValues[3]);
 			var canvas = document.createElement('canvas');
 			canvas.setAttribute('width', canvasWidth);
 			canvas.setAttribute('height', canvasHeight);
@@ -1268,6 +1270,16 @@
 								processParameter);
 					})).then(this.own(function() {
 				// カンバスを画像化
+				var w = processParameter.width;
+				var h = processParameter.height;
+				if (canvasWidth !== w || canvasHeight !== h) {
+					// 指定されたサイズと描画領域のサイズが異なる場合、指定されたサイズのcanvasを作ってリサイズ
+					var orgCanvas = canvas;
+					canvas = document.createElement('canvas');
+					canvas.setAttribute('width', w);
+					canvas.setAttribute('height', h);
+					canvas.getContext('2d').drawImage(orgCanvas, 0, 0, w, h);
+				}
 				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
 			}));
 			return dfd.promise();

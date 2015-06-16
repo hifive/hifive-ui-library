@@ -55,9 +55,6 @@
 	/** セーブ */
 	var EVENT_SAVE = 'save';
 
-	/** ロード */
-	var EVENT_LOAD = 'load';
-
 	//-------------------------------------------------------------
 	//  sample.ToolMenuController
 	//-------------------------------------------------------------
@@ -336,6 +333,13 @@
 		_textSettingsController: textSettingsController,
 
 		/**
+		 * 保存オプション設定コントローラ
+		 *
+		 * @memberOf sample.SaveController
+		 */
+		_saveController: sample.SaveController,
+
+		/**
 		 * 背景画像追加コントローラ
 		 *
 		 * @memberOf sample.ToolbarController
@@ -362,6 +366,9 @@
 			},
 			_pictureController: {
 				rootElement: '{.background-popup}'
+			},
+			_saveController: {
+				rootElement: '{.save-popup}'
 			}
 		},
 
@@ -491,9 +498,15 @@
 				header: false
 			});
 
+			this._savePopup = h5.ui.popupManager.createPopup('savePopup', '', this.$find(
+					'.popup-contents-wrapper').find('.save-popup'), null, {
+				header: false
+			});
+
 			this.popupMap = {
 				'background-popup': this._backgroundPopup,
-				'saveData-popup': this._saveDataPopup
+				'saveData-popup': this._saveDataPopup,
+				'save-popup': this._savePopup
 			};
 
 			// テキスト入力要素
@@ -1212,25 +1225,14 @@
 		//---------------------------
 		/**
 		 * セーブ
-		 */
-		'.save h5trackstart': function() {
-			this.trigger(EVENT_SAVE);
-			this.$find('.popup-open[data-popup-name="load-popup"]').removeClass('disabled');
-		},
-
-		/**
-		 * ロード
 		 *
 		 * @param context
 		 */
-		'{.load-popup .load} h5trackstart': function(context, $el) {
-			var $select = $el.parents('.load-popup').find('.load-data-list');
-			var saveNo = $select.val();
-			var label = $select.find(':selected').text();
-			if (!confirm(h5.u.str.format('{0}\nをロードします。よろしいですか？', label))) {
-				return;
-			}
-			this.trigger(EVENT_LOAD, saveNo);
+		'{.save-popup} save': function(ctx) {
+			this.trigger(EVENT_SAVE, ctx.evArg);
+
+			// 設定したらpopupを閉じる
+			this._hidePopup();
 		},
 
 		//-----------------------------------
@@ -1261,9 +1263,10 @@
 			// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
 			this._backgroundPopup.hide();
 			this._saveDataPopup.hide();
+			this._savePopup.hide();
 			$(this._backgroundPopup.rootElement).removeClass('current');
-			;
 			$(this._saveDataPopup.rootElement).removeClass('current');
+			$(this._savePopup.rootElement).removeClass('current');
 		}
 	};
 	h5.core.expose(controller);

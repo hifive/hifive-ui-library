@@ -372,7 +372,8 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} save': function() {
+		'{this._$toolbar} save': function(ctx) {
+			var option = ctx.evArg;
 			// 保存
 			this._artboardController.unselectAll();
 			var artboardSaveData = this._artboardController.save(true);
@@ -382,7 +383,9 @@
 			// imgとしてエクスポート
 			var label = sample.util.dateFormat(new Date());
 			this._artboardController.getImage('imgage/png', {
-				simulateItalic: true
+				simulateItalic: true,
+				width: option.width,
+				height: option.height
 			}).done(this.own(function(dataUrl) {
 				this.view.prepend(this._$savedImgWrapper, 'saved-img', {
 					dateStr: label,

@@ -44,7 +44,8 @@ h1 {
 .artboard {
 	box-sizing: border-box;
 }
-.artboard .h5-artboard-canvas-wrapper{
+
+.artboard .h5-artboard-canvas-wrapper {
 	border: 1px solid #ccc;
 }
 
@@ -508,4 +509,9 @@ h1 {
 	border: 1px solid #ccc;
 	background-color: #eee;
 	color: #000;
+}
+
+.save-popup input[type="text"] {
+	width: 4em;
+	margin: 0 1em;
 }
