@@ -70,8 +70,13 @@
 		this._$bg = $('<div></div>').addClass(CLASS_BG_LAYER);
 		this._$svg = $(document.createElementNS(XMLNS, 'svg')).attr('class', CLASS_SVG_LAYER); //svg要素はattr()でクラスを当てる必要あり
 		// 背景はこの時点で固定。動的に変更された場合は対応していない。
-		this._$bgElement = this._$orgBg.children().clone();
-		this._$bgElement.css('transform-origin', '0 0');
+		this._$orgBgElement = this._$orgBg.children();
+		this._$bgElement = this._$orgBgElement.clone();
+		this._$bgElement.css({
+			width: this._$orgBgElement.width(),
+			height: this._$orgBgElement.height(),
+			transformOrigin: '0 0'
+		});
 		this._orgBgElementTop = parseFloat(this._$bgElement.css('top'));
 		this._orgBgElementLeft = parseFloat(this._$bgElement.css('left'));
 		this._boardW = $board.width();
