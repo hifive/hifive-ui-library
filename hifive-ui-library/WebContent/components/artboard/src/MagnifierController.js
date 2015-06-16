@@ -40,8 +40,8 @@
 	var CLASS_MAGNIFIER = 'h5-artboard-magnifier';
 
 	var ERR_MSG_DISPOSED = 'dispose()されたMagnifierクラスのメソッドは呼び出せません';
-	var ERR_MSG_SCALE_NOT_A_NUMBER = 'setScale()に渡す拡大率は数値で指定してください';
 	var ERR_MSG_SIZE_OBJECT = 'setSize()に渡すサイズは、プロパティwidth,heightに数値を指定したオブジェクトを指定してください';
+	var ERR_MSG_INVALID_SCALE = '拡大率は0より大きい数値を指定してください';
 
 	//------------------------------------------------------------
 	// Cache
@@ -60,18 +60,24 @@
 	/**
 	 * Magnifierクラス
 	 *
-	 * @param board {DOM|jQuery} 拡大表示対象になる元のお絵かきボード要素
-	 * @param settings {Object}
 	 * @class
+	 * @name Magnifier
+	 * @param {DOM|jQuery} board 拡大表示対象になる元のお絵かきボード要素
+	 * @param {Object} settings
+	 * @param {number} settings.width 拡大表示する要素の幅
+	 * @param {number} settings.height 拡大表示する要素の高さ
+	 * @param {number} settings.scale 拡大率
 	 */
 	function Magnifier(board, settings) {
-		settings = settings || DEFAULT_SETTINGS;
 		var $board = $(board);
 		var $orgLayers = $board.hasClass(CLASS_LAYERS) ? $board : $board.find('.' + CLASS_LAYERS);
 		var $orgBg = $orgLayers.find('>.' + CLASS_BG_LAYER);
 		var $orgSvg = $orgLayers.find('>.' + CLASS_SVG_LAYER);
 		var $orgG = $orgSvg.find('>g');
 		var scale = settings.scale;
+		if (isNaN(scale) || scale <= 0) {
+			throw new Error(ERR_MSG_INVALID_SCALE);
+		}
 
 		var $root = $('<div></div>').addClass(CLASS_MAGNIFIER);
 		var $view = $('<div></div>').addClass(CLASS_CANVAS_WRAPPER);
@@ -120,23 +126,46 @@
 	}
 
 	$.extend(Magnifier.prototype, {
+		/**
+		 * 拡大表示要素を取得します
+		 *
+		 * @memberOf Magnifier
+		 * @returns {DOM}
+		 */
 		getElement: function() {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
 			}
-			return this._$root;
+			return this._$root[0];
 		},
+
+		/**
+		 * 拡大率を設定します
+		 *
+		 * @memberOf Magnifier
+		 * @param {number} scale 0より大きい数値
+		 * @returns {DOM}
+		 */
 		setScale: function(scale) {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
 			}
 			scale = parseFloat(scale);
-			if (isNaN(scale)) {
-				throw new Error(ERR_MSG_SCALE_NOT_A_NUMBER);
+			if (isNaN(scale) || scale <= 0) {
+				throw new Error(ERR_MSG_INVALID_SCALE);
 			}
 			this._scale = scale;
 			this._refresh();
 		},
+
+		/**
+		 * 拡大表示要素のサイズを設定します
+		 *
+		 * @memberOf Magnifier
+		 * @param {Object} size
+		 * @param {number} size.width 幅
+		 * @param {number} size.height 高さ
+		 */
 		setSize: function(size) {
 			if (!size) {
 				throw new Error(ERR_MSG_SIZE_OBJECT);
@@ -149,6 +178,14 @@
 			this._rootW = width;
 			this._rootH = height;
 		},
+
+		/**
+		 * 拡大表示箇所の座標を設定します
+		 *
+		 * @memberOf Magnifier
+		 * @param {number} x 拡大表示するx座標
+		 * @param {number} y 拡大表示するy座標
+		 */
 		focus: function(x, y) {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
@@ -159,8 +196,11 @@
 		},
 
 		/**
-		 * @param x
-		 * @param y
+		 * 拡大表示要素の位置を指定します
+		 *
+		 * @memberOf Magnifier
+		 * @param {number} x 拡大表示するx座標
+		 * @param {number} y 拡大表示するy座標
 		 * @param {boolean} center 中央の座標指定かどうか(falseなら左上の座標)
 		 */
 		move: function(x, y, center) {
@@ -178,6 +218,14 @@
 			});
 		},
 
+		/**
+		 * 拡大表示要素を表示します
+		 *
+		 * @memberOf Magnifier
+		 * @param {number} x 拡大表示するx座標
+		 * @param {number} y 拡大表示するy座標
+		 * @param {boolean} center 中央の座標指定かどうか(falseなら左上の座標)
+		 */
 		show: function() {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
@@ -185,17 +233,34 @@
 			this._$root.css('display', 'block');
 		},
 
+		/**
+		 * 拡大表示要素を非表示にします
+		 *
+		 * @memberOf Magnifier
+		 */
 		hide: function() {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
 			}
 			this._$root.css('display', 'none');
 		},
+
+		/**
+		 * このインスタンスがdisposeされた時に実行するハンドラを登録します
+		 *
+		 * @memberOf Magnifier
+		 * @param {Function} ハンドラ
+		 */
 		addDisposeHandler: function(handler) {
 			this._disposeHandlers = this._disposeHandlers || [];
 			this._disposeHandlers.push(handler);
 		},
 
+		/**
+		 * このインスタンスを使用不可にします
+		 *
+		 * @memberOf Magnifier
+		 */
 		dispose: function() {
 			if (this._disposed) {
 				throw new Error(ERR_MSG_DISPOSED);
@@ -213,7 +278,19 @@
 
 			this._disposed = true;
 		},
+
+		/**
+		 * 拡大表示を更新します
+		 *
+		 * @memberOf Magnifier
+		 * @private
+		 */
 		_refresh: function() {
+			// 非表示なら何もしない
+			if (this._$root.css('display') === 'none') {
+				return;
+			}
+
 			// 表示位置設定
 			var w = this._rootW;
 			var h = this._rootH;
@@ -268,82 +345,176 @@
 	});
 
 	/**
-	 * 拡大表示のマウスオーバー追従を行うコントローラ@class
+	 * 拡大表示のマウスオーバー追従を行うコントローラ
+	 * <p>
+	 * このコントローラは[MagnifierController]{@link h5.ui.components.artboard.controller.MagnifierController}によって動的にバインドされます
+	 * </p>
 	 *
+	 * @class
 	 * @name h5.ui.components.artboard.controller.MagnifierMouseoverController
 	 */
 	var mouseoverController = {
-		_mag: null,
-		$board: null,
-		mouseoverMove: null,
-		mouseoverFocus: null,
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
 		__name: 'h5.ui.components.artboard.controller.MagnifierMouseoverController',
+
+		/**
+		 * Magnifierインスタンス
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		_mag: null,
+
+		/**
+		 * 拡大表示対象となるボード要素
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		_$board: null,
+
+		/**
+		 * mouseover時(及びh5track時)に拡大表示要素の位置を追従させるかどうか
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		_mouseoverMove: null,
+
+		/**
+		 * mouseover時(及びh5track時)に拡大表示対象の座標を追従させるかどうか
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		_mouseoverFocus: null,
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
 		__construct: function(ctx) {
 			var args = ctx.args;
-			this.mag = args.mag;
-			this.mag.hide();
-			this.magElement = this.mag.getElement();
-			this.$board = args.$board;
-			this.mouseoverMove = args.mouseoverMove;
-			this.mouseoverFocus = args.mouseoverFocus;
-			this.mag.addDisposeHandler(this.own(function() {
+			this._mag = args.mag;
+			this._mag.hide();
+			this._magElement = this._mag.getElement();
+			this._$board = args.$board;
+			this._mouseoverMove = args.mouseoverMove;
+			this._mouseoverFocus = args.mouseoverFocus;
+			this._mag.addDisposeHandler(this.own(function() {
 				this.parentController.unmanageChild(this);
 			}));
 		},
-		'{this.$board} h5trackstart': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._$board} h5trackstart': function(ctx, $el) {
 			this._execute(ctx, $el);
 		},
-		'{this.$board} h5trackmove': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._$board} h5trackmove': function(ctx, $el) {
 			this._execute(ctx, $el);
 		},
-		'{this.$board} h5trackend': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._$board} h5trackend': function(ctx, $el) {
 			this._execute(ctx, $el);
 		},
-		'{this.$board} mousemove': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._$board} mousemove': function(ctx, $el) {
 			this._execute(ctx, $el);
 		},
-		'{this.magElement} h5trackstart': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._magElement} h5trackstart': function(ctx, $el) {
 			this._execute(ctx, $el, true);
 		},
-		'{this.magElement} h5trackmove': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._magElement} h5trackmove': function(ctx, $el) {
 			this._execute(ctx, $el, true);
 		},
-		'{this.magElement} h5trackend': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._magElement} h5trackend': function(ctx, $el) {
 			this._execute(ctx, $el, true);
 		},
-		'{this.magElement} mousemove': function(ctx, $el) {
+
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 */
+		'{this._magElement} mousemove': function(ctx, $el) {
 			this._execute(ctx, $el, true);
 		},
+
+		/**
+		 * mousemove及びh5track*イベント時に実行するハンドラ
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @param ctx {Object} イベントコンテキスト
+		 * @param $el {jQuery} イベントターゲット
+		 * @param isOnMagElement {boolean} Magnifierエレメントならtrue、ボード要素ならfalse
+		 */
 		_execute: function(ctx, $el, isOnMagElement) {
 			var event = ctx.event;
-			if (this.mouseoverMove) {
-				if (isOnMagElement) {
-					$el.css('display', 'none');
-					var target = document.elementFromPoint(event.pageX, event.pageY);
-					$el.css('display', 'block');
-					if (this.$board.find(target).length) {
-						this._move(event);
-					} else {
-						this.mag.hide();
-						return;
-					}
-				} else {
+			var onBoard = true;
+			if (isOnMagElement) {
+				// Magnifier要素上のイベントの場合、いったんdisplay:noneにして、後ろにボードがあるかどうかチェックする
+				$el.css('display', 'none');
+				var target = document.elementFromPoint(event.pageX, event.pageY);
+				$el.css('display', 'block');
+				onBoard = !!this._$board.find(target).length;
+			}
+			if (this._mouseoverMove) {
+				// Magnifier要素の追従移動
+				if (onBoard) {
 					this._move(event);
+				} else {
+					// 後ろにボードが無い場合はMagnifier要素を非表示
+					this._mag.hide();
 				}
 			}
-			if (this.mouseoverFocus) {
-				if (isOnMagElement) {
-					$el.css('display', 'none');
-					var target = document.elementFromPoint(event.pageX, event.pageY);
-					$el.css('display', 'block');
-					if (this.$board.find(target).length) {
-						this._focus(event);
-					}
-				} else {
-					this._focus(event);
-				}
+			if (this._mouseoverFocus) {
+				// Magnifierで表示している座標の追従
+				this._focus(event);
+
 			}
 		},
+
+		/**
+		 * Magnifierの移動
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @param event {jQuery.Event} イベントオブジェクト
+		 */
 		_move: function(event) {
 			if (event.type === 'h5trackend') {
 				this.mag.hide();
@@ -351,20 +522,35 @@
 			}
 			var x = event.pageX;
 			var y = event.pageY;
-			this.mag.show();
-			this.mag.move(x, y, true);
+			this._mag.show();
+			this._mag.move(x, y, true);
 		},
+
+		/**
+		 * Magnifierの表示座標の設定
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @param event {jQuery.Event} イベントオブジェクト
+		 */
 		_focus: function(event) {
-			var boardOffset = this.$board.offset();
+			var boardOffset = this._$board.offset();
 			var x = event.pageX - boardOffset.left;
 			var y = event.pageY - boardOffset.top;
-			this.mag.focus(x, y);
+			this._mag.focus(x, y);
 		}
 	};
 
 
 	/**
 	 * Artboardを拡大表示するコントローラ
+	 * <p>
+	 * このコントローラの{@link createMagnifier}を呼ぶと拡大表示を行うMagnifierインスタンスが生成され、
+	 * 拡大表示要素(Magnifier要素)がこのコントローラのルートエレメントに追加されます。
+	 * </p>
+	 * <p>
+	 * Magnifier要素を追加したい要素をルートエレメントにしてバインドして使用します。
+	 * </p>
 	 *
 	 * @class
 	 * @name h5.ui.components.artboard.controller.MagnifierController
@@ -380,12 +566,27 @@
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
 		 * @private
 		 */
-		_scale: null,
+		_preSettigns: DEFAULT_SETTINGS,
 
 		/**
 		 * Magnifierの作成
+		 * <p>
+		 * {@link Magnifier}インスタンスを生成し、このコントローラのルートエレメントにMagnifier要素を追加します。
+		 * </p>
 		 *
-		 * @param $board
+		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
+		 * @param {DOM|jQuery} $board 拡大対象となるボード要素、またはボード要素を子に持つ要素。
+		 * @param {Object} [settings={width:200,height:200,scale:2}]
+		 *            設定オブジェクト。省略した場合はデフォルト、または前回createMagnifier呼び出し時の設定が適用されます
+		 * @param {number} settings.width 生成するMagnifier要素の幅
+		 * @param {number} settings.height 生成するMagnifier要素の高さ
+		 * @param {number} settings.scale 拡大率(0以上の数値で指定)
+		 * @param {boolean} [settings.mouseoverMove=false]
+		 *            ボード上でマウス(タッチ)が起きた時にMagnifier要素の位置を追従をさせるかどうか
+		 * @param {boolean} [settings.mouseoverFocus=false]
+		 *            ボード上でマウス(タッチ)が起きた時にMagnifierが拡大するボードの座標位置を追従をさせるかどうか
+		 * @param {boolean} [settings.mouseover=false]
+		 *            mouseoverMove,mouseoverFocusの両フラグをtrueにする場合にtrueを設定
 		 */
 		createMagnifier: function(board, settings) {
 			if (this._mag) {
@@ -405,9 +606,14 @@
 			}
 			this._$board = $board;
 
-			var opt = $.extend({}, settings);
-			opt.scale = opt.scale || this._scale;
-			var mag = new Magnifier($board, opt);
+			// 未指定の場合は前回設定値またはデフォルト
+			settings = settings || this._preSettigns;
+			this._preSettigns = settings;
+			var mag = new Magnifier($board, {
+				width: settings.width,
+				height: settings.height,
+				scale: settings.scale
+			});
 			this._mag = mag;
 			var magElement = mag.getElement();
 			$(this.rootElement).append(magElement);
