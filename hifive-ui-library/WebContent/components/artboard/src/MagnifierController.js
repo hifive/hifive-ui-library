@@ -22,7 +22,16 @@
 	//------------------------------------------------------------
 	// Const
 	//------------------------------------------------------------
-	var DEFAULT_SCALE = 2;
+	/**
+	 * デフォルトのMagnifier設定
+	 *
+	 * @private
+	 */
+	var DEFAULT_SETTINGS = {
+		width: 200,
+		height: 200,
+		scale: 2
+	};
 
 	var CLASS_CANVAS_WRAPPER = 'h5-artboard-canvas-wrapper';
 	var CLASS_LAYERS = 'h5-artboard-layers';
@@ -56,46 +65,55 @@
 	 * @class
 	 */
 	function Magnifier(board, settings) {
-		settings = settings || {};
+		settings = settings || DEFAULT_SETTINGS;
 		var $board = $(board);
-		this._$orgLayers = $board.hasClass(CLASS_LAYERS) ? $board : $board.find('.' + CLASS_LAYERS);
-		this._$orgBg = this._$orgLayers.find('>.' + CLASS_BG_LAYER);
-		this._$orgSvg = this._$orgLayers.find('>.' + CLASS_SVG_LAYER);
-		this._$orgG = this._$orgSvg.find('>g');
-		this._scale = settings.scale || DEFAULT_SCALE;
+		var $orgLayers = $board.hasClass(CLASS_LAYERS) ? $board : $board.find('.' + CLASS_LAYERS);
+		var $orgBg = $orgLayers.find('>.' + CLASS_BG_LAYER);
+		var $orgSvg = $orgLayers.find('>.' + CLASS_SVG_LAYER);
+		var $orgG = $orgSvg.find('>g');
+		var scale = settings.scale;
 
-		this._$root = $('<div></div>').addClass(CLASS_MAGNIFIER);
-		this._$view = $('<div></div>').addClass(CLASS_CANVAS_WRAPPER);
-		this._$layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
-		this._$bg = $('<div></div>').addClass(CLASS_BG_LAYER);
-		this._$svg = $(document.createElementNS(XMLNS, 'svg')).attr('class', CLASS_SVG_LAYER); //svg要素はattr()でクラスを当てる必要あり
+		var $root = $('<div></div>').addClass(CLASS_MAGNIFIER);
+		var $view = $('<div></div>').addClass(CLASS_CANVAS_WRAPPER);
+		var $layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
+		var $bg = $('<div></div>').addClass(CLASS_BG_LAYER);
+		var $svg = $(document.createElementNS(XMLNS, 'svg')).attr('class', CLASS_SVG_LAYER); //svg要素はattr()でクラスを当てる必要あり
 		// 背景はこの時点で固定。動的に変更された場合は対応していない。
-		this._$orgBgElement = this._$orgBg.children();
-		this._$bgElement = this._$orgBgElement.clone();
-		this._$bgElement.css({
-			width: this._$orgBgElement.width(),
-			height: this._$orgBgElement.height(),
+		var $orgBgElement = $orgBg.children();
+		var $bgElement = $orgBgElement.clone();
+		$bgElement.css({
+			width: $orgBgElement.width(),
+			height: $orgBgElement.height(),
 			transformOrigin: '0 0'
 		});
-		this._orgBgElementTop = parseFloat(this._$bgElement.css('top'));
-		this._orgBgElementLeft = parseFloat(this._$bgElement.css('left'));
-		this._boardW = $board.width();
-		this._boardH = $board.height();
 
-		this._$bg.append(this._$bgElement);
-		this._$layerWrapper.append(this._$bg);
-		this._$layerWrapper.append(this._$svg);
-		this._$view.append(this._$layerWrapper);
-		this._$root.append(this._$view);
+		$bg.append($bgElement);
+		$layerWrapper.append($bg);
+		$layerWrapper.append($svg);
+		$view.append($layerWrapper);
+		$root.append($view);
 
 		// useタグの生成
-		this._use = document.createElementNS(XMLNS, 'use');
-		this._use.setAttributeNS(XMLNS, 'xlink', XMLNS);
-		this._use.setAttributeNS(XLINKNS, 'href', '#' + this._$orgG.attr('id'));
-		this._$svg.append(this._use);
+		var use = document.createElementNS(XMLNS, 'use');
+		use.setAttributeNS(XMLNS, 'xlink', XMLNS);
+		use.setAttributeNS(XLINKNS, 'href', '#' + $orgG.attr('id'));
+		$svg.append(use);
 
+		// インスタンスで操作する要素を覚えさせておく
+		// Magnifier設定
+		this._scale = scale;
 		this._rootW = parseFloat(settings.width);
 		this._rootH = parseFloat(settings.height);
+		// 要素
+		this._$root = $root;
+		this._$svg = $svg;
+		this._$bgElement = $bgElement;
+		this._use = use;
+		// ボード情報
+		this._boardW = $board.width();
+		this._boardH = $board.height();
+		this._orgBgElementTop = parseFloat($bgElement.css('top'));
+		this._orgBgElementLeft = parseFloat($bgElement.css('left'));
 
 		// 指定されたスケールとサイズを適用
 		this._refresh();
