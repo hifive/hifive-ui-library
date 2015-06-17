@@ -619,7 +619,7 @@
 			$(this.rootElement).append(magElement);
 			var mouseoverFocus = settings.mouseover || settings.mouseoverFocus;
 			var mouseoverMove = settings.mouseover || settings.mouseoverMove;
-			if (mouseoverFocus || mouseoveMove) {
+			if (mouseoverFocus || mouseoverMove) {
 				this._mouseoverController = h5.core.controller(this.rootElement,
 						mouseoverController, {
 							mag: mag,
