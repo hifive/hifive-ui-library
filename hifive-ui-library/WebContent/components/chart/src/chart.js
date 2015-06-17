@@ -18,6 +18,7 @@
 
 	var LINE_ELM_ID_FORMAT = 'line_{0}';
 	var RECT_ELM_ID_FORMAT = 'rect_{0}_{1}';
+	var PIE_ELM_ID_FORMAT = 'pie_{0}_{1}';
 
 	var VERT_LINE_ELM_ID_FORMAT = 'vert_line_{0}';
 	var X_LABEL_ELM_ID_FORMAT = 'x_label_{0}';
@@ -705,6 +706,7 @@
 		 */
 		setPropNames: function(type, propNames) {
 			this._type = type.toLowerCase();
+			this.propNames = propNames || {};
 			switch (this._type) {
 			case 'ohlc':
 				this.propNames = propNames || {};
@@ -2419,6 +2421,268 @@
 				barChartRenderer);
 	}
 
+	var PIE_PATH_FORMAT = 'M {0},{0} L {1},{2} A {0},{0} 0 {5},1 {3},{4}';
+
+	var pieSchema = {
+		id: {
+			id: true,
+			type: 'integer'
+		},
+		sum: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		total: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		radius: {
+			type: 'number',
+			depend: {
+				on: ['sum', 'total'],
+				calc: function(ev) {
+					return this.get('sum') / this.get('total') * Math.PI * 2;
+				}
+			}
+		},
+		radian: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		x: {
+			type: 'number',
+			depend: {
+				on: ['radius'],
+				calc: function(ev) {
+					var radian = this.get('radian');
+					return radian + radian * Math.sin(this.get('radius'));
+				}
+			}
+		},
+		y: {
+			type: 'number',
+			depend: {
+				on: ['radius'],
+				calc: function(ev) {
+					var radian = this.get('radian');
+					return radian - radian * Math.cos(this.get('radius'));
+				}
+			}
+		},
+		largeArcFlg: {
+			type: 'integer',
+			constraint: {
+				notNull: true
+			}
+		},
+		preX: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		preY: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		stroke: {
+			type: 'string'
+		},
+		fill: {
+			type: 'string'
+		}
+	};
+
+	/**
+	 * パイチャートレンダラ―を生成します。
+	 * 
+	 * @private
+	 * @param {Element} rootElement このラインチャートのルート要素
+	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {Object} chartSetting 設定
+	 * @param {Object} seriesSetting この種別の設定
+	 * @returns PieChartRenderer
+	 */
+	function createPieChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+		/**
+		 * パイチャートのレンダラ―
+		 */
+		var pieChartRenderer = {
+			/**
+			 * この系列の描画をします
+			 * 
+			 * @param {Boolean} animate アニメーションするか
+			 * @memberOf PieChartRenderer
+			 */
+			draw: function(animate) {
+				$(this.rootElement).empty();
+				this.$path = null;
+
+				this._radian = this.chartSetting.get('height') * 0.4;
+
+				this._createPieDataItems();
+
+				var count = 1;
+				var animateNum = this.seriesSetting.animateNum;
+				if (!animate || !animateNum) {
+					animateNum = 1;
+				}
+
+				function doAnimation() {
+					var rate = count / animateNum;
+					if (count == 1) {
+						this._appendPies(this.chartDataSource.toArray(), rate);
+					} else if (count > 1) {
+						this._updateBars(this.chartDataSource.toArray(), rate);
+					}
+
+					count++;
+
+					if (count <= animateNum) {
+						requestAnimationFrame(this.own(doAnimation));
+					} else {
+						// 描画完了時にイベントをあげる
+						$(this.rootElement).trigger('finishDrawing');
+					}
+				}
+				requestAnimationFrame(this.own(doAnimation));
+			},
+
+			_createPieDataItems: function() {
+				this.chartDataSource.removeAll();
+
+				var pieData = [];
+				var current = this.chartDataSource.dataSource.sequence.current()
+						- chartSetting.get('movedNum');
+				var dispDataSize = this.chartSetting.get('dispDataSize');
+
+				var total = 0;
+
+				for ( var id in this.chartDataSource.dataSource.dataMap) {
+					var intId = parseInt(id);
+					if (intId < current - dispDataSize || intId >= current) {
+						continue;
+					}
+
+					// 描画範囲の点について座標情報を計算する
+					var item = this.chartDataSource.getDataObj(intId);
+					total += item[this.chartDataSource.propNames.y];
+				}
+
+				this._total = total;
+
+				for ( var id in this.chartDataSource.dataSource.dataMap) {
+					var intId = parseInt(id);
+					if (intId < current - dispDataSize || intId >= current) {
+						continue;
+					}
+
+					// 描画範囲の点について座標情報を計算する
+					var item = this.chartDataSource.getDataObj(intId);
+					var chartData = this.toData(item);
+					this.chartDataSource.create(chartData);
+					// 					if (chartData) {
+					// 						// y座標の点があるもののみ表示する
+					// 						pieData.push(chartData);
+					// 					}
+				}
+			},
+
+			// TODO: ChartDataSourceを拡張したクラスに移動する
+
+			/**
+			 * データオブジェクトをチャート描画用のオブジェクトに変換する
+			 * 
+			 * @param {Object} dataObj データオブジェクト
+			 * @returns {Object} チャート描画用のオブジェクト
+			 */
+			toData: function(dataObj) {
+				var id = dataObj.id;
+
+				var yProp = this.chartDataSource.propNames.y;
+				var value = dataObj[yProp];
+
+				var pre = this.chartDataSource.get(id - 1);
+				var sum = value;
+				if (pre) {
+					sum += pre.get('sum');
+				}
+
+				return {
+					id: id,
+					radian: this._radian,
+					sum: sum,
+					total: this._total,
+					preX: pre ? pre.get('x') : this._radian,
+					preY: pre ? pre.get('y') : 0,
+					largeArcFlg: value < 0.5 * this._total ? 0 : 1,
+					fill: this._getColor(id),
+					stroke: this.seriesSetting.stroke || '#000'
+				};
+			},
+
+			_getColor: function(id) {
+				var colors = this.seriesSetting.colors;
+				return graphicRenderer.getFill(colors[id % colors.length], this.rootElement)
+						|| 'none';
+			},
+
+			_appendPies: function(chartItems, preRendererChartModel, rate) {
+				var height = this.chartSetting.get('height');
+				for (var i = 0, len = chartItems.length; i < len; i++) {
+					var chartItem = chartItems[i];
+					this._appendPie(chartItem, $(this.rootElement), {
+						id: h5format(PIE_ELM_ID_FORMAT, chartItem.get('id'), this.name),
+						'class': 'pieChart chartElm',
+						fill: chartItem.get('fill'),
+						stroke: chartItem.get('stroke')
+					});
+				}
+			},
+
+			_appendPie: function(chartItem, $elm, prop) {
+				var d = h5.u.str.format(PIE_PATH_FORMAT, chartItem.get('radian'), chartItem
+						.get('preX'), chartItem.get('preY'), chartItem.get('x'),
+						chartItem.get('y'), chartItem.get('largeArcFlg'));
+				graphicRenderer.appendPathElm(d, prop, $elm);
+			},
+
+			_chartModelChangeListener: function(ev) {
+			},
+
+			_getCentralPos: function(chartItem) {
+				return {
+					x: (chartItem.get('x') + chartItem.get('preX') + this._radian) / 3,
+					y: (chartItem.get('y') + chartItem.get('preY') + this._radian) / 3,
+				};
+			},
+
+			_appendHighLight: function(chartItem, $tooltip) {
+				// FIXME: ツールチップの色の出し方
+				this._appendPie(chartItem, $tooltip, {
+					'class': 'highlight_bar',
+					fill: 'none',
+					stroke: 'yellow',
+					'stroke-width': '2px'
+				});
+			},
+			_showAdditionalLine: function() {
+			// do nothing
+			}
+		};
+
+		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting, pieSchema,
+				pieChartRenderer);
+	}
+
 	/**
 	 * 軸を描画するレンダラ―
 	 *
@@ -2836,16 +3100,20 @@
 		 * @memberOf h5.ui.components.chart.ChartController
 		 */
 		_initChart: function(firstChartRenderer) {
-			this._appendBorder();
-			this._initAxis(firstChartRenderer);
-			var rightId = firstChartRenderer.chartDataSource.dataSource.sequence.current() - 1;
 			var paddingRight = 0;
 			if (this.settings.plotSetting && this.settings.plotSetting.paddingRight) {
 				paddingRight = this.settings.plotSetting.paddingRight;
 			}
-			// TODO: translateXの計算は共通化すべき
-			this.chartSetting.set('translateX', -this.chartSetting.get('dx')
-					* (rightId + paddingRight - this.chartSetting.get('movedNum')));
+
+			if (this.settings.axes) {
+				this._appendBorder();
+				this._initAxis(firstChartRenderer);
+				// TODO: translateXの計算は共通化すべき
+				var rightId = firstChartRenderer.chartDataSource.dataSource.sequence.current() - 1;
+				this.chartSetting.set('translateX', -this.chartSetting.get('dx')
+						* (rightId + paddingRight - this.chartSetting.get('movedNum')));
+			}
+
 		},
 
 		_initAxis: function(firstChartRenderer) {
@@ -3181,6 +3449,10 @@
 				this._renderers[name] = createBarChartRenderer(g, dataSource, this.chartSetting,
 						seriesOption);
 				break;
+			case 'pie':
+				this._renderers[name] = createPieChartRenderer(g, dataSource, this.chartSetting,
+						seriesOption);
+				break;
 			default:
 				break;
 			}
@@ -3499,11 +3771,15 @@
 			var renderer = this._renderers[seriesName];
 			var type = renderer.seriesSetting.type;
 
-			var yLabelMargin = this.axisRenderer.getYLabelMargin();
+			var leftCorrect = 0;
+			if (this.axisRenderer) {
+				var yLabelMargin = this.axisRenderer.getYLabelMargin();
+				leftCorrect = this.axisRenderer.getYLabelWidth() + yLabelMargin.marginRight + yLabelMargin.marginLeft;
+			}
+						
 			// 補正項
 			var correct = {
-				left: this.chartSetting.get('translateX') + this.axisRenderer.getYLabelWidth()
-						+ yLabelMargin.marginRight + yLabelMargin.marginLeft,
+				left: this.chartSetting.get('translateX') + leftCorrect,
 				top: DEFAULT_CHART_MARGIN_TOP
 			};
 			var tooltipId = renderer.getTargetId(context, type, correct);
