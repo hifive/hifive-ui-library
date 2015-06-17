@@ -517,7 +517,7 @@
 		 */
 		_move: function(event) {
 			if (event.type === 'h5trackend') {
-				this.mag.hide();
+				this._mag.hide();
 				return;
 			}
 			var x = event.pageX;
