@@ -382,17 +382,14 @@
 
 			// imgとしてエクスポート
 			var label = sample.util.dateFormat(new Date());
-			this._artboardController.getImage('imgage/png', {
-				simulateItalic: true,
-				width: option.width,
-				height: option.height
-			}).done(this.own(function(dataUrl) {
-				this.view.prepend(this._$savedImgWrapper, 'saved-img', {
-					dateStr: label,
-					dataUrl: dataUrl,
-					saveNo: saveNo
-				});
-			}));
+			this._artboardController.getImage('imgage/png', option).done(
+					this.own(function(dataUrl) {
+						this.view.prepend(this._$savedImgWrapper, 'saved-img', {
+							dateStr: label,
+							dataUrl: dataUrl,
+							saveNo: saveNo
+						});
+					}));
 		},
 
 		/**

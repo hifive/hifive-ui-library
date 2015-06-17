@@ -1566,11 +1566,58 @@
 	
         <tr>
             
-                <td class="name"><code>processParameter.simulateItalic</code></td>
+                <td class="name"><code>processParameter</code></td>
             
             
             <td class="type">
             Object
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                
+                </td>
+            
+            
+            <td class="description last">画像出力時設定オブジェクト<h6>Properties</h6>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		<th>Argument</th>
+		
+		
+		
+		<th>Default</th>
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>simulateItalic</code></td>
+            
+            
+            <td class="type">
+            boolean
             </td>
             
             
@@ -1592,11 +1639,11 @@
 	
         <tr>
             
-                <td class="name"><code>processParameter.width</code></td>
+                <td class="name"><code>size</code></td>
             
             
             <td class="type">
-            number
+            Object
             </td>
             
             
@@ -1609,6 +1656,41 @@
                 <td class="default">
                 
                 </td>
+            
+            
+            <td class="description last">サイズオブジェクト。指定しない場合は範囲指定に合わせたサイズまたは描画領域のサイズで保存されます。<h6>Properties</h6>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>width</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
             
             
             <td class="description last">出力する画像の幅(px)</td>
@@ -1618,11 +1700,34 @@
 	
         <tr>
             
-                <td class="name"><code>processParameter.height</code></td>
+                <td class="name"><code>height</code></td>
             
             
             <td class="type">
             number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">出力する画像の高さ(px)</td>
+        </tr>
+	
+	
+	</tbody>
+</table></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>trim</code></td>
+            
+            
+            <td class="type">
+            Object
             </td>
             
             
@@ -1637,7 +1742,106 @@
                 </td>
             
             
-            <td class="description last">出力する画像の高さ(px)</td>
+            <td class="description last">範囲指定オブジェクト。指定しない場合は範囲指定は行いません。<h6>Properties</h6>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>dx</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">切りぬく範囲の左上位置のx座標</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>dy</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">切りぬく範囲の左上位置のy座標</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>dw</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">切りぬく範囲の幅</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>dh</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">切りぬく範囲の高さ</td>
+        </tr>
+	
+	
+	</tbody>
+</table></td>
+        </tr>
+	
+	
+	</tbody>
+</table></td>
         </tr>
 	
 	
@@ -1664,7 +1868,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1190</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1197</li></ul></dd>
 	
 	-->
 
@@ -2548,7 +2752,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Tue Jun 16 2015 16:58:02 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Wed Jun 17 2015 12:05:40 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

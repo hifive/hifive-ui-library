@@ -1172,7 +1172,8 @@
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {Object} [processParameter.simulateItalic = false]
+		 * @param {Object} [processParameter] 画像出力時設定オブジェクト
+		 * @param {boolean} [processParameter.simulateItalic = false]
 		 *            italicの指定されたArtTextオブジェクトの画像化の際に、指定されているフォントがitalic体を持たない場合に、変形して出力を行うかどうか
 		 *            <p>
 		 *            Firefox以外のブラウザでは、italic体を持たないフォントについてもブラウザが自動で変形を行うので、このフラグを指定しても結果は変わりません。
@@ -1183,12 +1184,19 @@
 		 *            <p>
 		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
 		 *            </p>
-		 * @param {number} [processParameter.width] 出力する画像の幅(px)
-		 * @param {number} [processParameter.height] 出力する画像の高さ(px)
+		 * @param {Object} [processParameter.size] サイズオブジェクト。指定しない場合は範囲指定に合わせたサイズまたは描画領域のサイズで保存されます。
+		 * @param {number} processParameter.size.width 出力する画像の幅(px)
+		 * @param {number} processParameter.size.height 出力する画像の高さ(px)
+		 * @param {Object} [processParameter.trim] 範囲指定オブジェクト。指定しない場合は範囲指定は行いません。
+		 * @param {Object} processParameter.trim.dx 切りぬく範囲の左上位置のx座標
+		 * @param {Object} processParameter.trim.dy 切りぬく範囲の左上位置のy座標
+		 * @param {Object} processParameter.trim.dw 切りぬく範囲の幅
+		 * @param {Object} processParameter.trim.dh 切りぬく範囲の高さ
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
 			returnType = returnType || 'image/png';
+			processParameter = processParameter || {};
 			// _shapeLayerはg要素なので親のsvgを取得してviewBoxを求める
 			var svg = $(this._shapeLayer).parents('svg')[0];
 			// canvasを作成
@@ -1268,20 +1276,37 @@
 					this.own(function() {
 						return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas,
 								processParameter);
-					})).then(this.own(function() {
-				// カンバスを画像化
-				var w = processParameter.width;
-				var h = processParameter.height;
-				if (canvasWidth !== w || canvasHeight !== h) {
-					// 指定されたサイズと描画領域のサイズが異なる場合、指定されたサイズのcanvasを作ってリサイズ
-					var orgCanvas = canvas;
-					canvas = document.createElement('canvas');
-					canvas.setAttribute('width', w);
-					canvas.setAttribute('height', h);
-					canvas.getContext('2d').drawImage(orgCanvas, 0, 0, w, h);
-				}
-				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
-			}));
+					})).then(
+					this.own(function() {
+						// カンバスを画像化
+						var size = processParameter.size;
+						var trim = processParameter.trim;
+						if (size || trim) {
+							// sizeまたはtrimが指定されている場合
+							// 新しくcanvasを生成してサイズ変更とトリミングを行う
+							var orgCanvas = canvas;
+							canvas = document.createElement('canvas');
+							if (trim) {
+								var dx = trim.dx;
+								var dy = trim.dy;
+								var dh = trim.dh;
+								var dw = trim.dw;
+								// 出力サイズはsize指定があれば指定のサイズ、無い場合はtrimしたサイズ
+								var w = size ? size.width : dw;
+								var h = size ? size.height : dh;
+								canvas.setAttribute('width', w);
+								canvas.setAttribute('height', h);
+								canvas.getContext('2d').drawImage(orgCanvas, dx, dy, dw, dh, 0, 0,
+										w, h);
+							} else {
+								canvas.setAttribute('width', size.width);
+								canvas.setAttribute('height', size.height);
+								canvas.getContext('2d').drawImage(orgCanvas, 0, 0, size.width,
+										size.height);
+							}
+						}
+						dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+					}));
 			return dfd.promise();
 		}
 	};

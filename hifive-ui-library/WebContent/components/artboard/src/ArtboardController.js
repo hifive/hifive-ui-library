@@ -1251,35 +1251,12 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {Object} [processParameter]
-		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {number} [processParameter.width] 出力する画像の幅(px)
-		 * @param {number} [processParameter.height] 出力する画像の高さ(px)
+		 * @param {string} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
+		 * @param {Object} [processParameter] パラメータ詳細については[DrawingLogic#getImage]{@link h5.ui.components.artboard.logic.DrawingLogic#getImage}と同じです。
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
-			var w = processParameter.width;
-			var h = processParameter.height;
-			if (!w || !h) {
-				// どちらかが未設定の場合は、アスペクト比を同じにして片方を設定する
-				var orgW = this._canvas.getAttribute('width');
-				var orgH = this._canvas.getAttribute('height');
-				var aspectRatio = orgW / orgH;
-				if (w) {
-					h = w / aspectRatio;
-				} else if (h) {
-					w = h * aspectRatio;
-				} else {
-					// どちらも未設定の場合はcanvasの大きさと同じ
-					w = orgW;
-					h = orgH;
-				}
-			}
-			return this.drawingLogic.getImage(returnType, {
-				width: w,
-				height: h,
-				returnType: processParameter.returnType
-			});
+			return this.drawingLogic.getImage(returnType, processParameter);
 		},
 
 		/**

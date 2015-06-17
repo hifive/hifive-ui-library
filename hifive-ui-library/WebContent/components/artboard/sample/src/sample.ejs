@@ -145,10 +145,20 @@
 			</div>
 		</div>
 		<div class="save-popup">
-			<p>サイズ設定</p>
-			<label>幅<input type="text" name="save-width"/></label>
-			<label>高さ<input type="text"  name="save-height"/></label>
-			<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked/>比率を保持</label>
+			<div class="save-size-settings">
+				<p><label><input type="checkbox" name="save-size-on" value="on"/>出力サイズ指定</label></p>
+				<label>幅<input type="text" name="save-width" disabled/></label>
+				<label>高さ<input type="text"  name="save-height" disabled/></label>
+				<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked disabled/>比率を保持</label>
+			</div>
+			<div class="save-trim-settings">
+				<p><label><input type="checkbox" name="save-trim-on" value="on"/>範囲指定</label></p>
+				<!-- <div class="border1 save-trim-select">ドラッグして選択</div> -->
+				<label>dx<input type="text"  name="save-trim-dx" disabled/></label>
+				<label>dy<input type="text"  name="save-trim-dy" disabled/></label>
+				<label>dw<input type="text"  name="save-trim-dw" disabled/></label>
+				<label>dh<input type="text"  name="save-trim-dh" disabled/></label>
+			</div>
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
 				<div class="save popupCloseBtn border1 clear-both">保存</div>

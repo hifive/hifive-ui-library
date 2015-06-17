@@ -42,14 +42,26 @@
 			this._$width = this.$find('[name="save-width"]');
 			this._$height = this.$find('[name="save-height"]');
 			this._$aspectCheck = this.$find('[name="save-keep-aspect-ratio"]');
+			this._$sizeCheck = this.$find('[name="save-size-on"]');
+			this._$trimCheck = this.$find('[name="save-trim-on"]');
+			this._$dx = this.$find('[name="save-trim-dx"]');
+			this._$dy = this.$find('[name="save-trim-dy"]');
+			this._$dw = this.$find('[name="save-trim-dw"]');
+			this._$dh = this.$find('[name="save-trim-dh"]');
 			this._$save = this.$find('.save');
 			this.setDefaultSettings(size);
 		},
 
 		setDefaultSettings: function(settings) {
-			this._$width.val(settings.width);
-			this._$height.val(settings.height);
-			this._aspect = settings.width / settings.height;
+			var w = settings.width;
+			var h = settings.height;
+			this._$width.val(w);
+			this._$height.val(h);
+			this._$dx.val(0);
+			this._$dy.val(0);
+			this._$dw.val(w);
+			this._$dh.val(h);
+			this._aspect = w / h;
 		},
 
 		'{this._$width} keyup': function(ctx, $el) {
@@ -67,18 +79,50 @@
 			}
 			this._$width.val(parseInt(h * this._aspect));
 		},
+
+		'{this._$sizeCheck} change': function(ctx, $el) {
+			this.$find('.save-size-settings').find('input').not($el).prop('disabled',
+					!$el.prop('checked'));
+		},
+
+
+		'{this._$trimCheck} change': function(ctx, $el) {
+			this.$find('.save-trim-settings').find('input').not($el).prop('disabled',
+					!$el.prop('checked'));
+		},
+
 		'{this._$save} h5trackstart': function() {
-			var w = parseInt(this._$width.val());
-			var h = parseInt(this._$height.val());
-			if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
-				alert('幅と高さは0より大きい数値で指定してください');
-				return;
-			}
 			var saveOpt = {
-				width: w,
-				height: h
+				// italic対のシミュレート
+				simulateItalic: true
 			};
+			if (this._$sizeCheck.prop('checked')) {
+				var w = parseInt(this._$width.val());
+				var h = parseInt(this._$height.val());
+				if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+					alert('幅と高さは0より大きい数値で指定してください');
+					return;
+				}
+				var size = {
+					width: w,
+					height: h
+				};
+				saveOpt.size = size;
+			}
+			if (this._$trimCheck.prop('checked')) {
+				var trim = {
+					dx: this._$dx.val(),
+					dy: this._$dy.val(),
+					dw: this._$dw.val(),
+					dh: this._$dh.val()
+				};
+				saveOpt.trim = trim;
+			}
 			this.trigger('save', saveOpt);
+		},
+
+		'.save-trim-select h5trackstart': function() {
+		// TODO ドラッグして選択できるようにする
 		}
 	};
 
