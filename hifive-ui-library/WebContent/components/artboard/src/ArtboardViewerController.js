@@ -69,14 +69,39 @@
 		 * @param {DrawingSaveData|String} artboardSaveData 保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 */
-		load: function(artboardSaveData) {
+		load: function(artboardSaveData, isStretch) {
 			if (typeof artboardSaveData === 'string') {
 				artboardSaveData = h5.u.obj.deserialize(artboardSaveData);
 			}
 
 			// サイズの設定
 			var size = artboardSaveData.size;
-			this._$view.css(size);
+			if (isStretch) {
+				// isStretch指定されていたらルートの大きさに固定
+				this._$view.css({
+					width: '100%',
+					height: '100%'
+				});
+				// svg要素を変形させて縦横比が変わった場合、中身g要素はそれに追従せず縦横比が変わらない
+				// svgの縦横比に合わせてg要素も変形する
+				var viewW = this._$view.innerWidth();
+				var viewH = this._$view.innerHeight();
+				var orgAspectRatio = size.width / size.height;
+				var viewAspectRatio = viewW / viewH;
+				var isLargerViewAspect = orgAspectRatio < viewAspectRatio;
+				var scaleX = isLargerViewAspect ? viewAspectRatio / orgAspectRatio : 1;
+				var scaleY = isLargerViewAspect ? 1 : orgAspectRatio / viewAspectRatio;
+				var transX = isLargerViewAspect ? size.height / viewH
+						* (-viewW + viewH * orgAspectRatio) / 2 : 0;
+				var transY = isLargerViewAspect ? 0 : size.width / viewW
+						* (-viewH + viewW / orgAspectRatio) / 2;
+				var transformValue = h5.u.str.format('matrix({0} 0 0 {1} {2} {3})', scaleX, scaleY,
+						transX, transY);
+				this._g.setAttribute('transform', transformValue);
+			} else {
+				// isStretch指定の無い場合はロードするデータのサイズに合わせる
+				this._$view.css(size);
+			}
 			this._$svg[0].setAttribute('viewBox', h5.u.str.format('0 0 {0} {1}', size.width,
 					size.height));
 

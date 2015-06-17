@@ -1574,7 +1574,7 @@
 			ctx.globalAlpha = this._strokeOpacity;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.lineWidth = this._strokeWidth;
-			ctx.lineJoin = 'round';
+			ctx.lineJoin = 'miter';
 			ctx.lineCap = 'round';
 			ctx.beginPath();
 			ctx.moveTo(x - dx, y - dy);
