@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+	<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+	<link rel="stylesheet" href="../../src/chart.css" />
+
+	<!--[if lt IE 9]>
+	<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+	<![endif]-->
+	<!--[if gte IE 9]><!-->
+	<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+	<!--<![endif]-->
+	<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+	<!-- チャート部品 -->
+  	<script src="../../src/graphic-renderer.js"></script>
+  	<script src="../../src/chart.js"></script>
+
+	<script src="../data/testData.js"></script>
+	<script src="index.js"></script>
+
+	<title>チャート</title>
+</head>
+<body>
+	<h4>チャート</h4>
+	<h5>折れ線グラフ(積み上げ)サンプル</h5>
+	<button id="addSeries">系列追加</button>
+	<button id="removeSeries">系列削除</button>
+	<button id="expand">拡大</button>
+	<button id="shrink">縮小</button>
+	<button id="go">Go</button>
+	<button id="back">Back</button>
+	<button id="start">Start</button>
+	<button id="stop">Stop</button>
+
+	<div id="chart" ></div>
+</body>
+</html>
