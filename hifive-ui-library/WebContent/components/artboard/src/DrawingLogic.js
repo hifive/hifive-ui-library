@@ -885,9 +885,6 @@
 				return;
 			}
 
-			var $layer = $(this._backgroundLayer);
-			var layerW = $layer.width();
-			var layerH = $layer.height();
 			var $imgElement = $('<img>');
 			var imgElement = $imgElement[0];
 			$imgElement.attr('src', src);
@@ -897,88 +894,101 @@
 			}
 			$imgElement.data(DATA_IMAGE_SOURCE_FILLMODE, fillMode);
 			$imgElement.data(DATA_IMAGE_SOURCE_SRC, src);
-			var imgStyle = {
-				left: x || 0,
-				top: y || 0
-			};
-			switch (fillMode) {
-			case 'contain':
-				// アスペクト比を維持して画像がすべて含まれるように表示
-				var aspectRatio = layerW / layerH;
-				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-				if (aspectRatio < imgRate) {
-					imgStyle.width = layerW;
-					imgStyle.height = layerW / imgRate;
-				} else {
-					imgStyle.height = layerH;
-					imgStyle.width = layerH * imgRate;
-				}
-				break;
-			case 'cover':
-				// アスペクト比を維持して領域が画像で埋まるように表示
-				var aspectRatio = layerW / layerH;
-				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-				if (aspectRatio < imgRate) {
-					imgStyle.height = layerH;
-					imgStyle.width = layerH * imgRate;
-				} else {
-					imgStyle.width = layerW;
-					imgStyle.height = layerW / imgRate;
-				}
-				break;
-			case 'stretch':
-				imgStyle.width = '100%';
-				imgStyle.height = '100%';
-				break;
-			default:
-				// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
-			}
-			$imgElement.css(imgStyle);
 
-			// コマンドの作成
-			var layer = this._backgroundLayer;
-			var afterElement = imgElement;
-			var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
-			var that = this;
-			var command = new CustomCommand({
-				execute: function() {
-					var oldValue = that._getCurrentBackgroundData();
-					this._preBgElement = $layer.children()[0];
-					$(layer).append(afterElement);
-					$(this._preBgElement).remove();
-					var newValue = that._getCurrentBackgroundData();
-					// 必要なデータだけ取得
-					delete oldValue.color;
-					delete newValue.color;
-					return {
-						type: EVENT_EDIT_BACKGROUND,
-						layer: layer,
-						oldValue: oldValue,
-						newValue: newValue
-					};
-				},
-				undo: function() {
-					var oldValue = that._getCurrentBackgroundData();
-					$(layer).append(this._preBgElement);
-					$(afterElement).remove();
-					var newValue = that._getCurrentBackgroundData();
-					// 必要なデータだけ取得
-					oldValue = {
-						color: oldValue.color
-					};
-					newValue = {
-						color: newValue.color
-					};
-					return {
-						type: EVENT_EDIT_BACKGROUND,
-						layer: layer,
-						oldValue: oldValue,
-						newValue: newValue
-					};
-				},
-				_preBgElement: null
+			var imgOnload = this.own(function() {
+				var $layer = $(this._backgroundLayer);
+				var layerW = $layer.width();
+				var layerH = $layer.height();
+				var imgStyle = {
+					left: x || 0,
+					top: y || 0
+				};
+				switch (fillMode) {
+				case 'contain':
+					// アスペクト比を維持して画像がすべて含まれるように表示
+					var aspectRatio = layerW / layerH;
+					var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+					if (aspectRatio < imgRate) {
+						imgStyle.width = layerW;
+						imgStyle.height = layerW / imgRate;
+					} else {
+						imgStyle.height = layerH;
+						imgStyle.width = layerH * imgRate;
+					}
+					break;
+				case 'cover':
+					// アスペクト比を維持して領域が画像で埋まるように表示
+					var aspectRatio = layerW / layerH;
+					var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+					if (aspectRatio < imgRate) {
+						imgStyle.height = layerH;
+						imgStyle.width = layerH * imgRate;
+					} else {
+						imgStyle.width = layerW;
+						imgStyle.height = layerW / imgRate;
+					}
+					break;
+				case 'stretch':
+					imgStyle.width = '100%';
+					imgStyle.height = '100%';
+					break;
+				default:
+					// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
+				}
+				$imgElement.css(imgStyle);
+
+				// コマンドの作成
+				var layer = this._backgroundLayer;
+				var afterElement = imgElement;
+				var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
+				var that = this;
+				var command = new CustomCommand({
+					execute: function() {
+						var oldValue = that._getCurrentBackgroundData();
+						this._preBgElement = $layer.children()[0];
+						$(layer).append(afterElement);
+						$(this._preBgElement).remove();
+						var newValue = that._getCurrentBackgroundData();
+						// 必要なデータだけ取得
+						delete oldValue.color;
+						delete newValue.color;
+						return {
+							type: EVENT_EDIT_BACKGROUND,
+							layer: layer,
+							oldValue: oldValue,
+							newValue: newValue
+						};
+					},
+					undo: function() {
+						var oldValue = that._getCurrentBackgroundData();
+						$(layer).append(this._preBgElement);
+						$(afterElement).remove();
+						var newValue = that._getCurrentBackgroundData();
+						// 必要なデータだけ取得
+						oldValue = {
+							color: oldValue.color
+						};
+						newValue = {
+							color: newValue.color
+						};
+						return {
+							type: EVENT_EDIT_BACKGROUND,
+							layer: layer,
+							oldValue: oldValue,
+							newValue: newValue
+						};
+					},
+					_preBgElement: null
+				});
+				this.artboardCommandManager.appendCommand(command);
 			});
-			this.artboardCommandManager.appendCommand(command);
+
+			// img要素のロードが終わってから背景適用を実行
+			if (imgElement.complete) {
+				imgOnload();
+			} else {
+				imgElement.onload = imgOnload;
+			}
 		},
 
 		/**

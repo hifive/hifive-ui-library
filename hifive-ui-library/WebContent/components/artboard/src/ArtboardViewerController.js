@@ -118,33 +118,72 @@
 				this._$bg.empty();
 				if (background.src) {
 					var fillMode = background.fillMode;
-					var $bgImg;
-					var bgImgStyle = {};
-					// stretch指定が指定されていたらimg要素を作る
-					if (fillMode === 'stretch') {
-						$bgImg = $('<img style="width:100%;height:100%;position:absolute;">');
-						$bgImg.attr('src', background.src);
+					var layerW = this._$bg.width();
+					var layerH = this._$bg.height();
+					var $imgElement = $('<img>');
+					var imgElement = $imgElement[0];
+					$imgElement.attr('src', background.src);
+					var imgOnload = this.own(function() {
+						var imgStyle = {
+							left: background.x || 0,
+							top: background.y || 0
+						};
+						var scaleX = scaleY = 1;
+						if (isStretch) {
+							scaleX = layerW / size.width;
+							scaleY = layerH / size.height;
+						}
+						switch (fillMode) {
+						case 'contain':
+							// アスペクト比を維持して画像がすべて含まれるように表示
+							var aspectRatio = size.width / size.height;
+							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+							if (aspectRatio < imgRate) {
+								imgStyle.width = layerW;
+								imgStyle.height = size.width / imgRate * scaleY;
+							} else {
+								imgStyle.height = layerH;
+								imgStyle.width = size.height * imgRate * scaleX;
+							}
+							break;
+						case 'cover':
+							// アスペクト比を維持して領域が画像で埋まるように表示
+							var aspectRatio = size.width / size.height;
+							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+							if (aspectRatio < imgRate) {
+								imgStyle.height = layerH;
+								imgStyle.width = layerH * imgRate;
+							} else {
+								imgStyle.width = layerW;
+								imgStyle.height = layerW / imgRate * scaleX;
+							}
+							break;
+						case 'stretch':
+							// stretchの時は描画先のサイズがいくつであっても100%指定でOK
+							imgStyle.width = '100%';
+							imgStyle.height = '100%';
+							break;
+						default:
+							// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
+							if (isStretch) {
+								// isStretch指定の場合は画面サイズに合うようにする
+								imgStyle.width = imgElement.naturalWidth * scaleX;
+								imgStyle.height = imgElement.naturalHeight * scaleY;
+							}
+						}
+						if (isStretch) {
+							imgStyle.left *= scaleX;
+							imgStyle.top *= scaleY;
+						}
+						$imgElement.css(imgStyle);
+						this._$bg.append(imgElement);
+					});
+					// img要素のロードが終わってから背景適用を実行
+					if (imgElement.complete) {
+						imgOnload();
 					} else {
-						// stretchでなければbackgroundを指定したdivを作る
-						$bgImg = $('<div style="width:100%;height:100%;position:absolute; background-repeat: no-repeat;"></div>');
-						$bgImg.css({
-							backgroundImage: 'url("' + background.src + '")',
-							backgroundSize: fillMode
-						});
+						imgElement.onload = imgOnload;
 					}
-					var x = background.x;
-					var y = background.y;
-					bgImgStyle.left = x;
-					bgImgStyle.top = y;
-					if (x < 0 || y < 0) {
-						// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
-						var w = this._$bg.width();
-						var h = this._$bg.height();
-						bgImgStyle.width = w - x;
-						bgImgStyle.height = h - y;
-					}
-					$bgImg.css(bgImgStyle);
-					this._$bg.append($bgImg);
 				}
 			}
 
