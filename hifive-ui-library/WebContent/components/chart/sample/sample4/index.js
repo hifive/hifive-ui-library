@@ -18,35 +18,6 @@
 
 	var DUMMY_DATA_SIZE = 5;
 
-
-	/**
-	 * データ生成関数
-	 * @return
-	 */
-	function createChartDummyData(median, vibration) {
-		var ret = [];
-		for (var i = 0; i < DUMMY_DATA_SIZE; i++) {
-			ret.push({
-				label: 'データ' + (i + 1),
-				val: parseInt(median + (Math.random() - 0.5) * vibration * 2)
-			});
-		}
-		return ret;
-	}
-
-	var colors = ['#1BA466', '#1E98B9', '#B2CF3E', '#7379AE', '#C23685', '#E06A3B', '#91DBB9',
-			'#EEF5D3', '#FFFBD5', '#FCF1D3', '#F6D4D8', '#F3D1E5', '#EDD0E5', '#DEDFEF', '#CBE6F3',
-			'#C9E8F1', '#68CFC3', '#81D674', '#EBF182', '#FBE481', '#EDA184', '#DF81A2', '#D27EB3',
-			'#B492CC', '#8BA7D5', '#6CBAD8'];
-
-	/**
-	 * 色をランダムに指定
-	 * @return 
-	 */
-	function getRandomColor() {
-		return colors[parseInt(Math.random() * colors.length)];
-	}
-
 	/**
 	 * @class
 	 * @memberOF ui.sample.chart
@@ -118,7 +89,12 @@
 		 * @returns {Object} 系列の定義オブジェクト
 		 */
 		_createNewSeries: function() {
-			var data = createChartDummyData(100, 50); // ダミーデータを生成
+			var data = ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 100, 50); // ダミーデータを生成
+			
+			var colors = [];
+			for (var i = 0; i < DUMMY_DATA_SIZE; i++) {
+				colors.push(ui.sample.chart.getRandomColor());
+			}
 
 			var name = 'pie_series' + this._series.length;
 			// 系列定義
@@ -129,7 +105,7 @@
 				propNames: { // チャートに表示するときに使用するプロパティ名
 					y: 'val' 
 				},
-				colors: [getRandomColor(),getRandomColor(),getRandomColor(),getRandomColor(),getRandomColor()] 
+				colors: colors
 			};
 		},
 		

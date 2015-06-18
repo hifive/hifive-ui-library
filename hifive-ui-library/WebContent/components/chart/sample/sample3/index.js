@@ -18,51 +18,6 @@
 
 	var DUMMY_DATA_SIZE = 10;
 
-
-	/**
-	 * データ生成関数
-	 * @return
-	 */
-	function createChartDummyData(median, vibration) {
-		var ret = [];
-		for (var i = 0; i < DUMMY_DATA_SIZE; i++) {
-			ret.push({
-				val: median + (Math.random() - 0.5) * vibration * 2
-			});
-		}
-		return ret;
-	}
-
-	var colors = ['#1BA466', '#1E98B9', '#B2CF3E', '#7379AE', '#C23685', '#E06A3B', '#91DBB9',
-			'#EEF5D3', '#FFFBD5', '#FCF1D3', '#F6D4D8', '#F3D1E5', '#EDD0E5', '#DEDFEF', '#CBE6F3',
-			'#C9E8F1', '#68CFC3', '#81D674', '#EBF182', '#FBE481', '#EDA184', '#DF81A2', '#D27EB3',
-			'#B492CC', '#8BA7D5', '#6CBAD8'];
-
-	/**
-	 * 色をランダムに指定
-	 * @return 
-	 */
-	function getRandomColor() {
-		return colors[parseInt(Math.random() * colors.length)];
-	}
-
-	function createFillObj(name) {
-		return {
-			id: 'grad_' + name,
-			x1: '0%',
-			y1: '0%',
-			x2: '0%',
-			y2: '100%',
-			stops: [{
-				offset: '0%',
-				color: getRandomColor()
-			}, {
-				offset: '100%',
-				color: '#fff'
-			}]
-		};
-	}
-
 	/**
 	 * @class
 	 * @memberOF ui.sample.chart
@@ -158,7 +113,7 @@
 		 * @returns {Object} 系列の定義オブジェクト
 		 */
 		_createNewSeries: function() {
-			var data = createChartDummyData(400, 100); // ダミーデータを生成
+			var data = ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 400, 100); // ダミーデータを生成
 
 			var name = 'bar_series' + this._series.length;
 			// 系列定義
@@ -169,7 +124,7 @@
 				propNames: { // チャートに表示するときに使用するプロパティ名
 					y: 'val' 
 				},
-				color: getRandomColor()
+				color: ui.sample.chart.getRandomColor()
 			};
 		},
 		
@@ -190,7 +145,7 @@
 		},
 		
 		_getTooltipContent: function(data) {
-			return data.val.toString();
+			return data.label + ':' + data.val.toString();
 		}
 	};
 

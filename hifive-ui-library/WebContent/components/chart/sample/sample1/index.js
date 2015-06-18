@@ -15,52 +15,10 @@
  *
  */
 (function() {
-
+	
 	var DUMMY_DATA_SIZE = 300;
 
-
-	/**
-	 * データ生成関数
-	 */
-	function createChartDummyData(median, vibration) {
-		var ret = [];
-		for (var i = 0; i < DUMMY_DATA_SIZE; i++) {
-			ret.push({
-				val: median + (Math.random() - 0.5) * vibration * 2
-			});
-		}
-		return ret;
-	}
-
-	var colors = ['#1BA466', '#1E98B9', '#B2CF3E', '#7379AE', '#C23685', '#E06A3B', '#91DBB9',
-			'#EEF5D3', '#FFFBD5', '#FCF1D3', '#F6D4D8', '#F3D1E5', '#EDD0E5', '#DEDFEF', '#CBE6F3',
-			'#C9E8F1', '#68CFC3', '#81D674', '#EBF182', '#FBE481', '#EDA184', '#DF81A2', '#D27EB3',
-			'#B492CC', '#8BA7D5', '#6CBAD8'];
-
-	/**
-	 * 色をランダムに指定
-	 */
-	function getRandomColor() {
-		return colors[parseInt(Math.random() * colors.length)];
-	}
-
-	function createFillObj(name) {
-		return {
-			id: 'grad_' + name,
-			x1: '0%',
-			y1: '0%',
-			x2: '0%',
-			y2: '100%',
-			stops: [{
-				offset: '0%',
-				color: getRandomColor()
-			}, {
-				offset: '100%',
-				color: '#fff'
-			}]
-		};
-	}
-
+	
 	/**
 	 * @class
 	 * @memberOF ui.sample.chart
@@ -248,7 +206,7 @@
 		 * @returns {Object} 系列の定義オブジェクト
 		 */
 		_createNewSeries: function(isStacked) {
-			var data = createChartDummyData(400, 100); // ダミーデータを生成
+			var data = ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 400, 100); // ダミーデータを生成
 
 			// Goボタンを押し続けてダミーデータの最後までインデックスが進と、
 			// 最初に戻ってデータを表示するので、系列ごとの保持するデータサイズ長を
@@ -268,8 +226,8 @@
 				propNames: { // チャートに表示するときに使用するプロパティ名
 					y: 'val' // lineチャートのときは、yのプロパティ名を指定する(デフォルトはy)
 				},
-				fillColor: isStacked ? createFillObj(name) : undefined, // stacked_lineのときの塗りつぶす色の指定
-				color: isStacked ? getRandomColor() : 'black', // 線の色
+				fillColor: isStacked ? ui.sample.chart.createFillObj(name) : undefined, // stacked_lineのときの塗りつぶす色の指定
+				color: isStacked ? ui.sample.chart.getRandomColor() : 'black', // 線の色
 				animateNum: 20
 			// 系列を追加するときのアニメーションの回数(何分割するか)
 			};
