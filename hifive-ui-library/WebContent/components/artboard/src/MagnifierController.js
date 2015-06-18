@@ -70,10 +70,30 @@
 	 */
 	function Magnifier(board, settings) {
 		var $board = $(board);
+		var boardW = $board.width();
+		var boardH = $board.height();
 		var $orgLayers = $board.hasClass(CLASS_LAYERS) ? $board : $board.find('.' + CLASS_LAYERS);
 		var $orgBg = $orgLayers.find('>.' + CLASS_BG_LAYER);
 		var $orgSvg = $orgLayers.find('>.' + CLASS_SVG_LAYER);
+		var viewBoxValues = $orgSvg[0].getAttribute('viewBox').split(' ');
+		var orgViewBoxW = parseInt(viewBoxValues[2]);
+		var orgViewBoxH = parseInt(viewBoxValues[3]);
+		var orgScaleX = boardW / orgViewBoxW;
+		var orgScaleY = boardH / orgViewBoxH;
 		var $orgG = $orgSvg.find('>g');
+		var orgGTransform = $orgG.attr('transform');
+		var orgGTranslateX = 0;
+		var orgGTranslateY = 0;
+		var orgGScaleX = 1;
+		var orgGScaleY = 1;
+		if (orgGTransform) {
+			var tmp = orgGTransform.match(/matrix\((.*)\)/);
+			var transArgs = tmp[1].split(' ');
+			orgGScaleX = parseFloat(transArgs[0]);
+			orgGScaleY = parseFloat(transArgs[3]);
+			orgGTranslateX = parseFloat(transArgs[4]);
+			orgGTranslateY = parseFloat(transArgs[5]);
+		}
 		var scale = settings.scale;
 		if (isNaN(scale) || scale <= 0) {
 			throw new Error(ERR_MSG_INVALID_SCALE);
@@ -115,9 +135,19 @@
 		this._$svg = $svg;
 		this._$bgElement = $bgElement;
 		this._use = use;
+		// 元のsvg,g要素のtranslate情報
+		this._orgViewBoxW = orgViewBoxW;
+		this._orgViewBoxH = orgViewBoxH;
+		this._orgGTranslateX = orgGTranslateX;
+		this._orgGTranslateY = orgGTranslateY;
+		this._orgGScaleX = orgGScaleX;
+		this._orgGScaleY = orgGScaleY;
+		this._orgScaleRatioX = orgGScaleX / orgScaleX;
+		this._orgScaleRatioY = orgGScaleY / orgScaleY;
+		this._orgScaleRatioXY = Math.sqrt(this._orgScaleRatioX * this._orgScaleRatioY);
 		// ボード情報
-		this._boardW = $board.width();
-		this._boardH = $board.height();
+		this._boardW = boardW;
+		this._boardH = boardH;
 		this._orgBgElementTop = parseFloat($bgElement.css('top'));
 		this._orgBgElementLeft = parseFloat($bgElement.css('left'));
 
@@ -294,20 +324,25 @@
 			// 表示位置設定
 			var w = this._rootW;
 			var h = this._rootH;
-			var x = this._x || 0;
-			var y = this._y || 0;
+			// x,yはオリジナルのg要素上でどの場所かの値
+			// g要素が拡縮されていてもg要素上の位置
+			// (元のg要素が100px, g要素が2倍に拡大表示されていて200pxで表示されているとき、xは0～200の値を取る)
+			var x = (this._x || 0) * this._orgScaleRatioX;
+			var y = (this._y || 0) * this._orgScaleRatioY;
+			// _scaleがnの時、オリジナルのg要素の見かけ上の大きさのn倍にする必要がある
+			// オリジナルのg要素がすでにtransformで拡縮されて表示されていたら、その分を割ったscaleで計算する
+			var scale = this._scale / this._orgScaleRatioXY;
 			// svg
 			var use = this._use;
-			use.setAttribute('x', -x + w / 2);
-			use.setAttribute('y', -y + h / 2);
+
+			use.setAttribute('x', -x + w / 2 - this._orgGTranslateX);
+			use.setAttribute('y', -y + h / 2 - this._orgGTranslateY);
 
 			this._$root.css({
 				width: this._rootW,
 				height: this._rootH
 			});
 
-			// svg
-			var scale = this._scale;
 			var value = h5.u.str.format('matrix({0},0,0,{0},{1},{2})', scale, (1 - scale) * w / 2,
 					(1 - scale) * h / 2);
 			this._use.setAttribute('transform', value);
@@ -316,12 +351,12 @@
 			// カンバス範囲外は表示しないようにclip
 			// 全て表示する場合はrect(0 {w}px {h}px 0)
 			// x,yの位置がカンバスをはみ出す位置にいる場合は削る
-			var xMin = x * scale > w / 2 ? 0 : w / 2 - x * scale;
-			var yMin = y * scale > h / 2 ? 0 : h / 2 - y * scale;
-			var xMax = x * scale < this._boardW - w / 2 ? w : w
-					- (x + w / 2 / scale - this._boardW) * scale;
-			var yMax = y * scale < this._boardH - h / 2 ? h : h
-					- (y + h / 2 / scale - this._boardH) * scale;
+			var xMin = x > w / 2 / scale ? 0 : (w / 2 / scale - x) * scale;
+			var yMin = y > h / 2 / scale ? 0 : (h / 2 / scale - y) * scale;
+			var xMax = x + w / 2 / scale < this._orgViewBoxW * this._orgGScaleX ? w : w
+					- (x + w / 2 / scale - this._orgViewBoxW * this._orgGScaleX) * scale;
+			var yMax = y + h / 2 / scale < this._orgViewBoxH * this._orgGScaleY ? h : h
+					- (y + h / 2 / scale - this._orgViewBoxH * this._orgGScaleY) * scale;
 			var svgClipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax,
 					xMin);
 			this._$svg.css('clip', svgClipValue);
@@ -488,7 +523,8 @@
 			if (isOnMagElement) {
 				// Magnifier要素上のイベントの場合、いったんdisplay:noneにして、後ろにボードがあるかどうかチェックする
 				$el.css('display', 'none');
-				var target = document.elementFromPoint(event.pageX, event.pageY);
+				var target = document
+						.elementFromPoint(event.pageX - scrollX, event.pageY - scrollY);
 				$el.css('display', 'block');
 				onBoard = !!this._$board.find(target).length;
 			}
