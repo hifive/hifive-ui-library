@@ -151,6 +151,7 @@
 				<label>高さ<input type="text"  name="save-height" disabled/></label>
 				<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked disabled/>比率を保持</label>
 			</div>
+			[%# trim実装動作確認用。trimは一旦実装したもののAPIから一旦外している #83 
 			<div class="save-trim-settings">
 				<p><label><input type="checkbox" name="save-trim-on" value="on"/>範囲指定</label></p>
 				<!-- <div class="border1 save-trim-select">ドラッグして選択</div> -->
@@ -159,6 +160,7 @@
 				<label>dw<input type="text"  name="save-trim-dw" disabled/></label>
 				<label>dh<input type="text"  name="save-trim-dh" disabled/></label>
 			</div>
+			%]
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
 				<div class="save popupCloseBtn border1 clear-both">保存</div>

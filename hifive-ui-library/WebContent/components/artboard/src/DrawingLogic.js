@@ -1187,13 +1187,31 @@
 		 * @param {Object} [processParameter.size] サイズオブジェクト。指定しない場合は範囲指定に合わせたサイズまたは描画領域のサイズで保存されます。
 		 * @param {number} processParameter.size.width 出力する画像の幅(px)
 		 * @param {number} processParameter.size.height 出力する画像の高さ(px)
-		 * @param {Object} [processParameter.trim] 範囲指定オブジェクト。指定しない場合は範囲指定は行いません。
-		 * @param {Object} processParameter.trim.dx 切りぬく範囲の左上位置のx座標
-		 * @param {Object} processParameter.trim.dy 切りぬく範囲の左上位置のy座標
-		 * @param {Object} processParameter.trim.dw 切りぬく範囲の幅
-		 * @param {Object} processParameter.trim.dh 切りぬく範囲の高さ
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
+		// TODO trimオプションは実装済みだが、いったんAPIから外しています #83
+		// 自動トリム(図形描画領域を自動で計算してtrim)する機能を実装した時に復活させる
+		// 自動トリムは図形の線幅も考慮した矩形を取得する必要があり、ブラウザによって挙動が異なり、自動trim実装の差異は考慮する必要があります
+		// 例：path要素の矩形取得について
+		//		chrome
+		//		 getBoundingClientRect() 線の幅考慮されない
+		//		 getBBox() 線の幅考慮されない
+		//
+		//		ff
+		//		 getBoundingClientRect() +線の幅 +上下左右に10pxのマージン
+		//		 getBBox() 線の幅考慮されない
+		//
+		//		IE
+		//		 getBoundingClientRect() +線の幅
+		//		 getBBox() 線の幅考慮されない
+		//		/**
+		//		 * @private
+		//		 * @param {Object} [processParameter.trim] 範囲指定オブジェクト。指定しない場合は範囲指定は行いません。
+		//		 * @param {Object} processParameter.trim.dx 切りぬく範囲の左上位置のx座標
+		//		 * @param {Object} processParameter.trim.dy 切りぬく範囲の左上位置のy座標
+		//		 * @param {Object} processParameter.trim.dw 切りぬく範囲の幅
+		//		 * @param {Object} processParameter.trim.dh 切りぬく範囲の高さ
+		//		 */
 		getImage: function(returnType, processParameter) {
 			returnType = returnType || 'image/png';
 			processParameter = processParameter || {};
@@ -1280,7 +1298,9 @@
 					this.own(function() {
 						// カンバスを画像化
 						var size = processParameter.size;
-						var trim = processParameter.trim;
+						// TODO trimは実装済みだが行わないようにしている #83
+						// var trim = processParameter.trim;
+						var trim = null;
 						if (size || trim) {
 							// sizeまたはtrimが指定されている場合
 							// 新しくcanvasを生成してサイズ変更とトリミングを行う
