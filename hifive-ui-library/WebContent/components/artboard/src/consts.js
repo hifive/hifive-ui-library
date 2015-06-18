@@ -50,6 +50,9 @@
 	/** 画像設定時にIDと紐付かない画像を指定した時に要素にsrcパス覚えさせておくための属性名 */
 	var DATA_IMAGE_SOURCE_SRC = 'h5-artboard-image-src';
 
+	/** 画像設定時のfillModeを覚えさせておくための属性名 */
+	var DATA_IMAGE_SOURCE_FILLMODE = 'h5-artboard-image-fillmode';
+
 	/** 要素に、要素の位置とサイズを持たせるときのデータ属性名 */
 	var DATA_BOUNDS_OBJECT = 'bounds-object';
 
@@ -83,6 +86,7 @@
 			XLINKNS: XLINKNS,
 			DATA_IMAGE_SOURCE_ID: DATA_IMAGE_SOURCE_ID,
 			DATA_IMAGE_SOURCE_SRC: DATA_IMAGE_SOURCE_SRC,
+			DATA_IMAGE_SOURCE_FILLMODE: DATA_IMAGE_SOURCE_FILLMODE,
 			DATA_BOUNDS_OBJECT: DATA_BOUNDS_OBJECT
 		},
 		message: {

@@ -316,6 +316,7 @@
 	var RemoveCommand = h5.ui.components.artboard.RemoveCommand;
 	var DATA_IMAGE_SOURCE_ID = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_ID;
 	var DATA_IMAGE_SOURCE_SRC = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_SRC;
+	var DATA_IMAGE_SOURCE_FILLMODE = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_FILLMODE;
 
 	// ArtShape実装クラスコンストラクタ
 	var constructor = h5.ui.components.artboard.ArtShapeConstructor;
@@ -885,44 +886,58 @@
 			}
 
 			var $layer = $(this._backgroundLayer);
-			var $element;
-			// fillModeにstretch指定が指定されていたらimg要素を作る
-			if (fillMode === 'stretch') {
-				$element = $('<img style="width:100%;height:100%">');
-				$element.attr('src', src);
-			} else {
-				// stretchでなければbackgroundを指定したdivを作る
-				$element = $('<div></div>');
-				$element.css({
-					backgroundImage: 'url("' + src + '")',
-					backgroundSize: fillMode
-				});
-			}
-			// fillModeとidまたは画像パスを要素に持たせておく
-			$element.data('fillmode', fillMode);
+			var layerW = $layer.width();
+			var layerH = $layer.height();
+			var $imgElement = $('<img>');
+			var imgElement = $imgElement[0];
+			$imgElement.attr('src', src);
+			// fillModeとid(あれば)と画像パスを要素に持たせておく
 			if (id) {
-				$element.data(DATA_IMAGE_SOURCE_ID, id);
+				$imgElement.data(DATA_IMAGE_SOURCE_ID, id);
 			}
-			$element.data(DATA_IMAGE_SOURCE_SRC, src);
-			$element.css({
+			$imgElement.data(DATA_IMAGE_SOURCE_FILLMODE, fillMode);
+			$imgElement.data(DATA_IMAGE_SOURCE_SRC, src);
+			var imgStyle = {
 				left: x || 0,
-				top: y || 0,
-				position: 'absolute'
-			});
-
-			if (x < 0 || y < 0) {
-				// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
-				var w = $layer.width();
-				var h = $layer.height();
-				$element.css({
-					width: w - x,
-					height: h - y
-				});
+				top: y || 0
+			};
+			switch (fillMode) {
+			case 'contain':
+				// アスペクト比を維持して画像がすべて含まれるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				} else {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				}
+				break;
+			case 'cover':
+				// アスペクト比を維持して領域が画像で埋まるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				} else {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				}
+				break;
+			case 'stretch':
+				imgStyle.width = '100%';
+				imgStyle.height = '100%';
+				break;
+			default:
+				// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
 			}
+			$imgElement.css(imgStyle);
 
 			// コマンドの作成
 			var layer = this._backgroundLayer;
-			var afterElement = $element[0];
+			var afterElement = imgElement;
 			var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
 			var that = this;
 			var command = new CustomCommand({
@@ -1066,7 +1081,7 @@
 			}
 			ret.color = color;
 			if ($bgElement.length) {
-				ret.fillMode = $bgElement.data('fillmode');
+				ret.fillMode = $bgElement.data(DATA_IMAGE_SOURCE_FILLMODE);
 				var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 				if (!useSrc && id) {
 					ret.id = id;
@@ -1251,7 +1266,7 @@
 							var w, h;
 							if (canvasRate < imgRate) {
 								w = canvas.width;
-								h = w * imgRate;
+								h = w / imgRate;
 							} else {
 								h = canvas.height;
 								w = h * imgRate;
@@ -1264,7 +1279,7 @@
 							var w, h;
 							if (canvasRate < imgRate) {
 								h = canvas.height;
-								w = h / imgRate;
+								w = h * imgRate;
 							} else {
 								w = canvas.width;
 								h = w / imgRate;

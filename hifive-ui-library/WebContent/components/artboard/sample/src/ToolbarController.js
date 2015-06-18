@@ -915,7 +915,7 @@
 					var drawW, drawH;
 					if (canvasRate < imgRate) {
 						drawW = artboardW;
-						drawH = drawW * imgRate;
+						drawH = drawW / imgRate;
 						backgroundData.x = 0;
 						backgroundData.y = (artboardH - drawH) / 2;
 					} else {
