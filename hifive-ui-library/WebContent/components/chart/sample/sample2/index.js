@@ -395,14 +395,6 @@
 					data: resp.data
 				});
 
-				addData.push({
-					name: 'ttm',
-					data: {
-						x: null,
-						y: this._ttm
-					}
-				});
-
 				if (this.$find('#aveNum').val() == 1) {
 					addData.push({
 						name: 'ave',
