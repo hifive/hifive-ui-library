@@ -1646,7 +1646,7 @@
 						y1: item.get('lineY1'),
 						y2: item.get('lineY2')
 					});
-					var $rect = $root.find('#' + h5format(RECT_ELM_ID_FORMAT, item.get('id')));
+					var $rect = $root.find('#' + h5format(RECT_ELM_ID_FORMAT, item.get('id'), this.name));
 					$rect.attr({
 						y: item.get('rectY'),
 						height: item.get('rectHeight')
