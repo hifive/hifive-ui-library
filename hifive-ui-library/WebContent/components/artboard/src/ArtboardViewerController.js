@@ -116,6 +116,7 @@
 				}
 				// 背景画像要素の生成
 				this._$bg.empty();
+
 				if (background.src) {
 					var fillMode = background.fillMode;
 					var layerW = this._$bg.width();
@@ -123,6 +124,7 @@
 					var $imgElement = $('<img>');
 					var imgElement = $imgElement[0];
 					$imgElement.attr('src', background.src);
+					this._$bg.append(imgElement);
 					var imgOnload = this.own(function() {
 						var imgStyle = {
 							left: background.x || 0,
@@ -152,10 +154,10 @@
 							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
 							if (aspectRatio < imgRate) {
 								imgStyle.height = layerH;
-								imgStyle.width = layerH * imgRate;
+								imgStyle.width = layerH / scaleY * imgRate * scaleX;
 							} else {
 								imgStyle.width = layerW;
-								imgStyle.height = layerW / imgRate * scaleX;
+								imgStyle.height = layerW / scaleX / imgRate * scaleY;
 							}
 							break;
 						case 'stretch':
@@ -176,7 +178,6 @@
 							imgStyle.top *= scaleY;
 						}
 						$imgElement.css(imgStyle);
-						this._$bg.append(imgElement);
 					});
 					// img要素のロードが終わってから背景適用を実行
 					if (imgElement.complete) {
