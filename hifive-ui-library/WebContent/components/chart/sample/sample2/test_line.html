@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+	<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+	<link rel="stylesheet" href="../../src/chart.css" />
+
+	<!--[if lt IE 9]>
+	<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+	<![endif]-->
+	<!--[if gte IE 9]><!-->
+	<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+	<!--<![endif]-->
+
+	<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+	<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+	<!-- チャート部品 -->
+  	<script src="../../src/graphic-renderer.js"></script>
+  	<script src="../../src/chart.js"></script>
+
+	<script src="index.js"></script>
+
+	<title>チャート</title>
+</head>
+<body>
+	<h5>チャートサンプル</h5>
+	<button id="add">Add</button>
+	<form id="draw">
+		初期データ数：<input type="text" id="initDataNum" value="267">
+		表示する線種：<select id="type"><option value="line">ライン</option></select>
+		平均線の数：<select id="aveNum"><option value="0">0</option><option value="1">1</option></select>
+		<button type="submit">描画</button>
+	</form>
+	<div class="buttons">
+		<button id="plus">＋</button><!-- 拡大 -->
+		<button id="minus">－</button><!-- 縮小 -->
+	</div>
+
+	<div id="chart"></div>
+
+	<div id="sc_buttons">
+		<div>
+			<button data-init-num="0" data-type="line" data-ave-num="0">初期データ:0, 線種:ライン, 平均線:0</button>
+			<button data-init-num="0" data-type="line" data-ave-num="1">初期データ:0, 線種:ライン, 平均線:1</button>
+		</div>
+		<div>
+			<button data-init-num="10" data-type="line" data-ave-num="0">初期データ:10, 線種:ライン, 平均線:0</button>
+			<button data-init-num="10" data-type="line" data-ave-num="1">初期データ:10, 線種:ライン, 平均線:1</button>
+		</div>
+		<div>
+			<button data-init-num="267" data-type="line" data-ave-num="0">初期データ:267, 線種:ライン, 平均線:0</button>
+			<button data-init-num="267" data-type="line" data-ave-num="1">初期データ:267, 線種:ライン, 平均線:1</button>
+		</div>
+		<div>
+			<button data-init-num="290" data-type="line" data-ave-num="0">初期データ:290, 線種:ライン, 平均線:0</button>
+			<button data-init-num="290" data-type="line" data-ave-num="1">初期データ:290, 線種:ライン, 平均線:1</button>
+		</div>
+	</div>
+</body>
+</html>
