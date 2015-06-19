@@ -1024,6 +1024,8 @@
 
 			// イベントリスナの追加
 			this.chartDataSource.addEventListener('dataChange', this.own(this._addEventListener));
+			
+			this._init();
 		}
 
 		ChartRendererBase.prototype = {
@@ -1035,6 +1037,10 @@
 			 * @returns {Function} コンテキストを自分自身にした関数
 			 */
 			own: own,
+			
+			_init: function() {
+				
+			},
 
 			_setTooltipSetting: function(tooltip) {
 				if (tooltip == null) {
@@ -2516,6 +2522,32 @@
 		 * パイチャートのレンダラ―
 		 */
 		var pieChartRenderer = {
+				
+			_total: 0,
+			
+			_radian: null,
+				
+			_init: function() {
+				this.$path = null;
+
+				this._radian = this.chartSetting.get('height') * 0.4;
+				// イベントリスナの追加
+				this.chartDataSource.addEventListener('dataChange', this.own(this._updateTotal));
+			},
+			
+			_updateTotal: function(ev) {
+				if (!ev.add || ev.add.length == 0) {
+					return;
+				}
+				
+				for (var i = 0, len = ev.add.length; i < len; i ++) {
+					// 描画範囲の点について座標情報を計算する
+					var item = ev.add[i];
+					this._total += item[this.chartDataSource.propNames.y];
+				}
+			},
+		
+		
 			/**
 			 * この系列の描画をします
 			 * 
@@ -2524,9 +2556,6 @@
 			 */
 			draw: function(animate) {
 				$(this.rootElement).empty();
-				this.$path = null;
-
-				this._radian = this.chartSetting.get('height') * 0.4;
 
 				this._createPieDataItems();
 
@@ -2563,21 +2592,6 @@
 				var current = this.chartDataSource.dataSource.sequence.current()
 						- chartSetting.get('movedNum');
 				var dispDataSize = this.chartSetting.get('dispDataSize');
-
-				var total = 0;
-
-				for ( var id in this.chartDataSource.dataSource.dataMap) {
-					var intId = parseInt(id);
-					if (intId < current - dispDataSize || intId >= current) {
-						continue;
-					}
-
-					// 描画範囲の点について座標情報を計算する
-					var item = this.chartDataSource.getDataObj(intId);
-					total += item[this.chartDataSource.propNames.y];
-				}
-
-				this._total = total;
 
 				for ( var id in this.chartDataSource.dataSource.dataMap) {
 					var intId = parseInt(id);
