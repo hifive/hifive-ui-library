@@ -365,6 +365,18 @@
 		},
 
 		/**
+		 * カンバスサイズ変更
+		 *
+		 * @memberOf sample.PageController
+		 */
+		'{this._$toolbar} setSize': function(ctx) {
+			var size = ctx.evArg;
+			// ラッパーのサイズ指定
+			this._$canvasWrapper.css(size);
+			this._artboardController.setSize(size.width, size.height);
+		},
+
+		/**
 		 * 保存
 		 * <p>
 		 * 作業内容を保存してかつimgとして出力も行う

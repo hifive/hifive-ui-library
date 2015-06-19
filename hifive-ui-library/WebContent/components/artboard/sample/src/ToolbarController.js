@@ -55,6 +55,9 @@
 	/** セーブ */
 	var EVENT_SAVE = 'save';
 
+	/** サイズ変更 */
+	var EVENT_SIZE_CHANGE = 'setSize';
+
 	//-------------------------------------------------------------
 	//  sample.ToolMenuController
 	//-------------------------------------------------------------
@@ -340,6 +343,13 @@
 		_saveController: sample.SaveController,
 
 		/**
+		 * カンバスサイズ設定コントローラ
+		 *
+		 * @memberOf sample.SizechangeController
+		 */
+		_sizeChangeController: sample.SizeChangeController,
+
+		/**
 		 * 背景画像追加コントローラ
 		 *
 		 * @memberOf sample.ToolbarController
@@ -369,6 +379,9 @@
 			},
 			_saveController: {
 				rootElement: '{.save-popup}'
+			},
+			_sizeChangeController: {
+				rootElement: '{.size-change-popup}'
 			}
 		},
 
@@ -427,13 +440,13 @@
 		/**
 		 * ポップアップ名とポップアップのマップ
 		 * <p>
-		 * '.popup-open[data-popup-name="hoge"]'の要素をクリックすると、popupMap['hoge']に登録されたポップアップが開きます。
+		 * '.popup-open[data-popup-name="hoge"]'の要素をクリックすると、_popupMap['hoge']に登録されたポップアップが開きます。
 		 * </p>
 		 *
 		 * @memberOf sample.ToolbarController
 		 * @type {Object}
 		 */
-		popupMap: {},
+		_popupMap: {},
 
 		/**
 		 * 拡大鏡Magnifierインスタンス
@@ -442,6 +455,17 @@
 		 * @private
 		 */
 		_mag: null,
+
+		/**
+		 * 使用するポップアップのクラス名リスト
+		 * <p>
+		 * ポップアップを追加する場合は、ポップアップ要素と、ここのクラス名に追加する。 ポップアップ要素にコントローラをバインドしたい場合は子コントローラと__meta定義を更新する
+		 * </p>
+		 *
+		 * @private
+		 * @memberOf sample.ToolbarController
+		 */
+		_popupClasses: ['background-popup', 'saveData-popup', 'save-popup', 'size-change-popup'],
 
 		/**
 		 * __initイベント
@@ -488,26 +512,13 @@
 
 			// ポップアップの設定
 			// 背景画像設定ポップアップ
-			this._backgroundPopup = h5.ui.popupManager.createPopup('backgroundPopup', '', this
-					.$find('.popup-contents-wrapper').find('.background-popup'), null, {
-				header: false
-			});
-
-			this._saveDataPopup = h5.ui.popupManager.createPopup('saveDataPopup', '', this.$find(
-					'.popup-contents-wrapper').find('.saveData-popup'), null, {
-				header: false
-			});
-
-			this._savePopup = h5.ui.popupManager.createPopup('savePopup', '', this.$find(
-					'.popup-contents-wrapper').find('.save-popup'), null, {
-				header: false
-			});
-
-			this.popupMap = {
-				'background-popup': this._backgroundPopup,
-				'saveData-popup': this._saveDataPopup,
-				'save-popup': this._savePopup
-			};
+			for (var i = 0, l = this._popupClasses.length; i < l; i++) {
+				var cls = this._popupClasses[i];
+				this._popupMap[cls] = h5.ui.popupManager.createPopup(cls, '', this.$find(
+						'.popup-contents-wrapper').find('.' + cls), null, {
+					header: false
+				});
+			}
 
 			// テキスト入力要素
 			this._$textInputBox = this.$find('.text-input-box');
@@ -874,6 +885,7 @@
 
 		//--------------------------------------------------------
 		// 背景の設定
+		// TODO 別コントローラにする
 		//--------------------------------------------------------
 		/**
 		 * 背景画像の設定
@@ -961,16 +973,17 @@
 			var $colorList = $parent.find('.background-color-palette');
 			var $opacity = $parent.find('.background-color-opacity');
 			var $selectedWrapper = $parent.find('.background-color-selected-wrapper');
+			var bgPopup = this._popupMap['background-popup'];
 			if ($el.val() === 'none') {
 				$colorList.addClass('display-none');
 				$opacity.addClass('display-none');
 				$selectedWrapper.addClass('display-none');
-				this._backgroundPopup.refresh();
+				bgPopup.refresh();
 			} else {
 				$colorList.removeClass('display-none');
 				$opacity.removeClass('display-none');
 				$selectedWrapper.removeClass('display-none');
-				this._backgroundPopup.refresh();
+				bgPopup.refresh();
 			}
 		},
 
@@ -1016,7 +1029,8 @@
 			var $img = $(this.view.get('backgroundThumbnail', {
 				imageData: imageData
 			}));
-			$(this._backgroundPopup.rootElement).find('.img-input-wrap').after($img);
+			var bgPopup = this._popupMap['background-popup'];
+			$(bgPopup.rootElement).find('.img-input-wrap').after($img);
 			// 追加された画像をimageMapに登録
 			this.trigger('registDrawingImage', {
 				img: $img[0]
@@ -1095,11 +1109,6 @@
 				strokeWidth: parseInt(this.$find('.stroke-width-slidebar').val())
 			};
 		},
-
-		/**
-		 * 背景画像、背景色設定ポップアップ
-		 */
-		_backgroundPopup: null,
 
 		/**
 		 * 色選択状態、線の幅をsaveSettingsした時の状態に戻す
@@ -1235,6 +1244,21 @@
 			this._hidePopup();
 		},
 
+		//---------------------------
+		// セーブ/ロード
+		//---------------------------
+		/**
+		 * セーブ
+		 *
+		 * @param context
+		 */
+		'{.size-change-popup} setSize': function(ctx) {
+			this.trigger(EVENT_SIZE_CHANGE, ctx.evArg);
+
+			// 設定したらpopupを閉じる
+			this._hidePopup();
+		},
+
 		//-----------------------------------
 		// ポップアップ
 		//-----------------------------------
@@ -1250,7 +1274,7 @@
 		 * @param cls
 		 */
 		_showPopup: function(cls) {
-			var popup = this.popupMap[cls];
+			var popup = this._popupMap[cls];
 			popup.show();
 		},
 		/**
@@ -1259,14 +1283,14 @@
 		 * @param cls
 		 */
 		_hidePopup: function() {
-			// close()はしないけどdisplay:noneにしたいのでcurrentを外す
-			// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
-			this._backgroundPopup.hide();
-			this._saveDataPopup.hide();
-			this._savePopup.hide();
-			$(this._backgroundPopup.rootElement).removeClass('current');
-			$(this._saveDataPopup.rootElement).removeClass('current');
-			$(this._savePopup.rootElement).removeClass('current');
+			for ( var p in this._popupMap) {
+				var popup = this._popupMap[p];
+				// close()はせずにhide()
+				// display:noneにしたいのでcurrentを外す
+				// FIXME h5Popupはcurrent出ない場合にdisplay:noneになっていてほしい(現状visiblity:hiddenになっているだけ)
+				popup.hide();
+				$(popup.rootElement).removeClass('current');
+			}
 		}
 	};
 	h5.core.expose(controller);

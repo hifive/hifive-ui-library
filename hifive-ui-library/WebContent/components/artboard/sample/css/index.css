@@ -40,6 +40,11 @@ h1 {
 	box-sizing: border-box;
 }
 
+input[type="text"].num-input {
+	width: 4em;
+	margin: 0 1em;
+}
+
 /** カンバスの設定 **/
 .artboard {
 	box-sizing: border-box;
@@ -509,9 +514,4 @@ h1 {
 	border: 1px solid #ccc;
 	background-color: #eee;
 	color: #000;
-}
-
-.save-popup input[type="text"] {
-	width: 4em;
-	margin: 0 1em;
 }

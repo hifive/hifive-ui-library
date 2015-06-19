@@ -1185,6 +1185,28 @@
 		},
 
 		/**
+		 * 描画領域のサイズを変更します
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 * @instance
+		 * @param {number} width 変更後の幅(px)
+		 * @param {number} height 変更後の高さ(px)
+		 */
+		setSize: function(width, height) {
+			//svgのviewBox変更
+			var svg = $(this.rootElement).find('.svg-layer')[0];
+			var viewBox = h5.u.str.format('0 0 {0} {1}', width, height);
+			svg.setAttribute('viewBox', viewBox);
+			// canvasのwidth,height変更
+			var canvas = this._canvas;
+			canvas.setAttribute('width', width);
+			canvas.setAttribute('height', height);
+			// TODO 背景をどうするか
+			// 背景をfillMode指定して設定した場合、幅、高さは描画領域サイズに依存する。
+			// 描画領域サイズが変更された時に背景もそれに追従するべきかどうか仕様を決める必要がある
+		},
+
+		/**
 		 * セーブデータををロードして描画します
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
