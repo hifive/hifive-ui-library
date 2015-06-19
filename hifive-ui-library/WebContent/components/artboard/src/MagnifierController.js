@@ -52,7 +52,6 @@
 	//------------------------------------------------------------
 	// Variable
 	//------------------------------------------------------------
-	var TRACK_EVENTS = ['mousemove', 'h5trackstart', 'h5trackmove', 'h5trackend'];
 
 	//------------------------------------------------------------
 	// Body
@@ -104,16 +103,6 @@
 		var $layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
 		var $bg = $('<div></div>').addClass(CLASS_BG_LAYER);
 		var $svg = $(document.createElementNS(XMLNS, 'svg')).attr('class', CLASS_SVG_LAYER); //svg要素はattr()でクラスを当てる必要あり
-		// 背景はこの時点で固定。動的に変更された場合は対応していない。
-		var $orgBgElement = $orgBg.children();
-		var $bgElement = $orgBgElement.clone();
-		$bgElement.css({
-			width: $orgBgElement.width(),
-			height: $orgBgElement.height(),
-			transformOrigin: '0 0'
-		});
-
-		$bg.append($bgElement);
 		$layerWrapper.append($bg);
 		$layerWrapper.append($svg);
 		$view.append($layerWrapper);
@@ -148,8 +137,50 @@
 		// ボード情報
 		this._boardW = boardW;
 		this._boardH = boardH;
-		this._orgBgElementTop = parseFloat($bgElement.css('top'));
-		this._orgBgElementLeft = parseFloat($bgElement.css('left'));
+
+		// 背景情報
+		// 背景画像がロードされていない場合はonloadで背景画像のスタイルを取得する
+		var $orgBgElement = $orgBg.children();
+		if ($orgBgElement.length) {
+			var $bgElement = $orgBgElement.clone();
+			var that = this;
+			// 範囲外は表示しないようにclip
+
+			function getBgElementInfo() {
+				var orgTop = parseFloat($orgBgElement.css('top')) || 0;
+				var orgLeft = parseFloat($orgBgElement.css('left')) || 0;
+				var xMin = -orgLeft;
+				var yMin = -orgTop;
+				var xMax = this._boardW - orgLeft;
+				var yMax = this._boardH - orgTop;
+				var clipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax,
+						xMin);
+				$bgElement.css({
+					width: $orgBgElement.width(),
+					height: $orgBgElement.height(),
+					transformOrigin: '0 0',
+					'-webkit-transform-origin': '0 0',
+					clipValue: clipValue
+				});
+				$bg.append($bgElement);
+				that._$bgElement = $bgElement;
+				that._orgBgElementLeft = orgLeft;
+				that._orgBgElementTop = orgTop;
+				that._refresh();
+			}
+
+			if ($orgBgElement[0].complete) {
+				getBgElementInfo();
+			} else {
+				var orgOnLoad = $orgBgElement[0].onload;
+				$orgBgElement[0].onload = !orgOnLoad ? getBgElementInfo : function() {
+					// 既にonlaodが指定されている(ArtboardViewerでロード待機中などの)場合、
+					// 既存のonloadを実行した後にMagnifierの背景設定
+					orgOnLoad();
+					getBgElementInfo();
+				};
+			}
+		}
 
 		// 指定されたスケールとサイズを適用
 		this._refresh();
@@ -324,7 +355,7 @@
 			// 表示位置設定
 			var w = this._rootW;
 			var h = this._rootH;
-			// x,yはオリジナルのg要素上でどの場所かの値
+			// x,yはオリジナルのg要素上でどの場所かの値を使って計算する
 			// g要素が拡縮されていてもg要素上の位置
 			// (元のg要素が100px, g要素が2倍に拡大表示されていて200pxで表示されているとき、xは0～200の値を取る)
 			var x = (this._x || 0) * this._orgScaleRatioX;
@@ -357,24 +388,30 @@
 					- (x + w / 2 / scale - this._orgViewBoxW * this._orgGScaleX) * scale;
 			var yMax = y + h / 2 / scale < this._orgViewBoxH * this._orgGScaleY ? h : h
 					- (y + h / 2 / scale - this._orgViewBoxH * this._orgGScaleY) * scale;
-			var svgClipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax,
-					xMin);
-			this._$svg.css('clip', svgClipValue);
+			var clipValue = h5.u.str
+					.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax, xMin);
+			this._$svg.css('clip', clipValue);
 
 			// 背景
+			this._refreshBg();
+		},
+		_refreshBg: function() {
+			if (!this._$bgElement) {
+				return;
+			}
+			var w = this._rootW;
+			var h = this._rootH;
+			var scale = this._scale;
+			var x = this._x;
+			var y = this._y;
 			var scaleValue = 'scale(' + scale + ')';
 			var orgLeft = this._orgBgElementLeft;
 			var orgTop = this._orgBgElementTop;
-			// 範囲外は表示しないようにclip
-			var bgClipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)',
-					-this._orgBgElementTop, scale * (this._boardW - this._orgBgElementLeft), scale
-							* (this._boardH - this._orgBgElementTop), -this._orgBgElementLeft);
 			this._$bgElement.css({
 				left: orgLeft * scale - x * scale + w / 2,
 				top: orgTop * scale - y * scale + h / 2,
 				transform: scaleValue,
-				'-webkit-transform': scaleValue,
-				clip: bgClipValue
+				'-webkit-transform': scaleValue
 			});
 		}
 	});
