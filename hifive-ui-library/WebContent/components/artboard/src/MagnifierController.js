@@ -151,8 +151,8 @@
 				var orgLeft = parseFloat($orgBgElement.css('left')) || 0;
 				var xMin = -orgLeft;
 				var yMin = -orgTop;
-				var xMax = this._boardW - orgLeft;
-				var yMax = this._boardH - orgTop;
+				var xMax = boardW - orgLeft;
+				var yMax = boardH - orgTop;
 				var clipValue = h5.u.str.format('rect({0}px {1}px {2}px {3}px)', yMin, xMax, yMax,
 						xMin);
 				$bgElement.css({
@@ -160,7 +160,7 @@
 					height: $orgBgElement.height(),
 					transformOrigin: '0 0',
 					'-webkit-transform-origin': '0 0',
-					clipValue: clipValue
+					clip: clipValue
 				});
 				$bg.append($bgElement);
 				that._$bgElement = $bgElement;
