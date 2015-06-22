@@ -107,12 +107,18 @@
 				<label>fillMode</label>
 				<select class="background-fillmode-list">
 					<option value="none">none</option>
-					<option value="none-center">none(中央配置)</option>
+					<option value="center">center(中央配置)</option>
 					<option value="contain">contain</option>
-					<option value="contain-center">contain(中央配置)</option>
+					<option value="containCenter">containCenter(中央配置)</option>
 					<option value="cover">cover</option>
+					<option value="coverCenter">coverCenter(中央配置)</option>
 					<option value="stretch">stretch</option>
 				</select>
+				<p>
+					オフセット
+					<label>x<input type="text" class="num-input" name="background-offset-x" value="0"/></label>
+					<label>y<input type="text" class="num-input" name="background-offset-y" value="0"/></label> <label>
+				</p>
 			</div>
 			<div class="background-color-list-wrapper">
 				<label>背景色</label>
@@ -151,7 +157,7 @@
 			<label>高さ<input type="text" class="num-input" name="size-change-height"/></label>
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
-				<div class="sizeChange popupCloseBtn border1 clear-both">保存</div>
+				<div class="sizeChange popupCloseBtn border1 clear-both">設定</div>
 			</div>
 		</div>
 		<div class="save-popup">

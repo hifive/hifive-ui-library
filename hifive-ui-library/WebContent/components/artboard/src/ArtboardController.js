@@ -1186,6 +1186,8 @@
 
 		/**
 		 * 描画領域のサイズを変更します
+		 * <p>
+		 * 描画操作を行うcanvas要素及び、
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
@@ -1193,17 +1195,17 @@
 		 * @param {number} height 変更後の高さ(px)
 		 */
 		setSize: function(width, height) {
-			//svgのviewBox変更
-			var svg = $(this.rootElement).find('.svg-layer')[0];
-			var viewBox = h5.u.str.format('0 0 {0} {1}', width, height);
-			svg.setAttribute('viewBox', viewBox);
-			// canvasのwidth,height変更
+			// ルートエレメントのサイズ変更
+			$(this.rootElement).css({
+				width: width,
+				height: height
+			});
+			// 描画操作の領域(canvas要素)のwidth,height変更
 			var canvas = this._canvas;
 			canvas.setAttribute('width', width);
 			canvas.setAttribute('height', height);
-			// TODO 背景をどうするか
-			// 背景をfillMode指定して設定した場合、幅、高さは描画領域サイズに依存する。
-			// 描画領域サイズが変更された時に背景もそれに追従するべきかどうか仕様を決める必要がある
+			// drawingLogicのsetSizeでレイヤサイズの変更と背景の再計算を行う
+			this.drawingLogic.setSize(width, height);
 		},
 
 		/**
@@ -1503,31 +1505,12 @@
 		/**
 		 * 背景画像の設定
 		 * <p>
-		 * 画像IDまたはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
+		 * 設定パラメータについては[DraiwingLogic#setBackgroundImage]{@link h5.ui.components.artboard.logic.DrawingLogic#setBackgroundImage}をご覧ください
 		 * </p>
-		 * <p>
-		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
-		 * </p>
-		 * <ul>
-		 * <li>none : 左上を原点として画像のサイズを変更せずに描画
-		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
-		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
-		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
-		 * </ul>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {Object} data
-		 *
-		 * <pre class="sh_javascript"><code>
-		 * {
-		 *  id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
-		 *  // src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
-		 *  fillMode: 画像の配置モード('none'|'contain'|'cover'|'stretch') 指定のない場合は'none'で描画します,
-		 *  x: 背景画像の開始位置のx座標(fillModeがnoneの場合のみ有効。デフォルト:0),
-		 *  y: 背景画像の開始位置のy座標(fillModeがnoneの場合のみ有効。デフォルト:0)
-		 * }
-		 * </code></pre>
 		 */
 		setBackgroundImage: function(data) {
 			this.drawingLogic.setBackgroundImage(data);

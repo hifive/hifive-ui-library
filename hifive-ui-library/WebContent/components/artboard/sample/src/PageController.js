@@ -105,9 +105,6 @@
 			this.view.append('.artboard', 'h5-artboard-canvas-wrapper', size);
 			this._$canvasWrapper = this.$find('.h5-artboard-canvas-wrapper');
 
-			// ラッパーのサイズ指定
-			this._$canvasWrapper.css(size);
-
 			// Toolbarの配置
 			this.view.append(this.rootElement, 'toolbar', {
 				colors: ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#00FFFF',
@@ -371,8 +368,6 @@
 		 */
 		'{this._$toolbar} setSize': function(ctx) {
 			var size = ctx.evArg;
-			// ラッパーのサイズ指定
-			this._$canvasWrapper.css(size);
 			this._artboardController.setSize(size.width, size.height);
 		},
 

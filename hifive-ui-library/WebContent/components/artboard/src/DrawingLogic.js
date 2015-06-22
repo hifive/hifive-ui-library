@@ -317,6 +317,8 @@
 	var DATA_IMAGE_SOURCE_ID = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_ID;
 	var DATA_IMAGE_SOURCE_SRC = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_SRC;
 	var DATA_IMAGE_SOURCE_FILLMODE = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_FILLMODE;
+	var DATA_IMAGE_SOURCE_OFFSET_X = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_OFFSET_X;
+	var DATA_IMAGE_SOURCE_OFFSET_Y = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_OFFSET_Y;
 
 	// ArtShape実装クラスコンストラクタ
 	var constructor = h5.ui.components.artboard.ArtShapeConstructor;
@@ -849,11 +851,17 @@
 		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
 		 * </p>
 		 * <ul>
-		 * <li>none : 左上を原点として画像のサイズを変更せずに描画
+		 * <li>none : 画像のサイズを変更せずに左上を原点として描画
+		 * <li>center: 画像のサイズを変更せずに中央配置にして描画
 		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
+		 * <li>containCenter : サイズをcontainで計算して、位置を中央配置にして描画
 		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
+		 * <li>coverCenter : サイズをcoverで計算して、中央配置
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
+		 * <p>
+		 * offsetX, offsetYは、fillMode指定によって決定した位置を基準として、そこからの座標位置を指定します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -863,9 +871,9 @@
 		 * {
 		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
-		 * 	fillMode: 画像の配置モード('none'|'contain'|'cover'|'stretch') 指定のない場合は'none'で描画します,
-		 * 	x: 背景画像の開始位置のx座標(デフォルト:0),
-		 * 	y: 背景画像の開始位置のy座標(デフォルト:0)
+		 * 	fillMode: 画像の配置モード('none'|'center'|'contain'|'containCenter'|'cover'|'coverCenter'|'stretch') 指定のない場合は'none'で描画します,
+		 * 	offsetX: 背景画像位置のx座標のオフセット(デフォルト:0),
+		 * 	offsetY: 背景画像位置のy座標のオフセット(デフォルト:0)
 		 * }
 		 * </pre>
 		 */
@@ -873,14 +881,15 @@
 			var id = data.id;
 			var src = id ? this.imageSourceMap[id] : data.src;
 			var fillMode = data.fillMode || 'none';
-			var x = data.x ? Math.round(parseFloat(data.x)) : 0;
-			var y = data.y ? Math.round(parseFloat(data.y)) : 0;
+			var offsetX = data.offsetX ? data.offsetX : 0;
+			var offsetY = data.offsetY ? data.offsetY : 0;
 			// 現在の設定と同じかどうかチェック
 			// 現在の背景画像がid指定ならid、src指定されているならsrcで比較し、fillModeが同じかどうかもチェックする
 			// x,yも同じかどうかチェックする
 			var current = this._getCurrentBackgroundData();
 			if (current && (current.id ? (current.id === id) : (current.src === src))
-					&& current.fillMode === fillMode && current.x === x && current.y === y) {
+					&& current.fillMode === fillMode && current.offsetX === offsetX
+					&& current.y === offsetY) {
 				// 設定が全て現在の設定と同じなら何もしない
 				return;
 			}
@@ -888,54 +897,17 @@
 			var $imgElement = $('<img>');
 			var imgElement = $imgElement[0];
 			$imgElement.attr('src', src);
-			// fillModeとid(あれば)と画像パスを要素に持たせておく
+			// 設定をと画像パスを要素に持たせておく
 			if (id) {
 				$imgElement.data(DATA_IMAGE_SOURCE_ID, id);
 			}
 			$imgElement.data(DATA_IMAGE_SOURCE_FILLMODE, fillMode);
 			$imgElement.data(DATA_IMAGE_SOURCE_SRC, src);
+			$imgElement.data(DATA_IMAGE_SOURCE_OFFSET_X, offsetX);
+			$imgElement.data(DATA_IMAGE_SOURCE_OFFSET_Y, offsetY);
 
 			var imgOnload = this.own(function() {
-				var $layer = $(this._backgroundLayer);
-				var layerW = $layer.width();
-				var layerH = $layer.height();
-				var imgStyle = {
-					left: x || 0,
-					top: y || 0
-				};
-				switch (fillMode) {
-				case 'contain':
-					// アスペクト比を維持して画像がすべて含まれるように表示
-					var aspectRatio = layerW / layerH;
-					var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-					if (aspectRatio < imgRate) {
-						imgStyle.width = layerW;
-						imgStyle.height = layerW / imgRate;
-					} else {
-						imgStyle.height = layerH;
-						imgStyle.width = layerH * imgRate;
-					}
-					break;
-				case 'cover':
-					// アスペクト比を維持して領域が画像で埋まるように表示
-					var aspectRatio = layerW / layerH;
-					var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-					if (aspectRatio < imgRate) {
-						imgStyle.height = layerH;
-						imgStyle.width = layerH * imgRate;
-					} else {
-						imgStyle.width = layerW;
-						imgStyle.height = layerW / imgRate;
-					}
-					break;
-				case 'stretch':
-					imgStyle.width = '100%';
-					imgStyle.height = '100%';
-					break;
-				default:
-					// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
-				}
-				$imgElement.css(imgStyle);
+				$imgElement.css(this._getBackgroundImageStyle(imgElement, data));
 
 				// コマンドの作成
 				var layer = this._backgroundLayer;
@@ -945,7 +917,7 @@
 				var command = new CustomCommand({
 					execute: function() {
 						var oldValue = that._getCurrentBackgroundData();
-						this._preBgElement = $layer.children()[0];
+						this._preBgElement = $(layer).children()[0];
 						$(layer).append(afterElement);
 						$(this._preBgElement).remove();
 						var newValue = that._getCurrentBackgroundData();
@@ -1098,11 +1070,94 @@
 				} else {
 					ret.src = $bgElement.data(DATA_IMAGE_SOURCE_SRC);
 				}
-				// x,yも返す(四捨五入したint)
-				ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
-				ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
+				// オフセットを返す
+				ret.offsetX = parseFloat($bgElement.data(DATA_IMAGE_SOURCE_OFFSET_X)) || 0;
+				ret.offsetY = parseFloat($bgElement.data(DATA_IMAGE_SOURCE_OFFSET_Y)) || 0;
 			}
 			return ret;
+		},
+
+		/**
+		 * 背景画像に適用するスタイルオブジェクトを計算して返します
+		 *
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @private
+		 * @param imgElement {DOM} img要素。画像(src)はロード済みであること。
+		 * @param data
+		 * @param data.fillMode
+		 * @param data.offsetX
+		 * @param data.offsetY
+		 * @returns {Object}
+		 */
+		_getBackgroundImageStyle: function(imgElement, data) {
+			var fillMode = data.fillMode;
+			var offsetX = data.offsetX ? Math.round(parseFloat(data.offsetX)) : 0;
+			var offsetY = data.offsetY ? Math.round(parseFloat(data.offsetY)) : 0;
+			var $layer = $(this._backgroundLayer);
+			var layerW = $layer.width();
+			var layerH = $layer.height();
+			var imgStyle = {
+				left: offsetX || 0,
+				top: offsetY || 0
+			};
+			switch (fillMode) {
+			case 'contain':
+			case 'containCenter':
+				// containまたはcontainCenter
+				// アスペクト比を維持して画像がすべて含まれるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				} else {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				}
+				if (fillMode === 'containCenter') {
+					// 中央配置
+					if (aspectRatio < imgRate) {
+						imgStyle.top += (layerH - imgStyle.height) / 2;
+					} else {
+						imgStyle.left += (layerW - imgStyle.width) / 2;
+					}
+				}
+				break;
+			case 'cover':
+			case 'coverCenter':
+				// アスペクト比を維持して領域が画像で埋まるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				} else {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				}
+				if (fillMode === 'coverCenter') {
+					// 中央配置
+					if (aspectRatio < imgRate) {
+						imgStyle.left += (layerW - imgStyle.width) / 2;
+					} else {
+						imgStyle.top += (layerH - imgStyle.height) / 2;
+					}
+				}
+				break;
+			case 'stretch':
+				// 描画領域にちょうど収まるようにする
+				imgStyle.width = '100%';
+				imgStyle.height = '100%';
+				break;
+			case 'center':
+				// 画像のサイズは変更無しで中央配置
+				imgStyle.left += (layerW - imgElement.naturalWidth) / 2;
+				imgStyle.top += (layerH - imgElement.naturalHeight) / 2;
+				break;
+			default:
+				// 指定無しまたはnoneの場合は画像のサイズ、位置変更無し
+			}
+			return imgStyle;
 		},
 
 		//--------------------------------------------------------------
@@ -1131,6 +1186,31 @@
 		},
 
 		/**
+		 * 描画領域のサイズを変更します
+		 *
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
+		 * @param {number} width 変更後の幅(px)
+		 * @param {number} height 変更後の高さ(px)
+		 */
+		setSize: function(width, height) {
+			//svgのviewBox変更
+			var svg = $(this._shapeLayer).parents('svg')[0];
+			var viewBox = h5.u.str.format('0 0 {0} {1}', width, height);
+			svg.setAttribute('viewBox', viewBox);
+
+			// カンバスのサイズに依存する計算がある場合があるため再設定する
+			// 背景画像の位置再計算
+			var $imgElement = $(this._backgroundLayer).children();
+			if (!$imgElement.length) {
+				return;
+			}
+			var currentBgData = this._getCurrentBackgroundData();
+			var imgStyle = this._getBackgroundImageStyle($imgElement[0], currentBgData);
+			$imgElement.css(imgStyle);
+		},
+
+		/**
 		 * セーブデータををロードして描画します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
@@ -1153,15 +1233,15 @@
 					this.setBackgroundImage({
 						id: background.id,
 						fillMode: background.fillMode,
-						x: background.x,
-						y: background.y
+						offsetX: background.offsetX,
+						offsetY: background.offsetY
 					});
 				} else if (background.src) {
 					this.setBackgroundImage({
 						src: background.src,
 						fillMode: background.fillMode,
-						x: background.x,
-						y: background.y
+						offsetX: background.offsetX,
+						offsetY: background.offsetY
 					});
 				}
 			}
@@ -1267,10 +1347,11 @@
 					var fillMode = background.fillMode;
 					var tmpImg = document.createElement('img');
 					tmpImg.onload = function() {
-						var x = background.x;
-						var y = background.y;
+						var x = background.offsetX;
+						var y = background.offsetY;
 						switch (fillMode) {
 						case 'contain':
+						case 'containCenter':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
 							var w, h;
@@ -1281,9 +1362,18 @@
 								h = canvas.height;
 								w = h * imgRate;
 							}
+							if (fillMode === 'containCenter') {
+								// 中央配置
+								if (canvasRate < imgRate) {
+									y += (canvas.height - h) / 2;
+								} else {
+									x += (canvas.width - w) / 2;
+								}
+							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
+						case 'coverCenter':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
 							var w, h;
@@ -1293,11 +1383,24 @@
 							} else {
 								w = canvas.width;
 								h = w / imgRate;
+							}
+							if (fillMode === 'coverCenter') {
+								// 中央配置
+								if (canvasRate < imgRate) {
+									x += (canvas.width - w) / 2;
+								} else {
+									y += (canvas.height - h) / 2;
+								}
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
 							ctx.drawImage(this, x, y, canvas.width, canvas.height);
+							break;
+						case 'center':
+							x += (canvas.width - this.width) / 2;
+							y += (canvas.height - this.height) / 2;
+							ctx.drawImage(this, x, y);
 							break;
 						default:
 							// none

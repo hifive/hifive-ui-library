@@ -905,39 +905,10 @@
 
 				backgroundData = {
 					id: $selected.data(DATA_DRAWING_IMAGE_ID),
-					fillMode: fillMode
+					fillMode: fillMode,
+					offsetX: $popup.find('[name="background-offset-x"]').val(),
+					offsetY: $popup.find('[name="background-offset-y"]').val()
 				};
-				if (fillMode === 'none-center') {
-					// 中央配置
-					var $artboardRoot = $(targetArtboard.rootElement);
-					var w = selectedElement.naturalWidth;
-					var h = selectedElement.naturalHeight;
-					backgroundData.x = ($artboardRoot.innerWidth() - w) / 2;
-					backgroundData.y = ($artboardRoot.innerHeight() - h) / 2;
-					backgroundData.fillMode = 'none';
-				} else if (fillMode === 'contain-center') {
-					// containでかつ中央配置
-					var $artboardRoot = $(targetArtboard.rootElement);
-					var w = selectedElement.naturalWidth;
-					var h = selectedElement.naturalHeight;
-					var artboardW = $artboardRoot.innerWidth();
-					var artboardH = $artboardRoot.innerHeight();
-					var imgRate = w / h;
-					var canvasRate = artboardW / artboardH;
-					var drawW, drawH;
-					if (canvasRate < imgRate) {
-						drawW = artboardW;
-						drawH = drawW / imgRate;
-						backgroundData.x = 0;
-						backgroundData.y = (artboardH - drawH) / 2;
-					} else {
-						drawH = artboardH;
-						drawW = drawH * imgRate;
-						backgroundData.x = (artboardW - drawW) / 2;
-						backgroundData.y = 0;
-					}
-					backgroundData.fillMode = 'contain';
-				}
 			}
 			// 背景色設定
 			var rgbaColor = null;
