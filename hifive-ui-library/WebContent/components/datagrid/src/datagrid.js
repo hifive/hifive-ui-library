@@ -8595,7 +8595,7 @@
 
 			// --- Public Method --- //
 
-			getSourceDataSet: function() {
+			Set: function() {
 				return $.extend(true, {}, this._sourceDataSet);
 			},
 
@@ -9755,6 +9755,19 @@
 		'getDataIdAll',
 
 		/**
+		 * フィルタ前のすべてのデータの集合を返します。
+		 * 
+		 * @method
+		 * @public
+		 * @abstract
+		 * @memberOf DataSearcher#
+		 * @name Set
+		 * @returns {DataSet} フィルタ前のすべてのデータの集合（Readyでなければ null が返る）
+		 * @throws {NotSupported} サポートされない場合
+		 */
+		'getSourceDataSet',
+
+		/**
 		 * 検索パラメータの初期設定をします。
 		 * 
 		 * @method
@@ -10224,6 +10237,36 @@
 				});
 			},
 
+			getSourceDataSet: function() {
+				if (!this._isReady) {
+					return null;
+				}
+
+				var sourceDataSet = $.extend(true, {}, this._dataSet);
+
+				var addedSet = this._dataSource.getAddedDataSet();
+				var removedSet = this._dataSource.getRemovedDataSet();
+
+				// remove
+				$.each(removedSet, this.own(function(dataId) {
+					delete sourceDataSet[dataId];
+				}));
+
+				// update
+				sourceDataSet = util.mapObject(sourceDataSet, this.own(function(data, dataId) {
+					var edited = this._dataSource.applyEdit(data).edited;
+					return {
+						key: dataId,
+						value: edited
+					};
+				}));
+
+				// add
+				$.extend(true, sourceDataSet, addedSet);
+
+				return sourceDataSet;
+			},
+
 			initSearchParam: function(searchParam) {
 				var validator = ctx.argsValidator('public');
 				validator.arg('searchParam', searchParam, type.validateSearchParam);
@@ -10307,9 +10350,12 @@
 				}
 
 				this._isChangingSearchParam = true;
+
 				this.dispatchEvent({
 					type: 'changeSearchStart'
 				});
+
+				this._dataSource.rollback();
 
 				this._isReady = true;
 				this._searchParam = {};
@@ -10722,6 +10768,7 @@
 				};
 
 				// MEMO: 最後に挿入してソートはしない（リフレッシュor検索条件変更をしたときに並び替える）
+				this._dataSet[dataId] = edited;
 				this._cache.push(newData);
 				this._idToIndex[dataId] = this._cache.length - 1;
 			},
@@ -10748,6 +10795,7 @@
 				var index = this._idToIndex[changeEvent.dataId];
 
 				// TODO: 遅延の場合は削除フラグをたてて消さない形になるので削除の扱いを切り替えられるようにする必要がある
+				delete this._dataSet[changeEvent.dataId];
 				delete this._idToIndex[changeEvent.dataId];
 				this._cache.splice(index, 1);
 			},
@@ -11097,6 +11145,10 @@
 				throw error.NotSupported.createError('GetDataIdAll');
 			},
 
+			getSourceDataSet: function() {
+				throw error.NotSupported.createError('GetSourceDataSet');
+			},
+
 			initSearchParam: function(searchParam) {
 				var validator = ctx.argsValidator('public');
 				validator.arg('searchParam', searchParam, type.validateSearchParam);
@@ -11183,6 +11235,7 @@
 					type: 'changeSearchStart'
 				});
 
+				this._dataSource.rollback();
 
 				this._isReady = true;
 				this._searchParam = {};
@@ -16183,6 +16236,9 @@
 			var scrollRowHeightSet = new ScrollAreaCellSizeSet(rowHeightSet, headerRows);
 			var scrollColumnWidthSet = new ScrollAreaCellSizeSet(columnWidthSet, headerColumns);
 
+			this._scrollRowHeightSet = scrollRowHeightSet;
+			this._scrollColumnWidthSet = scrollColumnWidthSet;
+
 			this._verticalScrollCalculator = null;
 			if (param.scroll.vertical === 'pixel') {
 				this._verticalScrollCalculator = new PixelScrollCalculator(scrollRowHeightSet);
@@ -16380,6 +16436,41 @@
 		getDataDirection: function() {
 			return this._dataMapper.getDataDirection();
 		},
+
+		toVerticalPositionFromRow: function(row) {
+			var scrollRow = row - this.getHeaderRows();
+			if (scrollRow < 0) {
+				return 0;
+			}
+			return this._scrollRowHeightSet.toPositionFromIndex(scrollRow);
+		},
+
+		toHeightFromRow: function(row) {
+			return this._dataMapper.getRowHeightSet().toSizeFromIndex(row);
+		},
+
+		toRowFromVerticalPosition: function(verticalPosition) {
+			var scrollRow = this._scrollRowHeightSet.toIndexFromPosition(verticalPosition);
+			return scrollRow + this.getHeaderRows();
+		},
+
+		toHorizontalPositionFromColumn: function(column) {
+			var scrollColumn = column - this.getHeaderColumns();
+			if (scrollColumn < 0) {
+				return 0;
+			}
+			return this._scrollColumnWidthSet.toPositionFromIndex(scrollColumn);
+		},
+
+		toWidthFromColumn: function(column) {
+			return this._dataMapper.getColumnWidthSet().toSizeFromIndex(column);
+		},
+
+		toColumnFromHorizontalPosition: function(horizontalPosition) {
+			var scrollColumn = this._scrollColumnWidthSet.toIndexFromPosition(horizontalPosition);
+			return scrollColumn + this.getHeaderColumns();
+		},
+
 
 		/**
 		 * @param {PixelSize} displayAreaHeight
@@ -16600,10 +16691,127 @@
 		},
 
 		selectRangeAll: function() {
+			var focusedCell = this.getFocusedCell();
+			if ($.isEmptyObject(focusedCell)) {
+				this.focusCell(0, 0);
+			}
+
 			var rows = this.getTotalRows();
 			var columns = this.getTotalColumns();
 
 			this._cellSelector.selectRange(0, rows, 0, columns);
+		},
+
+		selectRangeUp: function() {
+			var focus = this.getFocusedCell();
+			var range = this.getSelectedRange();
+
+			var rowIndex = range.rowIndex;
+			var rowLength = range.rowLength;
+			var columnIndex = range.columnIndex;
+			var columnLength = range.columnLength;
+
+			var result;
+
+			if (focus.row === range.rowIndex && 1 < range.rowLength) {
+				// フォーカスの下を範囲選択時
+				rowLength -= 1;
+				result = rowIndex + rowLength - 1;
+			} else if (0 < rowIndex) {
+				// フォーカスの上を範囲選択時
+				rowIndex -= 1;
+				rowLength += 1;
+				result = rowIndex;
+			}
+
+			this._cellSelector.selectRange(rowIndex, rowLength, columnIndex, columnLength);
+
+			return result;
+		},
+
+		selectRangeDown: function() {
+			var focus = this.getFocusedCell();
+			var range = this.getSelectedRange();
+
+			var rowIndex = range.rowIndex;
+			var rowLength = range.rowLength;
+			var columnIndex = range.columnIndex;
+			var columnLength = range.columnLength;
+
+			var totalRows = this.getTotalRows();
+
+			var result;
+
+			if (range.rowIndex < focus.row) {
+				// フォーカスの上を範囲選択時
+				rowIndex += 1;
+				rowLength -= 1;
+				result = rowIndex;
+			} else if (rowIndex + rowLength < totalRows) {
+				// フォーカスの下を範囲選択時
+				rowLength += 1;
+				result = rowIndex + rowLength - 1;
+			}
+
+			this._cellSelector.selectRange(rowIndex, rowLength, columnIndex, columnLength);
+
+			return result;
+		},
+
+		selectRangeLeft: function() {
+			var focus = this.getFocusedCell();
+			var range = this.getSelectedRange();
+
+			var rowIndex = range.rowIndex;
+			var rowLength = range.rowLength;
+			var columnIndex = range.columnIndex;
+			var columnLength = range.columnLength;
+
+			var result;
+
+			if (focus.column === range.columnIndex && 1 < range.columnLength) {
+				// フォーカスの右を範囲選択時
+				columnLength -= 1;
+				result = columnIndex + columnLength - 1;
+			} else if (0 < columnIndex) {
+				// フォーカスの左を範囲選択時
+				columnIndex -= 1;
+				columnLength += 1;
+				result = columnIndex;
+			}
+
+			this._cellSelector.selectRange(rowIndex, rowLength, columnIndex, columnLength);
+
+			return result;
+		},
+
+		selectRangeRight: function() {
+			var focus = this.getFocusedCell();
+			var range = this.getSelectedRange();
+
+			var rowIndex = range.rowIndex;
+			var rowLength = range.rowLength;
+			var columnIndex = range.columnIndex;
+			var columnLength = range.columnLength;
+
+			var totalColumns = this.getTotalColumns();
+
+			var result;
+
+			if (range.columnIndex < focus.column) {
+				// フォーカスの左を範囲選択時
+				columnIndex += 1;
+				columnLength -= 1;
+				result = columnIndex;
+			} else if (columnIndex + columnLength < totalColumns) {
+				// フォーカスの右を範囲選択時
+				columnLength += 1;
+				result = columnIndex + columnLength - 1;
+			}
+
+			this._cellSelector.selectRange(rowIndex, rowLength, columnIndex, columnLength);
+
+			return result;
 		},
 
 		resetCellSelect: function() {
@@ -16745,6 +16953,18 @@
 		 * @type {CellSelector}
 		 */
 		_cellSelector: null,
+
+		/**
+		 * @private
+		 * @type {CellSizeSet}
+		 */
+		_scrollRowHeightSet: null,
+
+		/**
+		 * @private
+		 * @type {CellSizeSet}
+		 */
+		_scrollColumnWidthSet: null,
 
 		/**
 		 * @private
@@ -17035,7 +17255,7 @@
 					var divHeight = height;
 					var divWidth = width;
 
-					html += '<td style="padding: 0; border-widht: 0; overflow: hidden;">';
+					html += '<td style="padding: 0; border-width: 0; overflow: hidden;">';
 
 					html += '<div style="';
 					html += 'position: relative;';
@@ -17086,7 +17306,9 @@
 
 					html += ' data-h5-dyn-grid-row="' + cell.row + '"';
 					html += ' data-h5-dyn-grid-column="' + cell.column + '"';
-					html += ' data-h5-dyn-grid-data-id="' + dataIdStr + '"';
+					if (cell.dataId != null) {
+						html += ' data-h5-dyn-grid-data-id="' + dataIdStr + '"';
+					}
 					html += ' data-h5-dyn-grid-property-name="' + propertyNameStr + '"';
 					html += '>';
 
@@ -18743,6 +18965,11 @@
 		// --- Event Handler --- //
 
 		'.gridColumnSortAndFilterButton click': function(context, $el) {
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
 			var $frame = $el.closest('.gridCellFrame');
 
 			var row = $frame.data('h5DynGridRow');
@@ -18754,14 +18981,15 @@
 			var topPosition = frameOffset.top + $frame.outerHeight();
 			var rightPosition = frameOffset.left + $frame.outerWidth(); // 右端が左から何px目か
 
-			// TODO: 押したボタンのクラス変更
-			// TODO: フォーカスをメニューにあてる?
-			// TODO: メニューの内容を列にあわせて調節
-
 			this._showMenu(cell, topPosition, rightPosition);
 		},
 
 		'{#gridSortAndFilterOverlay} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
 			if (!$el.is(context.event.target)) {
 				return;
 			}
@@ -18776,6 +19004,11 @@
 
 			// selected の場合は無視する
 			if ($el.is('.selected')) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
 				return;
 			}
 
@@ -18812,6 +19045,11 @@
 				return;
 			}
 
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
 			var $menu = this._findMenu();
 			var property = $menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME);
 
@@ -18845,6 +19083,12 @@
 				return;
 			}
 
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
+
 			var searcher = this._gridLogic.getDataSearcher();
 			var searchParam = searcher.getSearchParam();
 			if (searchParam == null) {
@@ -18859,6 +19103,16 @@
 		},
 
 		'{.filterOptionCheckbox} change': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
 			var $menu = this._findMenu();
 			var $allCheckbox = $menu.find('#gridFilterOptionCheckbox_all');
 
@@ -18875,6 +19129,16 @@
 		},
 
 		'{.gridFilterButton} click': function() {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
 			var $menu = this._findMenu();
 			var property = $menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME);
 
@@ -18893,13 +19157,14 @@
 
 				$checkboxes.each(function(i, checkbox) {
 					var isChecked = checkbox.checked;
+					var value = h5.u.obj.deserialize(checkbox.value);
 					if (checkbox.id !== 'gridFilterOptionCheckbox_all' && isChecked) {
-						selected.push(checkbox.value);
+						selected.push(value);
 					}
 
 					options.push({
 						id: checkbox.id,
-						value: checkbox.value,
+						value: value,
 						checked: checkbox.checked
 					});
 				});
@@ -18949,6 +19214,16 @@
 		},
 
 		'{.gridFilterClearButton} click': function() {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
 			this._currentFilter = null;
 
 			var searcher = this._gridLogic.getDataSearcher();
@@ -19168,6 +19443,22 @@
 			$filterOptionsList.addClass('gridFilterOptionsList');
 			$filterOptionsItem.append($filterOptionsList);
 
+			var $selectAllOptionItem = $('<li></li>');
+			$filterOptionsList.append($selectAllOptionItem);
+
+			// 全選択オプション
+			var $selectAllCheckBox = $('<input type="checkbox">');
+			$selectAllCheckBox.attr('id', 'gridFilterOptionCheckbox_all');
+			$selectAllCheckBox.addClass('filterOptionCheckbox');
+			$selectAllCheckBox.attr('value', h5.u.obj.serialize('(Select All)'));
+			$selectAllCheckBox.attr('checked');
+			$selectAllOptionItem.append($selectAllCheckBox);
+
+			var $selectAllLabel = $('<label></label>');
+			$selectAllLabel.attr('for', 'gridFilterOptionCheckbox_all');
+			$selectAllLabel.text('(Select All)');
+			$selectAllOptionItem.append($selectAllLabel);
+
 			// フィルタ適用ボタン、フィルタクリアボタン
 			var $filterButtonsItem = $('<li></li>');
 			$filterButtonsItem.addClass(ITEM_CLASS);
@@ -19235,12 +19526,13 @@
 						return;
 					}
 
-					var key = reference.data.edited[propertyName];
+					var value = reference.data.edited[propertyName];
+					var key = h5.u.obj.serialize(value);
 					object[key] = true;
 				});
 
 				var keys = util.map(object, function(v, k) {
-					return k;
+					return h5.u.obj.deserialize(k);
 				});
 				this._setFilterOptions(propertyName, keys);
 			} else if (filterType === 'arrayValues') {
@@ -19257,17 +19549,6 @@
 				}
 			}
 
-			$overlay.show();
-			var width = $menu.outerWidth();
-
-			var position = {};
-			position.top = topPosition;
-			position.left = rightPosition - width;
-
-			if (position.left < 0) {
-				position.left = 0;
-			}
-
 			// 条件にあわせてメニューの表示を切り替える
 			$menu.find('.gridSortItem').toggle(sortSetting.enable);
 			$menu.find('.gridFilterItem').toggle(filterSetting.enable);
@@ -19277,6 +19558,17 @@
 			if (filterSetting.enable) {
 				$menu.find('.gridFilterMatchItem').toggle(filterType === 'partialMatch');
 				$menu.find('.gridFilterOptionsItem').toggle(filterType !== 'partialMatch');
+			}
+
+			$overlay.show();
+			var width = $menu.outerWidth();
+
+			var position = {};
+			position.top = topPosition;
+			position.left = rightPosition - width;
+
+			if (position.left < 0) {
+				position.left = 0;
 			}
 
 			$menu.css(position);
@@ -19289,6 +19581,7 @@
 			var options;
 			if (this._currentFilter != null && this._currentFilter.property === property) {
 				options = this._currentFilter.options;
+				this._findMenu().find('.gridFilterOptionsList').empty();
 			} else {
 				options = util.map(optionValues, function(optionValue) {
 					return {
@@ -19311,18 +19604,17 @@
 					option.id = 'gridFilterOptionCheckbox_' + i;
 					return option;
 				});
-
-				options.unshift({
-					id: 'gridFilterOptionCheckbox_all',
-					value: '(Select All)',
-					checked: true
-				});
 			}
 
 			var $menu = this._findMenu();
 			var $list = $menu.find('.gridFilterOptionsList');
 
-			$list.empty();
+			// (Select All) 以外を削除
+			var $selectAllCheckBox = $('#gridFilterOptionCheckbox_all');
+			$selectAllCheckBox.closest('li').nextAll().remove();
+
+			$selectAllCheckBox.prop('checked', true);
+
 			var html = '';
 
 			util.forEach(options, function(option) {
@@ -19330,7 +19622,7 @@
 				html += '<input type="checkbox"';
 				html += ' id="' + option.id + '"';
 				html += ' class="filterOptionCheckbox"';
-				html += ' value="' + option.value + '"';
+				html += ' value="' + h5.u.obj.serialize(option.value) + '"';
 				if (option.checked) {
 					html += ' checked';
 				}
@@ -19469,12 +19761,12 @@
 			}
 
 			if ($root.attr('tabindex') == null) {
-				$root.attr('tabindex', -1);
+				$root.attr('tabindex', 0);
 			}
+
 			$root.css({
 				position: rootPosition,
-				overflow: 'hidden',
-				outline: 'none'
+				overflow: 'hidden'
 			});
 
 
@@ -19687,6 +19979,38 @@
 
 		// --- Event Handler --- //
 
+		'.gridCell > input:text keydown': function(context) {
+			var event = context.event;
+			var keycode = context.event.which;
+
+			// Enter
+			if (keycode === 13) {
+				event.stopPropagation();
+				$(this.rootElement).focus();
+			}
+		},
+
+		'.gridCell > :text focusin': function(context, $el) {
+			var $cellFrame = $el.closest('.gridCellFrame');
+			var row = $cellFrame.data('h5DynGridRow');
+			var column = $cellFrame.data('h5DynGridColumn');
+			this._nextFocusCell = {
+				row: row,
+				column: column
+			};
+		},
+
+		'{rootElement} focusin': function(context) {
+			if (!$(context.event.target).is(this.rootElement)) {
+				return;
+			}
+
+			if (this._nextFocusCell != null) {
+				this._gridLogic.focusCell(this._nextFocusCell.row, this._nextFocusCell.column);
+			}
+			this._nextFocusCell = null;
+		},
+
 		'{rootElement} h5scroll': function(context) {
 			context.event.stopPropagation();
 
@@ -19701,6 +20025,8 @@
 					vPos = vInfo.position;
 				} else if (vInfo.type === 'scrollDiff') {
 					vPos += vInfo.diff;
+				} else if (vInfo.type === 'index') {
+					vPos = this._calcVerticalPositionFromRow(vInfo.index);
 				} else if (vInfo.type === 'indexDiff') {
 					vPos = this._calcVerticalPositionFromIndexDiff(vInfo.diff);
 				} else {
@@ -19715,6 +20041,8 @@
 					hPos = hInfo.position;
 				} else if (hInfo.type === 'scrollDiff') {
 					hPos += hInfo.diff;
+				} else if (hInfo.type === 'index') {
+					hPos = this._calcHorizontalPositionFromColumn(hInfo.index);
 				} else if (hInfo.type === 'indexDiff') {
 					hPos = this._calcHorizontalPositionFromIndexDiff(hInfo.diff);
 				} else {
@@ -19733,7 +20061,7 @@
 
 			context.event.preventDefault();
 
-			var diff = (context.event.wheelDelta < 0) ? 3 : -3;
+			var diff = (context.event.wheelDelta < 0) ? 1 : -1;
 
 			this.trigger('h5scroll', {
 				vertical: {
@@ -19744,6 +20072,7 @@
 		},
 
 		'{rootElement} keydown': function(context) {
+			/* jshint maxcomplexity: 22 */
 			if (!this.isActive()) {
 				return;
 			}
@@ -19757,7 +20086,7 @@
 			}
 
 			// 上下左右キー
-			if (37 <= keycode && keycode <= 40) {
+			if (37 <= keycode && keycode <= 40 && context.event.target === this.rootElement) {
 				event.preventDefault();
 				this._keydownArrowThrottle.call(event);
 				return;
@@ -19799,13 +20128,84 @@
 				}
 				return;
 			}
+
+
+			var focusedCell = this._gridLogic.getFocusedCell();
+
+			// Space
+			if (keycode === 32) {
+				event.preventDefault();
+				if ($.isEmptyObject(focusedCell)) {
+					return;
+				}
+
+				var row = focusedCell.row;
+				var column = focusedCell.column;
+				var cell = this._gridLogic.getGridCell(row, column);
+				var dataId = cell.dataId;
+
+				if (dataId == null) {
+					return;
+				}
+
+				if (cell.isSelectedData) {
+					this._gridLogic.unselectData(dataId);
+				} else {
+					this._gridLogic.selectData(dataId);
+				}
+
+				if (!cell.isFocusedData) {
+					this._gridLogic.focusData(dataId);
+				} else {
+					this._gridLogic.resetDataFocus();
+				}
+
+				return;
+			}
+
+			// Enter or F2
+			if (keycode === 13 || keycode === 113) {
+				if ($.isEmptyObject(focusedCell)) {
+					return;
+				}
+
+				var selector = '.gridCellFrame';
+				selector += '[data-h5-dyn-grid-row="' + focusedCell.row + '"]';
+				selector += '[data-h5-dyn-grid-column="' + focusedCell.column + '"]';
+				selector += '>.gridCell';
+
+				var $cell = this.$find(selector);
+				var $target = $cell.find('> :input');
+
+				if (1 <= $target.length) {
+					if ($target.is(':checkbox')) {
+						var checked = $target.prop('checked');
+						$target.prop('checked', !checked);
+						$target.change();
+						return;
+					}
+
+					$target.focus();
+
+					var elem = $target.get(0);
+					if ($target.is(':text')) {
+						elem.selectionStart = 0;
+						elem.selectionEnd = elem.value.length;
+					}
+				}
+			}
+
+			// Esc
+			if (keycode === 27) {
+				$(this.rootElement).focus();
+			}
 		},
 
 		'.gridCellFrame mousedown': function(context, $el) {
 
-			// gridCell 以外での mousedown は無視する
+			// gridCell または gridBorder 以外での mousedown は無視する
 			var $target = $(context.event.target);
-			if (!$target.hasClass('gridCell')) {
+			if (!$target.hasClass('gridCell') && !$target.hasClass('gridBorder')) {
 				return;
 			}
 
@@ -19939,6 +20339,10 @@
 				});
 			}
 
+			if (hasChangeCellSelect) {
+				this._nextFocusCell = null;
+			}
+
 			if (hasChangeDataFocus || hasChangeCellSelect || hasChangeDataSelect) {
 				$(this.rootElement).focus();
 			}
@@ -19984,6 +20388,8 @@
 
 		_mainRight: 0,
 
+		_nextFocusCell: null,
+
 
 		_isSelectStartHeaderRows: null,
 
@@ -20007,6 +20413,33 @@
 			return this._gridLogic.getSelectedRangeCopyText();
 		},
 
+		_calcVerticalPositionFromRow: function(row) {
+			var begin = this._vPos;
+			var mainHeight = this._mainHeight;
+			var end = begin + mainHeight;
+
+			var rowBegin = this._gridLogic.toVerticalPositionFromRow(row);
+			var rowHeight = this._gridLogic.toHeightFromRow(row);
+			var rowEnd = rowBegin + rowHeight;
+
+			// 1行が表示領域より大きい場合
+			if (mainHeight <= rowHeight) {
+				return rowBegin;
+			}
+
+			// 対象行が表示領域より上にある場合
+			if (rowBegin < begin) {
+				return rowBegin;
+			}
+
+			// 対象行が表示領域より下にある場合
+			if (end < rowEnd) {
+				return rowEnd - mainHeight;
+			}
+
+			return begin;
+		},
+
 		_calcVerticalPositionFromIndexDiff: function(diff) {
 			var d = diff;
 			var vPos = this._vPos;
@@ -20025,6 +20458,33 @@
 			}
 
 			return vPos;
+		},
+
+		_calcHorizontalPositionFromColumn: function(column) {
+			var begin = this._hPos;
+			var mainWidth = this._mainWidth;
+			var end = begin + mainWidth;
+
+			var columnBegin = this._gridLogic.toHorizontalPositionFromColumn(column);
+			var columnWidth = this._gridLogic.toWidthFromColumn(column);
+			var columnEnd = columnBegin + columnWidth;
+
+			// 1行が表示領域より大きい場合
+			if (mainWidth <= columnWidth) {
+				return columnBegin;
+			}
+
+			// 対象行が表示領域より左にある場合
+			if (columnBegin < begin) {
+				return columnBegin;
+			}
+
+			// 対象行が表示領域より下にある場合
+			if (end < columnEnd) {
+				return columnEnd - mainWidth;
+			}
+
+			return begin;
 		},
 
 		_calcHorizontalPositionFromIndexDiff: function(diff) {
@@ -20048,55 +20508,93 @@
 		},
 
 		_triggerKeydownArrow: function(event) {
+			/* jshint maxcomplexity: 17 */
+
 			var keycode = event.which;
+			var shiftKey = event.shiftKey;
+
+			if (shiftKey) {
+				var result;
+				var isVertical;
+
+				if (keycode === 37) { // arrow-left
+					result = this._gridLogic.selectRangeLeft();
+					isVertical = false;
+				} else if (keycode === 38) { // arrow-up
+					result = this._gridLogic.selectRangeUp();
+					isVertical = true;
+				} else if (keycode === 39) { // arrow-right
+					result = this._gridLogic.selectRangeRight();
+					isVertical = false;
+				} else if (keycode === 40) { // arrow-down
+					result = this._gridLogic.selectRangeDown();
+					isVertical = true;
+				}
+
+				var evArg = {};
+				evArg[isVertical ? 'vertical' : 'horizontal'] = {
+					type: 'index',
+					index: result
+				};
+
+				this.trigger(SCROLL_EVENT_NAME, evArg);
+
+				return;
+			}
+
+			var focusedCell = this._gridLogic.getFocusedCell();
+
+			if ($.isEmptyObject(focusedCell)) {
+				focusedCell = {
+					row: 0,
+					column: 0
+				};
+			}
+
+			if (this._nextFocusCell != null) {
+				focusedCell = this._nextFocusCell;
+				this._nextFocusCell = null;
+			}
+
+			var row = focusedCell.row;
+			var column = focusedCell.column;
 
 			if (keycode === 37) { // arrow-left
-
-				this.trigger('h5scroll', {
-					horizontal: {
-						type: 'indexDiff',
-						diff: -1
-					}
-				});
-
-				return;
+				column -= 1;
+			} else if (keycode === 38) { // arrow-up
+				row -= 1;
+			} else if (keycode === 39) { // arrow-right
+				column += 1;
+			} else if (keycode === 40) { // arrow-down
+				row += 1;
 			}
 
-			if (keycode === 38) { // arrow-up
+			var totalRows = this._gridLogic.getTotalRows();
+			var totalColumns = this._gridLogic.getTotalColumns();
 
-				this.trigger('h5scroll', {
-					vertical: {
-						type: 'indexDiff',
-						diff: -1
-					}
-				});
-
-				return;
+			if (row < 0) {
+				row = 0;
+			} else if (totalRows <= row) {
+				row = totalRows - 1;
 			}
 
-			if (keycode === 39) { // arrow-right
-
-				this.trigger('h5scroll', {
-					horizontal: {
-						type: 'indexDiff',
-						diff: 1
-					}
-				});
-
-				return;
+			if (column < 0) {
+				column = 0;
+			} else if (totalColumns <= column) {
+				column = totalColumns - 1;
 			}
 
-			if (keycode === 40) { // arrow-down
-
-				this.trigger('h5scroll', {
-					vertical: {
-						type: 'indexDiff',
-						diff: 1
-					}
-				});
-
-				return;
-			}
+			this._gridLogic.focusCell(row, column);
+			this.trigger(SCROLL_EVENT_NAME, {
+				vertical: {
+					type: 'index',
+					index: row
+				},
+				horizontal: {
+					type: 'index',
+					index: column
+				}
+			});
 		},
 
 
@@ -20575,6 +21073,8 @@
 					context.event.stopPropagation();
 
 					this.own(propertyParam.changeHandler)(context, $el, cell);
+
+					$(this.rootElement).focus();
 				};
 
 				this.on(target, eventName, listener);
@@ -20716,6 +21216,7 @@
 					return escapeHtml(String(cell.editedValue));
 				}
 				var _type = (type == null) ? 'text' : type;
+				var value = (cell.editedValue == null) ? '' : cell.editedValue;
 
 				var html = '<input tabindex="-1"';
 
@@ -20734,7 +21235,7 @@
 				html += _type;
 				html += '"';
 				html += ' value="';
-				html += escapeHtml(cell.editedValue);
+				html += escapeHtml(String(value));
 				html += '">';
 
 				return html;
@@ -21244,6 +21745,11 @@
 		 */
 		getDataSource: function() {
 			return this._gridLogic.getDataSource();
+		},
+
+		getSourceDataSet: function() {
+			var searcher = this._gridLogic.getDataSearcher();
+			return searcher.getSourceDataSet();
 		},
 
 		/**
