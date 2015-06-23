@@ -463,7 +463,7 @@
 				// 受け取ったイベントオブジェクトをコマンドマネージャから上げる
 				this._commandManager.dispatchEvent(r);
 			}
-		},
+		}
 	};
 	h5.core.expose(artboardCommandLogic);
 })();
@@ -944,9 +944,9 @@
 
 			// drawingLogicのセットアップ
 			// レイヤ領域を取得
-			var $layers = this.$find('.h5drawing-layers');
+			var $layers = this.$find('.h5-artboard-layers');
 			this._layers = $layers[0];
-			var svgLayerElement = $layers.find('.svg-layer')[0];
+			var svgLayerElement = $layers.find('.svg-layer>g')[0];
 			var backgroundLayerElement = $layers.find('.background-layer')[0];
 
 			// ロジックの初期化
@@ -980,7 +980,7 @@
 		/**
 		 * canvasをクリア
 		 * <p>
-		 * DRShapeの生成された確定済みの図形はcanvas上には無いので削除されません。
+		 * ArtShapeの生成された確定済みの図形はcanvas上には無いので削除されません。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
@@ -1161,13 +1161,27 @@
 		//
 		/**
 		 * 描画されている図形からセーブデータを作成します
+		 * <p>
+		 * useSrcオプションがtrueの場合、背景画像について画像IDではなくパス(srcの値)で保存します。
+		 * </p>
+		 * <p>
+		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSrcMapの登録が必要です。
+		 * 別ページで保存データを利用する場合などで同一のimageSrcMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
+		 * @param {Boolean} true指定の場合useSrc 画像IDではなくパス(srcの値)で保存します
 		 * @returns {DrawingSaveData}
 		 */
-		save: function() {
-			return this.drawingLogic.save();
+		save: function(useSrc) {
+			var saveData = this.drawingLogic.save(useSrc);
+			// 保存時のcanvasのサイズを覚えさせておく
+			saveData.size = {
+				width: this._canvas.getAttribute('width'),
+				height: this._canvas.getAttribute('height')
+			};
+			return saveData;
 		},
 
 		/**
@@ -1251,7 +1265,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {Boolean} exceptAlone trueの場合描画されている図形のみ
-		 * @returns {DRShape[]}
+		 * @returns {ArtShape[]}
 		 */
 		getAllShapes: function(exceptAlone) {
 			return this.drawingLogic.getAllShapes(exceptAlone);
@@ -1262,7 +1276,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 * @returns {String}
 		 */
 		getShapeID: function(shape) {
@@ -1282,7 +1296,7 @@
 		 * @param {Number} width 正方形の幅
 		 * @param {Number} height 正方形の高さ
 		 * @param {Boolean} isFill 塗りつぶすかどうか
-		 * @returns {DRRect}
+		 * @returns {ArtRect}
 		 */
 		drawRect: function(x, y, width, height, isFill) {
 			return this.drawingLogic.drawRect(x, y, width, height, {
@@ -1305,7 +1319,7 @@
 		 * @param {Number} rx 楕円の水平方向の半径
 		 * @param {Number} ry 楕円の垂直方向の半径
 		 * @param {Boolean} isFill 塗りつぶすかどうか
-		 * @returns {DREllipse}
+		 * @returns {ArtEllipse}
 		 */
 		drawEllipse: function(cx, cy, rx, ry, isFill) {
 			return this.drawingLogic.drawEllipse(cx, cy, rx, ry, {
@@ -1331,7 +1345,7 @@
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {String} pathData
-		 * @returns {DRPath}
+		 * @returns {ArtPath}
 		 */
 		drawPath: function(pathData) {
 			return this.drawingLogic.drawPath({
@@ -1369,7 +1383,7 @@
 		 * }
 		 * </code></pre>
 		 *
-		 * @returns {DRImage}
+		 * @returns {ArtImage}
 		 */
 		drawImage: function(data) {
 			return this.drawingLogic.drawImage(data);
@@ -1395,7 +1409,7 @@
 		 * }
 		 * </code></pre>
 		 *
-		 * @returns {DRImage}
+		 * @returns {ArtImage}
 		 */
 		drawText: function(data) {
 			// strokeの色でテキストを描画
@@ -1502,7 +1516,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 */
 		append: function(shape) {
 			this.drawingLogic.append(shape);
@@ -1513,7 +1527,7 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {DRShape} shape
+		 * @param {ArtShape} shape
 		 */
 		remove: function(shape) {
 			this.drawingLogic.remove(shape);
@@ -1951,6 +1965,7 @@
 		 */
 		_trackstartSelectedShape: function(event, $el) {
 			event.stopPropagation();
+
 			var selectedShapes = this.selectionLogic.getSelected();
 			if (selectedShapes.length === 0) {
 				return;
@@ -2036,7 +2051,22 @@
 			event.stopPropagation();
 			var trackingData = this._trackingData;
 			if (!trackingData.moved) {
+				if (event.ctrlKey && !trackingData.selectedWhenTrackstart) {
+					// ctrlキーが押されていてかつドラッグされていない(ctrl+クリック)
+					// かつ、クリックした図形が今選択されたものでなかった場合は、
+					// その図形の選択を解除
+					var id = $el.data('target-shape-id');
+					var selectedShapes = this.getSelectedShapes();
+					for (var i = 0, l = selectedShapes.length; i < l; i++) {
+						var shape = selectedShapes[i];
+						if (this.getShapeID(shape) == id) {
+							this.unselect(shape);
+							break;
+						}
+					}
+				}
 				// 動いていないなら何もしない
+				this._trackingData = null;
 				return;
 			}
 			var sessions = trackingData.sessions;

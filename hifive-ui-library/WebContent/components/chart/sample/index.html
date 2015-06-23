@@ -1,87 +1,13 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta name="viewport"
-	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-	<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
-	<link rel="stylesheet" href="../src/chart.css" />
-
-	<!--[if lt IE 9]>
-	<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
-	<![endif]-->
-	<!--[if gte IE 9]><!-->
-	<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
-	<!--<![endif]-->
-	<script src="/hifive-res/fw/current/h5.dev.js"></script>
-
-	<!-- チャート部品 -->
-  	<script src="../src/graphic-renderer.js"></script>
-  	<script src="../src/chart.js"></script>
-
-	<script src="index.js"></script>
-
-	<title>チャート</title>
-</head>
-<body>
-	<h4>チャート</h4>
-
-	<span>使用方法・制限事項</span>
-
-	<ul>
-		<li>当機能は、以下のファイルに依存します(jQuery, hifiveは前提)
-			<ul>
-				<li>res/lib/chart/chart.js</li>
-			</ul>
-		</li>
-		<li>
-			h5.uicomp.chart.chartControllerを子コントローラに持つコントローラを作成し、chartController#drawメソッドを呼ぶとチャートが描画されます
-			<pre>
-var pageController = {
-	__name: 'ui.sample.chart.pageController',
-	_chartController: h5.uicomp.chart.ChartController, // チャートライブラリ
-
-	__meta: {
-		_chartController: {
-			rootElement: '#chart'
-		}
-	},
-
-	__ready: function(context) {
-
-		this._chartController.draw({
-
-		});
-	},
-
-}
-h5.core.controller('body', pageController);
-			</pre>
-		</li>
-		<li>API仕様などは、別途チャート部品仕様.pptxをご覧ください。</li>
-		<li>以下の機能を持つ
-		 	<ul>
-		 	    <li>折れ線、折れ線(積み上げ)、ローソクチャートの表示が可能(※塗りつぶすことで面グラフも表示可能)</li>
-		 		<li>1領域内に複数系列(複数種類)表示可能</li>
-		 		<li>複数領域の表示も可能(領域間の連携は未実装)</li>
-		 		<li>表示後のデータの追加が可能(サンプルの「Go」でデータが追加される)</li>
-		 		<li>表示後の新しい系列の追加が可能(サンプルの「系列追加」で系列が追加される)</li>
-		 		<li>表示サイズの変更が可能(※ただし、初期サイズ以上にならないバグあり)</li>
-		 		<li>ローソクの場合はツールチップ、ハイライト機能あり(※折れ線では実装中)</li>
-		 	</ul>
-		 </li>
-	</ul>
-	<h5>折れ線グラフ(積み上げ)サンプル</h5>
-	<button id="addSeries">系列追加</button>
-	<button id="expand">拡大</button>
-	<button id="shrink">縮小</button>
-	<button id="go">Go</button>
-	<button id="back">Back</button>
-	<button id="start">Start</button>
-	<button id="stop">Stop</button>
-
-	<div id="chart" ></div>
-</body>
+	<head>
+		<meta charset="UTF-8">
+		<title>グリッドのサンプル</title>
+	</head>
+	<body>
+		<ul>
+			<li><a href="sample1/">折れ線チャートのサンプル</a></li>
+			<li><a href="sample2/">ローソクチャート のサンプル</a></li>
+		</ul>
+	</body>
 </html>

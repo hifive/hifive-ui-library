@@ -2,6 +2,16 @@
 <h5-file-constraction xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="h5ui-file-constraction.xsd">
 
+	<module name="aceEditor" description="aceEditor">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="aceEditor/src/AceEditorController.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
 	<module name="animate" description="animate">
 		<dependencies>
 		</dependencies>
@@ -20,6 +30,54 @@
 		</files>
 		<cssfiles>
 			<file name="appContainer/src/ApplicationController.css" />
+		</cssfiles>
+	</module>
+
+	<module name="artboard-core" description="artboard-core">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="artboard/src/consts.js" />
+			<file name="artboard/src/ArtShape.js" />
+		</files>
+		<cssfiles>
+			<file name="artboard/src/artboard.css" />
+		</cssfiles>
+	</module>
+
+	<module name="artboard-core-command" description="artboard-core-command">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="artboard/src/consts.js" />
+			<file name="artboard/src/Command.js" />
+			<file name="artboard/src/ArtShape.js" />
+		</files>
+		<cssfiles>
+			<file name="artboard/src/artboard.css" />
+		</cssfiles>
+	</module>
+
+	<module name="artboard" description="artboard">
+		<dependencies>
+			<dependency name="artboard-core-command" />
+		</dependencies>
+		<files>
+			<file name="artboard/src/DrawingLogic.js" />
+			<file name="artboard/src/ArtboardController.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
+	<module name="artboardViewer" description="artboardViewer">
+		<dependencies>
+			<dependency name="artboard-core" />
+		</dependencies>
+		<files>
+			<file name="artboard/src/ArtboardViewerController.js" />
+		</files>
+		<cssfiles>
 		</cssfiles>
 	</module>
 
@@ -110,18 +168,6 @@
 		</cssfiles>
 	</module>
 
-	<module name="drawing" description="drawing">
-		<dependencies>
-		</dependencies>
-		<files>
-			<file name="drawing/src/DrawingController.js" />
-			<file name="drawing/src/DrawingOperationController.js" />
-		</files>
-		<cssfiles>
-			<file name="drawing/src/drawing.css" />
-		</cssfiles>
-	</module>
-
 	<module name="graph" description="graph">
 		<dependencies>
 		</dependencies>
@@ -141,6 +187,16 @@
 		</files>
 		<cssfiles>
 			<file name="magnetContainer/src/magnet.css" />
+		</cssfiles>
+	</module>
+
+	<module name="pdf" description="pdf">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="pdf/src/PdfController.js" />
+		</files>
+		<cssfiles>
 		</cssfiles>
 	</module>
 

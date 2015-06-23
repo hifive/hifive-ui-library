@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: DRText</title>
+	<title>JSDoc: Class: ArtRect</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -29,26 +29,26 @@
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="DRShapeCommand.html">DRShapeCommand</a></li><li><a href="DRText.html">DRText</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li><li><a href="DRTextShape.html">DRTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
 
-        <h1 class="page-title">Class: DRText</h1>
+        <h1 class="page-title">Class: ArtRect</h1>
 
         
 
         <section>
 
         <header>
-            <h2>DRText</h2>
+            <h2>ArtRect</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="DRText"><span class="type-signature"></span>new DRText</h4>
+    <h4 class="name" id="ArtRect"><span class="type-signature"></span>new ArtRect</h4>
     
     
 </dt>
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        テキスト(text)クラス
+        矩形(rect)クラス
     </p>
     
     
@@ -90,14 +90,14 @@
             
             
             <td class="type">
-            
+            DOM
             </td>
             
             
             
             
             
-            <td class="description last">text要素</td>
+            <td class="description last">矩形要素(rect)</td>
         </tr>
 	
 	
@@ -142,7 +142,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 2361</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 1086</li></ul></dd>
 	
 	-->
 
@@ -170,10 +170,18 @@
                 <h3 class="subsection-title">Extends</h3>
 
                 <ul>
-                    <li><a href="DRShape.html">DRShape</a></li>
+                    <li><a href="ArtShape.html">ArtShape</a></li>
                 </ul>
             
 
+            
+                <h3 class="subsection-title">Mixes In</h3>
+
+                <ul>
+                    <li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li>
+                
+                    <li><a href="ArtFillShape.html">ArtFillShape</a></li>
+                </ul>
             
 
             
@@ -219,7 +227,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1585</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 567</li></ul></dd>
 	
 	-->
 
@@ -278,7 +286,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1412</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 390</li></ul></dd>
 	
 	-->
 
@@ -352,7 +360,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1423</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 401</li></ul></dd>
 	
 	-->
 
@@ -430,7 +438,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1398</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 376</li></ul></dd>
 	
 	-->
 
@@ -546,7 +554,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1450</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 428</li></ul></dd>
 	
 	-->
 
@@ -620,7 +628,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1434</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 412</li></ul></dd>
 	
 	-->
 
@@ -788,7 +796,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1475</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 453</li></ul></dd>
 	
 	-->
 
@@ -821,64 +829,6 @@
 	</dd>
 </dl>
 
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="moveBy"><span class="type-signature"></span>moveBy</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        DRShape.moveByの実装
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 2414</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
     
     
 
@@ -978,7 +928,65 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1511</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 489</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="moveBy"><span class="type-signature"></span>moveBy</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        ArtShape.moveByの実装
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 1132</li></ul></dd>
 	
 	-->
 
@@ -1094,7 +1102,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1496</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 474</li></ul></dd>
 	
 	-->
 
@@ -1124,7 +1132,7 @@
     
     
     <p class="description">
-        DRShape.moveToの実装
+        ArtShape.moveToの実装
     </p>
     
     
@@ -1152,7 +1160,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 2391</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 1112</li></ul></dd>
 	
 	-->
 
@@ -1210,7 +1218,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 2431</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 1149</li></ul></dd>
 	
 	-->
 
@@ -1284,7 +1292,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 1525</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 503</li></ul></dd>
 	
 	-->
 
@@ -1342,7 +1350,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Thu Mar 05 2015 13:11:46 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jun 05 2015 14:46:35 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
