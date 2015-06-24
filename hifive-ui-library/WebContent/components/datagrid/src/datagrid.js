@@ -19843,7 +19843,6 @@
 		__unbind: function() {
 			this._keydownArrowThrottle.dispose();
 			this._fetchDebounce.dispose();
-			this._resizeThrottle.dispose();
 			this._selectRangeScrollThrottle.dispose();
 
 			$(this.rootElement).empty();
@@ -21529,7 +21528,7 @@
 			this._viewController.setGridLogic(this._gridLogic);
 		},
 
-		__unbind: function() {
+		__dispose: function() {
 			this._gridLogic.dispose();
 		},
 
