@@ -160,7 +160,6 @@
 							}
 							break;
 						case 'cover':
-						case 'coverCenter':
 							// アスペクト比を維持して領域が画像で埋まるように表示
 							var aspectRatio = size.width / size.height;
 							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
@@ -171,29 +170,11 @@
 								imgStyle.width = layerW;
 								imgStyle.height = layerW / scaleX / imgRate * scaleY;
 							}
-							if (fillMode === 'coverCenter') {
-								// 中央配置
-								if (aspectRatio < imgRate) {
-									imgStyle.left += (layerW - imgStyle.width) / 2;
-								} else {
-									imgStyle.top += (layerH - imgStyle.height) / 2;
-								}
-							}
 							break;
 						case 'stretch':
 							// stretchの時はisStretch指定であっても描画先のサイズがいくつであっても100%指定でOK
 							imgStyle.width = '100%';
 							imgStyle.height = '100%';
-							break;
-						case 'center':
-							if (isStretch) {
-								// isStretch(表示先のサイズに合わせる)指定の場合は画面サイズに合うようにする
-								imgStyle.width = imgElement.naturalWidth * scaleX;
-								imgStyle.height = imgElement.naturalHeight * scaleY;
-							}
-							// 中央配置
-							imgStyle.left += (layerW - imgElement.naturalWidth * scaleX) / 2;
-							imgStyle.top += (layerH - imgElement.naturalHeight * scaleY) / 2;
 							break;
 						default:
 							// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする

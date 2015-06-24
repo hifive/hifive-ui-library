@@ -852,11 +852,9 @@
 		 * </p>
 		 * <ul>
 		 * <li>none : 画像のサイズを変更せずに左上を原点として描画
-		 * <li>center: 画像のサイズを変更せずに中央配置にして描画
 		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
 		 * <li>containCenter : サイズをcontainで計算して、位置を中央配置にして描画
 		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
-		 * <li>coverCenter : サイズをcoverで計算して、中央配置
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
 		 * <p>
@@ -871,7 +869,7 @@
 		 * {
 		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
-		 * 	fillMode: 画像の配置モード('none'|'center'|'contain'|'containCenter'|'cover'|'coverCenter'|'stretch') 指定のない場合は'none'で描画します,
+		 * 	fillMode: 画像の配置モード('none'|'contain'|'containCenter'|'cover'|'stretch') 指定のない場合は'none'で描画します,
 		 * 	offsetX: 背景画像位置のx座標のオフセット(デフォルト:0),
 		 * 	offsetY: 背景画像位置のy座標のオフセット(デフォルト:0)
 		 * }
@@ -1124,7 +1122,6 @@
 				}
 				break;
 			case 'cover':
-			case 'coverCenter':
 				// アスペクト比を維持して領域が画像で埋まるように表示
 				var aspectRatio = layerW / layerH;
 				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
@@ -1135,24 +1132,11 @@
 					imgStyle.width = layerW;
 					imgStyle.height = layerW / imgRate;
 				}
-				if (fillMode === 'coverCenter') {
-					// 中央配置
-					if (aspectRatio < imgRate) {
-						imgStyle.left += (layerW - imgStyle.width) / 2;
-					} else {
-						imgStyle.top += (layerH - imgStyle.height) / 2;
-					}
-				}
 				break;
 			case 'stretch':
 				// 描画領域にちょうど収まるようにする
 				imgStyle.width = '100%';
 				imgStyle.height = '100%';
-				break;
-			case 'center':
-				// 画像のサイズは変更無しで中央配置
-				imgStyle.left += (layerW - imgElement.naturalWidth) / 2;
-				imgStyle.top += (layerH - imgElement.naturalHeight) / 2;
 				break;
 			default:
 				// 指定無しまたはnoneの場合は画像のサイズ、位置変更無し
@@ -1373,7 +1357,6 @@
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
-						case 'coverCenter':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
 							var w, h;
@@ -1384,23 +1367,10 @@
 								w = canvas.width;
 								h = w / imgRate;
 							}
-							if (fillMode === 'coverCenter') {
-								// 中央配置
-								if (canvasRate < imgRate) {
-									x += (canvas.width - w) / 2;
-								} else {
-									y += (canvas.height - h) / 2;
-								}
-							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
 							ctx.drawImage(this, x, y, canvas.width, canvas.height);
-							break;
-						case 'center':
-							x += (canvas.width - this.width) / 2;
-							y += (canvas.height - this.height) / 2;
-							ctx.drawImage(this, x, y);
 							break;
 						default:
 							// none

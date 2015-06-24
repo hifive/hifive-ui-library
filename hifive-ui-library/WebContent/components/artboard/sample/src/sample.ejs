@@ -45,7 +45,7 @@
 		<div class="pallete-color" style="background-color:[%= color %]"></div>
 		[% } %]
 	</div>
-	
+
 	<div class="stroke-width-slider-wrapper stroke-width">
 		<label class="slider-label"><span>線の幅</span><span class="slider-value">5</span>px</label>
 		<div class="stroke-width-slidebar"></div>
@@ -72,13 +72,13 @@
 			<input type="text" name="font-family"/>
 		</div>
 	</div>
-	
+
 	[%# テキスト入力要素 %]
 	<div class="text-input-box display-none">
 		<input type="text" name="text-input"/>
 		<div class="set-text border1">OK</div>
 	</div>
-	
+
 	[%# ポップアップ %]
 	<div class="display-none popup-contents-wrapper">
 		<div class="background-popup">
@@ -107,11 +107,9 @@
 				<label>fillMode</label>
 				<select class="background-fillmode-list">
 					<option value="none">none</option>
-					<option value="center">center(中央配置)</option>
 					<option value="contain">contain</option>
 					<option value="containCenter">containCenter(中央配置)</option>
 					<option value="cover">cover</option>
-					<option value="coverCenter">coverCenter(中央配置)</option>
 					<option value="stretch">stretch</option>
 				</select>
 				<p>
@@ -167,7 +165,7 @@
 				<label>高さ<input type="text" class="num-input" name="save-height" disabled/></label>
 				<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked disabled/>比率を保持</label>
 			</div>
-			[%# trim実装動作確認用。trimは一旦実装したもののAPIから一旦外している #83 
+			[%# trim実装動作確認用。trimは一旦実装したもののAPIから一旦外している #83
 			<div class="save-trim-settings">
 				<p><label><input type="checkbox" name="save-trim-on" value="on"/>範囲指定</label></p>
 				<!-- <div class="border1 save-trim-select">ドラッグして選択</div> -->
