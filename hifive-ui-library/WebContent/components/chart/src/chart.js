@@ -2927,15 +2927,9 @@
 					d += i === 0 ? 'M' : ' L';
 					d += chartItems[i].get('x') + ','  + chartItems[i].get('y');
 				}
-				var fill = graphicRenderer.getFill(this.seriesSetting.fillColor, this.rootElement);
-				if (fill != null) {
-					d += h5format(PATH_LINE_FORMAT, chartItems[len - 1].get('x'),
-							this.chartSetting.get('height'))
-							+ h5format(PATH_LINE_FORMAT, item0.get('x'), this.chartSetting
-									.get('height'));
-				}
 				d += ' Z';
 
+				var fill = graphicRenderer.getFill(this.seriesSetting.fillColor, this.rootElement);
 				if (this.$path != null) {
 					this.$path.attr('d', d);
 				} else {
@@ -3338,7 +3332,7 @@
 				if (ev.props.minVal != null || ev.props.maxVal != null) {
 					var minVal = ev.target.get('minVal');
 					var maxVal = ev.target.get('maxVal');
-					scaling(minVal, maxVal);
+					this._scaling(minVal, maxVal);
 				}
 				if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
 					// rangeが変更されたので、水平方向の補助線を引き直す
@@ -3352,10 +3346,47 @@
 			 * @memberOf RadarAxisRenderer
 			 */
 			drawGridLines: function() {
-				var d = '';
-
 				var center = this.chartSetting.get('height') * 0.5;
 
+				var stroke = this._axesSettings.stroke || 'gray';
+
+				this._drawAxis(this._axesSettings.shape, center, center, {
+					'class': 'radar_axis',
+					fill: 'none',
+					stroke: stroke,
+					'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+				});
+
+				var num = this._axesSettings.num;
+				var radianInterval = Math.PI * 2 / num;
+
+				for (var j = 0; j < num; j++) {
+					graphicRenderer.appendLineElm(center, center, center + this._radius
+							* Math.sin(radianInterval * j), (center - this._radius
+							* Math.cos(radianInterval * j)), stroke, {
+						id: 'rader_axis_line' + j,
+						'class': 'radarChart axis',
+						fill: 'none',
+						'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+					}, $(this.rootElement));
+				}
+			},
+
+			_drawAxis: function(shape, centerX, centerY, props){
+				switch (shape) {
+				case 'polygon':
+				case null:
+					this._drawPolygonAxis(centerX, centerY, props);
+					break;
+				case 'circle':
+					this._drawCircleAxis(centerX, centerY, props);
+					break;
+				default:
+					throw new Error('不正なshapeが指定されました：' + shape);
+				}
+			},
+
+			_drawPolygonAxis: function(centerX, centerY, props) {
 				var interval = this._axesSettings.interval;
 				var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
 						/ interval);
@@ -3363,6 +3394,7 @@
 				var radianInterval = Math.PI * 2 / num;
 
 				for (var i = 0; i < intervalNum; i++) {
+					var d = '';
 					var r = this._radius / intervalNum * (i + 1);
 					for (var j = 0; j < num; j++) {
 						if (j == 0) {
@@ -3370,31 +3402,23 @@
 						} else {
 							d += ' L';
 						}
-						d += (center + r * Math.sin(radianInterval * j)) + ','
-								+ (center - r * Math.cos(radianInterval * j));
+						d += (centerX + r * Math.sin(radianInterval * j)) + ','
+								+ (centerY - r * Math.cos(radianInterval * j));
 					}
 					d += 'z';
+
+					graphicRenderer.appendPathElm(d, props, $(this.rootElement));
 				}
+			},
 
-				var stroke = this._axesSettings.stroke || 'gray';
+			_drawCircleAxis: function(centerX, centerY, props) {
+				var interval = this._axesSettings.interval;
+				var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
+						/ interval);
 
-				graphicRenderer.appendPathElm(d, {
-					id: this.name + '_rader_axis',
-					'class': 'radarChart axis',
-					fill: 'none',
-					stroke: stroke,
-					'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
-				}, $(this.rootElement));
-
-				for (var j = 0; j < num; j++) {
-					graphicRenderer.appendLineElm(center, center, center + this._radius
-							* Math.sin(radianInterval * j), (center - this._radius
-							* Math.cos(radianInterval * j)), stroke, {
-						id: this.name + '_rader_axis_line' + i,
-						'class': 'radarChart axis',
-						fill: 'none',
-						'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
-					}, $(this.rootElement));
+				for (var i = 0; i < intervalNum; i++) {
+					var r = this._radius / intervalNum * (i + 1);
+					graphicRenderer.appendCircleElm(centerX, centerY, r, null, props, $(this.rootElement));
 				}
 			},
 

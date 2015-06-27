@@ -28,7 +28,7 @@
 
 	/**
 	 * SVG用描画コントローラ
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui.components.chart
 	 * @name SVGRenderer
@@ -36,7 +36,7 @@
 	var svgRenderer = {
 		/**
 		 * SVG用描画コントローラであるか
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @type {Boolean}
 		 */
@@ -44,7 +44,7 @@
 
 		/**
 		 * SVG要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Object} props 属性オブジェクト
 		 * @returns {Element} SVG要素
@@ -55,7 +55,7 @@
 
 		/**
 		 * SVG要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Object} props 属性オブジェクト
 		 * @returns {Element} SVG要素
@@ -66,7 +66,7 @@
 
 		/**
 		 * g要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Object} attrs 属性オブジェクト
 		 * @returns {Element} g要素
@@ -77,7 +77,7 @@
 
 		/**
 		 * g要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Object} attrs 属性オブジェクト
 		 */
@@ -88,7 +88,7 @@
 
 		/**
 		 * translateを設定します
-		 * 
+		 *
 		 * @param {jQuery} $elem translateを設定するjQuery要素
 		 * @param {Number} x x座標
 		 * @param {Number} y y座標
@@ -103,7 +103,7 @@
 
 		/**
 		 * 指定したタグ名の要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} name SVG要素名
 		 * @returns 指定したSVG要素のオブジェクト
@@ -121,7 +121,7 @@
 
 		/**
 		 * line要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Number} x1 x1属性
 		 * @param {Number} y1 y1属性
@@ -144,7 +144,7 @@
 
 		/**
 		 * line要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Number} x1 x1属性
 		 * @param {Number} y1 y1属性
@@ -186,8 +186,42 @@
 		},
 
 		/**
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {Number} cx 円の中心のx座標
+		 * @param {Number} cy 円の中心のy座標
+		 * @param {Number} r 半径
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @return {Element} 円要素
+		 */
+		createCircleElm: function(cx, cy, r, fill, attrs) {
+			var attributes = attrs != null ? attrs : {};
+
+			return this._createSvgElm('circle', $.extend(attributes, {
+				cx: cx,
+				cy: cy,
+				r: r,
+				fill: fill || 'none'
+			}));
+		},
+
+		/**
+		 * @memberOf h5.ui.components.chart.SVGRenderer
+		 * @param {Number} cx 円の中心のx座標
+		 * @param {Number} cy 円の中心のy座標
+		 * @param {Number} r 半径
+		 * @param {String} fill fill属性
+		 * @param {Object} attrs その他の属性を持つオブジェクト
+		 * @param {jQuery} $parent 追加する親属性
+		 */
+		appendCircleElm: function(cx, cy, r, fill, attrs, $parent) {
+			var elem = this.createCircleElm(cx, cy, r, fill, attrs);
+			$parent.append(elem);
+		},
+
+		/**
 		 * text要素を作成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param str 表示する文字列
 		 * @param {Number} x x属性
@@ -210,7 +244,7 @@
 
 		/**
 		 * text要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} str 表示する文字列
 		 * @param {Number} x x属性
@@ -226,7 +260,7 @@
 
 		/**
 		 * text要素の位置を設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Element} elem text要素
 		 * @param {Number} x x座標
@@ -244,7 +278,7 @@
 
 		/**
 		 * 指定した要素のテキストを設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} 設定するテキスト
 		 * @param {jQuery} $ele jQuery要素
@@ -273,7 +307,7 @@
 
 		/**
 		 * パス要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} d パス
 		 * @param {Object} attrs 属性
@@ -289,7 +323,7 @@
 
 		/**
 		 * パス要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} d パス
 		 * @param {Object} attrs 属性
@@ -302,7 +336,7 @@
 
 		/**
 		 * 要素をclipします
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {jQuery} $elm clip対象の要素
 		 * @param {Element} clipElm クリップする形を表す要素
@@ -321,7 +355,7 @@
 
 		/**
 		 * 色の勾配を指定するURLを取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {String} id 設定するID
 		 * @param {Object} attrs 設定する属性
@@ -359,7 +393,7 @@
 
 		/**
 		 * 要素に属性をセットします
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Element} elem 属性をセットする要素
 		 * @param {Object} attrs 属性とその値
@@ -373,7 +407,7 @@
 
 		/**
 		 * styleを設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Element} elem 設定する要素
 		 * @param {Object} styles 設定するstyle
@@ -386,7 +420,7 @@
 
 		/**
 		 * 要素の幅を取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Element} elem SVG要素
 		 * @returns {Number} 要素の幅
@@ -400,7 +434,7 @@
 
 		/**
 		 * 要素の高さを取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.SVGRenderer
 		 * @param {Element} elem SVG要素
 		 * @returns {Number} 要素の高さ
@@ -418,7 +452,7 @@
 	// -------------------------------------------------------------------------
 	/**
 	 * VML用描画コントローラ
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui
 	 * @name VMLRenderer
@@ -428,7 +462,7 @@
 
 		/**
 		 * VMLのルート要素(DIV)を生成します
-		 * 
+		 *
 		 * @param {Object} props 属性を持つオブジェクト
 		 */
 		createGraphicRootElm: function(props) {
@@ -445,7 +479,7 @@
 
 		/**
 		 * group要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Object} attrs 属性を持つオブジェクト
 		 * @returns
@@ -456,7 +490,7 @@
 
 		/**
 		 * line要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Number} x1 x1属性
 		 * @param {Number} y1 y1属性
@@ -478,7 +512,7 @@
 
 		/**
 		 * line要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Number} x1 x1属性
 		 * @param {Number} y1 y1属性
@@ -493,7 +527,7 @@
 
 		/**
 		 * rect要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Number} x x属性
 		 * @param {Number} y y属性
@@ -522,7 +556,7 @@
 
 		/**
 		 * rect要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Number} x x属性
 		 * @param {Number} y y属性
@@ -538,7 +572,7 @@
 
 		/**
 		 * shape要素を生成します
-		 * 
+		 *
 		 * @param {Object} attrs 属性を持つオブジェクト
 		 * @returns shape要素
 		 */
@@ -548,7 +582,7 @@
 
 		/**
 		 * テキスト要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} str 表示する文字列
 		 * @param {Number} x x属性
@@ -585,7 +619,7 @@
 
 		/**
 		 * テキスト要素を追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} str 表示する文字列
 		 * @param {Number} x x属性
@@ -606,7 +640,7 @@
 
 		/**
 		 * 指定した要素のテキストを設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} 設定するテキスト
 		 * @param {jQuery} $ele jQuery要素
@@ -622,7 +656,7 @@
 
 		/**
 		 * text要素の位置を設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem text要素
 		 * @param {Number} x x座標
@@ -692,7 +726,7 @@
 
 		/**
 		 * fill要素を生成し、指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem
 		 * @param {Object} props
@@ -705,7 +739,7 @@
 
 		/**
 		 * stroke要素を指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem
 		 * @param {Object} props
@@ -718,7 +752,7 @@
 
 		/**
 		 * 色の勾配を指定するURLを取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} id 設定するID
 		 * @param {Object} attrs 設定する属性
@@ -765,7 +799,7 @@
 
 		/**
 		 * 指定されたタグ名の要素を生成します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} name
 		 * @param {Object} attrs
@@ -779,7 +813,7 @@
 
 		/**
 		 * ルート要素を生成し、指定された要素に追加します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {String} name
 		 * @param {Object} attrs
@@ -794,7 +828,7 @@
 
 		/**
 		 * translateを設定します
-		 * 
+		 *
 		 * @param {jQuery} $elem translateを設定するjQuery要素
 		 * @param {Number} x x座標
 		 * @param {Number} y y座標
@@ -809,7 +843,7 @@
 
 		/**
 		 * 要素に属性をセットします
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem 属性をセットする要素
 		 * @param {Object} attrs 属性とその値
@@ -827,7 +861,7 @@
 
 		/**
 		 * styleを設定します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem 設定する要素
 		 * @param {Object} styles 設定するstyle
@@ -841,7 +875,7 @@
 
 		/**
 		 * 要素の幅を取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem VML要素
 		 * @returns {Number} 要素の幅
@@ -852,7 +886,7 @@
 
 		/**
 		 * 要素の高さを取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem VML要素
 		 * @returns {Number} 要素の高さ
@@ -863,7 +897,7 @@
 
 		/**
 		 * 要素の高さまたは幅を取得します
-		 * 
+		 *
 		 * @memberOf h5.ui.components.chart.VMLRenderer
 		 * @param {Element} elem VML要素
 		 * @param type {String} 'Height' or 'Width'
@@ -880,7 +914,7 @@
 
 	/**
 	 * 図形描画レンダラ―
-	 * 
+	 *
 	 * @class
 	 * @memberOf h5.ui.components.chart
 	 * @name GraphicRenderer
@@ -889,7 +923,7 @@
 
 		/**
 		 * 塗りつぶしのためのオブジェクトを取得します
-		 * 
+		 *
 		 * @param {Object | String} 色定義
 		 * @param {Element} 図形領域のルート要素
 		 * @returns {Object | String} 塗りつぶしプロパティオブジェクトまたは色の指定文字列
