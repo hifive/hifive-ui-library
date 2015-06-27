@@ -3000,26 +3000,7 @@
 
 		this.setAxesSetting(axesSettings);
 
-		var that = this;
-		function scaling(min, max) {
-			if (min === Infinity && max === -Infinity) {
-				// 点が存在しない場合は、rangeにnullを設定
-				chartSetting.set({
-					rangeMax: null,
-					rangeMin: null
-				});
-				return;
-			}
-			var range;
-			if (that.autoScale) {
-				range = that.autoScale(min, max);
-			} else {
-				range = that._defaultAutoScale(min, max);
-			}
-			chartSetting.set(range);
-		}
-
-		scaling(chartSetting.get('minVal'), chartSetting.get('maxVal'));
+		this._scaling(chartSetting.get('minVal'), chartSetting.get('maxVal'));
 
 		chartSetting.addEventListener('change', this.own(this._chartSettingChangeListener));
 	}
@@ -3032,11 +3013,11 @@
 			if (ev.props.minVal != null || ev.props.maxVal != null) {
 				var minVal = ev.target.get('minVal');
 				var maxVal = ev.target.get('maxVal');
-				scaling(minVal, maxVal);
+				this._scaling(minVal, maxVal);
 			}
 			if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
 				// rangeが変更されたので、水平方向の補助線を引き直す
-				that._drawHorizLines();
+				this._drawHorizLines();
 			}
 		},
 
@@ -3045,6 +3026,24 @@
 				rangeMin: min,
 				rangeMax: max
 			};
+		},
+
+		_scaling: function(min, max) {
+			if (min === Infinity && max === -Infinity) {
+				// 点が存在しない場合は、rangeにnullを設定
+				this.chartSetting.set({
+					rangeMax: null,
+					rangeMin: null
+				});
+				return;
+			}
+			var range;
+			if (this.autoScale) {
+				range = this.autoScale(min, max);
+			} else {
+				range = this._defaultAutoScale(min, max);
+			}
+			this.chartSetting.set(range);
 		},
 
 		/**
