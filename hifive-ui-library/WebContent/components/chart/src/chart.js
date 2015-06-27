@@ -61,6 +61,8 @@
 	var DEFAULT_TOOLTIP_PADDING_LEFT = 8;
 	var DEFAULT_TOOLTIP_PADDING_RIGHT = 8;
 
+	var DEFAULT_RADIUS_RATE = 0.4;
+
 	var SERIES_PREFIX = '_series';
 
 	var STACKED_CHART_TYPES = ['stacked_line', 'stacked_bar'];
@@ -190,6 +192,10 @@
 	 */
 	function calcYDiff(val1, val2, rangeMin, rangeMax, height) {
 		return Math.abs(val1 * 1000 - val2 * 1000) / (rangeMax * 1000 - rangeMin * 1000) * height;
+	}
+
+	function calcDefaultRadius(chartSetting) {
+		return chartSetting.get('height') * DEFAULT_RADIUS_RATE;
 	}
 
 	function sortById(items) {
@@ -669,6 +675,8 @@
 
 		// イベントリスナの追加
 		dataSource.addEventListener('dataChange', this.own(this._addEventListener));
+
+		this._init();
 	}
 
 	ChartDataSource.prototype = {
@@ -680,6 +688,8 @@
 		 * @returns {Function} コンテキストを自分自身にした関数
 		 */
 		own: own,
+
+		_init: function() {},
 
 		/**
 		 * データを読み込む。系列の設定で指定されている場合はそれを利用します
@@ -730,6 +740,13 @@
 				this.xProp = this.propNames.x || 'x';
 				this.highProp = 'y';
 				break;
+			case 'radar':
+				this.propNames = propNames || {
+					y: 'val'
+				};
+				this.xProp = this.propNames.x || 'label';
+				this.highProp = 'y';
+				break;	
 			default:
 				break;
 			}
@@ -956,6 +973,68 @@
 
 	h5.mixin.eventDispatcher.mix(ChartDataSource.prototype);
 
+	/**
+	 * チャート描画用のデータソース
+	 * 
+	 * @class RadarChartDataSource
+	 */
+	var radarChartDataSource = {
+		_init: function() {
+			this._radius = calcDefaultRadius(this._chartSetting);		
+		},
+
+		/**
+		 * @memberOf RadarChartDataSource
+		 */
+		createItems: function() {
+			this.removeAll();
+
+			var current = this.dataSource.sequence.current() - this._chartSetting.get('movedNum');
+			var dispDataSize = this._chartSetting.get('dispDataSize');
+
+			for ( var id in this.dataSource.dataMap) {
+				var intId = parseInt(id);
+				if (intId < current - dispDataSize || intId >= current) {
+					continue;
+				}
+
+				// 描画範囲の点について座標情報を計算する
+				var item = this.getDataObj(intId);
+				var chartData = this.toData(item);
+				this.create(chartData);
+			}
+		},
+
+		toData: function(dataObj) {
+			var id = dataObj.id;
+			var chartSetting = this._chartSetting;
+			var current = this.dataSource.sequence.current() - chartSetting.get('movedNum');
+
+			var yProp = this.propNames.y;
+			var value = dataObj[yProp] - chartSetting.get('rangeMin');
+
+			var center = chartSetting.get('height') * 0.5;
+
+			return {
+				id: id,
+				centerX: center,
+				centerY: center,
+				radius: value * this._radius
+						/ (chartSetting.get('rangeMax') - chartSetting.get('rangeMin')),
+				radian: 2 * Math.PI * (id - 1) / chartSetting.get('dispDataSize')
+			};
+		}
+	};
+
+	function createChartDataSource(dataSource, seriesSetting, chartSetting, schema) {
+		if (seriesSetting.type === 'radar') {
+			$.extend(ChartDataSource.prototype, radarChartDataSource);
+			return new ChartDataSource(dataSource, seriesSetting, chartSetting, schema);
+		}
+
+		return new ChartDataSource(dataSource, seriesSetting, chartSetting, schema);
+	}
+
 	// チャートレンダラ―の定義
 
 	function getDefaultTooltip(data) {
@@ -1000,7 +1079,7 @@
 		 * チャートレンダラ―の基底クラス
 		 */
 		function ChartRendererBase(rootElement, dataSource, chartSetting, seriesSetting, schema) {
-			this.chartDataSource = new ChartDataSource(dataSource, seriesSetting, chartSetting,
+			this.chartDataSource = createChartDataSource(dataSource, seriesSetting, chartSetting,
 					schema);
 			this.name = this.chartDataSource.name;
 			this.chartSetting = chartSetting;
@@ -1024,7 +1103,7 @@
 
 			// イベントリスナの追加
 			this.chartDataSource.addEventListener('dataChange', this.own(this._addEventListener));
-			
+
 			this._init();
 		}
 
@@ -1037,9 +1116,9 @@
 			 * @returns {Function} コンテキストを自分自身にした関数
 			 */
 			own: own,
-			
+
 			_init: function() {
-				
+
 			},
 
 			_setTooltipSetting: function(tooltip) {
@@ -1646,7 +1725,8 @@
 						y1: item.get('lineY1'),
 						y2: item.get('lineY2')
 					});
-					var $rect = $root.find('#' + h5format(RECT_ELM_ID_FORMAT, item.get('id'), this.name));
+					var $rect = $root.find('#'
+							+ h5format(RECT_ELM_ID_FORMAT, item.get('id'), this.name));
 					$rect.attr({
 						y: item.get('rectY'),
 						height: item.get('rectHeight')
@@ -1825,6 +1905,10 @@
 				notNull: true
 			}
 		}
+	};
+
+	var commonLineChartRenderer = {
+
 	};
 
 	/**
@@ -2522,11 +2606,11 @@
 		 * パイチャートのレンダラ―
 		 */
 		var pieChartRenderer = {
-				
+
 			_total: 0,
-			
+
 			_radian: null,
-				
+
 			_init: function() {
 				this.$path = null;
 
@@ -2534,20 +2618,20 @@
 				// イベントリスナの追加
 				this.chartDataSource.addEventListener('dataChange', this.own(this._updateTotal));
 			},
-			
+
 			_updateTotal: function(ev) {
 				if (!ev.add || ev.add.length == 0) {
 					return;
 				}
-				
-				for (var i = 0, len = ev.add.length; i < len; i ++) {
+
+				for (var i = 0, len = ev.add.length; i < len; i++) {
 					// 描画範囲の点について座標情報を計算する
 					var item = ev.add[i];
 					this._total += item[this.chartDataSource.propNames.y];
 				}
 			},
-		
-		
+
+
 			/**
 			 * この系列の描画をします
 			 * 
@@ -2699,6 +2783,207 @@
 				pieChartRenderer);
 	}
 
+	var radarSchema = {
+		id: {
+			id: true,
+			type: 'integer'
+		},
+		radius: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		radian: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		x: {
+			type: 'number',
+			depend: {
+				on: ['radius', 'radian', 'centerX'],
+				calc: function() {
+					return this.get('centerX') + this.get('radius') * Math.sin(this.get('radian'));
+				}
+			}
+		},
+		y: {
+			type: 'number',
+			depend: {
+				on: ['radius', 'radian', 'centerY'],
+				calc: function() {
+					return this.get('centerY') - this.get('radius') * Math.cos(this.get('radian'));
+				}
+			}
+		},
+		centerX: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		},
+		centerY: {
+			type: 'number',
+			constraint: {
+				notNull: true
+			}
+		}
+	};
+
+	/**
+	 * レーダーチャートレンダラ―を生成します。
+	 * 
+	 * @private
+	 * @param {Element} rootElement このラインチャートのルート要素
+	 * @param {DataSource} dataSource このラインチャートのデータソース
+	 * @param {Object} chartSetting 設定
+	 * @param {Object} seriesSetting この種別の設定
+	 * @returns RadarChartRenderer
+	 */
+	function createRadarChartRenderer(rootElement, dataSource, chartSetting, seriesSetting) {
+		/**
+		 * パイチャートのレンダラ―
+		 */
+		var radarChartRenderer = {
+
+			_total: 0,
+
+			_radian: null,
+
+			_init: function() {
+				this.$path = null;
+
+				this._radian = this.chartSetting.get('height') * 0.4;
+				// イベントリスナの追加
+				this.chartDataSource.addEventListener('dataChange', this.own(this._updateTotal));
+			},
+
+			_updateTotal: function(ev) {
+				if (!ev.add || ev.add.length == 0) {
+					return;
+				}
+
+				for (var i = 0, len = ev.add.length; i < len; i++) {
+					// 描画範囲の点について座標情報を計算する
+					var item = ev.add[i];
+					this._total += item[this.chartDataSource.propNames.y];
+				}
+			},
+
+
+			/**
+			 * この系列の描画をします
+			 * 
+			 * @param {Boolean} animate アニメーションするか
+			 * @memberOf RadarChartRenderer
+			 */
+			draw: function(animate) {
+				$(this.rootElement).empty();
+
+				this.chartDataSource.createItems();
+
+				var count = 1;
+				var animateNum = this.seriesSetting.animateNum;
+				if (!animate || !animateNum) {
+					animateNum = 1;
+				}
+
+				function doAnimation() {
+					var rate = count / animateNum;
+					if (count == 1) {
+						this._appendLines(this.chartDataSource.toArray(), rate);
+					} else if (count > 1) {
+						this._updateLines(this.chartDataSource.toArray(), rate);
+					}
+
+					count++;
+
+					if (count <= animateNum) {
+						requestAnimationFrame(this.own(doAnimation));
+					} else {
+						// 描画完了時にイベントをあげる
+						$(this.rootElement).trigger('finishDrawing');
+					}
+				}
+				requestAnimationFrame(this.own(doAnimation));
+			},
+
+			_appendLines: function(lines, rate) {
+				var $root = $(this.rootElement);
+				var chartItems = sortById(lines || this.chartDataSource.toArray());
+
+				if (!chartItems || !chartItems.length) {
+					return;
+				}
+
+				var height = this.chartSetting.get('height');
+
+				var item0 = chartItems[0];
+				var d = '';
+				var len = chartItems.length;
+				for (var i = 0; i < len; i++) {
+					d += i === 0 ? 'M' : ' L';
+					d += chartItems[i].get('x') + ','  + chartItems[i].get('y');
+				}
+				var fill = graphicRenderer.getFill(this.seriesSetting.fillColor, this.rootElement);
+				if (fill != null) {
+					d += h5format(PATH_LINE_FORMAT, chartItems[len - 1].get('x'),
+							this.chartSetting.get('height'))
+							+ h5format(PATH_LINE_FORMAT, item0.get('x'), this.chartSetting
+									.get('height'));
+				}
+				d += ' Z';
+
+				if (this.$path != null) {
+					this.$path.attr('d', d);
+				} else {
+					var attrs = {
+						stroke: this.seriesSetting.color || '#000',
+						'class': 'RadarChart chartElm',
+						'stroke-width': this.seriesSetting['stroke-width'] || '2px',
+						fill: fill || 'none'
+					};
+					var $path = $(graphicRenderer.createPathElm(d, attrs));
+					// iOS7対応
+					window.scrollTo(window.scrollX, window.scrollY);
+					$root.append($path);
+					this.$path = $path;
+				}
+			},
+
+			_chartModelChangeListener: function(ev) {},
+
+			_getCentralPos: function(chartItem) {
+				return {
+					x: (chartItem.get('x') + chartItem.get('preX') + this._radian) / 3,
+					y: (chartItem.get('y') + chartItem.get('preY') + this._radian) / 3,
+				};
+			},
+
+			_appendHighLight: function(chartItem, $tooltip) {
+				// FIXME: ツールチップの色の出し方
+				this._appendPie(chartItem, $tooltip, {
+					'class': 'highlight_pie',
+					fill: '#fff'
+				});
+				this._appendPie(chartItem, $tooltip, {
+					'class': 'highlight_pie',
+					'fill-opacity': 0.5,
+					fill: chartItem.get('fill')
+				});
+			},
+			_showAdditionalLine: function() {
+			// do nothing
+			}
+		};
+
+		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting, radarSchema,
+				radarChartRenderer);
+	}
+
+
 	/**
 	 * 軸を描画するレンダラ―
 	 * 
@@ -2736,7 +3021,14 @@
 
 		scaling(chartSetting.get('minVal'), chartSetting.get('maxVal'));
 
-		chartSetting.addEventListener('change', function(ev) {
+		chartSetting.addEventListener('change', this.own(this._chartSettingChangeListener));
+	}
+
+	AxisRenderer.prototype = {
+
+		own: own,
+
+		_chartSettingChangeListener: function(ev) {
 			if (ev.props.minVal != null || ev.props.maxVal != null) {
 				var minVal = ev.target.get('minVal');
 				var maxVal = ev.target.get('maxVal');
@@ -2746,10 +3038,7 @@
 				// rangeが変更されたので、水平方向の補助線を引き直す
 				that._drawHorizLines();
 			}
-		});
-	}
-
-	AxisRenderer.prototype = {
+		},
 
 		_defaultAutoScale: function(min, max) {
 			return {
@@ -3035,6 +3324,99 @@
 		}
 	};
 
+	var RADER_AXIS_PATH_FORMAT = '';
+
+	/**
+	 * 軸を描画するレンダラ―
+	 * 
+	 * @param {Element} axesElm 軸のルート要素
+	 * @param {ChartSettingItem} chartSetting 設定アイテム
+	 * @param {Object} axesSetting 軸の設定オブジェクト
+	 */
+	function RadarAxisRenderer(axesElm, chartSetting, axesSetting) {
+		$.extend(AxisRenderer.prototype, {
+			_chartSettingChangeListener: function(ev) {
+				if (ev.props.minVal != null || ev.props.maxVal != null) {
+					var minVal = ev.target.get('minVal');
+					var maxVal = ev.target.get('maxVal');
+					scaling(minVal, maxVal);
+				}
+				if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
+					// rangeが変更されたので、水平方向の補助線を引き直す
+					that._drawHorizLines();
+				}
+			},
+
+			/**
+			 * 格子線を引く
+			 * 
+			 * @memberOf RadarAxisRenderer
+			 */
+			drawGridLines: function() {
+				var d = '';
+
+				var center = this.chartSetting.get('height') * 0.5;
+
+				var interval = this._axesSettings.interval;
+				var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
+						/ interval);
+				var num = this._axesSettings.num;
+				var radianInterval = Math.PI * 2 / num;
+
+				for (var i = 0; i < intervalNum; i++) {
+					var r = this._radius / intervalNum * (i + 1);
+					for (var j = 0; j < num; j++) {
+						if (j == 0) {
+							d += ' M';
+						} else {
+							d += ' L';
+						}
+						d += (center + r * Math.sin(radianInterval * j)) + ','
+								+ (center - r * Math.cos(radianInterval * j));
+					}
+					d += 'z';
+				}
+
+				var stroke = this._axesSettings.stroke || 'gray';
+
+				graphicRenderer.appendPathElm(d, {
+					id: this.name + '_rader_axis',
+					'class': 'radarChart axis',
+					fill: 'none',
+					stroke: stroke,
+					'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+				}, $(this.rootElement));
+
+				for (var j = 0; j < num; j++) {
+					graphicRenderer.appendLineElm(center, center, center + this._radius
+							* Math.sin(radianInterval * j), (center - this._radius
+							* Math.cos(radianInterval * j)), stroke, {
+						id: this.name + '_rader_axis_line' + i,
+						'class': 'radarChart axis',
+						fill: 'none',
+						'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+					}, $(this.rootElement));
+				}
+			},
+
+			/**
+			 * 軸の設定をセットします
+			 * 
+			 * @param axesSettings
+			 * @memberOf AxisRenderer
+			 */
+			setAxesSetting: function(axesSettings) {
+				this._axesSettings = axesSettings.axis;
+			}
+		});
+
+		var that = new AxisRenderer(axesElm, chartSetting, axesSetting);
+
+		that._radius = calcDefaultRadius(chartSetting);
+
+		return that;
+	}
+
 	var chartSequense = 0;
 
 	/**
@@ -3122,14 +3504,17 @@
 			}
 
 			if (this.settings.axes) {
-				this._appendBorder();
 				this._initAxis(firstChartRenderer);
+			}
+
+			var type = firstChartRenderer.seriesSetting.type;
+			if (type !== 'pie' && type !== 'radar') {
+				this._appendBorder();
 				// TODO: translateXの計算は共通化すべき
 				var rightId = firstChartRenderer.chartDataSource.dataSource.sequence.current() - 1;
 				this.chartSetting.set('translateX', -this.chartSetting.get('dx')
 						* (rightId + paddingRight - this.chartSetting.get('movedNum')));
 			}
-
 		},
 
 		_initAxis: function(firstChartRenderer) {
@@ -3138,14 +3523,23 @@
 					id: 'axes'
 				});
 				this.$stickingGroups.append(axesElm);
-				this.axisRenderer = new AxisRenderer(axesElm, this.chartSetting, this.settings.axes);
+				this.axisRenderer = this._createAxisRenderer(firstChartRenderer.seriesSetting.type
+						.toLowerCase(), axesElm, this.chartSetting, this.settings.axes);
 			} else {
 				this.axisRenderer.setAxesSetting(this.settings.axes);
 			}
 			this.axisRenderer.drawGridLines();
 
 			var xLabelArray = firstChartRenderer.getXLabelArray();
-			this.axisRenderer.showAxisLabels(xLabelArray);
+// 			this.axisRenderer.showAxisLabels(xLabelArray);
+		},
+
+		_createAxisRenderer: function(type, axesElm, chartSetting, axesSetting) {
+			if (type === 'radar') {
+				return new RadarAxisRenderer(axesElm, chartSetting, axesSetting);
+			}
+
+			return new AxisRenderer(axesElm, chartSetting, axesSetting);
 		},
 
 		_appendBorder: function() {
@@ -3469,6 +3863,9 @@
 				this._renderers[name] = createPieChartRenderer(g, dataSource, this.chartSetting,
 						seriesOption);
 				break;
+			case 'radar':
+				this._renderers[name] = createRadarChartRenderer(g, dataSource, this.chartSetting,
+						seriesOption);
 			default:
 				break;
 			}
