@@ -2937,7 +2937,8 @@
 						stroke: this.seriesSetting.color || '#000',
 						'class': 'RadarChart chartElm',
 						'stroke-width': this.seriesSetting['stroke-width'] || '2px',
-						fill: fill || 'none'
+						fill: fill || 'none',
+						'fill-opacity': 0.5
 					};
 					var $path = $(graphicRenderer.createPathElm(d, attrs));
 					// iOS7対応
