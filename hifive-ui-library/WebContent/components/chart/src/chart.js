@@ -3675,22 +3675,24 @@
 
 				// TODO: axisRenderの中に移動したい
 				var axesSetting = settings.axes;
-				var yLabeLWidth;
-				if (axesSetting && axesSetting.yaxis && axesSetting.yaxis.width) {
-					yLabeLWidth = axesSetting.yaxis.width;
-				} else {
-					yLabeLWidth = DEFAULT_Y_LABEL_WIDTH;
-				}
-
+				var yLabeLWidth = 0;
 				if (axesSetting && axesSetting.yaxis) {
+					if (!axesSetting.yaxis.width) {
+						yLabeLWidth = DEFAULT_Y_LABEL_WIDTH;
+					} else {
+						yLabeLWidth = axesSetting.yaxis.width;
+					}
 					yLabeLWidth += getMarginOrPadding(axesSetting.yaxis, 'margin', 'Right');
 				}
 
-				var xLabeLHeight;
-				if (axesSetting && axesSetting.xaxis && axesSetting.xaxis.height) {
-					xLabeLHeight = axesSetting.xaxis.height;
-				} else {
-					xLabeLHeight = DEFAULT_X_LABEL_HEIGHT;
+				var xLabeLHeight = 0;
+				if (axesSetting && axesSetting.xaxis) {
+					if (!axesSetting.xaxis.height) {
+						xLabeLHeight = DEFAULT_X_LABEL_HEIGHT;
+					} else {
+						xLabeLHeight = axesSetting.xaxis.height;
+					}
+					xLabeLHeight += getMarginOrPadding(axesSetting.xaxis, 'margin', 'Top');
 				}
 
 				if (axesSetting && axesSetting.xaxis) {
