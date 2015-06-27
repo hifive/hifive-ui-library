@@ -51,19 +51,21 @@
 
 		_series: [],
 
-		_chartController: h5.ui.components.chart.ChartController, // チャートライブラリ
+		// チャートライブラリ
+		_chart1Controller: h5.ui.components.chart.ChartController,
+		_chart2Controller: h5.ui.components.chart.ChartController,
 
 		__meta: {
-			_chartController: {
-				rootElement: '#chart'
+			_chart1Controller: {
+				rootElement: '#chart1'
+			},
+			_chart2Controller: {
+				rootElement: '#chart2'
 			}
 		},
 
 		__ready: function(context) {
-			// 取得したデータをもとにチャートを表示
-			var series = this._createNewSeries();
-
-			this._chartController.draw({
+			this._chart1Controller.draw({
 				chartSetting: {
 					width: this._width,
 					height: this._height
@@ -71,7 +73,8 @@
 				axes: {
 					axis: {
 						interval: 2,
-						num: DUMMY_DATA_SIZE
+						num: DUMMY_DATA_SIZE,
+						shape: 'polygon'
 					}
 				},
 				seriesDefault: { // すべての系列のデフォルト設定
@@ -86,7 +89,35 @@
 						maxVal: 10
 					}
 				},
-				series: [series]
+				series: [this._createNewSeries()]
+			// 系列データ
+			});
+
+			this._chart2Controller.draw({
+				chartSetting: {
+					width: this._width,
+					height: this._height
+				},
+				axes: {
+					axis: {
+						interval: 2,
+						num: DUMMY_DATA_SIZE,
+						shape: 'circle'
+					}
+				},
+				seriesDefault: { // すべての系列のデフォルト設定
+					// 表示データ数
+					mouseover: {
+						tooltip: {
+							content: this.own(this._getTooltipContent)
+						}
+					},
+					range: {
+						minVal: 0,
+						maxVal: 10
+					}
+				},
+				series: [this._createNewSeries()]
 			// 系列データ
 			});
 		},
@@ -101,12 +132,14 @@
 			var data = ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 5, 5); // ダミーデータを生成
 
 			var name = 'rader_series' + this._series.length;
+			var color = ui.sample.chart.getRandomColor();
 			// 系列定義
 			return {
 				name: name, //系列名(キーとして使用する)
 				type: 'radar',
 				data: data, // データ
-				color: ui.sample.chart.getRandomColor()
+				color: color,
+				fillColor: color
 			};
 		},
 
