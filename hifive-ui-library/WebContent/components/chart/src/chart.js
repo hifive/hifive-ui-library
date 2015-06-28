@@ -742,6 +742,7 @@
 				break;
 			case 'radar':
 				this.propNames = propNames || {
+					x: 'label',
 					y: 'val'
 				};
 				this.xProp = this.propNames.x || 'label';
@@ -2925,7 +2926,7 @@
 				var len = chartItems.length;
 				for (var i = 0; i < len; i++) {
 					d += i === 0 ? 'M' : ' L';
-					d += chartItems[i].get('x') + ','  + chartItems[i].get('y');
+					d += chartItems[i].get('x') + ',' + chartItems[i].get('y');
 				}
 				d += ' Z';
 
@@ -2971,7 +2972,36 @@
 			},
 			_showAdditionalLine: function() {
 			// do nothing
-			}
+			},
+
+			/**
+			 * X軸のラベルの配列を取得します
+			 *
+			 * @returns {Array} X軸のラベルの配列
+			 * @memberOf ChartRendererBase
+			 */
+			getXLabelArray: function() {
+				var dispSizeNum = this.chartSetting.get('dispDataSize');
+
+				if (this.xLabelArray == null) {
+					this.xLabelArray = h5.core.data.createObservableArray();
+				} else if (this.xLabelArray.length - 1 != dispSizeNum) {
+					this.xLabelArray.copyFrom([]);
+				}
+
+				var rightItemId = this.chartDataSource.dataSource.sequence.current() - 1;
+
+				var startId = rightItemId - dispSizeNum + 1;
+				for (var i = 0; i < dispSizeNum; i++) {
+					var item = this.chartDataSource.getDataObj(startId + i);
+					this.xLabelArray.set(i, {
+						value: item ? item[this.chartDataSource.xProp] : '', // 表示するデータがなければ空文字
+						item: item
+					});
+				}
+
+				return this.xLabelArray;
+			},
 		};
 
 		return createChartRenderer(rootElement, dataSource, chartSetting, seriesSetting, radarSchema,
@@ -3127,22 +3157,7 @@
 			this.$vertLines.children('.xLabel').remove();
 			if (this.xLabelArray !== xLabelArray) {
 				this.xLabelArray = xLabelArray;
-				var that = this;
-				this.xLabelArray.addEventListener('changeBefore', function(ev) {
-					var $xLabelTexts = that.$vertLines.children('.xLabel');
-					if ($xLabelTexts.length === 0) {
-						return;
-					}
-
-					var value = ev.args[1].value;
-					var index = ev.args[0];
-					var orgLabel = this.get(index);
-					if (ev.method !== 'set' || (orgLabel && value === orgLabel.value)) {
-						return;
-					}
-					var label = that._getXLabel(ev.args[1], index);
-					graphicRenderer.text(label, $xLabelTexts.eq(index));
-				});
+				this._setLabelArrayChangeListener(xLabelArray, this.$vertLines);
 			}
 
 			var dx = this.chartSetting.get('dx');
@@ -3168,6 +3183,24 @@
 				}, this.$vertLines);
 				x += xInterval;
 			}
+		},
+
+		_setLabelArrayChangeListener: function(xLabelArray, $target) {
+			xLabelArray.addEventListener('changeBefore', this.own(function(ev) {
+				var $xLabelTexts = $target.children('.xLabel');
+				if ($xLabelTexts.length === 0) {
+					return;
+				}
+
+				var value = ev.args[1].value;
+				var index = ev.args[0];
+				var orgLabel = xLabelArray.get(index);
+				if (ev.method !== 'set' || (orgLabel && value === orgLabel.value)) {
+					return;
+				}
+				var label = this._getXLabel(ev.args[1], index);
+				graphicRenderer.text(label, $xLabelTexts.eq(index));
+			}));
 		},
 
 		_getXLabel: function(xLabelObj, index) {
@@ -3341,13 +3374,17 @@
 				}
 			},
 
+			_getCenter: function() {
+				return this.chartSetting.get('height') * 0.5;
+			},
+
 			/**
 			 * 格子線を引く
 			 *
 			 * @memberOf RadarAxisRenderer
 			 */
 			drawGridLines: function() {
-				var center = this.chartSetting.get('height') * 0.5;
+				var center = this._getCenter();
 
 				var stroke = this._axesSettings.stroke || 'gray';
 
@@ -3423,6 +3460,35 @@
 				}
 			},
 
+			showAxisLabels: function(labelArray) {
+				if (labelArray == null) {
+					return;
+				}
+
+				var $rootElement = $(this.rootElement);
+				$rootElement.children('.xLabel').remove();
+
+				if (this.labelArray != labelArray) {
+					this.labelArray = labelArray;
+					this._setLabelArrayChangeListener(labelArray, $rootElement);
+				}
+
+				var center = this._getCenter();
+				var num = this._axesSettings.num;
+				var radianInterval = Math.PI * 2 / num;
+				var textRadisu = this._radius * 1.15;
+
+				for (var i = 0; i < num; i++) {
+					var label = this._getXLabel(this.labelArray.get(i), i);
+					graphicRenderer.appendTextElm(label, center + textRadisu
+							* Math.sin(radianInterval * i), (center - textRadisu
+							* Math.cos(radianInterval * i)), null, {
+						'class': 'xLabel',
+						'text-anchor': 'middle'
+					}, $rootElement);
+				}
+			},
+
 			/**
 			 * 軸の設定をセットします
 			 *
@@ -3431,6 +3497,8 @@
 			 */
 			setAxesSetting: function(axesSettings) {
 				this._axesSettings = axesSettings.axis;
+				this._xLabelFormatter = axesSettings.axis.formatter
+						|| this._xLabelDefaultFormatter;
 			}
 		});
 
@@ -3555,7 +3623,7 @@
 			this.axisRenderer.drawGridLines();
 
 			var xLabelArray = firstChartRenderer.getXLabelArray();
-// 			this.axisRenderer.showAxisLabels(xLabelArray);
+			this.axisRenderer.showAxisLabels(xLabelArray);
 		},
 
 		_createAxisRenderer: function(type, axesElm, chartSetting, axesSetting) {
