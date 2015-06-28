@@ -41,6 +41,11 @@
 	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
 
 	//------------------------------------------------------------
+	// Variable
+	//------------------------------------------------------------
+	var TRACK_EVENTS = ['mousemove', 'h5trackstart', 'h5trackmove', 'h5trackend'];
+
+	//------------------------------------------------------------
 	// Body
 	//------------------------------------------------------------
 	/**
@@ -59,9 +64,6 @@
 		this._$orgG = this._$orgSvg.find('>g');
 		this._scale = settings.scale || DEFAULT_SCALE;
 
-		this._rootW = settings.width;
-		this._rootH = settings.height;
-
 		this._$root = $('<div></div>').addClass(CLASS_MAGNIFIER);
 		this._$view = $('<div></div>').addClass(CLASS_CANVAS_WRAPPER);
 		this._$layerWrapper = $('<div></div>').addClass(CLASS_LAYERS);
@@ -72,13 +74,16 @@
 		this._$view.append(this._$layerWrapper);
 		this._$root.append(this._$view);
 
-		/** useタグの生成 * */
+		// useタグの生成
 		this._use = document.createElementNS(XMLNS, 'use');
 		this._use.setAttributeNS(XMLNS, 'xlink', XMLNS);
 		this._use.setAttributeNS(XLINKNS, 'href', '#' + this._$orgG.attr('id'));
 		this._$svg.append(this._use);
 
-		/** 指定されたスケールを適用 */
+		this._rootW = settings.width;
+		this._rootH = settings.height;
+
+		// 指定されたスケールとサイズを適用
 		this._refresh();
 	}
 
@@ -118,7 +123,6 @@
 			}
 			this._refresh();
 			var use = this._use;
-			var scale = this._scale;
 			use.setAttribute('x', -x + this._rootW / 2);
 			use.setAttribute('y', -y + this._rootH / 2);
 		},
@@ -133,8 +137,9 @@
 				throw new Error(ERR_MSG_DISPOSED);
 			}
 			if (center) {
-				x -= this._rootW / 2;
-				y -= this._rootH / 2;
+				// outerWidth/Heightでやらないとボーダー分ずれる
+				x -= this._$root.outerWidth() / 2;
+				y -= this._$root.outerHeight() / 2;
 			}
 			this._$root.css({
 				left: x,
@@ -191,6 +196,107 @@
 	});
 
 	/**
+	 * 拡大表示のマウスオーバー追従を行うコントローラ@class
+	 *
+	 * @name h5.ui.components.artboard.controller.MagnifierMouseoverController
+	 */
+	var mouseoverController = {
+		_mag: null,
+		$board: null,
+		mouseoverMove: null,
+		mouseoverFocus: null,
+		_boardOffset: null,
+		__name: 'h5.ui.components.artboard.controller.MagnifierMouseoverController',
+		__construct: function(ctx) {
+			var args = ctx.args;
+			this.mag = args.mag;
+			this.mag.hide();
+			this.magElement = this.mag.getElement();
+			this.$board = args.$board;
+			this.mouseoverMove = args.mouseoverMove;
+			this.mouseoverFocus = args.mouseoverFocus;
+			this.mag.addDisposeHandler(this.own(function() {
+				this.parentController.unmanageChild(this);
+			}));
+			var boardOffset = this.$board.offset();
+			this._boardOffset = {
+				left: boardOffset.left,
+				top: boardOffset.top
+			};
+		},
+		'{this.$board} h5trackstart': function(ctx, $el) {
+			this._execute(ctx, $el);
+		},
+		'{this.$board} h5trackmove': function(ctx, $el) {
+			this._execute(ctx, $el);
+		},
+		'{this.$board} h5trackend': function(ctx, $el) {
+			this._execute(ctx, $el);
+		},
+		'{this.$board} mousemove': function(ctx, $el) {
+			this._execute(ctx, $el);
+		},
+		'{this.magElement} h5trackstart': function(ctx, $el) {
+			this._execute(ctx, $el, true);
+		},
+		'{this.magElement} h5trackmove': function(ctx, $el) {
+			this._execute(ctx, $el, true);
+		},
+		'{this.magElement} h5trackend': function(ctx, $el) {
+			this._execute(ctx, $el, true);
+		},
+		'{this.magElement} mousemove': function(ctx, $el) {
+			this._execute(ctx, $el, true);
+		},
+		_execute: function(ctx, $el, isOnMagElement) {
+			var event = ctx.event;
+			if (this.mouseoverMove) {
+				if (isOnMagElement) {
+					$el.css('display', 'none');
+					var target = document.elementFromPoint(event.pageX, event.pageY);
+					$el.css('display', 'block');
+					if (this.$board.find(target).length) {
+						this._move(event);
+					} else {
+						this.mag.hide();
+						return;
+					}
+				} else {
+					this._move(event);
+				}
+			}
+			if (this.mouseoverFocus) {
+				if (isOnMagElement) {
+					$el.css('display', 'none');
+					var target = document.elementFromPoint(event.pageX, event.pageY);
+					$el.css('display', 'block');
+					if (this.$board.find(target).length) {
+						this._focus(event);
+					}
+				} else {
+					this._focus(event);
+				}
+			}
+		},
+		_move: function(event) {
+			if (event.type === 'h5trackend') {
+				this.mag.hide();
+				return;
+			}
+			var x = event.pageX;
+			var y = event.pageY;
+			this.mag.show();
+			this.mag.move(x, y, true);
+		},
+		_focus: function(event) {
+			var x = event.pageX - this._boardOffset.left;
+			var y = event.pageY - this._boardOffset.top;
+			this.mag.focus(x, y);
+		}
+	};
+
+
+	/**
 	 * Artboardを拡大表示するコントローラ
 	 *
 	 * @class
@@ -223,13 +329,14 @@
 		 *
 		 * @param $board
 		 */
-		createMagnifier: function($board, settings) {
+		createMagnifier: function(board, settings) {
 			if (this._mag) {
 				// 既に作成済みなら既存のものを破棄して新規に作成する
-				this._mag.dispose();
+				this._mag.dispose && this._mag.dispose();
 			}
 
 			// レイヤを子に持つレイヤラッパー要素を取得
+			$board = $(board);
 			$board = $board.hasClass(CLASS_LAYERS) ? $board : $board.find('.' + CLASS_LAYERS);
 			if ($board.length === 0) {
 				throw new Error('createMagnifierの第1引数には' + CLASS_LAYERS
@@ -248,80 +355,20 @@
 			$(this.rootElement).append(magElement);
 			var mouseoverFocus = settings.mouseover || settings.mouseoverFocus;
 			var mouseoverMove = settings.mouseover || settings.mouseoverMove;
-			if (mouseoverFocus) {
-				// mousemoveイベントで表示するハンドラをバインドする
-				this.on($board, 'mousemove h5trackstart h5trackmove', this._mouseoverFocusHandler);
-				// magElement上のマウス操作でも後ろがボードなら反応するようにする
-				this.on(magElement, 'mousemove h5trackstart h5trackmove',
-						this._overMagEventFocusHandler);
-				mag.addDisposeHandler(this.own(this._removeMouseoverFocusHandler));
+			if (mouseoverFocus || mouseoveMove) {
+				this._mouseoverController = h5.core.controller(this.rootElement,
+						mouseoverController, {
+							mag: mag,
+							$board: $board,
+							mouseoverFocus: mouseoverFocus,
+							mouseoverMove: mouseoverMove
+						});
+				// FIXME readyPromiseが終わった状態じゃないとmanageChildでイベントハンドラがバインドされない
+				this._mouseoverController.readyPromise.done(this.own(function() {
+					this.manageChild(this._mouseoverController);
+				}));
 			}
-			if (mouseoverMove) {
-				// mousemoveイベントで表示するハンドラをバインドする
-				this.on($board, 'mousemove h5trackstart h5trackmove', this._mouseoverMoveHandler);
-				this.on(magElement, 'mousemove h5trackstart h5trackmove',
-						this._overMagEventMoveHandler);
-				mag.addDisposeHandler(this.own(this._removeMouseoverMoveHandler));
-				// マウスに追従する場合、税所は非表示にしておく
-				mag.hide();
-			}
-			var rootPosition = $(this.rootElement).position();
-			this._rootOffset = {
-				left: rootPosition.left,
-				top: rootPosition.top
-			};
 			return mag;
-		},
-
-		_mouseoverFocusHandler: function(ctx, $board) {
-			var event = ctx.event;
-			var x = event.pageX - this._rootOffset.left;
-			var y = event.pageY - this._rootOffset.top;
-			this._mag.focus(x, y);
-		},
-
-		_mouseoverMoveHandler: function(ctx) {
-			var event = ctx.event;
-			var x = event.pageX;
-			var y = event.pageY;
-			this._mag.show();
-			this._mag.move(x, y, true);
-		},
-		_overMagEventFocusHandler: function(ctx, $el) {
-			var event = ctx.event;
-			$el.css('display', 'none');
-			var target = document.elementFromPoint(event.pageX, event.pageY);
-			$el.css('display', 'block');
-			if (this._$board.find(target).length) {
-				this._mouseoverFocusHandler(ctx, $el);
-			}
-		},
-
-		_overMagEventMoveHandler: function(ctx, $el) {
-			var event = ctx.event;
-			$el.css('display', 'none');
-			var target = document.elementFromPoint(event.pageX, event.pageY);
-			$el.css('display', 'block');
-			if (this._$board.find(target).length) {
-				this._mouseoverMoveHandler(ctx, $el);
-			} else {
-				this._mag.hide();
-			}
-		},
-
-		_removeMouseoverFocusHandler: function() {
-			this.off(this._$board, 'mousemove h5trackstart h5trackmove',
-					this._mouseoverFocusHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
-					this._overMagEventFocusHandler);
-		},
-
-		_removeMouseoverMoveHandler: function() {
-			this
-					.off(this._$board, 'mousemove h5trackstart h5trackmove',
-							this._mouseoverMoveHandler);
-			this.off(magElement, 'mousemove h5trackstart h5trackmove',
-					this._overMagEventMoveHandler);
 		}
 	};
 

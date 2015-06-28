@@ -18,6 +18,8 @@
 .h5-artboard-canvas-wrapper {
 	position: relative;
 	overflow: hidden;
+	touch-action: none;
+	-webkit-user-select: none;
 }
 
 .h5-artboard-canvas-wrapper canvas,.h5-artboard-canvas-wrapper .h5-artboard-layers,.h5-artboard-canvas-wrapper .h5-artboard-layers>*
@@ -64,7 +66,6 @@
 .h5-artboard-magnifier {
 	position: absolute;
 	overflow: hidden;
-	border: 1px solid #ccc;
 	background-color: #fff;
 	border: 1px solid #ccc;
 }
