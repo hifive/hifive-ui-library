@@ -18,6 +18,14 @@
 
 	var DUMMY_DATA_SIZE = 8;
 
+	function createChartDummyData(size, median, vibration) {
+		var ret = ui.sample.chart.createChartDummyData(size, median, vibration);
+		for (var i = 0; i < size; i++) {
+			ret[i].radian = Math.PI * 2 / size * i;
+		}
+		return ret;
+	}
+
 	/**
 	 * @class
 	 * @memberOF ui.sample.chart
@@ -65,6 +73,7 @@
 		},
 
 		__ready: function(context) {
+			var color = ui.sample.chart.getRandomColor();
 			this._chart1Controller.draw({
 				chartSetting: {
 					width: this._width,
@@ -89,58 +98,53 @@
 						maxVal: 10
 					}
 				},
-				series: [this._createNewSeries()]
+				series: [{
+					name: 'rader_series_0', //系列名(キーとして使用する)
+					type: 'radar',
+					data: ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 5, 5), // ダミーデータを生成
+					color: color,
+					fillColor: color
+				}]
 			// 系列データ
 			});
 
-			this._chart2Controller.draw({
-				chartSetting: {
-					width: this._width,
-					height: this._height
-				},
-				axes: {
-					axis: {
-						interval: 2,
-						num: DUMMY_DATA_SIZE,
-						shape: 'circle'
-					}
-				},
-				seriesDefault: { // すべての系列のデフォルト設定
-					// 表示データ数
-					mouseover: {
-						tooltip: {
-							content: this.own(this._getTooltipContent)
-						}
+			color = ui.sample.chart.getRandomColor();
+ 			this._chart2Controller.draw({
+ 				chartSetting: {
+ 					width: this._width,
+ 					height: this._height
+ 				},
+ 				axes: {
+ 					axis: {
+ 						interval: 2,
+ 						num: DUMMY_DATA_SIZE,
+ 						shape: 'circle'
+ 					}
+ 				},
+ 				seriesDefault: { // すべての系列のデフォルト設定
+ 					// 表示データ数
+ 					mouseover: {
+ 						tooltip: {
+ 							content: this.own(this._getTooltipContent)
+ 						}
+ 					},
+ 					range: {
+ 						minVal: 0,
+ 						maxVal: 10
+ 					}
+ 				},
+ 				series: [{
+					name: 'arc_series_0', //系列名(キーとして使用する)
+					type: 'arc',
+					data: createChartDummyData(10, 5, 5), // ダミーデータを生成
+					propNames: {
+						radius: 'val'
 					},
-					range: {
-						minVal: 0,
-						maxVal: 10
-					}
-				},
-				series: [this._createNewSeries()]
-			// 系列データ
-			});
-		},
-
-		/**
-		 * 系列の定義オブジェクトを生成する
-		 *
-		 * @memberOf ui.sample.chart.pageController
-		 * @returns {Object} 系列の定義オブジェクト
-		 */
-		_createNewSeries: function() {
-			var data = ui.sample.chart.createChartDummyData(DUMMY_DATA_SIZE, 5, 5); // ダミーデータを生成
-
-			var name = 'rader_series' + this._series.length;
-			var color = ui.sample.chart.getRandomColor();
-			// 系列定義
-			return {
-				name: name, //系列名(キーとして使用する)
-				type: 'radar',
-				data: data, // データ
-				color: color,
-				fillColor: color
-			};
+					color: color,
+					fillColor: color
+				}]
+ 			// 系列データ
+ 			});
 		},
 
 		_getTooltipContent: function(data) {
