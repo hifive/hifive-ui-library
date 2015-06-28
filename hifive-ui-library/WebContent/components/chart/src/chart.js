@@ -748,6 +748,12 @@
 				this.xProp = this.propNames.x || 'label';
 				this.highProp = 'y';
 				break;
+			case 'arc':
+				this.propNames = $.extend({
+					radius: 'radius',
+					radian: 'radian'
+				}, propNames);
+				break;
 			default:
 				break;
 			}
@@ -1027,9 +1033,39 @@
 		}
 	};
 
+	/**
+	 * チャート描画用のデータソース
+	 *
+	 * @class ArcChartDataSource
+	 */
+	var arcChartDataSource = {
+		_init: function() {
+			this._radius = calcDefaultRadius(this._chartSetting);
+		},
+
+		/**
+		 * @memberOf ArcChartDataSource
+		 */
+		toData: function(dataObj) {
+			var center = this._chartSetting.get('height') * 0.5;
+
+			return {
+				id: dataObj.id,
+				centerX: center,
+				centerY: center,
+				radius: this._radius * dataObj[this.propNames.radius] / this._chartSetting.get('maxVal'),
+				radian: dataObj[this.propNames.radian]
+			};
+		}
+	};
+
 	function createChartDataSource(dataSource, seriesSetting, chartSetting, schema) {
 		if (seriesSetting.type === 'radar') {
 			$.extend(ChartDataSource.prototype, radarChartDataSource);
+			return new ChartDataSource(dataSource, seriesSetting, chartSetting, schema);
+		}
+		if (seriesSetting.type === 'arc') {
+			$.extend(ChartDataSource.prototype, radarChartDataSource, arcChartDataSource);
 			return new ChartDataSource(dataSource, seriesSetting, chartSetting, schema);
 		}
 
@@ -3600,7 +3636,7 @@
 			}
 
 			var type = firstChartRenderer.seriesSetting.type;
-			if (type !== 'pie' && type !== 'radar') {
+			if ($.inArray(type, ['pie', 'radar', 'arc']) === -1) {
 				this._appendBorder();
 				// TODO: translateXの計算は共通化すべき
 				var rightId = firstChartRenderer.chartDataSource.dataSource.sequence.current() - 1;
@@ -3627,7 +3663,7 @@
 		},
 
 		_createAxisRenderer: function(type, axesElm, chartSetting, axesSetting) {
-			if (type === 'radar') {
+			if (type === 'radar' || type === 'arc') {
 				return new RadarAxisRenderer(axesElm, chartSetting, axesSetting);
 			}
 
@@ -3958,8 +3994,10 @@
 						seriesOption);
 				break;
 			case 'radar':
+			case 'arc':
 				this._renderers[name] = createRadarChartRenderer(g, dataSource, this.chartSetting,
 						seriesOption);
+				break;
 			default:
 				break;
 			}
