@@ -1984,7 +1984,7 @@
 
 			// ドラッグ開始時の選択範囲表示要素の位置
 			var selectionRectPositions = [];
-			var $selectionRectangles = $('.selection-rectangle');
+			var $selectionRectangles = this.$find('.selection-rectangle');
 			$selectionRectangles.each(function() {
 				var $rect = $(this);
 				selectionRectPositions.push({
@@ -2305,7 +2305,7 @@
 		 */
 		_removeSelectionRectangle: function(shape) {
 			var id = this.getShapeID(shape);
-			$('.selection-rectangle[data-target-shape-id=' + id + ']').remove();
+			this.$find('.selection-rectangle[data-target-shape-id=' + id + ']').remove();
 		},
 
 		/**
@@ -2318,8 +2318,8 @@
 		 */
 		_addSelectionRectangle: function(shape) {
 			var id = this.getShapeID(shape);
-			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="'
-					+ id + '"></div>');
+			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="' + id
+							+ '"></div>');
 			$(this.rootElement).append($selectionRectangle);
 			var bounds = shape.getBounds();
 			$selectionRectangle.css({
