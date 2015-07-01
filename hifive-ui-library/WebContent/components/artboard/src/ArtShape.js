@@ -506,6 +506,15 @@
 		},
 
 		/**
+		 * 任意のユーザデータを持たせることができるプロパティ
+		 *
+		 * @memberOf ArtShape
+		 * @instance
+		 * @type {Any}
+		 */
+		userData: null,
+
+		/**
 		 * エレメントのスタイルをコマンドを作って設定
 		 *
 		 * @memberOf ArtShape
