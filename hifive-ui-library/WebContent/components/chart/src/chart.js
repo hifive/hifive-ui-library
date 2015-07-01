@@ -2032,7 +2032,7 @@
 
 			_appendLinesForSvg: function(lines, preRendererChartModel, rate) {
 				var $root = $(this.rootElement);
-				var chartItems = sortById(lines || this.chartDataSource.toArray());
+ 				var chartItems = sortById(lines || this.chartDataSource.toArray());
 
 				if (!chartItems || !chartItems.length) {
 					return;
@@ -3053,22 +3053,26 @@
 	 * @param {Object} axesSetting 軸の設定オブジェクト
 	 */
 	function AxisRenderer(axesElm, chartSetting, axesSettings) {
-		this.rootElement = axesElm;
-		this.$horizLines = null;
-		this.$vertLines = null;
-
-		this.chartSetting = chartSetting;
-
-		this.setAxesSetting(axesSettings);
-
-		this._scaling(chartSetting.get('minVal'), chartSetting.get('maxVal'));
-
-		chartSetting.addEventListener('change', this.own(this._chartSettingChangeListener));
+		this._init(axesElm, chartSetting, axesSettings);
 	}
-
+	
 	AxisRenderer.prototype = {
 
 		own: own,
+		
+		_init: function(axesElm, chartSetting, axesSettings) {
+			this.rootElement = axesElm;
+			this.$horizLines = null;
+			this.$vertLines = null;
+
+			this.chartSetting = chartSetting;
+
+			this.setAxesSetting(axesSettings);
+
+			this._scaling(chartSetting.get('minVal'), chartSetting.get('maxVal'));
+
+			chartSetting.addEventListener('change', this.own(this._chartSettingChangeListener));
+		},
 
 		_chartSettingChangeListener: function(ev) {
 			if (ev.props.minVal != null || ev.props.maxVal != null) {
@@ -3397,153 +3401,150 @@
 	 * @param {Object} axesSetting 軸の設定オブジェクト
 	 */
 	function RadarAxisRenderer(axesElm, chartSetting, axesSetting) {
-		$.extend(AxisRenderer.prototype, {
-			_chartSettingChangeListener: function(ev) {
-				if (ev.props.minVal != null || ev.props.maxVal != null) {
-					var minVal = ev.target.get('minVal');
-					var maxVal = ev.target.get('maxVal');
-					this._scaling(minVal, maxVal);
-				}
-				if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
-					// rangeが変更されたので、水平方向の補助線を引き直す
-					that._drawHorizLines();
-				}
-			},
-
-			_getCenter: function() {
-				return this.chartSetting.get('height') * 0.5;
-			},
-
-			/**
-			 * 格子線を引く
-			 *
-			 * @memberOf RadarAxisRenderer
-			 */
-			drawGridLines: function() {
-				var center = this._getCenter();
-
-				var stroke = this._axesSettings.stroke || 'gray';
-
-				this._drawAxis(this._axesSettings.shape, center, center, {
-					'class': 'radar_axis',
-					fill: 'none',
-					stroke: stroke,
-					'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
-				});
-
-				var num = this._axesSettings.num;
-				var radianInterval = Math.PI * 2 / num;
-
-				for (var j = 0; j < num; j++) {
-					graphicRenderer.appendLineElm(center, center, center + this._radius
-							* Math.sin(radianInterval * j), (center - this._radius
-							* Math.cos(radianInterval * j)), stroke, {
-						id: 'rader_axis_line' + j,
-						'class': 'radarChart axis',
-						fill: 'none',
-						'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
-					}, $(this.rootElement));
-				}
-			},
-
-			_drawAxis: function(shape, centerX, centerY, props){
-				switch (shape) {
-				case 'polygon':
-				case null:
-					this._drawPolygonAxis(centerX, centerY, props);
-					break;
-				case 'circle':
-					this._drawCircleAxis(centerX, centerY, props);
-					break;
-				default:
-					throw new Error('不正なshapeが指定されました：' + shape);
-				}
-			},
-
-			_drawPolygonAxis: function(centerX, centerY, props) {
-				var interval = this._axesSettings.interval;
-				var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
-						/ interval);
-				var num = this._axesSettings.num;
-				var radianInterval = Math.PI * 2 / num;
-
-				for (var i = 0; i < intervalNum; i++) {
-					var d = '';
-					var r = this._radius / intervalNum * (i + 1);
-					for (var j = 0; j < num; j++) {
-						if (j == 0) {
-							d += ' M';
-						} else {
-							d += ' L';
-						}
-						d += (centerX + r * Math.sin(radianInterval * j)) + ','
-								+ (centerY - r * Math.cos(radianInterval * j));
-					}
-					d += 'z';
-
-					graphicRenderer.appendPathElm(d, props, $(this.rootElement));
-				}
-			},
-
-			_drawCircleAxis: function(centerX, centerY, props) {
-				var interval = this._axesSettings.interval;
-				var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
-						/ interval);
-
-				for (var i = 0; i < intervalNum; i++) {
-					var r = this._radius / intervalNum * (i + 1);
-					graphicRenderer.appendCircleElm(centerX, centerY, r, null, props, $(this.rootElement));
-				}
-			},
-
-			showAxisLabels: function(labelArray) {
-				if (labelArray == null) {
-					return;
-				}
-
-				var $rootElement = $(this.rootElement);
-				$rootElement.children('.xLabel').remove();
-
-				if (this.labelArray != labelArray) {
-					this.labelArray = labelArray;
-					this._setLabelArrayChangeListener(labelArray, $rootElement);
-				}
-
-				var center = this._getCenter();
-				var num = this._axesSettings.num;
-				var radianInterval = Math.PI * 2 / num;
-				var textRadisu = this._radius * 1.15;
-
-				for (var i = 0; i < num; i++) {
-					var label = this._getXLabel(this.labelArray.get(i), i);
-					graphicRenderer.appendTextElm(label, center + textRadisu
-							* Math.sin(radianInterval * i), (center - textRadisu
-							* Math.cos(radianInterval * i)), null, {
-						'class': 'xLabel',
-						'text-anchor': 'middle'
-					}, $rootElement);
-				}
-			},
-
-			/**
-			 * 軸の設定をセットします
-			 *
-			 * @param axesSettings
-			 * @memberOf AxisRenderer
-			 */
-			setAxesSetting: function(axesSettings) {
-				this._axesSettings = axesSettings.axis;
-				this._xLabelFormatter = axesSettings.axis.formatter
-						|| this._xLabelDefaultFormatter;
-			}
-		});
-
-		var that = new AxisRenderer(axesElm, chartSetting, axesSetting);
-
-		that._radius = calcDefaultRadius(chartSetting);
-
-		return that;
+		this._init(axesElm, chartSetting, axesSetting);
+		this._radius = calcDefaultRadius(chartSetting);
 	}
+	
+	RadarAxisRenderer.protptype = 	$.extend({}, AxisRenderer.prototype, {
+		_chartSettingChangeListener: function(ev) {
+			if (ev.props.minVal != null || ev.props.maxVal != null) {
+				var minVal = ev.target.get('minVal');
+				var maxVal = ev.target.get('maxVal');
+				this._scaling(minVal, maxVal);
+			}
+			if (ev.props.rangeMin != null || ev.props.rangeMax != null) {
+				// rangeが変更されたので、水平方向の補助線を引き直す
+				that._drawHorizLines();
+			}
+		},
+
+		_getCenter: function() {
+			return this.chartSetting.get('height') * 0.5;
+		},
+
+		/**
+		 * 格子線を引く
+		 *
+		 * @memberOf RadarAxisRenderer
+		 */
+		drawGridLines: function() {
+			var center = this._getCenter();
+
+			var stroke = this._axesSettings.stroke || 'gray';
+
+			this._drawAxis(this._axesSettings.shape, center, center, {
+				'class': 'radar_axis',
+				fill: 'none',
+				stroke: stroke,
+				'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+			});
+
+			var num = this._axesSettings.num;
+			var radianInterval = Math.PI * 2 / num;
+
+			for (var j = 0; j < num; j++) {
+				graphicRenderer.appendLineElm(center, center, center + this._radius
+						* Math.sin(radianInterval * j), (center - this._radius
+						* Math.cos(radianInterval * j)), stroke, {
+					id: 'rader_axis_line' + j,
+					'class': 'radarChart axis',
+					fill: 'none',
+					'stroke-width': this._axesSettings['stroke-width'] || '0.5px'
+				}, $(this.rootElement));
+			}
+		},
+
+		_drawAxis: function(shape, centerX, centerY, props){
+			switch (shape) {
+			case 'polygon':
+			case null:
+				this._drawPolygonAxis(centerX, centerY, props);
+				break;
+			case 'circle':
+				this._drawCircleAxis(centerX, centerY, props);
+				break;
+			default:
+				throw new Error('不正なshapeが指定されました：' + shape);
+			}
+		},
+
+		_drawPolygonAxis: function(centerX, centerY, props) {
+			var interval = this._axesSettings.interval;
+			var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
+					/ interval);
+			var num = this._axesSettings.num;
+			var radianInterval = Math.PI * 2 / num;
+
+			for (var i = 0; i < intervalNum; i++) {
+				var d = '';
+				var r = this._radius / intervalNum * (i + 1);
+				for (var j = 0; j < num; j++) {
+					if (j == 0) {
+						d += ' M';
+					} else {
+						d += ' L';
+					}
+					d += (centerX + r * Math.sin(radianInterval * j)) + ','
+							+ (centerY - r * Math.cos(radianInterval * j));
+				}
+				d += 'z';
+
+				graphicRenderer.appendPathElm(d, props, $(this.rootElement));
+			}
+		},
+
+		_drawCircleAxis: function(centerX, centerY, props) {
+			var interval = this._axesSettings.interval;
+			var intervalNum = parseInt((this.chartSetting.get('maxVal') - this.chartSetting.get('minVal'))
+					/ interval);
+
+			for (var i = 0; i < intervalNum; i++) {
+				var r = this._radius / intervalNum * (i + 1);
+				graphicRenderer.appendCircleElm(centerX, centerY, r, null, props, $(this.rootElement));
+			}
+		},
+
+		showAxisLabels: function(labelArray) {
+			if (labelArray == null) {
+				return;
+			}
+
+			var $rootElement = $(this.rootElement);
+			$rootElement.children('.xLabel').remove();
+
+			if (this.labelArray != labelArray) {
+				this.labelArray = labelArray;
+				this._setLabelArrayChangeListener(labelArray, $rootElement);
+			}
+
+			var center = this._getCenter();
+			var num = this._axesSettings.num;
+			var radianInterval = Math.PI * 2 / num;
+			var textRadisu = this._radius * 1.15;
+
+			for (var i = 0; i < num; i++) {
+				var label = this._getXLabel(this.labelArray.get(i), i);
+				graphicRenderer.appendTextElm(label, center + textRadisu
+						* Math.sin(radianInterval * i), (center - textRadisu
+						* Math.cos(radianInterval * i)), null, {
+					'class': 'xLabel',
+					'text-anchor': 'middle'
+				}, $rootElement);
+			}
+		},
+
+		/**
+		 * 軸の設定をセットします
+		 *
+		 * @param axesSettings
+		 * @memberOf AxisRenderer
+		 */
+		setAxesSetting: function(axesSettings) {
+			this._axesSettings = axesSettings.axis;
+			this._xLabelFormatter = axesSettings.axis.formatter
+					|| this._xLabelDefaultFormatter;
+		}
+	});
 
 	var chartSequense = 0;
 
