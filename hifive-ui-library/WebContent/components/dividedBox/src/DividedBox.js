@@ -723,6 +723,7 @@
 				var l_t = this._l_t;
 				var dividerWH = $divider[w_h]();
 				this._getPrevBoxByDivider($divider).css(w_h, '+=' + dividerWH);
+				$divider.css(l_t, '+=' + dividerWH);
 			}
 			$divider.css('display', 'none');
 			this.refresh();
@@ -746,6 +747,7 @@
 				var l_t = this._l_t;
 				var dividerWH = $divider[w_h]();
 				this._getPrevBoxByDivider($divider).css(w_h, '-=' + dividerWH);
+				$divider.css(l_t, '-=' + dividerWH);
 			}
 			$divider.css('display', 'block');
 			this.refresh();
