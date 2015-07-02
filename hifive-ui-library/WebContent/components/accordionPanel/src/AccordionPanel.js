@@ -65,9 +65,9 @@
 			var stateBoxDef = h5.ui.container.StateBox;
 			this.$find('.' + CLASS_PANELBOX).each(this.own(function(i, elem) {
 				this._setMinimizableBox(elem);
-				// min-sizeが指定されていなければボックスの高さの分を指定
+				// min-sizeが指定されていなければボックスの高さ(幅)+1px分を指定
 				if ($(elem).data(DATA_MIN_BOX_SIZE) == null) {
-					$(elem).data(DATA_MIN_BOX_SIZE, $(elem).find('.boxHeader').height());
+					$(elem).data(DATA_MIN_BOX_SIZE, $(elem).find('.boxHeader').outerHeight() + 1);
 				}
 				var controller = h5.core.controller(elem, stateBoxDef);
 				$(elem).data(DATA_STATE_BOX_INSTANCE, controller);
@@ -86,7 +86,7 @@
 						}
 						var $boxHeader = $(this).find('.boxHeader');
 						if ($boxHeader.length) {
-							$(this).data(DATA_MIN_BOX_SIZE, $boxHeader.height());
+							$(this).data(DATA_MIN_BOX_SIZE, $boxHeader.outerHeight() + 1);
 						}
 					});
 				}
@@ -114,8 +114,10 @@
 			$dividedBoxRoot.each(this.ownWithOrg(function(orgThis) {
 				var $root = $(orgThis);
 				var dividedBoxController = $root.data(DATA_DIVIDED_BOX_INSTANCE);
-				var $boxes = $root.children(DIVIDED_BOXES_SELECTOR);
-				this._adjustBoxes($boxes, dividedBoxController);
+				if (dividedBoxController) {
+					var $boxes = $root.children(DIVIDED_BOXES_SELECTOR);
+					this._adjustBoxes($boxes, dividedBoxController);
+				}
 			}));
 		},
 
@@ -201,7 +203,6 @@
 				return;
 			}
 
-
 			// dividedBox内かどうか
 			var isInDividedBox = $dividedBox.length !== 0;
 
@@ -216,7 +217,17 @@
 				return;
 			}
 
+			// ダミーがある場合はstate変更前に削除
+			var $dummy = $dividedBox.find('>.accodionDummyBox');
+			if ($dummy.length) {
+				// 全てmin状態で追加したダミーボックスがある場合、削除してからstate変更
+				var $dummyDivider = $dividedBox.find('>.accordionDummyDivider');
+				$dummyDivider.remove();
+				$dummy.remove();
+			}
+
 			stateBoxController.setState(state);
+
 			var dividedBoxController = isInDividedBox ? $dividedBox.data(DATA_DIVIDED_BOX_INSTANCE)
 					: null;
 
@@ -228,20 +239,84 @@
 			// サイズ変更する方向
 			var partition = $stateBox.data(DATA_STATE_CHANGE_DIRECTION) === DIRECTION_BACKWARD ? 1
 					: 0;
+			// 自分より後ろが全て最小化されていたら(= 有効なdividerが無かったら)後ろ側にfitToContentsする
+			// 自分より前が全て最小化されていたら前川にfitToContentsする
+			// どちらにも最小化されていないボックスがある場合は要素に指定されている側にfitToContentsする
+			if (!$stateBox.nextAll('.divider:not(.fixedDivider)').length) {
+				partition = 1;
+			} else if (!$stateBox.prevAll('.divider:not(.fixedDivider)').length) {
+				partition = 0;
+			}
+
+			var w_h = isVertical ? 'height' : 'width';
+			var innerW_H = isVertical ? 'innerHeight' : 'innerWidth';
+			var outerW_H = isVertical ? 'outerHeight' : 'outerWidth';
+
+			var l_t = isVertical ? 'top' : 'left';
+			var $boxes = $dividedBox.children(DIVIDED_BOXES_SELECTOR);
 			if (state === NORMAL_STATE) {
 				var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
-				dividedBoxController.resize($stateBox, size, {
-					partition: partition
-				});
-				dividedBoxController.refresh();
+				if (!size || size > $stateBox[innerW_H]()) {
+					if ($dividedBox.data('dyn-all-minimized')) {
+						// 全部min状態だった場合、ダミーボックス削除後は全て前側に寄っている
+						// $stateBox以降のmin状態であるボックスを後ろ側に寄せる
+						var $prev = $boxes.eq($boxes.length - 1);
+						var lastPos = $dividedBox[w_h]();
+						while ($prev[0] !== $stateBox[0]) {
+							lastPos -= ($prev.data('min-size') || $prev[outerW_H]());
+							$prev.css(l_t, lastPos);
+							$prev = $prev.prev();
+						}
+						// 全部min状態なので、dividerは表示されない。normal-stateに変更するボックスの高さはdivider分大きくする
+						var nextAllDividerWidth = 0;
+						$stateBox.nextAll('.divider').each(function() {
+							nextAllDividerWidth += $(this)[outerW_H]();
+						});
+						$stateBox[w_h]
+								(lastPos - parseInt($stateBox.css(l_t)) + nextAllDividerWidth);
+						dividedBoxController.refresh();
+						$dividedBox.data('dyn-all-minimized', false);
+					} else {
+
+						// sizeが可動域を超えていたら、動かせる最大値まで動かす
+						var resizebleMaxSize = 0;
+						$stateBox[partition ? 'prevAll' : 'nextAll']('.box:not(.fixedSize)').each(
+								function() {
+									var $box = $(this);
+									resizebleMaxSize += $box[innerW_H]
+											- ($box.data(DATA_MIN_BOX_SIZE) || 0);
+								});
+						var size = size > resizebleMaxSize ? resizebleMaxSize : size;
+						dividedBoxController.resize($stateBox, size, {
+							partition: partition
+						});
+						dividedBoxController.refresh();
+					}
+				}
 			}
+
 			if (state === MIN_STATE) {
 				// normalからminへの変更の場合は現在のサイズを記憶する
 				var size = isVertical ? $stateBox.outerHeight() : $stateBox.outerWidth();
 				$stateBox.data(NORMAL_STATE_SIZE_DATA_NAME, size);
+
 				dividedBoxController.fitToContents($stateBox, {
 					partition: partition
 				});
+				// dividedBox内のボックスに一つでも最小化されていないボックスがあるかどうか
+				var existNotMinBox = false;
+				$boxes.each(function() {
+					var stateBoxCtrl = $(this).data(DATA_STATE_BOX_INSTANCE);
+					if (!stateBoxCtrl || stateBoxCtrl.getState() !== MIN_STATE) {
+						existNotMinBox = true;
+						return false;
+					}
+				});
+				if (!existNotMinBox) {
+					// 全てのボックスが最小化されている場合は各ボックスを指定された最小化方向に寄せる処理が必要
+					this._allMinStateAdjust(dividedBoxController);
+					$dividedBox.data('dyn-all-minimized', true);
+				}
 			}
 		},
 
@@ -344,12 +419,9 @@
 			var isVertical = $dividedBox.is('.vertical');
 			var sizeMethod = isVertical ? 'outerHeight' : 'outerWidth';
 			var sizeProperty = isVertical ? 'height' : 'width';
-			var scrollSizeProperty = isVertical ? 'scrollHeight' : 'scrollWidth';
-
 
 			var dividedBoxSize = $dividedBox[sizeMethod]();
 			var otherSize = dividedBoxSize;
-
 
 			// divider の表示/非表示を反映
 			for (i = 0, len = showDividerFlags.length; i < len; i++) {
@@ -370,81 +442,62 @@
 					dividedBoxController.unfixSize(i);
 				}
 			}
+		},
 
-			//			// min すべてのサイズの引き算と最後の normal の発見
-			//			var lastNormalIndex = null;
-			//			var sizeCache = {};
-			//
-			//			for (i = lastIndex; 0 <= i; i--) {
-			//				state = stateList[i];
-			//
-			//				if (state === NORMAL_STATE) {
-			//					if (lastNormalIndex == null) {
-			//						lastNormalIndex = i;
-			//					}
-			//					continue;
-			//				}
-			//
-			//				var boxController = $boxes.eq(i).data(DATA_STATE_BOX_INSTANCE);
-			//
-			//				var boxSize;
-			//				if (boxController == null) {
-			//					boxSize = $boxes.eq(i)[0][scrollSizeProperty];
-			//				} else {
-			//					boxSize = boxController.getContentsSize()[sizeProperty];
-			//				}
-			//				sizeCache[i] = boxSize;
-			//				otherSize -= boxSize;
-			//			}
-			//
-			//			// normal がなかったら最後の一つ上を normal 扱いにする
-			//			if (lastNormalIndex == null) {
-			//				lastNormalIndex = lastIndex - 1;
-			//				otherSize += sizeCache[lastNormalIndex];
-			//				delete sizeCache[lastNormalIndex];
-			//			}
-			//
-			//			// 最初にリフレッシュ
-			//			dividedBoxController.refresh();
-			//
-			//			// 一番上を最大に広げる
-			//			for (i = lastIndex; 1 <= i; i--) {
-			//				dividedBoxController.resize(i, DIVIDER_SIZE + 1, {
-			//					partition: 1
-			//				});
-			//			}
-			//
-			//			// 最後の normal であるかどうかのフラグをリセットする
-			//			$boxes.data(IS_LAST_NORMAL_BOX_DATA_NAME, false);
-			//
-			//			// 上から最後以外を resize で設定していく
-			//			for (i = 0, len = stateList.length - 1; i < len; i++) {
-			//				if (i === lastNormalIndex) {
-			//					$boxes.eq(i).data(IS_LAST_NORMAL_BOX_DATA_NAME, true);
-			//					dividedBoxController.resize(i, otherSize);
-			//					continue;
-			//				}
-			//
-			//				state = stateList[i];
-			//
-			//				if (state === MIN_STATE) {
-			//					var minBoxSize = sizeCache[i];
-			//					dividedBoxController.resize(i, minBoxSize);
-			//					dividedBoxController.refresh();
-			//					continue;
-			//				}
-			//
-			//				var $stateBox = $boxes.eq(i);
-			//				var normalStateSize = $stateBox.attr('data-' + NORMAL_STATE_SIZE_DATA_NAME);
-			//
-			//				// サイズがとれない場合でもとりあえずリサイズしておく
-			//				if (normalStateSize == null) {
-			//					normalStateSize = DEFAULT_NORMAL_SIZE;
-			//				}
-			//
-			//				dividedBoxController.resize(i, normalStateSize);
-			//				otherSize -= normalStateSize;
-			//			}
+		_allMinStateAdjust: function(dividedBoxCtrl) {
+			// 全てmin状態になった場合は再度位置計算する
+			// 後ろのボックスからチェックして、最小化方向がbackwardのものは後ろ側に配置
+			// backward指定の無いボックスが出てきたら前側に配置
+			var backwardMinLastBoxIndex = boxesLength;
+			var $dividedBox = $(dividedBoxCtrl.rootElement);
+			var isVertical = $dividedBox.hasClass('vertical');
+			var l_t = isVertical ? 'top' : 'left';
+			var w_h = isVertical ? 'height' : 'width';
+			var outerW_H = isVertical ? 'outerHeight' : 'outerWidth';
+			var innerW_H = isVertical ? 'innerHeight' : 'innerWidth';
+			var $boxes = $dividedBox.children(DIVIDED_BOXES_SELECTOR);
+			var boxesLength = $boxes.length;
+			var pos = $dividedBox[innerW_H]();
+			var fpos = 0;
+			var $backwardMinLastBox = null;
+			for (var i = boxesLength - 1; i >= 0; i--) {
+				var $b = $boxes.eq(i);
+				var $divider = $b.prev('.divider');
+				if ($b.data(DATA_STATE_CHANGE_DIRECTION) === DIRECTION_BACKWARD) {
+					pos -= $b[outerW_H]();
+					$b.css(l_t, pos);
+					$divider.css(l_t, pos);
+					$backwardMinLastBox = $b;
+					backwardMinLastBoxIndex--;
+				} else {
+					// 残りはforward方向に寄せる
+					for (var j = 0; j < i + 1; j++) {
+						var $fb = $boxes.eq(j);
+						$fb.css(l_t, fpos);
+						fpos += $fb[outerW_H]();
+						$fb.next('.divider').css(l_t, fpos);
+					}
+					break;
+				}
+			}
+
+			// 各ボックスを寄せた時に隙間ができるが、DividedBox部品は隙間に対応していない
+			// (隙間がある状態でのリサイズなどに対応していない)ため、AccordionPanel部品で制御する。
+			// refreshによる位置計算でここで計算した配置がずれないようにするためにダミーのボックスを追加する
+			var $dummy = $('<div class="accodionDummyBox autoSize"></div>');
+			if ($backwardMinLastBox) {
+				$backwardMinLastBox.before($dummy);
+			} else {
+				$dividedBox.append($dummy);
+				backwardMinLastBoxIndex = boxesLength - 1;
+			}
+			$dummy.css(w_h, pos - fpos - 4);
+			dividedBoxCtrl.refresh();
+			// 新規追加されたdividerを隠す
+			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex);
+			// 新規追加されたdividerにクラスを当てる
+			$dividedBox.find('>.divider').eq(backwardMinLastBoxIndex).addClass(
+					'accordionDummyDivider');
 		},
 
 		_resizeDividedBoxContents: function($el) {
