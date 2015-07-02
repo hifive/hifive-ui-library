@@ -195,7 +195,11 @@
 
 			var $stateBox = $(boxSelector);
 			var $dividedBox = $stateBox.parent().closest('.dividedBox');
-
+			var isVertical = $dividedBox.hasClass('vertical');
+			var w_h = isVertical ? 'height' : 'width';
+			var innerW_H = isVertical ? 'innerHeight' : 'innerWidth';
+			var outerW_H = isVertical ? 'outerHeight' : 'outerWidth';
+			var l_t = isVertical ? 'top' : 'left';
 
 			var stateBoxController = $stateBox.data(DATA_STATE_BOX_INSTANCE);
 			if (stateBoxController == null) {
@@ -226,6 +230,9 @@
 				$dummy.remove();
 			}
 
+			// state変更前のサイズを覚えておく
+			var orgSize = $stateBox[innerW_H]();
+
 			stateBoxController.setState(state);
 
 			var dividedBoxController = isInDividedBox ? $dividedBox.data(DATA_DIVIDED_BOX_INSTANCE)
@@ -235,7 +242,6 @@
 				// dividedBox内のStateBoxでないならsetStateして終わり
 				return;
 			}
-			var isVertical = $dividedBox.hasClass('vertical');
 			// サイズ変更する方向
 			var partition = $stateBox.data(DATA_STATE_CHANGE_DIRECTION) === DIRECTION_BACKWARD ? 1
 					: 0;
@@ -247,12 +253,6 @@
 			} else if (!$stateBox.prevAll('.divider:not(.fixedDivider)').length) {
 				partition = 0;
 			}
-
-			var w_h = isVertical ? 'height' : 'width';
-			var innerW_H = isVertical ? 'innerHeight' : 'innerWidth';
-			var outerW_H = isVertical ? 'outerHeight' : 'outerWidth';
-
-			var l_t = isVertical ? 'top' : 'left';
 			var $boxes = $dividedBox.children(DIVIDED_BOXES_SELECTOR);
 			if (state === NORMAL_STATE) {
 				var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
@@ -279,14 +279,15 @@
 					} else {
 
 						// sizeが可動域を超えていたら、動かせる最大値まで動かす
-						var resizebleMaxSize = 0;
+						var resizebleMaxSize = $stateBox[innerW_H]();
+						var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
 						$stateBox[partition ? 'prevAll' : 'nextAll']('.box:not(.fixedSize)').each(
 								function() {
 									var $box = $(this);
-									resizebleMaxSize += $box[innerW_H]
+									resizebleMaxSize += $box[innerW_H]()
 											- ($box.data(DATA_MIN_BOX_SIZE) || 0);
 								});
-						var size = size > resizebleMaxSize ? resizebleMaxSize : size;
+						size = size > resizebleMaxSize ? resizebleMaxSize : size;
 						dividedBoxController.resize($stateBox, size, {
 							partition: partition
 						});
@@ -296,9 +297,8 @@
 			}
 
 			if (state === MIN_STATE) {
-				// normalからminへの変更の場合は現在のサイズを記憶する
-				var size = isVertical ? $stateBox.outerHeight() : $stateBox.outerWidth();
-				$stateBox.data(NORMAL_STATE_SIZE_DATA_NAME, size);
+				// normalからminへの変更の場合はstate変更前のサイズを記憶する
+				$stateBox.data(NORMAL_STATE_SIZE_DATA_NAME, orgSize);
 
 				dividedBoxController.fitToContents($stateBox, {
 					partition: partition
