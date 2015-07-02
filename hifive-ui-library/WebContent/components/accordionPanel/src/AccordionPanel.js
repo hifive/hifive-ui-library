@@ -245,18 +245,18 @@
 			// サイズ変更する方向
 			var partition = $stateBox.data(DATA_STATE_CHANGE_DIRECTION) === DIRECTION_BACKWARD ? 1
 					: 0;
-			// 自分より後ろが全て最小化されていたら(= 有効なdividerが無かったら)後ろ側にfitToContentsする
-			// 自分より前が全て最小化されていたら前川にfitToContentsする
-			// どちらにも最小化されていないボックスがある場合は要素に指定されている側にfitToContentsする
-			if (!$stateBox.nextAll('.divider:not(.fixedDivider)').length) {
-				partition = 1;
-			} else if (!$stateBox.prevAll('.divider:not(.fixedDivider)').length) {
-				partition = 0;
+			// 自分より前が全て最小化されていたら前側にfitToContentsする
+			// 自分より後ろが全て最小化されていたら後ろ側にfitToContentsする
+			// 前後共に全て最小化されている場合、または、前後共に最小化されていないボックスがある場合は要素に指定されている側にfitToContentsする
+			var isPrevAllFixed = !$stateBox.prevAll('.panelBox:not(.fixedSize)').length;
+			var isNextAllFixed = !$stateBox.nextAll('.panelBox:not(.fixedSize)').length;
+			if (isPrevAllFixed !== isNextAllFixed) {
+				partition = isPrevAllFixed ? 0 : 1;
 			}
 			var $boxes = $dividedBox.children(DIVIDED_BOXES_SELECTOR);
 			if (state === NORMAL_STATE) {
 				var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
-				if (!size || size > $stateBox[innerW_H]()) {
+				if (!size || size > orgSize) {
 					if ($dividedBox.data('dyn-all-minimized')) {
 						// 全部min状態だった場合、ダミーボックス削除後は全て前側に寄っている
 						// $stateBox以降のmin状態であるボックスを後ろ側に寄せる
@@ -279,7 +279,7 @@
 					} else {
 
 						// sizeが可動域を超えていたら、動かせる最大値まで動かす
-						var resizebleMaxSize = $stateBox[innerW_H]();
+						var resizebleMaxSize = orgSize;
 						var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
 						$stateBox[partition ? 'prevAll' : 'nextAll']('.box:not(.fixedSize)').each(
 								function() {
@@ -417,18 +417,12 @@
 
 			var $dividedBox = $(dividedBoxController.rootElement);
 			var isVertical = $dividedBox.is('.vertical');
-			var sizeMethod = isVertical ? 'outerHeight' : 'outerWidth';
-			var sizeProperty = isVertical ? 'height' : 'width';
-
-			var dividedBoxSize = $dividedBox[sizeMethod]();
-			var otherSize = dividedBoxSize;
 
 			// divider の表示/非表示を反映
 			for (i = 0, len = showDividerFlags.length; i < len; i++) {
 				var isShowDivider = showDividerFlags[i];
 				if (isShowDivider) {
 					dividedBoxController.showDivider(i, true);
-					otherSize -= DIVIDER_SIZE;
 				} else {
 					dividedBoxController.hideDivider(i, true);
 				}
