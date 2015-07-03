@@ -710,15 +710,15 @@
 		 *
 		 * @memberOf h5.ui.container.DividedBox
 		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
-		 * @param {Boolean} [fixPrev=false]
+		 * @param {Boolean} [forwardAdjust=false]
 		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
 		 */
-		hideDivider: function(divider, fixPrev) {
+		hideDivider: function(divider, forwardAdjust) {
 			var $divider = this._getDividerElement(divider);
 			if ($divider.css('display') === 'none') {
 				return;
 			}
-			if (fixPrev) {
+			if (forwardAdjust) {
 				var w_h = this._w_h;
 				var l_t = this._l_t;
 				var dividerWH = $divider[w_h]();
@@ -734,15 +734,15 @@
 		 *
 		 * @memberOf h5.ui.container.DividedBox
 		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
-		 * @param {Boolean} [fixPrev=false]
+		 * @param {Boolean} [forwardAdjust=false]
 		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
 		 */
-		showDivider: function(divider, fixPrev) {
+		showDivider: function(divider, forwardAdjust) {
 			var $divider = this._getDividerElement(divider);
 			if ($divider.css('display') === 'block') {
 				return;
 			}
-			if (fixPrev) {
+			if (forwardAdjust) {
 				var w_h = this._w_h;
 				var l_t = this._l_t;
 				var dividerWH = $divider[w_h]();
