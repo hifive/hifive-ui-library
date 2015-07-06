@@ -326,83 +326,31 @@
 		 * @param {DOM|jQuery} box
 		 */
 		insert: function(index, box) {
-			var root = this._$root;
+			var $root = this._$root;
 			var type = this._type;
 			var l_t = this._l_t;
 			var t_l = l_t === 'left' ? 'top' : 'left';
 			var w_h = this._w_h;
 			var outerW_H = this._outerW_H;
 
-			var $target = this._getBoxElement(index);
-			var $boxes = this._getBoxes();
-			if (!$target.length) {
-				// 範囲外の場合は一番最後に追加
-				$target = $boxes.eq($boxes.length - 1);
-			}
-
-			// 追加したボックスにクラスCLASS_MANAGEDを追加
+			// 追加しするボックスにクラスCLASS_MANAGEDを追加
 			var $box = $(box);
 			$box.addClass(CLASS_MANAGED);
-
+			var $target = this._getBoxElement(index);
+			var $boxes = this._getBoxes();
 			if ($target.length) {
+				// ボックスの追加
 				$target.before($box);
 			} else {
-				// 既存のboxが一つもない場合は追加して終了
-				root.append($box);
-				this._triggerBoxSizeChange();
-				return;
+				// 範囲外の場合は一番最後に追加
+				$root.append($box);
 			}
-
-			// 前のboxがあるならdividerを追加
-			var $divider = $('<div class="divider"></div>');
-			var $dividerHandler = $('<div class="dividerHandler"></div>');
-			$divider.append('<div style="height:50%;"></div>');
-			$dividerHandler = $('<div class="dividerHandler"></div>');
-			$divider.append($dividerHandler);
-			$dividerHandler.css({
-				'margin-top': -$dividerHandler.height() / 2
-			});
-			if (type === 'y') {
-				$dividerHandler.css({
-					'margin-left': 'auto',
-					'margin-right': 'auto'
-				});
-			} else {
-				$dividerHandler.css({
-					'margin-left': ($divider.width() - $dividerHandler.width()) / 2
-				});
-			}
-			//jQueryが古いと以下のようにする必要があるかもしれない。1.8.3だと以下で動作しない。何かのオブジェクトが返ってくる。
-			//divider.css(l_t, target.position()[l_t] + target[outerW_H]({margin:true}));
-			$divider.css(l_t, $target.length ? $target.position()[l_t] : 0);
-			$divider.css('position', 'absolute');
-			$box.after($divider);
-
-			var targetWH = $target[w_h](true) - $divider[outerW_H](true) - $box[outerW_H](true);
-
-			var mbpSize = this._getMBPSize($target, w_h);
-			if (targetWH <= mbpSize) {
-				targetWH = mbpSize + 1;
-			}
-			this._setOuterSize($target, w_h, targetWH);
-
-			$box.css(l_t, $divider.position()[l_t] + $divider[outerW_H](true));
-			$box.css(t_l, 0);
-			$box.css('position', 'absolute');
-
-			var $nextDivider = this._getNextDividerByBox($box);
-			var distance = 0;
-			if ($nextDivider.length) {
-				distance = $nextDivider.position()[l_t] - $box.position()[l_t];
-			} else {
-				distance = root[w_h]() - $box.position()[l_t];
-			}
-			var boxOuterWH = $box[outerW_H](true);
-			if (distance < boxOuterWH) {
-				this._setOuterSize($box, w_h, distance);
-			}
-
+			// 追加したボックスのサイズ分、dividedBoxのサイズが大きくなる。
+			// dividedBoxのサイズ大きくなった状態から、現在のサイズに変更されたと見做して
+			// 現在のdividedBoxのサイズに合うよう各ボックスを調整するために、前回調整サイズに追加されたボックスのサイズを加えている
+			this._lastAdjustAreaWH += $box[w_h]();
 			this._triggerBoxSizeChange();
+			this.refresh();
 		},
 
 		/**
@@ -836,7 +784,7 @@
 		},
 
 		/**
-		 * 位置の調整を行う
+		 * 現在のdividedBoxのサイズに合わせてボックスのサイズと位置の調整を行う
 		 *
 		 * @private
 		 * @memberOf h5.ui.container.DividedBox
@@ -849,6 +797,10 @@
 			var adjustAreaWH = $root[w_h]();
 			// dividedBoxのサイズの差分
 			var divSize = adjustAreaWH - this._lastAdjustAreaWH;
+			if (divSize === 0) {
+				// サイズに差分が無いなら何もしない
+				return;
+			}
 			this._lastAdjustAreaWH = adjustAreaWH;
 
 			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
@@ -891,7 +843,7 @@
 				}
 			}));
 
-			// dividerの位置は設定済みなので、それに合わせてボックスを動かす
+			// 各ボックスのサイズ変更とdividerの移動
 			$boxes.each(this.ownWithOrg(function(orgThis, index) {
 				var $box = $(orgThis);
 				if ($box.data(DATA_HIDDEN)) {
