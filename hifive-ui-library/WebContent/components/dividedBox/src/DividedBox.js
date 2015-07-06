@@ -193,23 +193,6 @@
 			}));
 			this._lastAdjustAreaWH = totalBoxSize;
 
-			if (autoSizeBoxCouunt) {
-				// dividerの幅を取得(この時点ではまだdivider未配置のため、ダミーで追加して削除しておく)
-				var $dummyDivider = $('<div class="divider"></div>');
-				$root.append($dummyDivider);
-				var dividerWH = $dummyDivider[outerW_H]();
-				$dummyDivider.remove();
-
-				var autoSizeBoxWH = autoSizeBoxAreaWH / autoSizeBoxCouunt - dividerWH
-						* ($boxes.length - 1);
-				$boxes.each(this.ownWithOrg(function(orgThis) {
-					var $box = $(orgThis);
-					if ($box.hasClass(CLASS_AUTO_SIZE) && !$box.hasClass(CLASS_FIXED_BOX)) {
-						this._setOuterSize($box, w_h, autoSizeBoxWH);
-					}
-				}));
-			}
-
 			// リフレッシュ
 			this.refresh();
 		},
