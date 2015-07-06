@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<link href="../src//DividedBox.css"
+	rel="stylesheet">
+<script src="../src//DividedBox.js"></script>
+<!-- <script src="/y/generalLayoutSample/lib/hifive/ui/DividedBox.js"></script> -->
+<script src="insert.js"></script>
+<style type="text/css">
+html,body {
+	height: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+.sample {
+	height: 100%
+}
+
+.sample>.dividedBox {
+	height: 100%;
+}
+
+.box {
+	width: 100%;
+}
+
+.box,.box>* {
+	box-sizing: border-box;
+}
+
+.yellow {
+	background-color: #FFF280;
+}
+
+.green {
+	background-color: #B2CF3E;
+}
+
+.purple {
+	background-color: #B492CC;
+}
+
+.blue {
+	background-color: #6EB7DB;
+}
+
+.orange {
+	background-color: #EDAD0B;
+}
+
+.box {
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.vertical>.box {
+	height: 80px;
+}
+</style>
+<script>
+	(function() {
+		var count = 0;
+		EJS.Helpers.prototype._getCallCount = function() {
+			return count++;
+		}
+	})();
+</script>
+<script type="text/ejs" id="box-template">
+	<div class="box [%= ['yellow','green','purple','blue','orange'][_getCallCount()%5] %]">
+		<p class="btn btn-xs insert before">上に追加</p>
+		<p class="btn btn-xs insert after">下に追加</p>
+		<p class="btn btn-xs remove">削除</p>
+	</div>
+</script>
+
+<title>ボックス区切り移動サンプル(fixedSize floatSize)</title>
+</head>
+<body class="container">
+	<div class="btn executeRefresh btn-default"
+		style="position: absolute; top: 0; left: 0">refresh</div>
+	<div class="sample">
+		<div class="dividedBox vertical"></div>
+	</div>
+</body>
+</html>
