@@ -330,11 +330,7 @@
 		 */
 		insert: function(index, box) {
 			var $root = this._$root;
-			var type = this._type;
-			var l_t = this._l_t;
-			var t_l = l_t === 'left' ? 'top' : 'left';
 			var w_h = this._w_h;
-			var outerW_H = this._outerW_H;
 
 			// 追加しするボックスにクラスCLASS_MANAGEDを追加
 			var $box = $(box);
@@ -349,7 +345,7 @@
 				$root.append($box);
 			}
 			// 追加したボックスのサイズ分、dividedBoxのサイズが大きくなる。
-			// dividedBoxのサイズ大きくなった状態から、現在のサイズに変更されたと見做して
+			// dividedBoxのサイズが大きくなった状態から、現在のサイズに変更されたと見做して
 			// 現在のdividedBoxのサイズに合うよう各ボックスを調整するために、前回調整サイズに追加されたボックスのサイズを加えている
 			this._lastAdjustAreaWH += $box[w_h]();
 			this._triggerBoxSizeChange();
@@ -378,6 +374,10 @@
 				$nextBox.css(this._l_t, $target.css(this._l_t));
 				$nextDivider.remove();
 			}
+			// 削除ボックスのサイズ分、dividedBoxのサイズが小さくなる。
+			// dividedBoxのサイズが小さくなった状態から、現在のサイズに変更されたと見做して
+			// 現在のdividedBoxのサイズに合うよう各ボックスを調整するために、前回調整サイズに追加されたボックスのサイズを加えている
+			this._lastAdjustAreaWH += $target[this._w_h]();
 			$target.remove();
 			this.refresh();
 		},
