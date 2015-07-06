@@ -163,7 +163,6 @@
 				$root.height($root.height());
 			}
 
-			this._lastAdjustAreaWH = $root[w_h]();
 			var rootPosition = $root.css('position');
 			if (rootPosition === 'static' || !rootPosition) {
 				// ルートがposition:staticまたは指定無しの場合はposition:relativeを設定
@@ -179,16 +178,20 @@
 			// ボックスのサイズがオートのものについてサイズ計算
 			var autoSizeBoxCouunt = 0;
 			var autoSizeBoxAreaWH = $root[w_h]();
+			var totalBoxSize = 0;
 
 			var $boxes = this._getBoxes();
 			$boxes.each(this.ownWithOrg(function(orgThis) {
 				var $box = $(orgThis);
+				var boxSize = $box[outerW_H](true);
+				totalBoxSize += boxSize;
 				if ($box.hasClass(CLASS_AUTO_SIZE)) {
 					autoSizeBoxCouunt++;
 				} else {
-					autoSizeBoxAreaWH -= $box[outerW_H](true);
+					autoSizeBoxAreaWH -= boxSize;
 				}
 			}));
+			this._lastAdjustAreaWH = totalBoxSize;
 
 			if (autoSizeBoxCouunt) {
 				// dividerの幅を取得(この時点ではまだdivider未配置のため、ダミーで追加して削除しておく)
