@@ -191,7 +191,18 @@
 					autoSizeBoxAreaWH -= boxSize;
 				}
 			}));
-			this._lastAdjustAreaWH = totalBoxSize;
+			// dividerのサイズ計算
+			// 追加して削除することで、実際に置いた時のサイズを取得
+			var totalDividerSize = 0;
+			if ($boxes.length > 1) {
+				var $tmpDivider = $('<div class="divider"></div>');
+				$root.append($tmpDivider);
+				totalDividerSize = $tmpDivider[w_h]() * ($boxes.length - 2);
+				$tmpDivider.remove();
+			}
+			// 初期配置(refresh()前)はボックスの合計サイズとdividerの合計サイズが全体のサイズになる
+			// refresh前に、初期配置のサイズを覚えておく
+			this._lastAdjustAreaWH = totalBoxSize + totalDividerSize;
 
 			// リフレッシュ
 			this.refresh();
@@ -206,11 +217,13 @@
 			var type = this._type;
 
 			// ボックスにクラスCLASS_MANAGEDを追加
+			// position:absoluteに設定
 			// ボックス間に区切り線がない場合は挿入
-			this._getBoxes().addClass(CLASS_MANAGED).filter(':not(.divider) + :not(.divider)')
-					.each(function() {
-						$(this).before('<div class="divider"></div>');
-					});
+			var $boxes = this._getBoxes();
+			$boxes.filter(':not(.divider) + :not(.divider)').each(function() {
+				$(this).before('<div class="divider" style="position:absolute"></div>');
+			});
+			$boxes.addClass(CLASS_MANAGED).css('position', 'absolute');
 
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
 			var $dividers = this._getDividers();
@@ -245,11 +258,11 @@
 				}
 
 				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可
+				// fixedDividerクラスを追加する
 				if ((!isLast || lastIndex === 0)
 						&& (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
 						&& $prev.hasClass(CLASS_FIXED_BOX)) {
 					$divider.addClass(CLASS_FIXED_DIVIDER);
-					return;
 				}
 
 				var nextZIndex = $next.css('z-index');
@@ -265,7 +278,6 @@
 				$divider.css({
 					top: dividerTop,
 					left: dividerLeft,
-					position: 'absolute',
 					'z-index': nextZIndex + 1
 				});
 				var nextTop = (type === 'y') ? dividerTop
@@ -276,7 +288,6 @@
 				$next.css({
 					top: nextTop,
 					left: nextLeft,
-					position: 'absolute'
 				});
 
 				// 一番下まで計算が終わったら、
