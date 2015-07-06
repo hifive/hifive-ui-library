@@ -220,6 +220,7 @@
 			// position:absoluteに設定
 			// ボックス間に区切り線がない場合は挿入
 			var $boxes = this._getBoxes();
+			// dividerが間にないボックスを探して、dividerを追加
 			$boxes.filter(':not(.divider) + :not(.divider)').each(function() {
 				$(this).before('<div class="divider" style="position:absolute"></div>');
 			});
@@ -236,33 +237,25 @@
 				var $prev = this._getPrevBoxByDivider($divider);
 				var $next = this._getNextBoxByDivider($divider);
 
-				// dividerハンドラーの調整
+				// dividerハンドラーの調整(新規追加したdividerの設定)
 				var $dividerHandler = $divider.find('.dividerHandler');
 				if ($dividerHandler.length === 0) {
 					$divider.append('<div style="height:50%;"></div>');
 					$dividerHandler = $('<div class="dividerHandler"></div>');
 					$divider.append($dividerHandler);
-				}
-				$dividerHandler.css({
-					'margin-top': -$dividerHandler.height() / 2
-				});
-				if (type === 'y') {
 					$dividerHandler.css({
-						'margin-left': 'auto',
-						'margin-right': 'auto'
+						'margin-top': -$dividerHandler.height() / 2
 					});
-				} else {
-					$dividerHandler.css({
-						'margin-left': ($divider.width() - $dividerHandler.outerWidth()) / 2
-					});
-				}
-
-				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可
-				// fixedDividerクラスを追加する
-				if ((!isLast || lastIndex === 0)
-						&& (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))
-						&& $prev.hasClass(CLASS_FIXED_BOX)) {
-					$divider.addClass(CLASS_FIXED_DIVIDER);
+					if (type === 'y') {
+						$dividerHandler.css({
+							'margin-left': 'auto',
+							'margin-right': 'auto'
+						});
+					} else {
+						$dividerHandler.css({
+							'margin-left': ($divider.width() - $dividerHandler.outerWidth()) / 2
+						});
+					}
 				}
 
 				var nextZIndex = $next.css('z-index');
@@ -290,11 +283,17 @@
 					left: nextLeft,
 				});
 
-				// 一番下まで計算が終わったら、
-				if (isLast && $next.hasClass(CLASS_FIXED_BOX)) {
-					// 最後のboxがfixedの時は、そのboxの前のdividerはfixed
+				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可(fixedDivider)にする
+				appearedUnfix = appearedUnfix || !$prev.hasClass(CLASS_FIXED_BOX);
+				if (isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))) {
+					// 一番最後まで計算が終わって、かつ、最後のボックスがfixedBoxなら、そこから前にたどって、fixedDividerになるdividerを探す
+					// 最後のboxがfixedの時は、そのboxの前のdividerはfixedDivider
 					$divider.addClass(CLASS_FIXED_DIVIDER);
-					// fixdeでないboxが出てくるまで、前のdividerを辿って全てfixedにする
+					// fixedでないboxが出てくるまで、前のdividerを辿って全てfixedにする
+					// 既に今までのチェックでfixedでないboxが無いことが分かっていれば何もしない
+					if (!appearedUnfix) {
+						return;
+					}
 					var $p = $prev;
 					var $d = $divider;
 					while (true) {
@@ -306,8 +305,13 @@
 						$d = this._getPrevDividerByBox($p);
 					}
 				} else {
-					$divider.removeClass(CLASS_FIXED_DIVIDER);
-					appearedUnfix = true;
+					// 前から辿ってfixedDividerかどうかの判定を行う
+					// あるdividerより前のボックスの中にfixedBoxでないボックスが一つもないならそのdividerはfixedDivder
+					if (!isLast && !appearedUnfix) {
+						$divider.addClass(CLASS_FIXED_DIVIDER);
+					} else {
+						$divider.removeClass(CLASS_FIXED_DIVIDER);
+					}
 				}
 			}));
 
