@@ -23,6 +23,7 @@
 
 	var DATA_STATE_BOX_SELECTOR = 'state-box-selector';
 	var DATA_STATE = 'state';
+	var DATA_DEFAULT_STATE = 'default-state';
 	var BOX_NAME_DATA_NAME = 'box-name';
 	var DATA_STATE_CHANGE_DIRECTION = 'state-change-direction';
 	var DIRECTION_BACKWARD = 'backward';
@@ -375,6 +376,12 @@
 			var $contents = $box.children();
 			$box.append($boxWrapper);
 			$boxWrapper.find('.boxContent').append($contents);
+
+			// default-stateにminが指定されていたらfixedSizeにする
+			if ($box.data(DATA_DEFAULT_STATE) === MIN_STATE) {
+				$box.addClass('fixedSize');
+				$box.height($box.data(DATA_MIN_BOX_SIZE));
+			}
 		},
 
 		_adjustBoxes: function($boxes, dividedBoxController) {
@@ -442,7 +449,6 @@
 			// 全てmin状態になった場合は再度位置計算する
 			// 後ろのボックスからチェックして、最小化方向がbackwardのものは後ろ側に配置
 			// backward指定の無いボックスが出てきたら前側に配置
-			var backwardMinLastBoxIndex = boxesLength;
 			var $dividedBox = $(dividedBoxCtrl.rootElement);
 			var isVertical = $dividedBox.hasClass('vertical');
 			var l_t = isVertical ? 'top' : 'left';
@@ -453,6 +459,7 @@
 			var boxesLength = $boxes.length;
 			var pos = $dividedBox[innerW_H]();
 			var fpos = 0;
+			var backwardMinLastBoxIndex = boxesLength;
 			var $backwardMinLastBox = null;
 			for (var i = boxesLength - 1; i >= 0; i--) {
 				var $b = $boxes.eq(i);
@@ -488,7 +495,9 @@
 			$dummy.css(w_h, pos - fpos - 4);
 			dividedBoxCtrl.refresh();
 			// 新規追加されたdividerを隠す
-			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex);
+			// 追加されたdividerが先頭の場合(ダミーボックスが先頭で、残りはすべて後ろに最小化されている場合)、
+			// は第２引数にtrueを指定して後ろ側を動かさないようにする
+			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex, !backwardMinLastBoxIndex);
 			// 新規追加されたdividerにクラスを当てる
 			$dividedBox.find('>.divider').eq(backwardMinLastBoxIndex).addClass(
 					'accordionDummyDivider');
