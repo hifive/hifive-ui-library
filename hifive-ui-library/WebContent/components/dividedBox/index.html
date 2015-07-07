@@ -1,156 +1,91 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<meta http-equiv="pragma" content="no-cache"/>
-		<meta http-equiv="cache-control" content="no-cache"/>
-		<meta name="viewport" content="width=device-width">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
 
-		<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
 
-		<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
-		<link href="src/DividedBox.css" rel="stylesheet">
 
-		<style type="text/css">
-			div.dividerHandler{
-				border-style:none;
-				border-color:yellow;
-				background-color:yellow;
-			}
-			body{
-				padding:1em;
-			}
-			div.dividedBox{
-				background-color: green;
-			}
-			div.dividedBox div.box{
-				background-color: #00ffff;
-			}
-			div.dividedBox div.box:first-child{
-				background-color: blue;
-			}
-			div.dividedBox div.box:last-child{
-				background-color: red;
-			}
-			div.horizontal{
-				height:200px;
-				width:800px;
-			}
-			div.horizontal div.box:first-child{
-				width:20%;
-			}
-			div.horizontal div.box:last-child{
-				width:20%;
-			}
-			div.vertical{
-				height:600px;
-				width:800px;
-			}
-			div.vertical div.box{
-				height:33%;
-			}
-			.dividedBox.horizontal > div.divider{
-				background-color:yellow;
-			}
-			.dividedBox.vertical > div.divider{
-				background-color:yellow;
-			}
-		</style>
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
 
-		<!--[if lt IE 9]>
+<!--[if lt IE 9]>
 		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
 		<![endif]-->
-		<!--[if gte IE 9]><!-->
-		<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
-		<!--<![endif]-->
-		<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
-		<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
 
-		<script src="src/DividedBox.js"></script>
+<title>ボックス区切り移動サンプル</title>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
 
-		<script>
-		$(function(){
-			//$(window).resize(function(){
-			//	$(".horizontal").css("width", ($(window).width() - 30) + "px");
-			//	$(".vertical").css("height", ($(window).height() - 550) + "px");
-			//});
-			$('.dividedBox').each(function(){
-				h5.core.controller(this, h5.ui.container.DividedBox);
-			});
-		});
-		</script>
+			<h3>ボックス区切り移動</h3>
 
-		<title>ボックス区切り移動</title>
-	</head>
-	<body>
-
-		<h3>ボックス区切り移動</h3>
-
-		<p><a href="sample/index.html">ボックス区切り移動サンプル(ボックス追加機能、リセット機能あり)</a></p>
-
-		<span>使用方法・制限事項</span>
-		<ul>
-		<li>
-			本機能使用時は、併せて以下のファイルを読み込んでください。
+			<p>実際の動作画面は以下のサンプルをご覧ください</p>
 			<ul>
-				<li>rcomponents/DividedBox/src/DividedBox.css</li>
+				<li><a href="sample/index.html">ボックス区切り移動サンプル</a>
+				<li><a href="sample/state.html">StateBox使用サンプル</a>
 			</ul>
-			デザインについては適宜、別定義によるオーバーライド等で変更してください。
-			<li>
-			ルート要素にdividedBoxクラスを設定し、その配下にボックス要素を配置してください。複数配置可能です。<br/>
-			以下のようにしてコントローラーを適用します。
-<pre>
-$(function(){
-	$('.dividedBox').each(function(){
-		h5.core.controller(this, h5.ui.container.DividedBox);
-	});
-});</pre>
-			各ボックス間に移動可能な区切り線を作成します。
-			</li>
-			<li>ルート要素と各ボックス間、および各ボックスと区切り線の間に余白(margin、padding)は指定できません。</li>
-			<li>
-			ルート要素にverticalクラスを指定、もしくは指定しない場合は垂直配置(区切り線は縦)とみなします。<br/>
-			horizontalクラスを指定した場合は水平区切り(区切り線は横)とみなします。
-			</li>
-			<li>
-			ルート要素にfreezeSizeクラスを指定すると、処理前の表示状態でルート要素のサイズを固定します。<br/>
-			指定しない場合は別途サイズ指定を行ってください。
-			</li>
-			<li>
-			各ボックスににfillクラスを指定すると非分割方向(垂直区切りは縦、水平区切りは横)に要素を自動的に拡張します。<br/>
-			指定しない場合は別途サイズ指定を行ってください。
-			</li>
-			<li>
-			各ボックスににautoSizeクラスを指定すると分割方向(垂直区切りは横、水平区切りは縦)の幅を自動で設定します。<br/>
-			（autoSize以外のボックスを除いた、残り部分の幅をautoSizeのボックスで等分）<br>
-			指定しない場合は別途サイズ指定を行ってください。
-			</li>
-			<li>
-			ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、<br>
-			本機能をサブコントローラーとした上で、コントローラーのrefresh関数を呼び出してください。表示が修正されます。<br>
-			dividedBoxController::refresh(引数なし);
-			</li>
-			<li>
-			本機能をサブコントローラーとした上で、コントローラーのinsert関数を呼び出すと、ボックスを追加することができます。<br>
-			dividedBoxController::insert(対象要素インデックス(0～), 追加要素(jQuery関数と同じ引数を許容));
-			</li>
-			<li>区切り線のハンドル用要素(中央の○)はCSS div.dividerHandler で設定されています。</li>
-			<li><a href="sample/index.html">ボックス区切り移動サンプル(ボックス追加機能、リセット機能あり)</a>も併せて参照してください。</li>
-		</ul>
 
-		<div class="dividedBox horizontal">
-			<div class="box fill"></div>
-			<div class="box fill autoSize"></div>
-			<div class="box fill "></div>
+			<h4>使用方法・制限事項</h4>
+			<ul>
+				<li>本機能使用時は、以下のファイルを読み込んでください。
+					<ul>
+						<li>dividedBox/src/DividedBox.css</li>
+						<li>dividedBox/src/DividedBox.js</li>
+					</ul> デザインについては適宜、別定義によるオーバーライド等で変更してください。
+				<li>ルート要素をdividedBoxクラスとして、DividedBoxを適用する例です。<pre>
+var dividedBoxControlelr = h5.core.controller('.dividedBox', h5.ui.container.DividedBox);
+</pre>
+					<p>ルート要素直下にボックス要素を配置してください。複数配置可能です。DividedBoxを適用すると各ボックス間に移動可能な区切り線が作成されます。
+					</li>
+				<li><p>ルート要素と各ボックス間、および各ボックスと区切り線の間に余白(margin、padding)は指定できません。</p></li>
+				<li><p>
+						ルート要素に<strong>vertical</strong>クラスを指定、もしくは指定しない場合は垂直配置(区切り線は縦)とみなします。
+					</p>
+					<p>
+						<strong>horizontal</strong>クラスを指定した場合は水平区切り(区切り線は横)とみなします。</li>
+				<li><p>
+						ルート要素に<strong>freezeSize</strong>クラスを指定すると、処理前の表示状態でルート要素のサイズを固定します。
+					</p>
+					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
+				<li><p>各ボックスのサイズは非分割方向(垂直区切りは縦、水平区切りは横)に要素を自動的に拡張されます。</p>
+					<p>
+						ボックスのサイズを変更したくない場合は<strong>noFill</strong>クラスをボックスに指定てください。
+					</p></li>
+				<li><p>
+						各ボックスに<strong>autoSize</strong>クラスを指定すると分割方向(垂直区切りは横、水平区切りは縦)の幅を自動で設定します。
+					</p>
+					<p>（autoSize以外のボックスを除いた、残り部分の幅をautoSizeのボックスで等分）</p>
+					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
+				<li><p>
+						ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、
+						DividedBoxControllerの<strong>refresh</strong>関数を呼び出してください。再計算して表示します。
+					</p>
+					<p>
+					<pre>dividedBoxController.refresh();</pre>
+					</p></li>
+				<li>
+					<p>コントローラーのinsert関数を呼び出すと、ボックスを追加することができます。</p>
+					<p>
+					<pre>dividedBoxController.insert(index, box);
+  // index = 対象要素インデックス(0～)
+  // box = 追加要素(DOM||jQuery||要素生成文字列)</pre>
+					</p>
+				</li>
+				<li><p>区切り線はdiv.divider、区切り線のハンドル用要素(中央の○)はCSS
+						div.dividerHandler で設定されています。</p>
+					<p>見た目を変更したい場合は適宜スタイルを上書きしてください。</li>
+			</ul>
 		</div>
-
-		<hr>
-
-		<div class="dividedBox vertical">
-			<div class="box fill"></div>
-			<div class="box fill"></div>
-			<div class="box fill"></div>
-		</div>
-
-	</body>
+	</div>
+</body>
 </html>
