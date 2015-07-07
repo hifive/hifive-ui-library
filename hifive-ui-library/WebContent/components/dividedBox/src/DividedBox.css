@@ -32,8 +32,12 @@
 	vertical-align: middle;
 }
 
-.dividedBox.horizontal>.fill {
+.dividedBox.horizontal>.dividedbox-managed {
 	height: 100%;
+}
+
+.dividedBox.horizontal>.dividedbox-managed.noFill {
+	height: auto;
 }
 
 .dividedBox.horizontal>.divider {
@@ -49,13 +53,18 @@
 	display: block;
 }
 
-.dividedBox.vertical>.fill {
+.dividedBox.vertical>.dividedbox-managed {
 	width: 100%;
+}
+
+.dividedBox.vertical>.dividedbox-managed.noFill {
+	width: auto;
 }
 
 .dividedBox.vertical>.divider {
 	display: block;
-	cursor: row-resize; width : 100%;
+	cursor: row-resize;
+	width: 100%;
 	height: 4px;
 	width: 100%;
 }
@@ -82,7 +91,7 @@
 }
 
 .dividedBox>.divider,.dividedBox .dividerHandler {
-	background-color: yellow;
+	background-color: #eee;
 }
 
 .dividedBox>.divider.fixedDivider {
