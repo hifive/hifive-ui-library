@@ -1,161 +1,254 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<meta http-equiv="pragma" content="no-cache"/>
-		<meta http-equiv="cache-control" content="no-cache"/>
-		<meta name="viewport" content="width=device-width">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
 
-		<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
 
 
-		<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
-		<link href="../src/DividedBox.css" rel="stylesheet">
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="../src/DividedBox.css" rel="stylesheet">
 
-		<style type="text/css">
-			body{
-				padding:1em;
-			}
-			div._dividedBox{
-				background-color: green;
-			}
-			div._dividedBox div.box{
-				background-color: #00ffff;
-			}
-			div._dividedBox div.box.first{
-				background-color: blue;
-			}
-			div._dividedBox div.box.last{
-				background-color: red;
-			}
-			div.horizontal{
-				height:200px;
-			}
-			div.horizontal.freezeSize{
-				height:auto;
-			}
-			div.horizontal div.box{
-				width:33%;
-				height:100px;
-			}
-			div.vertical{
-				height:600px;
-			}
-			div.vertical div.box{
-				height:33%;
-				width:300px;
-			}
-			div.fixedSizeTest div.box.first{
-				width: 200px;
-			}
-			div.fixedSizeTest div.box.center{
-				width: auto;
-			}
-			div.fixedSizeTest div.box.last{
-				width: 300px;
-			}
-		</style>
+<link href="sample.css" rel="stylesheet">
 
-		<!--[if lt IE 9]>
+<!--[if lt IE 9]>
 		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
 		<![endif]-->
-		<!--[if gte IE 9]><!-->
-		<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
-		<!--<![endif]-->
-		<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
-		<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
 
-		<script>
-		$(function(){
-			$(window).resize(function(){
-				//$(".horizontal").css("width", ($(window).width() - 60) + "px");
-				//$(".vertical").css("height", ($(window).height() - 550) + "px");
-			});
-		});
-		</script>
+<script src="../src/DividedBox.js"></script>
+<script src="sample.js"></script>
 
-		<script src="../src/DividedBox.js"></script>
-		<script src="sample.js"></script>
+<!-- テンプレート定義 -->
+<script>
+	// テンプレートのヘルパー定義
+	(function() {
+		var count = 0;
+		EJS.Helpers.prototype._getCallCount = function() {
+			return count++;
+		}
+	})();
+</script>
+<script type="text/ejs" id="fixedSize-box-contents-template">
+	<p class="state-fixed">fixed</p>
+	<p class="state-unfixed">unfixed</p>
+	<p>
+		<button class="btn btn-xs fixSize">fixSize()</button>
+		<button class="btn btn-xs unfixSize">unfixSize()</button>
+	</p>
+</script>
+<script type="text/ejs" id="insert-box-template">
+	<div class="box [%= ['yellow','green','purple','blue','orange'][_getCallCount()%5] %]">
+		<p class="btn btn-xs insert before">上に追加</p>
+		<p class="btn btn-xs insert after">下に追加</p>
+		<p class="btn btn-xs remove">削除</p>
+	</div>
+</script>
 
-		<title>ボックス区切り移動サンプル(ボックス追加機能、リセット機能あり)</title>
-	</head>
-	<body>
+<title>ボックス区切り移動サンプル</title>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<h2>ボックス区切り移動サンプル</h2>
+			<p>
+				DividedBoxの使用方法については<a href="../index.html">こちら</a>を参照してください
+			</p>
+			<hr>
 
-		<h3>ボックス区切り移動サンプル(ボックス追加機能、リセット機能あり)</h3>
+			<h3>横積みDividedBox</h3>
+			<p>横積み(区切り方向は縦)のDividedBoxです。</p>
+			<p>refreshボタンをクリックするとDividedBoxController.refresh()を実行します。</p>
+			<p>サイズ変更でDividedBoxのルート要素のサイズを変更できます。</p>
+			<p>refreshを実行するとDividedBoxのルート要素に合わせてボックスの領域が再計算されます。</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*300" selected>auto×300px</option>
+						<option value="200*200">200px×200px</option>
+						<option value="300*300">300px×300px</option>
+						<option value="400*400">400px×400px</option></select></label>
+				<div class="dividedBox horizontal">
+					<div class="box yellow">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box orange">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box last blue">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+				</div>
+			</div>
 
-		<span>使用方法・制限事項</span>
-		<ul>
-			<li>
-			ここではdividedBoxControllerをサブコントローラーとして使用しています。<br/>
-			class=sampleの要素がルート要素、配下のclass=_dividedBoxの要素がdividedBoxControllerの対象です。
-			</li>
-			<li>_dividedBoxの要素については<a href="../index.html">こちら</a>と同様です。</li>
-			<li>
-			insertボタンは、dividedBoxControllerのinsertメソッドを実行することにより、<br/>
-			2番目の要素の後ろに要素を追加して、その間に区切り線を生成します。<br/>
-			</li>
-			<li>
-			addDiv→ボタンは、_dividedBoxの要素の末尾にDIV要素を追加するのみです。<br/>
-			その後、refreshボタンを押すと、dividedBoxControllerのrefreshメソッドを実行することにより、<br/>
-			区切り線のない要素間に区切り線を生成します。
-			</li>
-		</ul>
+			<h3>縦積みDividedBox</h3>
+			<p>縦積み(区切り方向は横)のDividedBoxです。</p>
+			<p>
+				ルート要素に<strong>horizontal</strong>クラスを指定すると縦積みのDividedBoxになります。
+			</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*500" selected>auto×500px</option>
+						<option value="200*200">200px×200px</option>
+						<option value="300*300">300px×300px</option>
+						<option value="400*400">400px×400px</option></select></label>
+				<div class="dividedBox vertical">
+					<div class="box yellow">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box orange">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box last blue">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+				</div>
+			</div>
 
-		<hr>
+			<h3>DividedBoxの入れ子</h3>
+			<p>横積みのDividedBoxの中に縦積みのDividedBoxを入れ子で使用した例です。</p>
+			<p>refreshボタンをクリックすると各DividedBoxについてrefreshを実行しています。</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*500" selected>auto×500px</option>
+						<option value="200*200">200px×200px</option>
+						<option value="300*300">300px×300px</option>
+						<option value="400*400">400px×400px</option></select></label>
+				<div class="dividedBox vertical">
+					<div class="box yellow">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="dividedBox hrozontal">
+						<div class="box purple">
+							<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+						</div>
+						<div class="box last green">
+							<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+						</div>
+					</div>
+					<div class="box last blue">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+				</div>
+			</div>
 
-		<p>
-		ルート要素は縦幅サイズ200px、両端のボックスはfill指定あり、中央はfill指定なしで縦幅サイズ100pxを指定<br>
-		ルート要素にfreezeSize指定がなく、横幅の指定がない(autoで100%)ため、ウィンドウサイズ変更時にルート要素と内容がずれる。<br>
-		refreshボタンを押すことで修正される。
-		</p>
+			<h3>noFill指定</h3>
+			<p>
+				中央のボックスに<strong>noFill</strong>クラスを指定しています。
+			</p>
+			<p>ボックス要素は自動で高さ(縦積みDividedBoxの場合は幅)が100%になり、ルート要素と同じ高さ(縦積みの場合は幅)になります。</p>
+			<p>しかし、noFillクラスの指定されたボックスは元のサイズを維持します。</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<div class="dividedBox horizontal">
+					<div class="box yellow">
+						<p>noFill指定のないボックス</p>
+						<p>ボックスの高さは100%()dividedBoxの高さと同じ)になります</p>
+					</div>
+					<div class="box noFill orange">
+						<p>noFill指定ボックス</p>
+						<p>noFill指定の場合は高さ100%ではなく中身に依存します</p>
+					</div>
+					<div class="box last blue">
+						<p>noFill指定のないボックス</p>
+						<p>ボックスの高さは100%()dividedBoxの高さと同じ)になります</p>
+					</div>
+				</div>
+			</div>
 
-		<div class="sample">
-			<button class="insert">insert</button>
-			<button class="addDiv">addDiv→</button>
-			<button class="refresh">refresh</button>
-			<div class="_dividedBox horizontal">
-				<div class="box fill first"></div>
-				<div class="box"></div>
-				<div class="box fill last"></div>
+			<h3>freezeSize指定</h3>
+			<p>
+				ルート要素に<strong>freezeSize</strong>クラスを指定すると、DividedBoxのルートのサイズは生成時のサイズに固定されます。
+			</p>
+			<p>ルート要素の幅はauto指定をしています。そのためウィンドウ幅を変更した場合にルート要素の幅も変わります。</p>
+			<p>しかし、freezeSizeを指定するとルート要素はDividedBox適用時のサイズに固定されます。</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<div class="dividedBox horizontal freezeSize">
+					<div class="box yellow">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box orange">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box last blue">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+				</div>
+			</div>
+
+			<h3>fixedSize指定</h3>
+			<p>
+				DividedBox適用時に、ボックス要素に<strong>fixedSize</strong>クラスを指定すると、そのボックスのサイズは変更できなくなります。
+			</p>
+			<p>また、以下のようにして動的にボックスを固定にすることもできます</p>
+			<p>
+			<pre>dividedBoxController.fixSize(box); // box = ボックス要素またはボックスのインデックス</pre>
+			</p>
+			<p>サイズ固定を解除するにはunfixSize()を呼びます。</p>
+			<p>
+			<pre>dividedBoxController.unfixSize(box); // box = ボックス要素またはボックスのインデックス</pre>
+			</p>
+			<p>refresh時にサイズの自動計算が行われますが、固定サイズボックスはrefreshされてもサイズ変更されません。</p>
+			<div class="sample fixedSizeSample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*300" selected>auto×300px</option>
+						<option value="500*300">500px×300px</option>
+						<option value="600*300">600px×300px</option>
+						<option value="700*300">700px×300px</option></select></label>
+				<div class="dividedBox">
+					<div class="box green "></div>
+					<div class="box purple fixedSize"></div>
+					<div class="box yellow fixedSize "></div>
+					<div class="box orange autoSize"></div>
+					<div class="box blue fixedSize"></div>
+					<div class="box green fixedSize"></div>
+				</div>
+			</div>
+
+			<h3>ボックスの動的追加と削除</h3>
+			<h4>要素を追加してrefresh()</h4>
+			<p>DividedBoxのルート要素にdiv要素を追加してrefresh()を呼ぶと、自動で追加した要素がボックスとして扱われます。</p>
+			<p>divを追加ボタンを押すと最後尾にdiv要素を追加します。</p>
+			<p>refresh()を呼ぶと、追加されたdivをボックスとして扱えます。</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<button class="appendDiv btn btn-default">divを追加</button>
+				<div class="dividedBox freezeSize">
+					<div class="box green">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box purple">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+					<div class="box yellow">
+						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
+					</div>
+				</div>
+			</div>
+
+			<h4>insert()とremove()</h4>
+			<p>DividedBoxにボックスを動的に追加・削除することができます。</p>
+			<p>追加する箇所は、追加したボックスが何番目のボックスになるか、既存のボックス要素を指定します。既存のボックス要素を指定した場合はそのボックスの前に追加されます。</p>
+			<p>省略した場合は最後尾に追加します。</p>
+			<p>削除する箇所は、削除するボックス要素または削除するボックスが何番目のボックスかを指定します。</p>
+			<pre>dividedBox.insert(indexOrTargetBox, box);</pre>
+			<pre>dividedBox.remove(indexOrTargetBox); </pre>
+			<div class="sample insertSample">
+				<div class="dividedBox vertical"></div>
 			</div>
 		</div>
-
-		<hr>
-
-		<p>
-		(上との違いは、ルート要素にfreezeSize指定が追加されている点のみ)<br>
-		ルート要素はfreezeSize指定ありで縦幅サイズ指定なし、中央のボックスに縦幅サイズ100pxを指定<br>
-		このため、処理前のルート要素の高さは中央のボックスの高さに依存する。<br>
-		freezeSize指定によりその状態でサイズが固定される。<br>
-		両端のボックスはfill指定ありなので縦幅が100%となる。
-		</p>
-
-		<div class="sample">
-			<button class="insert">insert</button>
-			<button class="addDiv">addDiv→</button>
-			<button class="refresh">refresh</button>
-			<div class="_dividedBox horizontal freezeSize">
-				<div class="box fill first"></div>
-				<div class="box"></div>
-				<div class="box fill last"></div>
-			</div>
-		</div>
-
-		<hr>
-
-		<p>
-		ルート要素はfreezeSize指定なしで横幅サイズ指定なし、両端のボックスはfill指定あり、中央はfill指定なしで横幅サイズ300pxを指定<br>
-		（このケースは縦幅が動的に変わらないのでウィンドウサイズ変更等で内容のずれは生じない。）
-		</p>
-
-		<div class="sample">
-			<button class="insert">insert</button>
-			<div class="_dividedBox vertical">
-				<div class="box fill first"></div>
-				<div class="box"></div>
-				<div class="box fill last"></div>
-			</div>
-		</div>
-
-	</body>
+	</div>
+</body>
 </html>

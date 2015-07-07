@@ -24,26 +24,75 @@ $(function() {
 
 		__meta: {
 			dividedBoxController: {
-				rootElement: '> ._dividedBox'
+				rootElement: '> .dividedBox'
 			},
 		},
 
-		'.insert click': function() {
-			this.dividedBoxController.insert(1,
-					'<div class="box" style="/*width:500px;*/background-color:orange;"></div>');
+		__init: function() {
+			var $root = $(this.rootElement);
+			if ($root.hasClass('fixedSizeSample')) {
+				this.$find('.box').each(this.ownWithOrg(function(orgThis) {
+					this.view.append(orgThis, 'fixedSize-box-contents-template');
+				}));
+			}
+			if ($root.hasClass('insertSample')) {
+				for (var i = 0; i < 3; i++) {
+					this.view.append(this.$find('.dividedBox'), 'insert-box-template');
+				}
+			}
 		},
 
-		'.addDiv click': function() {
-			var dividedBox = $(this.dividedBoxController.rootElement);
-			var last = dividedBox.find('.box:last').width('-=100px;');
-			var addDiv = $('<div class="box" style="width:100px;background-color:orange;"></div>')
-					.css({
-						left: last.position().left + last.width()
-					});
-			dividedBox.append(addDiv);
+		__ready: function() {
+			this.$dividedBox = $(this.dividedBoxController.rootElement);
+			// 入れ子になっているdividedBox要素にもバインド
+			var childDividedBoxControllers = this._childDividedBoxControllers = [];
+			this.$dividedBox.find('.dividedBox').each(function() {
+				var c = h5.core.controller(this, h5.ui.container.DividedBox);
+				childDividedBoxControllers.push(c);
+			});
+		},
+
+		'.fixSize click': function(context, $el) {
+			this.dividedBoxController.fixSize($el.closest('.box'));
+		},
+
+		'.unfixSize click': function(context, $el) {
+			this.dividedBoxController.unfixSize($el.closest('.box'));
+		},
+
+		'.appendDiv click': function() {
+			var addDiv = $('<div class="box orange">追加されたdiv</div>');
+			this.$dividedBox.append(addDiv);
+		},
+
+		'.insert click': function(context, $el) {
+			var $target = $el.parent('.box');
+			var index = this.$dividedBox.find('.box').index($target);
+			if ($el.hasClass('after')) {
+				index++;
+			}
+			this.dividedBoxController.insert(index, this.view.get('insert-box-template'));
+		},
+
+		'.remove click': function(context, $el) {
+			var $target = $el.parent('.box');
+			var index = this.$dividedBox.find('.box').index($target);
+			this.dividedBoxController.remove(index);
+		},
+
+		'[name="size"] change': function(ctx, $el) {
+			var size = $el.val();
+			var tmp = size.split('*');
+			this.$dividedBox.css({
+				width: tmp[0],
+				height: tmp[1]
+			});
 		},
 
 		'.refresh click': function() {
+			for (var i = 0, l = this._childDividedBoxControllers.length; i < l; i++) {
+				this._childDividedBoxControllers[i].refresh();
+			}
 			this.dividedBoxController.refresh();
 		}
 	};
