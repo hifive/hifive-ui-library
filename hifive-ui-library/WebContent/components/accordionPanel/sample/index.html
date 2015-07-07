@@ -150,11 +150,45 @@
 	</div>
 
 	<h2>サイズ変更方向指定</h2>
+	<h3>forward指定とbackward指定</h3>
 	<p>
 		<code>data-change-state=forward=&quot;backward&quot;</code>
 		を指定すると、最小化/復元の時に前方向(縦済みなら上、横積みなら左)のdividerが動きます
 	</p>
-	<p>最初のボックスや最後のボックスの場合は動ける方向が決まっているため、指定した方向は無視されます。</p>
+	<p>ただし最初のボックスや最後のボックス、前のボックスが全て最小化されている場合など、動ける方向が決まってる場合は指定した方向は無視されます。</p>
+	<div class="sampleWrapper">
+		<div class="dividedBox">
+			<div class="box panelBox autoSize" data-default-state="normal"
+				data-state-change-direction="forward" data-box-name="ボックス１">
+				<div class="contentWrapper">
+					<p>forward指定</p>
+					<p>最小化・復元で、左側のdividerが動きます</p>
+				</div>
+			</div>
+			<div class="box panelBox autoSize" data-default-state="normal"
+				data-state-change-direction="forward" data-box-name="ボックス２">
+				<div class="contentWrapper">
+					<p>forward指定</p>
+					<p>最小化・復元で、左側のdividerが動きます</p>
+				</div>
+			</div>
+			<div class="box panelBox autoSize" data-default-state="normal"
+				data-state-change-direction="backward" data-box-name="ボックス３">
+				<div class="contentWrapper">
+					<p>backward指定</p>
+					<p>最小化・復元で、右側のdividerが動きます</p>
+				</div>
+			</div>
+			<div class="box panelBox autoSize"
+				data-state-change-direction="backward" data-box-name="ボックス４">
+				<div class="contentWrapper">
+					<p>backward指定</p>
+					<p>最小化・復元で、右側のdividerが動きます</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<h3>全てbackward指定</h3>
 	<div class="sampleWrapper">
 		<div class="dividedBox">
 			<div class="box panelBox autoSize" data-default-state="normal"
@@ -211,6 +245,5 @@
 			</div>
 		</div>
 	</div>
-
 </body>
 </html>

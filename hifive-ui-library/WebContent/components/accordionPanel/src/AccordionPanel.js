@@ -228,6 +228,11 @@
 				// 全てmin状態で追加したダミーボックスがある場合、削除してからstate変更
 				var $dummyDivider = $dividedBox.find('>.accordionDummyDivider');
 				$dummyDivider.remove();
+				// ダミーより後ろを全部前側に寄せる
+				var dummySize = $dummy[w_h]();
+				$dummy.nextAll().each(function() {
+					$(this).css(l_t, '-=' + dummySize);
+				});
 				$dummy.remove();
 			}
 
@@ -278,7 +283,6 @@
 						dividedBoxController.refresh();
 						$dividedBox.data('dyn-all-minimized', false);
 					} else {
-
 						// sizeが可動域を超えていたら、動かせる最大値まで動かす
 						var resizebleMaxSize = orgSize;
 						var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
@@ -495,9 +499,8 @@
 			$dummy.css(w_h, pos - fpos - 4);
 			dividedBoxCtrl.refresh();
 			// 新規追加されたdividerを隠す
-			// 追加されたdividerが先頭の場合(ダミーボックスが先頭で、残りはすべて後ろに最小化されている場合)、
-			// は第２引数にtrueを指定して後ろ側を動かさないようにする
-			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex, !backwardMinLastBoxIndex);
+			// 第２引数にtrueを指定して後ろ側を動かさないようにする
+			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex, true);
 			// 新規追加されたdividerにクラスを当てる
 			$dividedBox.find('>.divider').eq(backwardMinLastBoxIndex).addClass(
 					'accordionDummyDivider');
