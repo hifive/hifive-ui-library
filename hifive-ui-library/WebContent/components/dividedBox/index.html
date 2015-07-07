@@ -83,8 +83,63 @@ var dividedBoxControlelr = h5.core.controller('.dividedBox', h5.ui.container.Div
 				</li>
 				<li><p>区切り線はdiv.divider、区切り線のハンドル用要素(中央の○)はCSS
 						div.dividerHandler で設定されています。</p>
+					<p>見た目を変更したい場合は適宜スタイルを上書きしてください。</li> >>>>>>> branch 'dividedBox' of
+				https://github.com/hifive/hifive-ui-library.git
+			</ul>
+			<<<<<<< HEAD
+
+			<h4>使用方法・制限事項</h4>
+			<ul>
+				<li>本機能使用時は、以下のファイルを読み込んでください。
+					<ul>
+						<li>dividedBox/src/DividedBox.css</li>
+						<li>dividedBox/src/DividedBox.js</li>
+					</ul> デザインについては適宜、別定義によるオーバーライド等で変更してください。
+				<li>ルート要素をdividedBoxクラスとして、DividedBoxを適用する例です。<pre>
+var dividedBoxControlelr = h5.core.controller('.dividedBox', h5.ui.container.DividedBox);
+</pre>
+					<p>ルート要素直下にボックス要素を配置してください。複数配置可能です。DividedBoxを適用すると各ボックス間に移動可能な区切り線が作成されます。
+					</li>
+				<li><p>ルート要素と各ボックス間、および各ボックスと区切り線の間に余白(margin、padding)は指定できません。</p></li>
+				<li><p>
+						ルート要素に<strong>vertical</strong>クラスを指定、もしくは指定しない場合は垂直配置(区切り線は縦)とみなします。
+					</p>
+					<p>
+						<strong>horizontal</strong>クラスを指定した場合は水平区切り(区切り線は横)とみなします。</li>
+				<li><p>
+						ルート要素に<strong>freezeSize</strong>クラスを指定すると、処理前の表示状態でルート要素のサイズを固定します。
+					</p>
+					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
+				<li><p>各ボックスのサイズは非分割方向(垂直区切りは縦、水平区切りは横)に要素を自動的に拡張されます。</p>
+					<p>
+						ボックスのサイズを変更したくない場合は<strong>noFill</strong>クラスをボックスに指定てください。
+					</p></li>
+				<li><p>
+						各ボックスに<strong>autoSize</strong>クラスを指定すると分割方向(垂直区切りは横、水平区切りは縦)の幅を自動で設定します。
+					</p>
+					<p>（autoSize以外のボックスを除いた、残り部分の幅をautoSizeのボックスで等分）</p>
+					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
+				<li><p>
+						ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、
+						DividedBoxControllerの<strong>refresh</strong>関数を呼び出してください。再計算して表示します。
+					</p>
+					<p>
+					<pre>dividedBoxController.refresh();</pre>
+					</p></li>
+				<li>
+					<p>コントローラーのinsert関数を呼び出すと、ボックスを追加することができます。</p>
+					<p>
+					<pre>dividedBoxController.insert(index, box);
+  // index = 対象要素インデックス(0～)
+  // box = 追加要素(DOM||jQuery||要素生成文字列)</pre>
+					</p>
+				</li>
+				<li><p>区切り線はdiv.divider、区切り線のハンドル用要素(中央の○)はCSS
+						div.dividerHandler で設定されています。</p>
 					<p>見た目を変更したい場合は適宜スタイルを上書きしてください。</li>
 			</ul>
+			======= >>>>>>> branch 'dividedBox' of
+			https://github.com/hifive/hifive-ui-library.git
 		</div>
 	</div>
 </body>
