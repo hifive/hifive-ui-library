@@ -336,22 +336,15 @@
 			var $root = this._$root;
 			var w_h = this._w_h;
 
-			// 追加しするボックスにクラスCLASS_MANAGEDを追加
-			var $box = $(box);
-			$box.addClass(CLASS_MANAGED);
 			var $target = this._getBoxElement(index);
 			var $boxes = this._getBoxes();
 			if ($target.length) {
 				// ボックスの追加
-				$target.before($box);
+				$target.before(box);
 			} else {
 				// 範囲外の場合は一番最後に追加
-				$root.append($box);
+				$root.append(box);
 			}
-			// 追加したボックスのサイズ分、dividedBoxのサイズが大きくなる。
-			// dividedBoxのサイズが大きくなった状態から、現在のサイズに変更されたと見做して
-			// 現在のdividedBoxのサイズに合うよう各ボックスを調整するために、前回調整サイズに追加されたボックスのサイズを加えている
-			this._lastAdjustAreaWH += $box[w_h]();
 			this._triggerBoxSizeChange();
 			this.refresh();
 		},
