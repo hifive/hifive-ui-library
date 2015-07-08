@@ -61,8 +61,7 @@ $(function() {
 		},
 
 		'.appendDiv click': function() {
-			var addDiv = $('<div class="box orange">追加されたdiv</div>');
-			this.$dividedBox.append(addDiv);
+			this.view.append(this.$dividedBox, 'appendSample-box-template');
 		},
 
 		'.insert click': function(context, $el) {

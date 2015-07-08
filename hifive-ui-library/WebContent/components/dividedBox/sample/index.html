@@ -32,8 +32,9 @@
 	// テンプレートのヘルパー定義
 	(function() {
 		var count = 0;
-		EJS.Helpers.prototype._getCallCount = function() {
-			return count++;
+		var colors = ['yellow', 'green', 'purple', 'blue', 'orange'];
+		EJS.Helpers.prototype._getColor = function() {
+			return colors[count++ % 5];
 		}
 	})();
 </script>
@@ -46,11 +47,14 @@
 	</p>
 </script>
 <script type="text/ejs" id="insert-box-template">
-	<div class="box [%= ['yellow','green','purple','blue','orange'][_getCallCount()%5] %]">
-		<p class="btn btn-xs insert before">上に追加</p>
-		<p class="btn btn-xs insert after">下に追加</p>
-		<p class="btn btn-xs remove">削除</p>
+	<div class="box [%= _getColor() %]">
+		<button class="btn btn-xs insert before">上に追加</button>
+		<button class="btn btn-xs insert after">下に追加</button>
+		<button class="btn btn-xs remove">削除</button>
 	</div>
+</script>
+<script type="text/ejs" id="appendSample-box-template">
+	<div class="box [%= _getColor() %]">追加されたdiv</div>
 </script>
 
 <title>ボックス区切り移動サンプル</title>
