@@ -19,7 +19,7 @@
 	var DATA_DEFAULT_STATE = 'default-state';
 	var EVENT_STATE_CHANGE = 'state-change';
 	var selectBoxController = {
-		__name: 'h5.ui.container.StateBox',
+		__name: 'h5.ui.components.DividedBox.StateBox',
 		_currentState: null,
 		__init: function() {
 			// 初期stateの設定
@@ -112,7 +112,7 @@
 
 	var dividedBoxController = {
 
-		__name: 'h5.ui.container.DividedBox',
+		__name: 'h5.ui.components.DividedBox.DividedBox',
 
 		_dividerPos: {
 			left: 0.5,
@@ -182,7 +182,7 @@
 		/**
 		 * ボックスとdividerの位置を最適化します
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
 		refresh: function() {
 			var type = this._type;
@@ -328,7 +328,7 @@
 		/**
 		 * ボックスの追加
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {Integer} index 何番目に追加するか(追加した要素が何番目に来るか)
 		 * @param {DOM|jQuery} box
 		 */
@@ -352,7 +352,7 @@
 		/**
 		 * ボックスの削除
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {Integer} index 何番目のボックスを削除するか
 		 */
 		remove: function(index) {
@@ -382,9 +382,9 @@
 		/**
 		 * ボックスの最小化
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
-		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 * @param {Object} opt {@link h5.ui.components.DividedBox.DividedBox#resize}のオプションと同じです
 		 */
 		minimize: function(box, opt) {
 			this.resize(box, 0, opt);
@@ -393,9 +393,9 @@
 		/**
 		 * ボックスの最大化
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
-		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 * @param {Object} opt {@link h5.ui.components.DividedBox.DividedBox#resize}のオプションと同じです
 		 */
 		maximize: function(box, opt) {
 			this.resize(box, $(this.rootElement)[this._w_h](), $.extend({}, opt, {
@@ -406,20 +406,20 @@
 		/**
 		 * ボックスの中身の大きさを自動取得し、そのサイズにリサイズします
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
-		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 * @param {Object} opt {@link h5.ui.components.DividedBox.DividedBox#resize}のオプションと同じです
 		 */
 		fitToContents: function(box, opt) {
 			this.resize(box, null, opt);
 		},
 
 		/**
-		 * {@link h5.ui.container.DividedBox#hide}で非表示にしたボックスを表示します
+		 * {@link h5.ui.components.DividedBox.DividedBox#hide}で非表示にしたボックスを表示します
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
-		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 * @param {Object} opt {@link h5.ui.components.DividedBox.DividedBox#resize}のオプションと同じです
 		 */
 		show: function(box, opt) {
 			// hide状態のボックスを表示
@@ -444,9 +444,9 @@
 		/**
 		 * ボックスを非表示にします
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
-		 * @param {Object} opt {@link h5.ui.container.DividedBox#resize}のオプションと同じです
+		 * @param {Object} opt {@link h5.ui.components.DividedBox.DividedBox#resize}のオプションと同じです
 		 */
 		hide: function(box, opt) {
 			var $box = this._getBoxElement(box);
@@ -551,7 +551,7 @@
 		/**
 		 * ボックスを今のサイズで固定にする
 		 *
-		 * @memberOf h5.ui.container.DividedBox*
+		 * @memberOf h5.ui.components.DividedBox.DividedBox*
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 */
 		fixSize: function(box) {
@@ -563,7 +563,7 @@
 		/**
 		 * ボックスの固定を解除する
 		 *
-		 * @memberOf h5.ui.container.DividedBox*
+		 * @memberOf h5.ui.components.DividedBox.DividedBox*
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 */
 		unfixSize: function(box) {
@@ -575,7 +575,7 @@
 		/**
 		 * dividerのトラック操作開始時イベントハンドラ
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param context
 		 */
 		'> .divider h5trackstart': function(context) {
@@ -619,7 +619,7 @@
 		/**
 		 * dividerのトラック操作中イベントハンドラ
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param context
 		 */
 		'> .divider h5trackmove': function(context) {
@@ -646,7 +646,7 @@
 		/**
 		 * dividerのトラック操作終了イベントハンドラ
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param context
 		 */
 		'> .divider h5trackend': function(context) {
@@ -660,7 +660,7 @@
 		/**
 		 * 指定されたdividerを非表示にする
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
 		 * @param {Boolean} [forwardAdjust=false]
 		 *            dividerを非表示にするとき、divider分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。
@@ -684,7 +684,7 @@
 		/**
 		 * 指定されたdividerを表示する
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
 		 * @param {Boolean} [forwardAdjust=false]
 		 *            dividerを表示するとき、divider分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。
@@ -709,7 +709,7 @@
 		 * dividerを動かす
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {Integer} move 移動量
 		 * @param {DOM|jQuery} divider divider
 		 * @param {jQuery} $dividerGroup dividerを動かした時に同時に動く要素。
@@ -791,7 +791,7 @@
 		 * 現在のdividedBoxのサイズに合わせてボックスのサイズと位置の調整を行う
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
 		_adjust: function() {
 			var l_t = this._l_t;
@@ -891,7 +891,7 @@
 		 * 要素のouterWidthまたはouterHeightがouterSizeになるようにサイズを設定する
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {jQuery} $el
 		 * @param {String} w_h 'width'または'height'
 		 * @param {Integer} outerSize
@@ -904,7 +904,7 @@
 		 * 要素のマージン+ボーダー+パディングの値を計算する
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {jQuery} $el
 		 * @param {String} w_h 'width'または'height'
 		 */
@@ -920,7 +920,7 @@
 		 * </p>
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {DOM} element
 		 */
 		_cleanWhitespace: function(element) {
@@ -938,7 +938,7 @@
 		 * 全てのボックスについて、boxSizeChangeイベントをあげる
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
 		_triggerBoxSizeChange: function() {
 			this._getBoxes().each(function() {
@@ -950,7 +950,7 @@
 		 * 全てのボックスを取得
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getBoxes: function() {
@@ -966,7 +966,7 @@
 		 * 全てのdividerを取得
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getDividers: function() {
@@ -977,7 +977,7 @@
 		 * indexからdividerを返す。DOM,jQueryが渡された場合はdivider要素ならそれを$()でラップして返す
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} dividerのindexまたはdivider要素またはセレクタ
 		 * @returns {jQuery} divider要素。該当するものが無い場合は空jQuery
 		 */
@@ -993,7 +993,7 @@
 		/**
 		 * indexからボックスを返す。DOM,jQueryが渡された場合はdivider要素ならそれを$()でラップして返す
 		 *
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} ボックスのindexまたはボックス要素またはセレクタ
 		 * @returns {jQuery}
 		 */
@@ -1012,7 +1012,7 @@
 		 * </p>
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getPrevBoxByDivider: function(divider) {
@@ -1033,7 +1033,7 @@
 		 * </p>
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getNextBoxByDivider: function(divider) {
@@ -1054,7 +1054,7 @@
 		 * </p>
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getPrevDividerByBox: function(box) {
@@ -1077,7 +1077,7 @@
 		 * </p>
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @returns {jQuery}
 		 */
 		_getNextDividerByBox: function(box) {
@@ -1094,7 +1094,7 @@
 		 * dividerを動かす時にそのdividerと連動して動く要素(divider,box)をjQueryオブジェクトで返す
 		 *
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
 		_getDividerGroup: function($divider) {
 			var $result = $divider;
@@ -1125,7 +1125,7 @@
 
 		/**
 		 * @private
-		 * @memberOf h5.ui.container.DividedBox
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
 		__unbind: function() {
 			var $root = this._$root = $(this.rootElement);

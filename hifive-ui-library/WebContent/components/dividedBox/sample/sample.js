@@ -20,7 +20,7 @@ $(function() {
 
 		__name: 'sampleController',
 
-		dividedBoxController: h5.ui.container.DividedBox,
+		dividedBoxController: h5.ui.components.DividedBox.DividedBox,
 
 		__meta: {
 			dividedBoxController: {
@@ -47,7 +47,7 @@ $(function() {
 			// 入れ子になっているdividedBox要素にもバインド
 			var childDividedBoxControllers = this._childDividedBoxControllers = [];
 			this.$dividedBox.find('.dividedBox').each(function() {
-				var c = h5.core.controller(this, h5.ui.container.DividedBox);
+				var c = h5.core.controller(this, h5.ui.components.DividedBox.DividedBox);
 				childDividedBoxControllers.push(c);
 			});
 		},

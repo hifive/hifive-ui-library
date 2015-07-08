@@ -19,13 +19,13 @@
 	var sampleController = {
 		__name: 'sample.sampleController',
 
-		verticalDBController: h5.ui.container.DividedBox,
-		horizontalDBController: h5.ui.container.DividedBox,
-		yellowSBController: h5.ui.container.StateBox,
-		greenSBController: h5.ui.container.StateBox,
-		purpleSBController: h5.ui.container.StateBox,
-		blueSBController: h5.ui.container.StateBox,
-		orangeSBController: h5.ui.container.StateBox,
+		verticalDBController: h5.ui.components.DividedBox.DividedBox,
+		horizontalDBController: h5.ui.components.DividedBox.DividedBox,
+		yellowSBController: h5.ui.components.DividedBox.StateBox,
+		greenSBController: h5.ui.components.DividedBox.StateBox,
+		purpleSBController: h5.ui.components.DividedBox.StateBox,
+		blueSBController: h5.ui.components.DividedBox.StateBox,
+		orangeSBController: h5.ui.components.DividedBox.StateBox,
 		__meta: {
 			verticalDBController: {
 				rootElement: '._dividedBox.horizontal'
