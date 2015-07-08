@@ -375,7 +375,7 @@
 			// 削除ボックスのサイズ分、dividedBoxのサイズが小さくなる。
 			// dividedBoxのサイズが小さくなった状態から、現在のサイズに変更されたと見做して
 			// 現在のdividedBoxのサイズに合うよう各ボックスを調整するために、前回調整サイズに追加されたボックスのサイズを加えている
-			this._lastAdjustAreaWH += $target[this._w_h]();
+			this._lastAdjustAreaWH -= $target[this._w_h]();
 			$target.remove();
 			this.refresh();
 		},
