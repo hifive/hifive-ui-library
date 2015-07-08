@@ -628,11 +628,15 @@
 			if ($divider.hasClass(CLASS_FIXED_DIVIDER)) {
 				return;
 			}
-			context.event.preventDefault();
+			var event = context.event;
+			event.preventDefault();
+			var dividerOffset = $divider.offset();
 			var l_t = this._l_t;
-			var move = (l_t === 'left') ? context.event.dx : context.event.dy;
-			if (move === 0)
+			var move = (l_t === 'left') ? event.pageX - dividerOffset.left : event.pageY
+					- dividerOffset.top;
+			if (move === 0) {
 				return;
+			}
 			this._move(move, $divider, this._$dividerGroup, this._prevStart, this._nextEnd,
 					this._lastPos, true);
 			this._lastPos = $divider.position();
