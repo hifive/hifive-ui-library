@@ -154,7 +154,7 @@
 			var w_h = this._w_h = (type === 'x') ? 'width' : 'height';
 			this._l_t = (type === 'x') ? 'left' : 'top';
 
-			var outerW_H = this._outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
+			this._outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
 			this._scrollW_H = w_h === 'width' ? 'scrollWidth' : 'scrollHeight';
 
 			// frezeSize指定時はdividedBoxのルートを適用時のサイズに固定
@@ -175,35 +175,6 @@
 				}
 			}
 
-			// ボックスのサイズがオートのものについてサイズ計算
-			var autoSizeBoxCouunt = 0;
-			var autoSizeBoxAreaWH = $root[w_h]();
-			var totalBoxSize = 0;
-
-			var $boxes = this._getBoxes();
-			$boxes.each(this.ownWithOrg(function(orgThis) {
-				var $box = $(orgThis);
-				var boxSize = $box[outerW_H](true);
-				totalBoxSize += boxSize;
-				if ($box.hasClass(CLASS_AUTO_SIZE)) {
-					autoSizeBoxCouunt++;
-				} else {
-					autoSizeBoxAreaWH -= boxSize;
-				}
-			}));
-			// dividerのサイズ計算
-			// 追加して削除することで、実際に置いた時のサイズを取得
-			var totalDividerSize = 0;
-			if ($boxes.length > 1) {
-				var $tmpDivider = $('<div class="divider"></div>');
-				$root.append($tmpDivider);
-				totalDividerSize = $tmpDivider[w_h]() * ($boxes.length - 2);
-				$tmpDivider.remove();
-			}
-			// 初期配置(refresh()前)はボックスの合計サイズとdividerの合計サイズが全体のサイズになる
-			// refresh前に、初期配置のサイズを覚えておく
-			this._lastAdjustAreaWH = totalBoxSize + totalDividerSize;
-
 			// リフレッシュ
 			this.refresh();
 		},
@@ -215,16 +186,51 @@
 		 */
 		refresh: function() {
 			var type = this._type;
+			var w_h = this._w_h;
+			var outerW_H = this._outerW_H;
 
 			// ボックスにクラスCLASS_MANAGEDを追加
 			// position:absoluteに設定
 			// ボックス間に区切り線がない場合は挿入
 			var $boxes = this._getBoxes();
-			// dividerが間にないボックスを探して、dividerを追加
+
+			// 初めてのrefresh(__initから呼ばれた最初のrefresh)かどうか
+			var isFirstRefresh = this._lastAdjustAreaWH === null;
+			if (isFirstRefresh) {
+				// boxのサイズ計算
+				var totalBoxSize = 0;
+				$boxes.each(function() {
+					totalBoxSize += $(this)[outerW_H](true);
+				});
+				// クラスとposition:absoluteの設定
+				$boxes.addClass(CLASS_MANAGED).css('position', 'absolute');
+				// dividerのサイズ計算
+				// 追加して削除することで、実際に置いた時のサイズを取得
+				var totalDividerSize = 0;
+				if ($boxes.length > 1) {
+					var $tmpDivider = $('<div class="divider"></div>');
+					$(this.rootElement).append($tmpDivider);
+					totalDividerSize = $tmpDivider[w_h]() * ($boxes.length - 1);
+					$tmpDivider.remove();
+				}
+				// ボックスの合計サイズとdividerの合計サイズから、現在のルート要素の幅に調整する。
+				// ボックスとdividerの合計サイズを覚えておく
+				this._lastAdjustAreaWH = totalBoxSize + totalDividerSize;
+			}
+
+			// _adjustで追加された分のサイズを考慮してボックスのサイズを調整する必要があるため、
+			// 新規追加されたボックスのサイズを_lastAdjustWHに加える
+			$boxes.not('.' + CLASS_MANAGED).each(this.ownWithOrg(function(orgThis) {
+				var $box = $(orgThis);
+				this._lastAdjustAreaWH += $box[outerW_H]();
+				// 新規追加されたボックスにクラス追加とposition:absolute設定
+				$box.addClass(CLASS_MANAGED).css('position', 'absolute');
+			}));
+
+			// dividerが間にないボックスを探して、ボックス間にdividerを追加
 			$boxes.filter(':not(.divider) + :not(.divider)').each(function() {
 				$(this).before('<div class="divider" style="position:absolute"></div>');
 			});
-			$boxes.addClass(CLASS_MANAGED).css('position', 'absolute');
 
 			//主に、新たに配置した区切り線とその前後のボックスの設定(既存も調整)
 			var $dividers = this._getDividers();
