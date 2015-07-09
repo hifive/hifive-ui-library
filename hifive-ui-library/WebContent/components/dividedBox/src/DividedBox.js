@@ -670,12 +670,17 @@
 			if ($divider.css('display') === 'none') {
 				return;
 			}
+			var w_h = this._w_h;
+			var l_t = this._l_t;
+			var dividerWH = $divider[w_h]();
 			if (forwardAdjust) {
-				var w_h = this._w_h;
-				var l_t = this._l_t;
-				var dividerWH = $divider[w_h]();
-				this._getPrevBoxByDivider($divider).css(w_h, '+=' + dividerWH);
+				var $prev = this._getPrevBoxByDivider($divider);
+				$prev.css(w_h, '+=' + dividerWH);
 				$divider.css(l_t, '+=' + dividerWH);
+			} else {
+				var $next = this._getNextBoxByDivider($divider);
+				$next.css(w_h, '+=' + dividerWH);
+				$next.css(l_t, '+=' + dividerWH);
 			}
 			$divider.css('display', 'none');
 			this.refresh();
@@ -694,12 +699,18 @@
 			if ($divider.css('display') === 'block') {
 				return;
 			}
+			var w_h = this._w_h;
+			var l_t = this._l_t;
+			var dividerWH = $divider[w_h]();
 			if (forwardAdjust) {
-				var w_h = this._w_h;
-				var l_t = this._l_t;
-				var dividerWH = $divider[w_h]();
-				this._getPrevBoxByDivider($divider).css(w_h, '-=' + dividerWH);
+				var $prev = this._getPrevBoxByDivider($divider);
+				$prev.css(w_h, '-=' + dividerWH);
 				$divider.css(l_t, '-=' + dividerWH);
+			} else {
+				var $next = this._getNextBoxByDivider($divider);
+				$next.css(w_h, '-=' + dividerWH);
+				$next.css(l_t, '-=' + dividerWH);
+
 			}
 			$divider.css('display', 'block');
 			this.refresh();
