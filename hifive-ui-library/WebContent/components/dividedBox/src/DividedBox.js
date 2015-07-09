@@ -286,7 +286,7 @@
 				// dividerの次の要素の調整
 				$next.css({
 					top: nextTop,
-					left: nextLeft,
+					left: nextLeft
 				});
 
 				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可(fixedDivider)にする

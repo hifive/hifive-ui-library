@@ -25,7 +25,7 @@ $(function() {
 		__meta: {
 			dividedBoxController: {
 				rootElement: '> .dividedBox'
-			},
+			}
 		},
 
 		__init: function() {
