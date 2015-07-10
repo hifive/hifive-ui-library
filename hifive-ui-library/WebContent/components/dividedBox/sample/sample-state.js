@@ -51,7 +51,7 @@
 		},
 
 		__init: function() {
-			var methods = ['fitToContents', 'minimize', 'maximize', 'hide'];
+			var methods = ['fitToContents', 'minimize', 'maximize', 'hide', 'fixSize'];
 			this.$find('.box').each(
 					function() {
 						var $this = $(this);
@@ -112,6 +112,20 @@
 			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
 			var opt = this._getResizeOption();
 			target.targetDbCtrl.hide(target.index, opt);
+		},
+
+		'.fixSize click': function(context, $el){
+			var $box = $el.parent('.box');
+			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
+			target.targetDbCtrl.fixSize(target.index);
+			$el.removeClass('fixSize').addClass('unfixSize').text('unfixSize');
+		},
+
+		'.unfixSize click': function(context, $el){
+			var $box = $el.parent('.box');
+			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
+			target.targetDbCtrl.unfixSize(target.index);
+			$el.removeClass('unfixSize').addClass('fixSize').text('fixSize');
 		},
 
 		'.set-state click': function(context, $el) {

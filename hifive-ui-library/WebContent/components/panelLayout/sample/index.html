@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+<meta name="viewport"
+	content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<!-- jquery -->
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<!-- bootstrap -->
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet" media="screen">
+<script src="/hifive-res/ext/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+<!-- hifive1.2.0 -->
+<link href="hifive/h5.css" rel="stylesheet">
+<script src="hifive/ejs-h5mod.js"></script>
+<script src="hifive/h5.dev.js"></script>
+
+<!-- DividedBox -->
+<link rel="stylesheet" href="../../dividedBox/src/DividedBox.css">
+<script type="text/javascript" src="../../dividedBox/src/DividedBox.js"></script>
+
+<!-- PanelLayout -->
+<link rel="stylesheet" href="../src/PanelLayout.css">
+<script type="text/javascript" src="../src/PanelLayout.js"></script>
+
+
+<script type="text/javascript" src="index.js"></script>
+
+<script>
+	$(function() {
+		$('.sampleWrapper').each(function() {
+			h5.core.controller(this, sample.PageController);
+		});
+	});
+</script>
+<style>
+.sampleWrapper>.dividedBox {
+	width: 1200px;
+	height: 600px;
+	background-color: #f7f7f7;
+	border: 1px solid #000;
+	overflow: hidden;
+}
+
+.sampleWrapper .dividerHandler {
+	display: none;
+}
+
+.sampleWrapper .contentWrapper {
+	background-color: #fff;
+	height: 100%;
+	overflow: auto;
+}
+
+.sampleWrapper .divider {
+	background-color: #ccc;
+}
+</style>
+<title></title>
+</head>
+<body>
+	<h1>サンプル</h1>
+	<h2>縦と横の入れ子</h2>
+	<div class="sampleWrapper">
+		<div class="dividedBox">
+			<div class="box stateBox" data-default-state="middle"
+				data-middleStateSize="300" data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box stateBox" data-default-state="minimum"
+				data-middleStateSize="200" data-box-name="ボックス２">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="dividedBox fill vertical autoSize">
+				<div class="box stateBox" data-default-state="middle"
+					data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box stateBox" data-default-state="minimum"
+					data-box-name="ボックス２">
+					<div class="contentWrapper">
+						<p>右上のボタンを押すと最小化/復元をすることができます</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>あ</p>
+						<p>一番下</p>
+					</div>
+				</div>
+				<div class="box stateBox autoSize" data-box-name="ボックス３"
+					data-state-minimize-direction="bottom">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<h2>縦積み</h2>
+	<div class="sampleWrapper">
+		<div class="dividedBox fill vertical autoSize">
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box stateBox autoSize" data-box-name="ボックス３"
+				data-state-minimize-direction="bottom">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+		</div>
+	</div>
+
+	<h2>横積み</h2>
+	<div class="sampleWrapper">
+		<div class="dividedBox fill autoSize">
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box stateBox autoSize" data-box-name="ボックス３"
+				data-state-minimize-direction="bottom">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+		</div>
+	</div>
+
+	<h2>縦積み(通常のボックスと混在)</h2>
+	<div class="sampleWrapper">
+		<div class="dividedBox fill vertical autoSize">
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box" data-default-state="minimum" data-box-name="ボックス２">
+				<div class="contentWrapper">
+					<p>通常のボックスも混在できます</p>
+				</div>
+			</div>
+			<div class="box stateBox autoSize" data-box-name="ボックス３"
+				data-state-minimize-direction="bottom">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+		</div>
+	</div>
+
+	<h2>横積み(通常のボックスと混在)</h2>
+	<div class="sampleWrapper">
+		<div class="dividedBox fill autoSize">
+			<div class="box stateBox" data-default-state="middle"
+				data-box-name="ボックス１">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+			<div class="box" data-default-state="minimum" data-box-name="ボックス２">
+				<div class="contentWrapper">
+					<p>通常のボックスも混在できます</p>
+				</div>
+			</div>
+			<div class="box stateBox autoSize" data-box-name="ボックス３"
+				data-state-minimize-direction="bottom">
+				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>
