@@ -560,6 +560,10 @@
 			if (isOnMagElement) {
 				// Magnifier要素上のイベントの場合、いったんdisplay:noneにして、後ろにボードがあるかどうかチェックする
 				$el.css('display', 'none');
+				var scrollX = window.pageXOffset === undefined ? window.scrollX
+						: window.pageXOffset;
+				var scrollY = window.pageYOffset === undefined ? window.scrollY
+						: window.pageYOffset;
 				var target = document
 						.elementFromPoint(event.pageX - scrollX, event.pageY - scrollY);
 				$el.css('display', 'block');
