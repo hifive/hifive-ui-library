@@ -40,6 +40,8 @@
 <link rel="stylesheet" href="css/index.css" />
 <script src="src/common.js"></script>
 <script src="src/PictureController.js"></script>
+<script src="src/SaveController.js"></script>
+<script src="src/SizeChangeController.js"></script>
 <script src="src/ToolbarController.js"></script>
 <script src="src/PageController.js"></script>
 
@@ -50,7 +52,7 @@
 		h5.core.controller($root, sample.PageController, {
 			canvasSize: {
 				height: 300,
-				width: $('.artboard').innerWidth()
+				width: $('.artboard').innerWidth() - 2 // borderの分引いている
 			}
 		});
 	});

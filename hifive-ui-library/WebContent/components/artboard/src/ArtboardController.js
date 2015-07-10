@@ -1185,6 +1185,30 @@
 		},
 
 		/**
+		 * 描画領域のサイズを変更します
+		 * <p>
+		 * 描画操作を行うcanvas要素及び、
+		 *
+		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
+		 * @instance
+		 * @param {number} width 変更後の幅(px)
+		 * @param {number} height 変更後の高さ(px)
+		 */
+		setSize: function(width, height) {
+			// ルートエレメントのサイズ変更
+			$(this.rootElement).css({
+				width: width,
+				height: height
+			});
+			// 描画操作の領域(canvas要素)のwidth,height変更
+			var canvas = this._canvas;
+			canvas.setAttribute('width', width);
+			canvas.setAttribute('height', height);
+			// drawingLogicのsetSizeでレイヤサイズの変更と背景の再計算を行う
+			this.drawingLogic.setSize(width, height);
+		},
+
+		/**
 		 * セーブデータををロードして描画します
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
@@ -1251,8 +1275,8 @@
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
-		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {Object} [processParameter]
+		 * @param {string} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
+		 * @param {Object} [processParameter] パラメータ詳細については[DrawingLogic#getImage]{@link h5.ui.components.artboard.logic.DrawingLogic#getImage}と同じです。
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
 		getImage: function(returnType, processParameter) {
@@ -1481,31 +1505,12 @@
 		/**
 		 * 背景画像の設定
 		 * <p>
-		 * 画像IDまたはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
+		 * 設定パラメータについては[DraiwingLogic#setBackgroundImage]{@link h5.ui.components.artboard.logic.DrawingLogic#setBackgroundImage}をご覧ください
 		 * </p>
-		 * <p>
-		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
-		 * </p>
-		 * <ul>
-		 * <li>none : 左上を原点として画像のサイズを変更せずに描画
-		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
-		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
-		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
-		 * </ul>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardController
 		 * @instance
 		 * @param {Object} data
-		 *
-		 * <pre class="sh_javascript"><code>
-		 * {
-		 *  id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
-		 *  // src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
-		 *  fillMode: 画像の配置モード('none'|'contain'|'cover'|'stretch') 指定のない場合は'none'で描画します,
-		 *  x: 背景画像の開始位置のx座標(fillModeがnoneの場合のみ有効。デフォルト:0),
-		 *  y: 背景画像の開始位置のy座標(fillModeがnoneの場合のみ有効。デフォルト:0)
-		 * }
-		 * </code></pre>
 		 */
 		setBackgroundImage: function(data) {
 			this.drawingLogic.setBackgroundImage(data);
@@ -1574,7 +1579,7 @@
 			ctx.globalAlpha = this._strokeOpacity;
 			ctx.strokeStyle = this._strokeColor;
 			ctx.lineWidth = this._strokeWidth;
-			ctx.lineJoin = 'round';
+			ctx.lineJoin = 'miter';
 			ctx.lineCap = 'round';
 			ctx.beginPath();
 			ctx.moveTo(x - dx, y - dy);
@@ -1979,7 +1984,7 @@
 
 			// ドラッグ開始時の選択範囲表示要素の位置
 			var selectionRectPositions = [];
-			var $selectionRectangles = $('.selection-rectangle');
+			var $selectionRectangles = this.$find('.selection-rectangle');
 			$selectionRectangles.each(function() {
 				var $rect = $(this);
 				selectionRectPositions.push({
@@ -2300,7 +2305,7 @@
 		 */
 		_removeSelectionRectangle: function(shape) {
 			var id = this.getShapeID(shape);
-			$('.selection-rectangle[data-target-shape-id=' + id + ']').remove();
+			this.$find('.selection-rectangle[data-target-shape-id=' + id + ']').remove();
 		},
 
 		/**
@@ -2313,8 +2318,8 @@
 		 */
 		_addSelectionRectangle: function(shape) {
 			var id = this.getShapeID(shape);
-			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="'
-					+ id + '"></div>');
+			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="' + id
+							+ '"></div>');
 			$(this.rootElement).append($selectionRectangle);
 			var bounds = shape.getBounds();
 			$selectionRectangle.css({

@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: CanvasConvertLogic</title>
+	<title>JSDoc: Class: MagnifierController</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: CanvasConvertLogic</h1>
+        <h1 class="page-title">Class: MagnifierController</h1>
 
         
 
         <section>
 
         <header>
-            <h2>CanvasConvertLogic</h2>
+            <h2>MagnifierController</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="CanvasConvertLogic"><span class="type-signature"></span>new CanvasConvertLogic</h4>
+    <h4 class="name" id="MagnifierController"><span class="type-signature"></span>new MagnifierController</h4>
     
     
 </dt>
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        canvasの画像変換を行うロジック
+        Artboardを拡大表示するコントローラ<p>このコントローラのcreateMagnifierを呼ぶと拡大表示を行うMagnifierインスタンスが生成され、拡大表示要素(Magnifier要素)がこのコントローラのルートエレメントに追加されます。</p><p>Magnifier要素を追加したい要素をルートエレメントにしてバインドして使用します。</p>
     </p>
     
     
@@ -84,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 69</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>MagnifierController.js, line 618</li></ul></dd>
 	
 	-->
 
@@ -125,7 +125,7 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="drawSVGToCanvas"><span class="type-signature"></span>drawSVGToCanvas</h4>
+    <h4 class="name" id="createMagnifier"><span class="type-signature">&lt;static> </span>createMagnifier</h4>
     
     
 </dt>
@@ -133,7 +133,7 @@
     
     
     <p class="description">
-        svg要素の中身をcanvasに描画します。<p>このメソッドはプロミスを返します。画像(image要素)が使用されている場合は非同期になる場合があります。</p>
+        Magnifierの作成<p><a href="Magnifier.html">Magnifier</a>インスタンスを生成し、このコントローラのルートエレメントにMagnifier要素を追加します。</p>
     </p>
     
     
@@ -167,11 +167,11 @@
 	
         <tr>
             
-                <td class="name"><code>svgElement</code></td>
+                <td class="name"><code>$board</code></td>
             
             
             <td class="type">
-            SVG
+            DOM | jQuery
             </td>
             
             
@@ -186,40 +186,14 @@
                 </td>
             
             
-            <td class="description last">svg要素</td>
+            <td class="description last">拡大対象となるボード要素、またはボード要素を子に持つ要素。</td>
         </tr>
 	
 	
 	
         <tr>
             
-                <td class="name"><code>canvas</code></td>
-            
-            
-            <td class="type">
-            Canvas
-            </td>
-            
-            
-                <td class="attributes">
-                
-                </td>
-            
-            
-            
-                <td class="default">
-                
-                </td>
-            
-            
-            <td class="description last">canvas要素</td>
-        </tr>
-	
-	
-	
-        <tr>
-            
-                <td class="name"><code>processParameter.simulateItalic</code></td>
+                <td class="name"><code>settings</code></td>
             
             
             <td class="type">
@@ -234,74 +208,11 @@
             
             
                 <td class="default">
-                false
+                {width:200,height:200,scale:2}
                 </td>
             
             
-            <td class="description last">italic体が描画できるかどうかチェックして描画できない場合に変形してシミュレートするかどうか</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 91</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="toDataURL"><span class="type-signature"></span>toDataURL</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        canvasに描画されている図形を画像データにして返します<p>このメソッドはプロミスを返し、非同期で画像のデータURLを返します。画像が使用されている場合は非同期になる場合があります。</p>
-    </p>
-    
-    
-    
-    
-    <h5>Parameters:</h5>
+            <td class="description last">設定オブジェクト。省略した場合はデフォルト、または前回createMagnifier呼び出し時の設定が適用されます<h6>Properties</h6>
 
 <table class="params">
     <thead>
@@ -313,7 +224,11 @@
 		<th>Type</th>
 		
 		
+		<th>Argument</th>
 		
+		
+		
+		<th>Default</th>
 		
 		
 		<th class="last">Description</th>
@@ -325,36 +240,161 @@
 	
         <tr>
             
-                <td class="name"><code>returnType</code></td>
+                <td class="name"><code>width</code></td>
             
             
             <td class="type">
-            String
+            number
             </td>
             
             
+                <td class="attributes">
+                
+                </td>
             
             
             
-            <td class="description last">imgage/png, image/jpeg, image/svg+xml のいずれか</td>
+                <td class="default">
+                
+                </td>
+            
+            
+            <td class="description last">生成するMagnifier要素の幅</td>
         </tr>
 	
 	
 	
         <tr>
             
-                <td class="name"><code>processParameter</code></td>
+                <td class="name"><code>height</code></td>
             
             
             <td class="type">
-            Object
+            number
             </td>
             
             
+                <td class="attributes">
+                
+                </td>
             
             
             
-            <td class="description last">第1引数にimage/jpegを指定した場合、第2引数は0.0～1.0の範囲で品質レベルを指定</td>
+                <td class="default">
+                
+                </td>
+            
+            
+            <td class="description last">生成するMagnifier要素の高さ</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>scale</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+                <td class="attributes">
+                
+                </td>
+            
+            
+            
+                <td class="default">
+                
+                </td>
+            
+            
+            <td class="description last">拡大率(0以上の数値で指定)</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>mouseoverMove</code></td>
+            
+            
+            <td class="type">
+            boolean
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                false
+                </td>
+            
+            
+            <td class="description last">ボード上でマウス(タッチ)が起きた時にMagnifier要素の位置を追従をさせるかどうか</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>mouseoverFocus</code></td>
+            
+            
+            <td class="type">
+            boolean
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                false
+                </td>
+            
+            
+            <td class="description last">ボード上でマウス(タッチ)が起きた時にMagnifierが拡大するボードの座標位置を追従をさせるかどうか</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>mouseover</code></td>
+            
+            
+            <td class="type">
+            boolean
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+                <td class="default">
+                false
+                </td>
+            
+            
+            <td class="description last">mouseoverMove,mouseoverFocusの両フラグをtrueにする場合にtrueを設定</td>
+        </tr>
+	
+	
+	</tbody>
+</table></td>
         </tr>
 	
 	
@@ -381,7 +421,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 292</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>MagnifierController.js, line 664</li></ul></dd>
 	
 	-->
 
@@ -398,26 +438,6 @@
     
     
     
-    <h5>Returns:</h5>
-    
-<div class="param-desc">
-    doneハンドラに'data:'で始まる画像データURLを渡します
-</div>
-
-
-
-
-<dl>
-	<dt>
-		Type
-	</dt>
-	<dd>
-		
-		<span class="param-type">Promise</span> 
-		
-	</dd>
-</dl>
-
     
     
 

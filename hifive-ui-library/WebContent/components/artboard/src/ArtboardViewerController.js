@@ -69,14 +69,39 @@
 		 * @param {DrawingSaveData|String} artboardSaveData 保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 */
-		load: function(artboardSaveData) {
+		load: function(artboardSaveData, isStretch) {
 			if (typeof artboardSaveData === 'string') {
 				artboardSaveData = h5.u.obj.deserialize(artboardSaveData);
 			}
 
 			// サイズの設定
 			var size = artboardSaveData.size;
-			this._$view.css(size);
+			if (isStretch) {
+				// isStretch指定されていたらルートの大きさに固定
+				this._$view.css({
+					width: '100%',
+					height: '100%'
+				});
+				// svg要素を変形させて縦横比が変わった場合、中身g要素はそれに追従せず縦横比が変わらない
+				// svgの縦横比に合わせてg要素も変形する
+				var viewW = this._$view.innerWidth();
+				var viewH = this._$view.innerHeight();
+				var orgAspectRatio = size.width / size.height;
+				var viewAspectRatio = viewW / viewH;
+				var isLargerViewAspect = orgAspectRatio < viewAspectRatio;
+				var scaleX = isLargerViewAspect ? viewAspectRatio / orgAspectRatio : 1;
+				var scaleY = isLargerViewAspect ? 1 : orgAspectRatio / viewAspectRatio;
+				var transX = isLargerViewAspect ? size.height / viewH
+						* (-viewW + viewH * orgAspectRatio) / 2 : 0;
+				var transY = isLargerViewAspect ? 0 : size.width / viewW
+						* (-viewH + viewW / orgAspectRatio) / 2;
+				var transformValue = h5.u.str.format('matrix({0} 0 0 {1} {2} {3})', scaleX, scaleY,
+						transX, transY);
+				this._g.setAttribute('transform', transformValue);
+			} else {
+				// isStretch指定の無い場合はロードするデータのサイズに合わせる
+				this._$view.css(size);
+			}
 			this._$svg[0].setAttribute('viewBox', h5.u.str.format('0 0 {0} {1}', size.width,
 					size.height));
 
@@ -91,35 +116,82 @@
 				}
 				// 背景画像要素の生成
 				this._$bg.empty();
+
 				if (background.src) {
 					var fillMode = background.fillMode;
-					var $bgImg;
-					var bgImgStyle = {};
-					// stretch指定が指定されていたらimg要素を作る
-					if (fillMode === 'stretch') {
-						$bgImg = $('<img style="width:100%;height:100%;position:absolute;">');
-						$bgImg.attr('src', background.src);
+					var layerW = this._$bg.width();
+					var layerH = this._$bg.height();
+					var $imgElement = $('<img>');
+					var imgElement = $imgElement[0];
+					$imgElement.attr('src', background.src);
+					this._$bg.append(imgElement);
+					var imgOnload = this.own(function() {
+						var imgStyle = {
+							left: background.offsetX || 0,
+							top: background.offsetY || 0
+						};
+						var scaleX = scaleY = 1;
+						if (isStretch) {
+							scaleX = layerW / size.width;
+							scaleY = layerH / size.height;
+							imgStyle.left *= scaleX;
+							imgStyle.top *= scaleY;
+						}
+						switch (fillMode) {
+						case 'contain':
+						case 'containCenter':
+							// アスペクト比を維持して画像がすべて含まれるように表示
+							var aspectRatio = size.width / size.height;
+							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+							if (aspectRatio < imgRate) {
+								imgStyle.width = layerW;
+								imgStyle.height = size.width / imgRate * scaleY;
+							} else {
+								imgStyle.height = layerH;
+								imgStyle.width = size.height * imgRate * scaleX;
+							}
+							if (fillMode === 'containCenter') {
+								// 中央配置
+								if (aspectRatio < imgRate) {
+									imgStyle.top += (layerH - imgStyle.height) / 2;
+								} else {
+									imgStyle.left += (layerW - imgStyle.width) / 2;
+								}
+							}
+							break;
+						case 'cover':
+							// アスペクト比を維持して領域が画像で埋まるように表示
+							var aspectRatio = size.width / size.height;
+							var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+							if (aspectRatio < imgRate) {
+								imgStyle.height = layerH;
+								imgStyle.width = layerH / scaleY * imgRate * scaleX;
+							} else {
+								imgStyle.width = layerW;
+								imgStyle.height = layerW / scaleX / imgRate * scaleY;
+							}
+							break;
+						case 'stretch':
+							// stretchの時はisStretch指定であっても描画先のサイズがいくつであっても100%指定でOK
+							imgStyle.width = '100%';
+							imgStyle.height = '100%';
+							break;
+						default:
+							// 指定無しまたはnoneの場合はwidth/heightは計算しないで画像の幅、高さそのままで表示されるようにする
+							if (isStretch) {
+								// isStretch(表示先のサイズに合わせる)指定の場合は画面サイズに合うようにする
+								imgStyle.width = imgElement.naturalWidth * scaleX;
+								imgStyle.height = imgElement.naturalHeight * scaleY;
+							}
+						}
+						$imgElement.css(imgStyle);
+					});
+					// img要素のロードが終わってから背景適用を実行
+					if (imgElement.complete) {
+						imgOnload();
 					} else {
-						// stretchでなければbackgroundを指定したdivを作る
-						$bgImg = $('<div style="width:100%;height:100%;position:absolute; background-repeat: no-repeat;"></div>');
-						$bgImg.css({
-							backgroundImage: 'url("' + background.src + '")',
-							backgroundSize: fillMode
-						});
+						imgElement.onload = imgOnload;
 					}
-					var x = background.x;
-					var y = background.y;
-					bgImgStyle.left = x;
-					bgImgStyle.top = y;
-					if (x < 0 || y < 0) {
-						// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
-						var w = this._$bg.width();
-						var h = this._$bg.height();
-						bgImgStyle.width = w - x;
-						bgImgStyle.height = h - y;
-					}
-					$bgImg.css(bgImgStyle);
-					this._$bg.append($bgImg);
 				}
 			}
 

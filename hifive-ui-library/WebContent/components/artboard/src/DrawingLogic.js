@@ -316,6 +316,9 @@
 	var RemoveCommand = h5.ui.components.artboard.RemoveCommand;
 	var DATA_IMAGE_SOURCE_ID = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_ID;
 	var DATA_IMAGE_SOURCE_SRC = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_SRC;
+	var DATA_IMAGE_SOURCE_FILLMODE = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_FILLMODE;
+	var DATA_IMAGE_SOURCE_OFFSET_X = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_OFFSET_X;
+	var DATA_IMAGE_SOURCE_OFFSET_Y = h5.ui.components.artboard.consts.DATA_IMAGE_SOURCE_OFFSET_Y;
 
 	// ArtShape実装クラスコンストラクタ
 	var constructor = h5.ui.components.artboard.ArtShapeConstructor;
@@ -848,11 +851,15 @@
 		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
 		 * </p>
 		 * <ul>
-		 * <li>none : 左上を原点として画像のサイズを変更せずに描画
+		 * <li>none : 画像のサイズを変更せずに左上を原点として描画
 		 * <li>contain : アスペクト比を保持して、全体が見えるように描画（描画領域と画像のアスペクト比が異なる場合は隙間ができます）
+		 * <li>containCenter : サイズをcontainで計算して、位置を中央配置にして描画
 		 * <li>cover : アスペクト比を保持して、隙間が出ないように描画（描画領域と画像のアスペクト比が異なる場合は画像が描画領域をはみ出します）
 		 * <li>stretch : アスペクト比を無視して、描画領域を埋めるように描画
 		 * </ul>
+		 * <p>
+		 * offsetX, offsetYは、fillMode指定によって決定した位置を基準として、そこからの座標位置を指定します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -862,9 +869,9 @@
 		 * {
 		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
-		 * 	fillMode: 画像の配置モード('none'|'contain'|'cover'|'stretch') 指定のない場合は'none'で描画します,
-		 * 	x: 背景画像の開始位置のx座標(fillModeがnoneの場合のみ有効。デフォルト:0),
-		 * 	y: 背景画像の開始位置のy座標(fillModeがnoneの場合のみ有効。デフォルト:0)
+		 * 	fillMode: 画像の配置モード('none'|'contain'|'containCenter'|'cover'|'stretch') 指定のない場合は'none'で描画します,
+		 * 	offsetX: 背景画像位置のx座標のオフセット(デフォルト:0),
+		 * 	offsetY: 背景画像位置のy座標のオフセット(デフォルト:0)
 		 * }
 		 * </pre>
 		 */
@@ -872,98 +879,86 @@
 			var id = data.id;
 			var src = id ? this.imageSourceMap[id] : data.src;
 			var fillMode = data.fillMode || 'none';
-			var x = data.x ? Math.round(parseFloat(data.x)) : 0;
-			var y = data.y ? Math.round(parseFloat(data.y)) : 0;
+			var offsetX = data.offsetX ? data.offsetX : 0;
+			var offsetY = data.offsetY ? data.offsetY : 0;
 			// 現在の設定と同じかどうかチェック
 			// 現在の背景画像がid指定ならid、src指定されているならsrcで比較し、fillModeが同じかどうかもチェックする
 			// x,yも同じかどうかチェックする
 			var current = this._getCurrentBackgroundData();
 			if (current && (current.id ? (current.id === id) : (current.src === src))
-					&& current.fillMode === fillMode && current.x === x && current.y === y) {
+					&& current.fillMode === fillMode && current.offsetX === offsetX
+					&& current.y === offsetY) {
 				// 設定が全て現在の設定と同じなら何もしない
 				return;
 			}
 
-			var $layer = $(this._backgroundLayer);
-			var $element;
-			// fillModeにstretch指定が指定されていたらimg要素を作る
-			if (fillMode === 'stretch') {
-				$element = $('<img style="width:100%;height:100%">');
-				$element.attr('src', src);
-			} else {
-				// stretchでなければbackgroundを指定したdivを作る
-				$element = $('<div></div>');
-				$element.css({
-					backgroundImage: 'url("' + src + '")',
-					backgroundSize: fillMode
-				});
-			}
-			// fillModeとidまたは画像パスを要素に持たせておく
-			$element.data('fillmode', fillMode);
+			var $imgElement = $('<img>');
+			var imgElement = $imgElement[0];
+			$imgElement.attr('src', src);
+			// 設定をと画像パスを要素に持たせておく
 			if (id) {
-				$element.data(DATA_IMAGE_SOURCE_ID, id);
+				$imgElement.data(DATA_IMAGE_SOURCE_ID, id);
 			}
-			$element.data(DATA_IMAGE_SOURCE_SRC, src);
-			$element.css({
-				left: x || 0,
-				top: y || 0,
-				position: 'absolute'
-			});
+			$imgElement.data(DATA_IMAGE_SOURCE_FILLMODE, fillMode);
+			$imgElement.data(DATA_IMAGE_SOURCE_SRC, src);
+			$imgElement.data(DATA_IMAGE_SOURCE_OFFSET_X, offsetX);
+			$imgElement.data(DATA_IMAGE_SOURCE_OFFSET_Y, offsetY);
 
-			if (x < 0 || y < 0) {
-				// xまたはyが負ならwidth/heightが100%だと表示しきれない場合があるので、heightとwidthを調整する
-				var w = $layer.width();
-				var h = $layer.height();
-				$element.css({
-					width: w - x,
-					height: h - y
+			var imgOnload = this.own(function() {
+				$imgElement.css(this._getBackgroundImageStyle(imgElement, data));
+
+				// コマンドの作成
+				var layer = this._backgroundLayer;
+				var afterElement = imgElement;
+				var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
+				var that = this;
+				var command = new CustomCommand({
+					execute: function() {
+						var oldValue = that._getCurrentBackgroundData();
+						this._preBgElement = $(layer).children()[0];
+						$(layer).append(afterElement);
+						$(this._preBgElement).remove();
+						var newValue = that._getCurrentBackgroundData();
+						// 必要なデータだけ取得
+						delete oldValue.color;
+						delete newValue.color;
+						return {
+							type: EVENT_EDIT_BACKGROUND,
+							layer: layer,
+							oldValue: oldValue,
+							newValue: newValue
+						};
+					},
+					undo: function() {
+						var oldValue = that._getCurrentBackgroundData();
+						$(layer).append(this._preBgElement);
+						$(afterElement).remove();
+						var newValue = that._getCurrentBackgroundData();
+						// 必要なデータだけ取得
+						oldValue = {
+							color: oldValue.color
+						};
+						newValue = {
+							color: newValue.color
+						};
+						return {
+							type: EVENT_EDIT_BACKGROUND,
+							layer: layer,
+							oldValue: oldValue,
+							newValue: newValue
+						};
+					},
+					_preBgElement: null
 				});
-			}
-
-			// コマンドの作成
-			var layer = this._backgroundLayer;
-			var afterElement = $element[0];
-			var EVENT_EDIT_BACKGROUND = h5.ui.components.artboard.consts.EVENT_EDIT_BACKGROUND;
-			var that = this;
-			var command = new CustomCommand({
-				execute: function() {
-					var oldValue = that._getCurrentBackgroundData();
-					this._preBgElement = $layer.children()[0];
-					$(layer).append(afterElement);
-					$(this._preBgElement).remove();
-					var newValue = that._getCurrentBackgroundData();
-					// 必要なデータだけ取得
-					delete oldValue.color;
-					delete newValue.color;
-					return {
-						type: EVENT_EDIT_BACKGROUND,
-						layer: layer,
-						oldValue: oldValue,
-						newValue: newValue
-					};
-				},
-				undo: function() {
-					var oldValue = that._getCurrentBackgroundData();
-					$(layer).append(this._preBgElement);
-					$(afterElement).remove();
-					var newValue = that._getCurrentBackgroundData();
-					// 必要なデータだけ取得
-					oldValue = {
-						color: oldValue.color
-					};
-					newValue = {
-						color: newValue.color
-					};
-					return {
-						type: EVENT_EDIT_BACKGROUND,
-						layer: layer,
-						oldValue: oldValue,
-						newValue: newValue
-					};
-				},
-				_preBgElement: null
+				this.artboardCommandManager.appendCommand(command);
 			});
-			this.artboardCommandManager.appendCommand(command);
+
+			// img要素のロードが終わってから背景適用を実行
+			if (imgElement.complete) {
+				imgOnload();
+			} else {
+				imgElement.onload = imgOnload;
+			}
 		},
 
 		/**
@@ -1066,18 +1061,87 @@
 			}
 			ret.color = color;
 			if ($bgElement.length) {
-				ret.fillMode = $bgElement.data('fillmode');
+				ret.fillMode = $bgElement.data(DATA_IMAGE_SOURCE_FILLMODE);
 				var id = $bgElement.data(DATA_IMAGE_SOURCE_ID);
 				if (!useSrc && id) {
 					ret.id = id;
 				} else {
 					ret.src = $bgElement.data(DATA_IMAGE_SOURCE_SRC);
 				}
-				// x,yも返す(四捨五入したint)
-				ret.x = Math.round(parseFloat($bgElement.css('left'))) || 0;
-				ret.y = Math.round(parseFloat($bgElement.css('top'))) || 0;
+				// オフセットを返す
+				ret.offsetX = parseFloat($bgElement.data(DATA_IMAGE_SOURCE_OFFSET_X)) || 0;
+				ret.offsetY = parseFloat($bgElement.data(DATA_IMAGE_SOURCE_OFFSET_Y)) || 0;
 			}
 			return ret;
+		},
+
+		/**
+		 * 背景画像に適用するスタイルオブジェクトを計算して返します
+		 *
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @private
+		 * @param imgElement {DOM} img要素。画像(src)はロード済みであること。
+		 * @param data
+		 * @param data.fillMode
+		 * @param data.offsetX
+		 * @param data.offsetY
+		 * @returns {Object}
+		 */
+		_getBackgroundImageStyle: function(imgElement, data) {
+			var fillMode = data.fillMode;
+			var offsetX = data.offsetX ? Math.round(parseFloat(data.offsetX)) : 0;
+			var offsetY = data.offsetY ? Math.round(parseFloat(data.offsetY)) : 0;
+			var $layer = $(this._backgroundLayer);
+			var layerW = $layer.width();
+			var layerH = $layer.height();
+			var imgStyle = {
+				left: offsetX || 0,
+				top: offsetY || 0
+			};
+			switch (fillMode) {
+			case 'contain':
+			case 'containCenter':
+				// containまたはcontainCenter
+				// アスペクト比を維持して画像がすべて含まれるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				} else {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				}
+				if (fillMode === 'containCenter') {
+					// 中央配置
+					if (aspectRatio < imgRate) {
+						imgStyle.top += (layerH - imgStyle.height) / 2;
+					} else {
+						imgStyle.left += (layerW - imgStyle.width) / 2;
+					}
+				}
+				break;
+			case 'cover':
+				// アスペクト比を維持して領域が画像で埋まるように表示
+				var aspectRatio = layerW / layerH;
+				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRate) {
+					imgStyle.height = layerH;
+					imgStyle.width = layerH * imgRate;
+				} else {
+					imgStyle.width = layerW;
+					imgStyle.height = layerW / imgRate;
+				}
+				break;
+			case 'stretch':
+				// 描画領域にちょうど収まるようにする
+				imgStyle.width = '100%';
+				imgStyle.height = '100%';
+				break;
+			default:
+				// 指定無しまたはnoneの場合は画像のサイズ、位置変更無し
+			}
+			return imgStyle;
 		},
 
 		//--------------------------------------------------------------
@@ -1106,6 +1170,31 @@
 		},
 
 		/**
+		 * 描画領域のサイズを変更します
+		 *
+		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
+		 * @instance
+		 * @param {number} width 変更後の幅(px)
+		 * @param {number} height 変更後の高さ(px)
+		 */
+		setSize: function(width, height) {
+			//svgのviewBox変更
+			var svg = $(this._shapeLayer).parents('svg')[0];
+			var viewBox = h5.u.str.format('0 0 {0} {1}', width, height);
+			svg.setAttribute('viewBox', viewBox);
+
+			// カンバスのサイズに依存する計算がある場合があるため再設定する
+			// 背景画像の位置再計算
+			var $imgElement = $(this._backgroundLayer).children();
+			if (!$imgElement.length) {
+				return;
+			}
+			var currentBgData = this._getCurrentBackgroundData();
+			var imgStyle = this._getBackgroundImageStyle($imgElement[0], currentBgData);
+			$imgElement.css(imgStyle);
+		},
+
+		/**
 		 * セーブデータををロードして描画します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
@@ -1128,15 +1217,15 @@
 					this.setBackgroundImage({
 						id: background.id,
 						fillMode: background.fillMode,
-						x: background.x,
-						y: background.y
+						offsetX: background.offsetX,
+						offsetY: background.offsetY
 					});
 				} else if (background.src) {
 					this.setBackgroundImage({
 						src: background.src,
 						fillMode: background.fillMode,
-						x: background.x,
-						y: background.y
+						offsetX: background.offsetX,
+						offsetY: background.offsetY
 					});
 				}
 			}
@@ -1172,7 +1261,8 @@
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {String} [returnType="image/png"] imgage/png, image/jpeg, image/svg+xml のいずれか
-		 * @param {Object} [processParameter.simulateItalic = false]
+		 * @param {Object} [processParameter] 画像出力時設定オブジェクト
+		 * @param {boolean} [processParameter.simulateItalic = false]
 		 *            italicの指定されたArtTextオブジェクトの画像化の際に、指定されているフォントがitalic体を持たない場合に、変形して出力を行うかどうか
 		 *            <p>
 		 *            Firefox以外のブラウザでは、italic体を持たないフォントについてもブラウザが自動で変形を行うので、このフラグを指定しても結果は変わりません。
@@ -1183,17 +1273,44 @@
 		 *            <p>
 		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
 		 *            </p>
+		 * @param {Object} [processParameter.size] サイズオブジェクト。指定しない場合は範囲指定に合わせたサイズまたは描画領域のサイズで保存されます。
+		 * @param {number} processParameter.size.width 出力する画像の幅(px)
+		 * @param {number} processParameter.size.height 出力する画像の高さ(px)
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
+		// TODO trimオプションは実装済みだが、いったんAPIから外しています #83
+		// 自動トリム(図形描画領域を自動で計算してtrim)する機能を実装した時に復活させる
+		// 自動トリムは図形の線幅も考慮した矩形を取得する必要があり、ブラウザによって挙動が異なり、自動trim実装の差異は考慮する必要があります
+		// 例：path要素の矩形取得について
+		//		chrome
+		//		 getBoundingClientRect() 線の幅考慮されない
+		//		 getBBox() 線の幅考慮されない
+		//
+		//		ff
+		//		 getBoundingClientRect() +線の幅 +上下左右に10pxのマージン
+		//		 getBBox() 線の幅考慮されない
+		//
+		//		IE
+		//		 getBoundingClientRect() +線の幅
+		//		 getBBox() 線の幅考慮されない
+		//		/**
+		//		 * @private
+		//		 * @param {Object} [processParameter.trim] 範囲指定オブジェクト。指定しない場合は範囲指定は行いません。
+		//		 * @param {Object} processParameter.trim.dx 切りぬく範囲の左上位置のx座標
+		//		 * @param {Object} processParameter.trim.dy 切りぬく範囲の左上位置のy座標
+		//		 * @param {Object} processParameter.trim.dw 切りぬく範囲の幅
+		//		 * @param {Object} processParameter.trim.dh 切りぬく範囲の高さ
+		//		 */
 		getImage: function(returnType, processParameter) {
 			returnType = returnType || 'image/png';
+			processParameter = processParameter || {};
 			// _shapeLayerはg要素なので親のsvgを取得してviewBoxを求める
 			var svg = $(this._shapeLayer).parents('svg')[0];
 			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
-			var canvasWidth = viewBoxValues[2];
-			var canvasHeight = viewBoxValues[3];
+			var canvasWidth = parseInt(viewBoxValues[2]);
+			var canvasHeight = parseInt(viewBoxValues[3]);
 			var canvas = document.createElement('canvas');
 			canvas.setAttribute('width', canvasWidth);
 			canvas.setAttribute('height', canvasHeight);
@@ -1214,19 +1331,28 @@
 					var fillMode = background.fillMode;
 					var tmpImg = document.createElement('img');
 					tmpImg.onload = function() {
-						var x = background.x;
-						var y = background.y;
+						var x = background.offsetX;
+						var y = background.offsetY;
 						switch (fillMode) {
 						case 'contain':
+						case 'containCenter':
 							var canvasRate = canvas.width / canvas.height;
 							var imgRate = this.width / this.height;
 							var w, h;
 							if (canvasRate < imgRate) {
 								w = canvas.width;
-								h = w * imgRate;
+								h = w / imgRate;
 							} else {
 								h = canvas.height;
 								w = h * imgRate;
+							}
+							if (fillMode === 'containCenter') {
+								// 中央配置
+								if (canvasRate < imgRate) {
+									y += (canvas.height - h) / 2;
+								} else {
+									x += (canvas.width - w) / 2;
+								}
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
@@ -1236,7 +1362,7 @@
 							var w, h;
 							if (canvasRate < imgRate) {
 								h = canvas.height;
-								w = h / imgRate;
+								w = h * imgRate;
 							} else {
 								w = canvas.width;
 								h = w / imgRate;
@@ -1266,10 +1392,39 @@
 					this.own(function() {
 						return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas,
 								processParameter);
-					})).then(this.own(function() {
-				// カンバスを画像化
-				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
-			}));
+					})).then(
+					this.own(function() {
+						// カンバスを画像化
+						var size = processParameter.size;
+						// TODO trimは実装済みだが行わないようにしている #83
+						// var trim = processParameter.trim;
+						var trim = null;
+						if (size || trim) {
+							// sizeまたはtrimが指定されている場合
+							// 新しくcanvasを生成してサイズ変更とトリミングを行う
+							var orgCanvas = canvas;
+							canvas = document.createElement('canvas');
+							if (trim) {
+								var dx = trim.dx;
+								var dy = trim.dy;
+								var dh = trim.dh;
+								var dw = trim.dw;
+								// 出力サイズはsize指定があれば指定のサイズ、無い場合はtrimしたサイズ
+								var w = size ? size.width : dw;
+								var h = size ? size.height : dh;
+								canvas.setAttribute('width', w);
+								canvas.setAttribute('height', h);
+								canvas.getContext('2d').drawImage(orgCanvas, dx, dy, dw, dh, 0, 0,
+										w, h);
+							} else {
+								canvas.setAttribute('width', size.width);
+								canvas.setAttribute('height', size.height);
+								canvas.getContext('2d').drawImage(orgCanvas, 0, 0, size.width,
+										size.height);
+							}
+						}
+						dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+					}));
 			return dfd.promise();
 		}
 	};
