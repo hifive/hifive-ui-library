@@ -17,7 +17,7 @@
 (function($) {
 	var controller = {
 		__name: 'sample.PageController',
-		accordionPanelController: h5.ui.container.AccordionPanelController
+		accordionPanelController: h5.ui.components.AccordionPanel.AccordionPanelController
 	};
 	h5.core.expose(controller);
 })(jQuery);

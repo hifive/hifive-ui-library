@@ -47,9 +47,9 @@
 
 	var accordionPanelController = {
 		/**
-		 * @memberOf h5.ui.container.
+		 * @memberOf h5.ui.components.AccordionPanel.
 		 */
-		__name: 'h5.ui.container.AccordionPanelController',
+		__name: 'h5.ui.components.AccordionPanel.AccordionPanelController',
 
 		__init: function() {
 			// テンプレートの登録
@@ -127,7 +127,7 @@
 		/**
 		 * 変更ボタン
 		 *
-		 * @memberOf h5.ui.container.AccordionPanelController
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
 		 */
 		'.changeStateButton click': function(context, $el) {
 			context.event.stopPropagation();
