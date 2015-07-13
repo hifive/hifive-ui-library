@@ -345,7 +345,6 @@
 				// 範囲外の場合は一番最後に追加
 				$root.append(box);
 			}
-			this._triggerBoxSizeChange();
 			this.refresh();
 		},
 
@@ -545,7 +544,6 @@
 			if (isFixedSize) {
 				$targetBox.addClass(CLASS_FIXED_BOX);
 			}
-			this._triggerBoxSizeChange();
 		},
 
 		/**
@@ -639,8 +637,6 @@
 			this._move(move, $divider, this._$dividerGroup, this._prevStart, this._nextEnd,
 					this._lastPos, true);
 			this._lastPos = $divider.position();
-
-			this._triggerBoxSizeChange();
 		},
 
 		/**
@@ -793,8 +789,8 @@
 			$dividerGroup.each(function() {
 				$(this).css(l_t, '+=' + move);
 			});
-			$groupPrev[w_h](prevWH);
-			$groupNext[w_h](nextWH);
+			this._setOuterSize($groupPrev, prevWH);
+			this._setOuterSize($groupNext, nextWH);
 			$groupNext.css(l_t, '+=' + move);
 		},
 
@@ -894,7 +890,7 @@
 					$next.css('display', 'none');
 				}
 				// 計算したサイズを設定
-				this._setOuterSize($box, w_h, outerSize);
+				this._setOuterSize($box, outerSize);
 			}));
 		},
 
@@ -904,24 +900,24 @@
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {jQuery} $el
-		 * @param {String} w_h 'width'または'height'
 		 * @param {Integer} outerSize
 		 */
-		_setOuterSize: function($el, w_h, outerSize) {
-			$el[w_h](outerSize - this._getMBPSize($el, w_h));
-		},
-
-		/**
-		 * 要素のマージン+ボーダー+パディングの値を計算する
-		 *
-		 * @private
-		 * @memberOf h5.ui.components.DividedBox.DividedBox
-		 * @param {jQuery} $el
-		 * @param {String} w_h 'width'または'height'
-		 */
-		_getMBPSize: function(element, w_h) {
-			var outerW_H = w_h === 'width' ? 'outerWidth' : 'outerHeight';
-			return element[outerW_H](true) - element[w_h]();
+		_setOuterSize: function($el, outerSize) {
+			// outerWidth/Heightとcssで指定するwidht/heightの差
+			var outerW_H = this._outerW_H;
+			var w_h = this._w_h;
+			var pre = parseFloat($el[w_h]());
+			var mbp = $el[outerW_H](true) - $el[w_h]();
+			var after = (outerSize - mbp);
+			if (pre === after) {
+				// 変更無しなら何もしない
+				return;
+			}
+			$el[w_h](after);
+			$el.trigger(EVENT_BOX_SIZE_CHANGE, {
+				oldValue: pre,
+				newValue: after
+			});
 		},
 
 		/**
@@ -943,18 +939,6 @@
 				node = nextNode;
 			}
 			return element;
-		},
-
-		/**
-		 * 全てのボックスについて、boxSizeChangeイベントをあげる
-		 *
-		 * @private
-		 * @memberOf h5.ui.components.DividedBox.DividedBox
-		 */
-		_triggerBoxSizeChange: function() {
-			this._getBoxes().each(function() {
-				$(this).trigger(EVENT_BOX_SIZE_CHANGE);
-			});
 		},
 
 		/**

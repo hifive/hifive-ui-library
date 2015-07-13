@@ -28,10 +28,10 @@
 		orangeSBController: h5.ui.components.DividedBox.StateBox,
 		__meta: {
 			verticalDBController: {
-				rootElement: '._dividedBox.horizontal'
+				rootElement: '.dividedBox.horizontal'
 			},
 			horizontalDBController: {
-				rootElement: '._dividedBox.vertical'
+				rootElement: '.dividedBox.vertical'
 			},
 			yellowSBController: {
 				rootElement: '.state-container.yellow'
@@ -65,7 +65,7 @@
 		},
 
 		_getTargetDvidedBoxCtrlAndIndexByBox: function($box) {
-			var $element = $box.parent('._dividedBox');
+			var $element = $box.parent('.dividedBox');
 			var index = $element.find('>.dividedbox-managed:not(.divider)').index($box);
 			var targetDbCtrl;
 			if ($element[0] === this.verticalDBController.rootElement) {
@@ -157,6 +157,23 @@
 			var index = $ctrlGroup.find('[name="index"]').val();
 			var fixPrev = $el.data('fix-prev');
 			targetController.showDivider(parseInt(index), fixPrev);
+		},
+
+		'{rootElement} boxSizeChange': function(ctx) {
+			var $target = $(ctx.event.target);
+			var boxName = '';
+			var cls = $target.attr('class');
+			var colors = ['yellow', 'green', 'purple', 'blue', 'orange'];
+			for (var i = 0, l = colors.length; i < l; i++) {
+				if (cls.indexOf(colors[i]) !== -1) {
+					boxName = colors[i];
+					break;
+				}
+			}
+			if (i === l) {
+				boxName = 'dividedBox(green,purple)';
+			}
+			this.log.debug('ボックスのサイズが変更されました。' + boxName);
 		}
 	};
 	h5.core.expose(sampleController);
