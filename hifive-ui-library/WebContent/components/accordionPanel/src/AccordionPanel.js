@@ -286,7 +286,8 @@
 						// sizeが可動域を超えていたら、動かせる最大値まで動かす
 						var resizebleMaxSize = orgSize;
 						var size = $stateBox.data(NORMAL_STATE_SIZE_DATA_NAME);
-						$stateBox[partition ? 'prevAll' : 'nextAll']('*:not(.fixedSize,.divider)').each(
+						$stateBox[partition ? 'prevAll' : 'nextAll'](
+								DIVIDED_BOXES_SELECTOR + ':not(.fixedSize)').each(
 								function() {
 									var $box = $(this);
 									resizebleMaxSize += $box[innerW_H]()
