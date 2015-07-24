@@ -1060,10 +1060,7 @@
 	ArtPath.prototype = Object.create(ArtShape.prototype);
 	ArtPath.constructor = ArtPath;
 	$.extend(mixinArtStrokeShape(ArtPath.prototype), {
-		/**
-		 * @memberOf ArtPath
-		 * @inheritdoc
-		 */
+		/* override */
 		moveTo: function(position) {
 			var element = this.getElement();
 			var d = element.getAttribute('d');
@@ -1089,10 +1086,7 @@
 			return command;
 		},
 
-		/**
-		 * @memberOf ArtPath
-		 * @inheritdoc
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var d = element.getAttribute('d');
@@ -1109,10 +1103,7 @@
 			}
 		},
 
-		/**
-		 * @memberOf ArtPath
-		 * @inheritdoc
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1160,10 +1151,7 @@
 	ArtRect.prototype = Object.create(ArtShape.prototype);
 	ArtRect.constructor = ArtRect;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtRect.prototype)), {
-		/**
-		 * @memberOf ArtRect
-		 * @inheritdoc
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1177,10 +1165,7 @@
 			return command;
 		},
 
-		/**
-		 * @memberOf ArtRect
-		 * @inheritdoc
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1191,10 +1176,7 @@
 			});
 		},
 
-		/**
-		 * @memberOf ArtRect
-		 * @inheritdoc
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1236,10 +1218,7 @@
 	ArtEllipse.prototype = Object.create(ArtShape.prototype);
 	ArtEllipse.constructor = ArtEllipse;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtEllipse.prototype)), {
-		/**
-		 * @memberOf ArtEllipse
-		 * @inheritdoc
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1256,10 +1235,7 @@
 			return command;
 		},
 
-		/**
-		 * @memberOf ArtEllipse
-		 * @inheritdoc
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var cx = parseInt(element.getAttribute('cx')) + position.x;
@@ -1270,10 +1246,7 @@
 			});
 		},
 
-		/**
-		 * @memberOf ArtEllipse
-		 * @inheritdoc
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1313,10 +1286,7 @@
 	ArtImage.prototype = Object.create(ArtShape.prototype);
 	ArtImage.constructor = ArtImage;
 	$.extend(ArtImage.prototype, {
-		/**
-		 * @memberOf ArtImage
-		 * @inheritdoc
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1333,10 +1303,7 @@
 			return command;
 		},
 
-		/**
-		 * @memberOf ArtImage
-		 * @inheritdoc
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1347,10 +1314,7 @@
 			});
 		},
 
-		/**
-		 * @memberOf ArtImage
-		 * @inheritdoc
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1403,10 +1367,7 @@
 	ArtText.prototype = Object.create(ArtShape.prototype);
 	ArtText.constructor = ArtText;
 	$.extend(mixinArtTextShape(ArtText.prototype), {
-		/**
-		 * @memberOf ArtText
-		 * @inheritdoc
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1423,10 +1384,7 @@
 			return command;
 		},
 
-		/**
-		 * @memberOf ArtText
-		 * @inheritdoc
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1437,10 +1395,7 @@
 			});
 		},
 
-		/**
-		 * @memberOf ArtText
-		 * @inheritdoc
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
