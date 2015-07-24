@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Mixin: ArtStrokeShape</title>
+	<title>JSDoc: Class: DragSession</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,20 +34,77 @@
 
     <div id="main">
 
-        <h1 class="page-title">Mixin: ArtStrokeShape</h1>
+        <h1 class="page-title">Class: DragSession</h1>
 
         
 
         <section>
 
         <header>
-            <h2>ArtStrokeShape</h2>
+            <h2>DragSession</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
-            <p class="description">ストロークを持つ図形についてのプロパティ定義<p>以下のクラスがArtStrokeShapeのプロパティを持ちます(プロトタイプにmixinしています)</p><ul><li><a href="ArtPath.html">ArtPath</a><li><a href="ArtRect.html">ArtRect</a><li><a href="ArtEllipse.html">ArtEllipse</a></ul></p><dl class="details">
+            <dt>
+    <h4 class="name" id="DragSession"><span class="type-signature"></span>new DragSession</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        DragSession<p>図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>shape</code></td>
+            
+            
+            <td class="type">
+            <a href="ArtShape.html">ArtShape</a>
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">ドラッグ操作対象の図形</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
     
 
 	
@@ -67,7 +124,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 636</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 177</li></ul></dd>
 	
 	-->
 
@@ -77,6 +134,17 @@
 
 	
 </dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
 
             </div>
 
@@ -96,14 +164,14 @@
 
                 <dl>
 <dt>
-    <h4 class="name" id="strokeColor"><span class="type-signature"></span>strokeColor<span class="type-signature"> :string</span></h4>
+    <h4 class="name" id="shape"><span class="type-signature"></span>shape<span class="type-signature"> :<a href="ArtShape.html">ArtShape</a></span></h4>
     
     
 </dt>
 <dd>
     
     <p class="description">
-        ストロークの色<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p><p>CSSカラー形式の文字列を指定します(#f00,rgb(255,0,0) など)</p>
+        ドラッグ操作対象の図形
     </p>
     
     
@@ -127,101 +195,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 652</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="strokeOpacity"><span class="type-signature"></span>strokeOpacity<span class="type-signature"> :number</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <p class="description">
-        ストロークの透明度(0～1)<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
-    </p>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 680</li></ul></dd>
-	
-	-->
-
-    
-
-	
-
-	
-</dl>
-
-    
-    
-</dd>
-<hr>
-<dt>
-    <h4 class="name" id="strokeWidth"><span class="type-signature"></span>strokeWidth<span class="type-signature"> :Integer</span></h4>
-    
-    
-</dt>
-<dd>
-    
-    <p class="description">
-        ストロークの幅<p>このプロパティにはsetterが設定されており、値を変更すると図形に反映されます</p>
-    </p>
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 705</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 194</li></ul></dd>
 	
 	-->
 
@@ -238,6 +212,276 @@
 <hr></dl>
 
             
+
+            
+
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="cancel"><span class="type-signature"></span>cancel</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        ドラッグセッションを終了して位置を元に戻す<p>moveメソッドで移動させた処理を元に戻します。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 277</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="end"><span class="type-signature"></span>end</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        ドラッグセッションを終了して位置を確定させる<p>moveメソッドを使って移動させた位置で、図形の位置を確定します。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 254</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="move"><span class="type-signature"></span>move</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        指定された位置に移動<p>このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(ArtShape)のmoveToやmoveByは呼ばれません。ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。</p><p>このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。</p><p>引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 235</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr></dl>
 
             
 

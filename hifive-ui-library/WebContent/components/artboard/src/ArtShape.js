@@ -1061,8 +1061,8 @@
 	ArtPath.constructor = ArtPath;
 	$.extend(mixinArtStrokeShape(ArtPath.prototype), {
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtPath
+		 * @inheritdoc
 		 */
 		moveTo: function(position) {
 			var element = this.getElement();
@@ -1090,8 +1090,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtPath
+		 * @inheritdoc
 		 */
 		moveBy: function(position) {
 			var element = this.getElement();
@@ -1110,8 +1110,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtPath
+		 * @inheritdoc
 		 */
 		serialize: function() {
 			var element = this.getElement();
@@ -1161,8 +1161,8 @@
 	ArtRect.constructor = ArtRect;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtRect.prototype)), {
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtRect
+		 * @inheritdoc
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
@@ -1178,8 +1178,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtRect
+		 * @inheritdoc
 		 */
 		moveBy: function(position) {
 			var element = this.getElement();
@@ -1192,8 +1192,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtRect
+		 * @inheritdoc
 		 */
 		serialize: function() {
 			var element = this.getElement();
@@ -1237,8 +1237,8 @@
 	ArtEllipse.constructor = ArtEllipse;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtEllipse.prototype)), {
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtEllipse
+		 * @inheritdoc
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
@@ -1257,8 +1257,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtEllipse
+		 * @inheritdoc
 		 */
 		moveBy: function(position) {
 			var element = this.getElement();
@@ -1271,8 +1271,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtEllipse
+		 * @inheritdoc
 		 */
 		serialize: function() {
 			var element = this.getElement();
@@ -1314,8 +1314,8 @@
 	ArtImage.constructor = ArtImage;
 	$.extend(ArtImage.prototype, {
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtImage
+		 * @inheritdoc
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
@@ -1334,8 +1334,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtImage
+		 * @inheritdoc
 		 */
 		moveBy: function(position) {
 			var element = this.getElement();
@@ -1348,8 +1348,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtImage
+		 * @inheritdoc
 		 */
 		serialize: function() {
 			var element = this.getElement();
@@ -1404,8 +1404,8 @@
 	ArtText.constructor = ArtText;
 	$.extend(mixinArtTextShape(ArtText.prototype), {
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtText
+		 * @inheritdoc
 		 */
 		moveTo: function(position) {
 			var command = new AttrCommand({
@@ -1424,8 +1424,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtText
+		 * @inheritdoc
 		 */
 		moveBy: function(position) {
 			var element = this.getElement();
@@ -1438,8 +1438,8 @@
 		},
 
 		/**
-		 * @instance
-		 * @override
+		 * @memberOf ArtText
+		 * @inheritdoc
 		 */
 		serialize: function() {
 			var element = this.getElement();
