@@ -58,6 +58,9 @@
 	//------------------------------------------------------------
 	/**
 	 * Magnifierクラス
+	 * <p>
+	 * アートボードの拡大表示を行うためのクラスです
+	 * </p>
 	 *
 	 * @class
 	 * @name Magnifier
@@ -191,6 +194,7 @@
 		 * 拡大表示要素を取得します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @returns {DOM}
 		 */
 		getElement: function() {
@@ -204,6 +208,7 @@
 		 * 拡大率を設定します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {number} scale 0より大きい数値
 		 * @returns {DOM}
 		 */
@@ -223,6 +228,7 @@
 		 * 拡大表示要素のサイズを設定します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {Object} size
 		 * @param {number} size.width 幅
 		 * @param {number} size.height 高さ
@@ -244,6 +250,7 @@
 		 * 拡大表示箇所の座標を設定します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {number} x 拡大表示するx座標
 		 * @param {number} y 拡大表示するy座標
 		 */
@@ -260,6 +267,7 @@
 		 * 拡大表示要素の位置を指定します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {number} x 拡大表示するx座標
 		 * @param {number} y 拡大表示するy座標
 		 * @param {boolean} center 中央の座標指定かどうか(falseなら左上の座標)
@@ -283,6 +291,7 @@
 		 * 拡大表示要素を表示します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {number} x 拡大表示するx座標
 		 * @param {number} y 拡大表示するy座標
 		 * @param {boolean} center 中央の座標指定かどうか(falseなら左上の座標)
@@ -298,6 +307,7 @@
 		 * 拡大表示要素を非表示にします
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 */
 		hide: function() {
 			if (this._disposed) {
@@ -310,6 +320,7 @@
 		 * このインスタンスがdisposeされた時に実行するハンドラを登録します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @param {Function} ハンドラ
 		 */
 		addDisposeHandler: function(handler) {
@@ -321,6 +332,7 @@
 		 * このインスタンスを使用不可にします
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 */
 		dispose: function() {
 			if (this._disposed) {
@@ -344,6 +356,7 @@
 		 * 拡大表示を更新します
 		 *
 		 * @memberOf Magnifier
+		 * @instance
 		 * @private
 		 */
 		_refresh: function() {
@@ -395,6 +408,14 @@
 			// 背景
 			this._refreshBg();
 		},
+
+		/**
+		 * 背景画像について拡大表示の更新します
+		 *
+		 * @memberOf Magnifier
+		 * @instance
+		 * @private
+		 */
 		_refreshBg: function() {
 			if (!this._$bgElement) {
 				return;
@@ -419,7 +440,7 @@
 	/**
 	 * 拡大表示のマウスオーバー追従を行うコントローラ
 	 * <p>
-	 * このコントローラは[MagnifierController]{@link h5.ui.components.artboard.controller.MagnifierController}によって動的にバインドされます
+	 * このコントローラは[MagnifierController]{@link h5.ui.components.artboard.controller.MagnifierController}によって拡大対象のアートボードに動的にバインドされます
 	 * </p>
 	 *
 	 * @class
@@ -429,6 +450,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		__name: 'h5.ui.components.artboard.controller.MagnifierMouseoverController',
 
@@ -437,6 +459,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		_mag: null,
 
@@ -445,6 +468,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		_$board: null,
 
@@ -453,6 +477,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		_mouseoverMove: null,
 
@@ -461,12 +486,14 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		_mouseoverFocus: null,
 
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		__construct: function(ctx) {
 			var args = ctx.args;
@@ -484,6 +511,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._$board} h5trackstart': function(ctx, $el) {
 			this._execute(ctx, $el);
@@ -492,6 +520,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._$board} h5trackmove': function(ctx, $el) {
 			this._execute(ctx, $el);
@@ -500,6 +529,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._$board} h5trackend': function(ctx, $el) {
 			this._execute(ctx, $el);
@@ -508,6 +538,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._$board} mousemove': function(ctx, $el) {
 			this._execute(ctx, $el);
@@ -516,6 +547,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._magElement} h5trackstart': function(ctx, $el) {
 			this._execute(ctx, $el, true);
@@ -524,6 +556,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._magElement} h5trackmove': function(ctx, $el) {
 			this._execute(ctx, $el, true);
@@ -532,6 +565,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._magElement} h5trackend': function(ctx, $el) {
 			this._execute(ctx, $el, true);
@@ -540,6 +574,7 @@
 		/**
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 */
 		'{this._magElement} mousemove': function(ctx, $el) {
 			this._execute(ctx, $el, true);
@@ -550,6 +585,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 * @param ctx {Object} イベントコンテキスト
 		 * @param $el {jQuery} イベントターゲット
 		 * @param isOnMagElement {boolean} Magnifierエレメントならtrue、ボード要素ならfalse
@@ -590,6 +626,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 * @param event {jQuery.Event} イベントオブジェクト
 		 */
 		_move: function(event) {
@@ -608,6 +645,7 @@
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierMouseoverController
+		 * @instance
 		 * @param event {jQuery.Event} イベントオブジェクト
 		 */
 		_focus: function(event) {
@@ -622,11 +660,11 @@
 	/**
 	 * Artboardを拡大表示するコントローラ
 	 * <p>
-	 * このコントローラの{@link createMagnifier}を呼ぶと拡大表示を行うMagnifierインスタンスが生成され、
-	 * 拡大表示要素(Magnifier要素)がこのコントローラのルートエレメントに追加されます。
+	 * このコントローラの[createMagnifier]{@link h5.ui.components.artboard.controller.MagnifierController#createMagnifier}
+	 * を呼ぶと拡大表示を行う{@link Magnifier}インスタンスが生成され、 拡大表示要素(Magnifier要素)がこのコントローラのルートエレメントに追加されます。
 	 * </p>
 	 * <p>
-	 * Magnifier要素を追加したい要素をルートエレメントにしてバインドして使用します。
+	 * このコントローラはMagnifier要素を追加したい要素をルートエレメントにしてバインドして使用します。
 	 * </p>
 	 *
 	 * @class
@@ -635,12 +673,14 @@
 	var controller = {
 		/**
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
+		 * @instance
 		 * @private
 		 */
 		__name: 'h5.ui.components.artboard.controller.MagnifierController',
 
 		/**
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
+		 * @instance
 		 * @private
 		 */
 		_preSettigns: DEFAULT_SETTINGS,
@@ -652,6 +692,7 @@
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.controller.MagnifierController
+		 * @instance
 		 * @param {DOM|jQuery} $board 拡大対象となるボード要素、またはボード要素を子に持つ要素。
 		 * @param {Object} [settings={width:200,height:200,scale:2}]
 		 *            設定オブジェクト。省略した場合はデフォルト、または前回createMagnifier呼び出し時の設定が適用されます

@@ -354,21 +354,21 @@
 		 * <p>
 		 * 以下のようなデータを持つオブジェクトです
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	version: セーブデータのバージョン,
 		 * 	shapes: [shapeデータの配列]
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * shapeデータは、以下のようなデータです
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	type: ['path' | 'rect' | 'ellipse' | 'image' | 'text'],
 		 * 	data: (typeごとに異なります)
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * </p>
 		 *
@@ -387,6 +387,7 @@
 		 * セーブデータ形式のバージョン
 		 *
 		 * @memberOf DrawingSaveData
+		 * @type {string}
 		 */
 		version: '1'
 	});
@@ -449,11 +450,14 @@
 
 		/**
 		 * コマンド管理ロジックインスタンス
+		 * <p>
+		 * [init]{@link h5.ui.components.artboard.logic.DrawingLogic#init}の第3引数で設定したアートボードコマンドマネージャを持ちます
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 * @instance
-		 * @type h5.ui.components.artboard.logic.CommandTransactionLogic
+		 * @type h5.ui.components.artboard.logic.ArtboardCommandLogic
 		 */
 		artboardCommandManager: null,
 
@@ -482,7 +486,8 @@
 		 * @instance
 		 * @param {DOM} drawingElement 図形描画領域レイヤ要素
 		 * @param {DOM} backgroundElement 背景領域レイヤ要素
-		 * @param {ArtboardCommandLogic} [artboardCommandManager] アートボードコマンドマネージャ
+		 * @param {h5.ui.components.artboard.logic.ArtboardCommandLogic} artboardCommandManager
+		 *            アートボードコマンドマネージャ
 		 */
 		init: function(drawingElement, backgroundElement, artboardCommandManager) {
 			// svg要素とcanvas要素を取得
@@ -553,6 +558,9 @@
 		//----------------------------
 		/**
 		 * パス(フリーハンド、直線、多角形)描画
+		 * <p>
+		 * {@link ArtPath}でパスを作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -592,6 +600,9 @@
 
 		/**
 		 * 長方形描画
+		 * <p>
+		 * {@link ArtRect}で長方形図形を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -623,6 +634,9 @@
 
 		/**
 		 * 正方形描画
+		 * <p>
+		 * {@link ArtRect}で正方形図形を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -639,6 +653,9 @@
 
 		/**
 		 * 楕円描画
+		 * <p>
+		 * {@link ArtEllipse}で楕円を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -669,6 +686,9 @@
 
 		/**
 		 * 真円描画
+		 * <p>
+		 * {@link ArtEllipse}で新円を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -686,24 +706,27 @@
 		/**
 		 * 画像の配置
 		 * <p>
-		 * 画像をdivレイヤに配置します
+		 * {@link ArtImage}で画像図形を作成して描画します。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	x: x座標,
 		 * 	y: y座標,
 		 * 	width: 幅,
 		 * 	height: 高さ,
-		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	id: 画像ID。idが指定された場合、imageSourceMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
+		 * <p>
+		 *            参照：[imageSourceMap]{@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}
+		 *            </p>
 		 * @returns {ArtImage}
 		 */
 		drawImage: function(data) {
@@ -739,14 +762,14 @@
 		/**
 		 * テキストの配置
 		 * <p>
-		 * svgレイヤに配置します
+		 * {@link ArtText}で文字列図形を作成して描画します。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 *  x: 左上のx座標,
 		 *  y: 左上のy座標
@@ -756,7 +779,7 @@
 		 * 	fill: 色,
 		 * 	fillOpacity: 透明度
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * @returns {ArtImage}
 		 */
@@ -786,7 +809,7 @@
 		},
 
 		/**
-		 * ロジック管理下にある図形(Shape)を全て取得
+		 * ロジック管理下にある図形(Shape)を全て取得します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -807,7 +830,7 @@
 		},
 
 		/**
-		 * 渡された図形のIDを返す。(ロジック管理下にある図形のみ)
+		 * 図形のIDを返します。(ロジック管理下にある図形のみ)
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -825,7 +848,7 @@
 		},
 
 		/**
-		 * 図形(Shape)をこのロジックの管理下に置く
+		 * 図形(Shape)をこのロジックの管理下に置きます
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
@@ -845,7 +868,8 @@
 		/**
 		 * 背景画像の設定
 		 * <p>
-		 * 画像IDまたはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
+		 * 画像ID([imageSourceMap]{@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}に登録された画像のID)
+		 * またはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
 		 * </p>
 		 * <p>
 		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
@@ -865,15 +889,15 @@
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
-		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	id: 画像ID。idが指定された場合、imageSourceMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
 		 * 	fillMode: 画像の配置モード('none'|'contain'|'containCenter'|'cover'|'stretch') 指定のない場合は'none'で描画します,
 		 * 	offsetX: 背景画像位置のx座標のオフセット(デフォルト:0),
 		 * 	offsetY: 背景画像位置のy座標のオフセット(デフォルト:0)
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 */
 		setBackgroundImage: function(data) {
 			var id = data.id;
@@ -963,6 +987,9 @@
 
 		/**
 		 * 背景色の設定
+		 * <p>
+		 * 背景色の設定をします。引数にはCSSカラー形式の文字列を指定してください。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1006,7 +1033,10 @@
 		},
 
 		/**
-		 * 背景画像をクリアします
+		 * 背景画像のクリア
+		 * <p>
+		 * 背景画像を削除します
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1153,8 +1183,8 @@
 		 * useSrcオプションがtrueの場合、背景画像について画像IDではなくパス(srcの値)で保存します。
 		 * </p>
 		 * <p>
-		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSrcMapの登録が必要です。
-		 * 別ページで保存データを利用する場合などで同一のimageSrcMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
+		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSourceMapの登録が必要です。
+		 * 別ページで保存データを利用する場合などで同一のimageSourceMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
@@ -1195,7 +1225,10 @@
 		},
 
 		/**
-		 * セーブデータををロードして描画します
+		 * セーブデータををロード
+		 * <p>
+		 * [save]{@link h5.ui.components.artboard.logic.DrawingLogic#save}で生成したセーブデータをロードして描画します
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1278,7 +1311,7 @@
 		 * @param {number} processParameter.size.height 出力する画像の高さ(px)
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
-		// TODO trimオプションは実装済みだが、いったんAPIから外しています #83
+		// TODO trimオプションは実装済みですが、いったんAPIから外しています #83
 		// 自動トリム(図形描画領域を自動で計算してtrim)する機能を実装した時に復活させる
 		// 自動トリムは図形の線幅も考慮した矩形を取得する必要があり、ブラウザによって挙動が異なり、自動trim実装の差異は考慮する必要があります
 		// 例：path要素の矩形取得について

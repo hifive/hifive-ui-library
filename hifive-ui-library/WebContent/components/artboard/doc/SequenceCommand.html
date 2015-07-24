@@ -29,7 +29,7 @@
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul><h3>Global</h3><ul><li><a href="global.html#moveBy">moveBy</a></li><li><a href="global.html#moveTo">moveTo</a></li><li><a href="global.html#serialize">serialize</a></li></ul>
     </nav>
 
     <div id="main">
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        複数のCommandを一つのコマンドとして扱うコマンド
+        複数のCommandを一つのコマンドとして扱うコマンド<p>SequenceCommandは複数のコマンドを包括するためのコマンドです。</p><p>execute()及びundo()時に、登録されたコマンド全ての実行及び取り消しを行います。</p>
     </p>
     
     
@@ -136,7 +136,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 485</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 491</li></ul></dd>
 	
 	-->
 
@@ -219,7 +219,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 43</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 46</li></ul></dd>
 	
 	-->
 
@@ -297,7 +297,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 75</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 78</li></ul></dd>
 	
 	-->
 
@@ -347,7 +347,7 @@
     
     
     <p class="description">
-        内部コマンドの取得
+        内部コマンドの取得<p>一括で実行及び取り消しを行うコマンドのリスト(配列)を返します</p>
     </p>
     
     
@@ -375,7 +375,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 545</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 563</li></ul></dd>
 	
 	-->
 
@@ -421,7 +421,7 @@
     
     
     <p class="description">
-        コマンドの追加
+        コマンドの追加<p>一括で実行及び取り消しを行うコマンドを追加します</p>
     </p>
     
     
@@ -489,7 +489,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 534</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 549</li></ul></dd>
 	
 	-->
 
@@ -547,7 +547,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 59</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 62</li></ul></dd>
 	
 	-->
 
@@ -605,7 +605,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Wed Jul 01 2015 11:08:21 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 15:50:31 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

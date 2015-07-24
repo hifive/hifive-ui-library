@@ -50,6 +50,9 @@
 (function() {
 	/**
 	 * セレクションロジック
+	 * <p>
+	 * 任意のオブジェクトの選択状態、フォーカス状態を管理する
+	 * </p>
 	 *
 	 * @name h5.ui.components.SelectionLogic
 	 * @class
@@ -2318,8 +2321,8 @@
 		 */
 		_addSelectionRectangle: function(shape) {
 			var id = this.getShapeID(shape);
-			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="' + id
-							+ '"></div>');
+			var $selectionRectangle = $('<div class="selection-rectangle" data-target-shape-id="'
+					+ id + '"></div>');
 			$(this.rootElement).append($selectionRectangle);
 			var bounds = shape.getBounds();
 			$selectionRectangle.css({

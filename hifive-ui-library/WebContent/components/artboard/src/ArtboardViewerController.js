@@ -64,9 +64,13 @@
 		},
 
 		/**
-		 * 保存データから復元
+		 * 保存データから図形を復元して描画
+		 * <p>
+		 * [DrawingLogic#save]{@link h5.ui.components.artboard.logic.DrawingLogic#save}
+		 * などで生成したDrawingSaveDataクラスから図形をロードして描画します
+		 * </p>
 		 *
-		 * @param {DrawingSaveData|String} artboardSaveData 保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列
+		 * @param {DrawingSaveData|string} artboardSaveData 保存データオブジェクトまたは保存データオブジェクトをシリアライズした文字列
 		 * @memberOf h5.ui.components.artboard.controller.ArtboardViewerController
 		 */
 		load: function(artboardSaveData, isStretch) {
