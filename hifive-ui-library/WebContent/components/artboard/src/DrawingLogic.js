@@ -93,9 +93,6 @@
 			var viewBoxValues = viewBox.split(' ');
 			var viewBoxWidth = parseInt(viewBoxValues[2]);
 			var viewBoxHeight = parseInt(viewBoxValues[3]);
-			var sx = canvas.width / viewBoxWidth;
-			var sy = canvas.height / viewBoxHeight;
-			var avgScale = Math.sqrt(sx * sy);
 			var ctx = canvas.getContext('2d');
 			var simulateItalic = processParameter || processParameter.simulateItalic;
 			// h5.async.loopを使って非同期処理がある場合に待機してから次のループを実行するようにしている
@@ -109,7 +106,7 @@
 					// strokeの設定
 					ctx.save();
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = avgScale * parseFloat(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.lineJoin = style.strokeLinejoin;
 					ctx.lineCap = style.strokeLinecap;
 					ctx.globalAlpha = style.strokeOpacity;
@@ -120,15 +117,15 @@
 					// IEの場合、d属性の値を取得すると、'M x1 y1 l x2 y2 l x3 y3 l...'となっているため
 					// 各ブラウザ共通になるようにMとlを最初に取り除く
 					var pathDataArray = pathData.replace(/M |l /g, '').split(' ');
-					var firstX = sx * parseFloat(pathDataArray[0]);
-					var firstY = sy * parseFloat(pathDataArray[1]);
+					var firstX = parseFloat(pathDataArray[0]);
+					var firstY = parseFloat(pathDataArray[1]);
 					ctx.moveTo(firstX, firstY);
 					var preX = firstX;
 					var preY = firstY;
 					// x,yのデータを同時に取り出すので２つずつカウント
 					for (var index = 2, l = pathDataArray.length; index < l; index += 2) {
-						var x = preX + sx * parseInt(pathDataArray[index]);
-						var y = preY + sy * parseInt(pathDataArray[index + 1]);
+						var x = preX + parseInt(pathDataArray[index]);
+						var y = preY + parseInt(pathDataArray[index + 1]);
 						ctx.lineTo(x, y);
 						preX = x;
 						preY = y;
@@ -138,10 +135,10 @@
 					ctx.restore();
 					break;
 				case 'rect':
-					var x = sx * parseFloat(element.getAttribute('x'));
-					var y = sy * parseFloat(element.getAttribute('y'));
-					var w = sx * parseFloat(element.getAttribute('width'));
-					var h = sy * parseFloat(element.getAttribute('height'));
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
+					var w = parseFloat(element.getAttribute('width'));
+					var h = parseFloat(element.getAttribute('height'));
 					var style = element.style;
 
 					// fillの設定
@@ -151,7 +148,7 @@
 						ctx.save();
 						ctx.fillStyle = style.fill;
 						ctx.globalAlpha = style.fillOpacity;
-						var fillMargin = avgScale * parseFloat(style.strokeWidth) / 2;
+						var fillMargin = parseFloat(style.strokeWidth) / 2;
 						// fillRectで描画
 						ctx.fillRect(x, y, w + fillMargin / 8 - 1, h + fillMargin / 8 - 1);
 						ctx.restore();
@@ -160,7 +157,7 @@
 					// strokeの設定
 					ctx.save();
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = avgScale * parseFloat(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.lineJoin = style.strokeLinejoin;
 					ctx.globalAlpha = style.strokeOpacity;
 					// strokeRectで描画
@@ -168,10 +165,10 @@
 					ctx.restore();
 					break;
 				case 'ellipse':
-					var cx = sx * parseFloat(element.getAttribute('cx'));
-					var cy = sy * parseFloat(element.getAttribute('cy'));
-					var rx = sx * parseFloat(element.getAttribute('rx'));
-					var ry = sy * parseFloat(element.getAttribute('ry'));
+					var cx = parseFloat(element.getAttribute('cx'));
+					var cy = parseFloat(element.getAttribute('cy'));
+					var rx = parseFloat(element.getAttribute('rx'));
+					var ry = parseFloat(element.getAttribute('ry'));
 					var style = element.style;
 
 					var ellipseScaleX = rx > ry ? rx / ry : 1;
@@ -193,7 +190,7 @@
 
 					// strokeの設定
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = avgScale * parseFloat(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.globalAlpha = style.strokeOpacity;
 
 					ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
@@ -206,14 +203,12 @@
 					break;
 				case 'text':
 					var $element = $(element);
-					var x = sx * parseFloat(element.getAttribute('x'));
-					var y = sy * parseFloat(element.getAttribute('y'));
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
 					var fill = element.getAttribute('fill');
 					var opacity = element.getAttribute('opacity');
 					var fontFamily = element.getAttribute('font-family');
-					// fontSizeは縦拡大率と横拡大率の平均分拡大している
-					var fontSize = (Math.sqrt(sx * sy))
-							* parseFloat(element.getAttribute('font-size'));
+					var fontSize = parseFloat(element.getAttribute('font-size'));
 					var fontWeight = $element.css('font-weight');
 					var fontStyle = $element.css('font-style');
 					var textContent = $element.text();
@@ -228,11 +223,11 @@
 							&& !canDrawItalicText(fontFamily);
 					if (shouldTransform) {
 						// シミュレートが必要な場合は変形
-						ctx.setTransform(1, 0.0, -1 / 3, 1, y / 3, 0);
+						ctx.transform(1, 0, -1 / 3, 1, y / 3, 0);
 						ctx.font = ctx.font.replace('italic', '');
 						ctx.fillText(textContent, x, y);
 						// 変形を元に戻す
-						ctx.setTransform(1, 0, 0, 1, 0, 0);
+						ctx.transform(1, 0, 3, 1, -y / 3, 0);
 					} else {
 						ctx.fillText(textContent, x, y);
 					}
@@ -266,10 +261,10 @@
 					ctx.restore();
 					break;
 				case 'image':
-					var x = sx * parseFloat(element.getAttribute('x'));
-					var y = sy * parseFloat(element.getAttribute('y'));
-					var w = sx * parseFloat(element.getAttribute('width'));
-					var h = sy * parseFloat(element.getAttribute('height'));
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
+					var w = parseFloat(element.getAttribute('width'));
+					var h = parseFloat(element.getAttribute('height'));
 					var src = element.getAttributeNS(XLINKNS, 'href');
 					var tmpImg = document.createElement('img');
 					var imgDfd = h5.async.deferred();
@@ -1370,14 +1365,12 @@
 			processParameter = processParameter || {};
 			// _shapeLayerはg要素なので親のsvgを取得してviewBoxを求める
 			var svg = $(this._shapeLayer).parents('svg')[0];
-			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
 			var viewBoxWidth = parseInt(viewBoxValues[2]);
 			var viewBoxHeight = parseInt(viewBoxValues[3]);
 			var aspectRatio = viewBoxWidth / viewBoxHeight;
-			var canvasWidth = viewBoxWidth;
-			var canvasHeight = viewBoxHeight;
+			var outputWidth, outputHeight;
 			var size = processParameter.size;
 			if (size) {
 				// サイズが指定されている場合は出力サイズを変更
@@ -1386,34 +1379,37 @@
 					// アスペクト保持指定がある場合は幅、高さの指定されていない方を計算
 					// (両方指定されている場合は幅を基準に高さを計算)
 					if (size.width) {
-						canvasWidth = size.width;
-						canvasHeight = canvasWidth / aspectRatio;
+						outputWidth = size.width;
+						outputHeight = outputWidth / aspectRatio;
 					} else if (size.height) {
-						canvasHeight = size.height;
-						canvasWidth = canvasHeight * aspectRatio;
+						outputHeight = size.height;
+						outputWidth = outputHeight * aspectRatio;
 					}
 				} else {
-					canvasWidth = size.width || viewBoxWidth;
-					canvasHeight = size.height || viewBoxHeight;
+					outputWidth = size.width || viewBoxWidth;
+					outputHeight = size.height || viewBoxHeight;
 				}
+			} else {
+				outputWidth = viewBoxWidth;
+				outputHeight = viewBoxHeight;
 			}
-			var sx = canvasWidth / viewBoxWidth;
-			var sy = canvasHeight / viewBoxHeight;
 
-			var canvas = document.createElement('canvas');
-			canvas.setAttribute('width', canvasWidth);
-			canvas.setAttribute('height', canvasHeight);
-			var ctx = canvas.getContext('2d');
-
+			// 出力先サイズに合わせたcanvas
+			// 背景画像はこっちに描画
+			var outputCanvas = document.createElement('canvas');
+			outputCanvas.width = outputWidth;
+			outputCanvas.height = outputHeight;
+			var ctx = outputCanvas.getContext('2d');
 			var dfd = h5.async.deferred();
 
 			// 背景を描画
+			// 背景はoutputCanvas(出力画像の元になるのcanvas)に描画
 			var background = this._getCurrentBackgroundData();
 			var backgroundDfd = h5.async.deferred();
 			if (background) {
 				if (background.color) {
 					ctx.fillStyle = background.color;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					ctx.fillRect(0, 0, outputWidth, outputHeight);
 				}
 				var src = background.id ? this.imageSourceMap[background.id] : background.src;
 				if (src) {
@@ -1427,46 +1423,46 @@
 						// 400*200で(x,y)=(50,0)で描画されます
 						// 例えばfillMode:noneで描画されている画像は、出力先カンバスのサイズが変わっても出力画像のサイズは拡大または縮小されません
 						// なお、背景画像のオフセット位置は、出力先に合わせて拡大・縮小されます
-						var x = sx * background.offsetX;
-						var y = sy * background.offsetY;
+						var x = (outputWidth / viewBoxWidth) * background.offsetX;
+						var y = (outputHeight / viewBoxHeight) * background.offsetY;
 						switch (fillMode) {
 						case 'contain':
 						case 'containCenter':
-							var canvasRatio = canvasWidth / canvasHeight;
+							var canvasRatio = outputWidth / outputHeight;
 							var imgRatio = this.width / this.height;
 							var w, h;
 							if (canvasRatio < imgRatio) {
-								w = canvasWidth;
+								w = outputWidth;
 								h = w / imgRatio;
 							} else {
-								h = canvasHeight;
+								h = outputHeight;
 								w = h * imgRatio;
 							}
 							if (fillMode === 'containCenter') {
 								// 中央配置
 								if (canvasRatio < imgRatio) {
-									y += (canvasHeight - h) / 2;
+									y += (outputHeight - h) / 2;
 								} else {
-									x += (canvasWidth - w) / 2;
+									x += (outputWidth - w) / 2;
 								}
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
-							var canvasRatio = canvasWidth / canvasHeight;
+							var canvasRatio = outputWidth / outputHeight;
 							var imgRatio = this.width / this.height;
 							var w, h;
 							if (canvasRatio < imgRatio) {
-								h = canvasHeight;
+								h = outputWidth;
 								w = h * imgRatio;
 							} else {
-								w = canvasWidth;
+								w = outputHeight;
 								h = w / imgRatio;
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
-							ctx.drawImage(this, x, y, canvasWidth, canvasHeight);
+							ctx.drawImage(this, x, y, outputWidth, outputHeight);
 							break;
 						default:
 							// none
@@ -1484,9 +1480,14 @@
 			}
 
 			// 背景描画が終わったら図形をカンバスに描画
-			backgroundDfd.promise().then(this.own(function() {
-				return this._canvasConvertLogic.drawSVGToCanvas(svg, canvas, processParameter);
-			})).then(this.own(function() {
+			backgroundDfd.promise().then(
+					this.own(function() {
+						// 図形は、描画領域の座標が出力先カンバスの座標に変換されるようtransform設定
+						ctx.transform(outputWidth / viewBoxWidth, 0, 0, outputHeight
+								/ viewBoxHeight, 0, 0);
+						return this._canvasConvertLogic.drawSVGToCanvas(svg, outputCanvas,
+								processParameter);
+					})).then(this.own(function() {
 				// カンバスを画像化
 				// TODO trimは実装済みだが行わないようにしている #83
 				// var trim = processParameter.trim;
@@ -1494,8 +1495,7 @@
 				if (trim) {
 					// trimが指定されている場合
 					// 新しくcanvasを生成してサイズ変更とトリミングを行う
-					var orgCanvas = canvas;
-					canvas = document.createElement('canvas');
+					var canvas = document.createElement('canvas');
 					var dx = trim.dx;
 					var dy = trim.dy;
 					var dh = trim.dh;
@@ -1505,9 +1505,9 @@
 					var h = size ? size.height : dh;
 					canvas.setAttribute('width', w);
 					canvas.setAttribute('height', h);
-					canvas.getContext('2d').drawImage(orgCanvas, dx, dy, dw, dh, 0, 0, w, h);
+					canvas.getContext('2d').drawImage(outputCanvas, dx, dy, dw, dh, 0, 0, w, h);
 				}
-				dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
+				dfd.resolve(this._canvasConvertLogic.toDataURL(outputCanvas, returnType, 1));
 			}));
 			return dfd.promise();
 		}
