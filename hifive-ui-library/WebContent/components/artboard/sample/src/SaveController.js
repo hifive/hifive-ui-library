@@ -105,7 +105,8 @@
 				}
 				var size = {
 					width: w,
-					height: h
+					height: h,
+					keepAspectRatio: this._$aspectCheck.prop('checked')
 				};
 				saveOpt.size = size;
 			}
