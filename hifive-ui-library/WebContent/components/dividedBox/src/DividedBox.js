@@ -194,14 +194,17 @@
 			// ボックス間に区切り線がない場合は挿入
 			var $boxes = this._getBoxes();
 
-			// 初めてのrefresh(__initから呼ばれた最初のrefresh)かどうか
+			// 初めてのrefresh(_lastAdjustAreaWHが未設定==__initから呼ばれた最初のrefresh)かどうか
 			var isFirstRefresh = this._lastAdjustAreaWH === null;
 			if (isFirstRefresh) {
 				// boxのサイズ計算
 				var totalBoxSize = 0;
-				$boxes.each(function() {
-					totalBoxSize += $(this)[outerW_H](true);
-				});
+				$boxes.each(this.ownWithOrg(function(box) {
+					var outerSize = $(box)[outerW_H](true);
+					totalBoxSize += outerSize;
+					// サイズを固定する
+					this._setOuterSize($(box), outerSize);
+				}));
 				// クラスとposition:absoluteの設定
 				$boxes.addClass(CLASS_MANAGED).css('position', 'absolute');
 				// dividerのサイズ計算
@@ -345,6 +348,8 @@
 				// 範囲外の場合は一番最後に追加
 				$root.append(box);
 			}
+			// ボックスのサイズを固定する
+			this._setOuterSize($(box), $(box)[this._outerW_H]());
 			this.refresh();
 		},
 
@@ -909,8 +914,9 @@
 			var pre = parseFloat($el[w_h]());
 			var mbp = $el[outerW_H](true) - $el[w_h]();
 			var after = (outerSize - mbp);
-			if (pre === after) {
-				// 変更無しなら何もしない
+			var styleW_H = $el[0].style[w_h];
+			if (pre === after && styleW_H && styleW_H !== 'auto') {
+				// 変更無しかつ、スタイルのwidthまたはheightが設定済みなら何もしない
 				return;
 			}
 			$el[w_h](after);
