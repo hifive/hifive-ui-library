@@ -225,7 +225,7 @@
 			// 新規追加されたボックスのサイズを_lastAdjustWHに加える
 			$boxes.not('.' + CLASS_MANAGED).each(this.ownWithOrg(function(orgThis) {
 				var $box = $(orgThis);
-				this._lastAdjustAreaWH += $box[outerW_H]();
+				this._lastAdjustAreaWH += $box[outerW_H](true);
 				// 新規追加されたボックスにクラス追加とposition:absolute設定
 				$box.addClass(CLASS_MANAGED).css('position', 'absolute');
 			}));
@@ -349,7 +349,7 @@
 				$root.append(box);
 			}
 			// ボックスのサイズを固定する
-			this._setOuterSize($(box), $(box)[this._outerW_H]());
+			this._setOuterSize($(box), $(box)[this._outerW_H](true));
 			this.refresh();
 		},
 
@@ -524,7 +524,7 @@
 				}
 			}
 
-			var totalMove = size - $targetBox[outerW_H]();
+			var totalMove = size - $targetBox[outerW_H](true);
 			if (!$prevDivider.length) {
 				partition = 0;
 			} else if (!$nextDivider.length) {
@@ -780,13 +780,13 @@
 				}
 			}
 
-			var prevWH = $groupPrev[w_h]() + move;
+			var prevWH = $groupPrev[outerW_H](true) + move;
 			if (prevWH < 0) {
 				prevWH = 0;
-				move = -$groupPrev[w_h]();
+				move = -$groupPrev[outerW_H](true);
 			}
 
-			var nextWH = $groupNext[w_h]() - move;
+			var nextWH = $groupNext[outerW_H](true) - move;
 			if (nextWH < 0) {
 				nextWH = 0;
 			}
@@ -914,6 +914,8 @@
 			var pre = parseFloat($el[w_h]());
 			var mbp = $el[outerW_H](true) - $el[w_h]();
 			var after = (outerSize - mbp);
+			// 負の数にはしない
+			after = after < 0 ? 0 : after;
 			var styleW_H = $el[0].style[w_h];
 			if (pre === after && styleW_H && styleW_H !== 'auto') {
 				// 変更無しかつ、スタイルのwidthまたはheightが設定済みなら何もしない
