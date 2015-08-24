@@ -725,6 +725,7 @@
 			var $groupLast = $dividerGroup.eq($dividerGroup.length - 1);
 			var $groupPrev = this._getPrevBoxByDivider($groupFirst);
 			var $groupNext = this._getNextBoxByDivider($groupLast);
+			var prevStart,nextEnd,lastPos;
 			if (isTrack) {
 				prevStart = trackingData.prevStart;
 				nextEnd = trackingData.nextEnd;
@@ -737,7 +738,7 @@
 					lastPos = $divider.position();
 				} else {
 					// 非表示の場合はboxの位置を基にする
-					lastPos = $groupNext.position();
+					lastPos = this._getNextBoxByDivider($divider).position();
 				}
 				// 両サイドのボックスの最小サイズを考慮して可動範囲を決定
 				prevStart = $groupPrev.length ? $groupPrev.position()[l_t]
