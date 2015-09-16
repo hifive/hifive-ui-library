@@ -338,14 +338,14 @@
 		/**
 		 * 保存オプション設定コントローラ
 		 *
-		 * @memberOf sample.SaveController
+		 * @memberOf sample.ToolbarController
 		 */
 		_saveController: sample.SaveController,
 
 		/**
 		 * カンバスサイズ設定コントローラ
 		 *
-		 * @memberOf sample.SizechangeController
+		 * @memberOf sample.ToolbarController
 		 */
 		_sizeChangeController: sample.SizeChangeController,
 

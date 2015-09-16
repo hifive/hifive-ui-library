@@ -89,10 +89,14 @@
 		 *            italic体が描画できるかどうかチェックして描画できない場合に変形してシミュレートするかどうか
 		 */
 		drawSVGToCanvas: function(svgElement, canvas, processParameter) {
+			var viewBox = svgElement.getAttribute('viewBox');
+			var viewBoxValues = viewBox.split(' ');
+			var viewBoxWidth = parseInt(viewBoxValues[2]);
+			var viewBoxHeight = parseInt(viewBoxValues[3]);
 			var ctx = canvas.getContext('2d');
 			var simulateItalic = processParameter || processParameter.simulateItalic;
 			// h5.async.loopを使って非同期処理がある場合に待機してから次のループを実行するようにしている
-			var elements = $(svgElement).children().toArray();
+			var elements = $(svgElement).find('>g').children().toArray();
 			var promise = h5.async.loop(elements, function(index, element) {
 				switch (element.tagName.toLowerCase()) {
 				case 'path':
@@ -102,7 +106,7 @@
 					// strokeの設定
 					ctx.save();
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.lineJoin = style.strokeLinejoin;
 					ctx.lineCap = style.strokeLinecap;
 					ctx.globalAlpha = style.strokeOpacity;
@@ -113,8 +117,8 @@
 					// IEの場合、d属性の値を取得すると、'M x1 y1 l x2 y2 l x3 y3 l...'となっているため
 					// 各ブラウザ共通になるようにMとlを最初に取り除く
 					var pathDataArray = pathData.replace(/M |l /g, '').split(' ');
-					var firstX = parseInt(pathDataArray[0]);
-					var firstY = parseInt(pathDataArray[1]);
+					var firstX = parseFloat(pathDataArray[0]);
+					var firstY = parseFloat(pathDataArray[1]);
 					ctx.moveTo(firstX, firstY);
 					var preX = firstX;
 					var preY = firstY;
@@ -131,10 +135,10 @@
 					ctx.restore();
 					break;
 				case 'rect':
-					var x = parseInt(element.getAttribute('x'));
-					var y = parseInt(element.getAttribute('y'));
-					var w = parseInt(element.getAttribute('width'));
-					var h = parseInt(element.getAttribute('height'));
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
+					var w = parseFloat(element.getAttribute('width'));
+					var h = parseFloat(element.getAttribute('height'));
 					var style = element.style;
 
 					// fillの設定
@@ -144,7 +148,7 @@
 						ctx.save();
 						ctx.fillStyle = style.fill;
 						ctx.globalAlpha = style.fillOpacity;
-						var fillMargin = parseInt(style.strokeWidth) / 2;
+						var fillMargin = parseFloat(style.strokeWidth) / 2;
 						// fillRectで描画
 						ctx.fillRect(x, y, w + fillMargin / 8 - 1, h + fillMargin / 8 - 1);
 						ctx.restore();
@@ -153,7 +157,7 @@
 					// strokeの設定
 					ctx.save();
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.lineJoin = style.strokeLinejoin;
 					ctx.globalAlpha = style.strokeOpacity;
 					// strokeRectで描画
@@ -161,17 +165,17 @@
 					ctx.restore();
 					break;
 				case 'ellipse':
-					var cx = element.getAttribute('cx');
-					var cy = element.getAttribute('cy');
-					var rx = element.getAttribute('rx');
-					var ry = element.getAttribute('ry');
+					var cx = parseFloat(element.getAttribute('cx'));
+					var cy = parseFloat(element.getAttribute('cy'));
+					var rx = parseFloat(element.getAttribute('rx'));
+					var ry = parseFloat(element.getAttribute('ry'));
 					var style = element.style;
 
-					var sx = rx > ry ? rx / ry : 1;
-					var sy = rx > ry ? 1 : ry / rx;
+					var ellipseScaleX = rx > ry ? rx / ry : 1;
+					var ellipseScaleY = rx > ry ? 1 : ry / rx;
 					ctx.save();
 					ctx.translate(cx, cy);
-					ctx.scale(sx, sy);
+					ctx.scale(ellipseScaleX, ellipseScaleY);
 
 					// fillの設定
 					var fill = style.fill;
@@ -186,11 +190,11 @@
 
 					// strokeの設定
 					ctx.strokeStyle = style.stroke;
-					ctx.lineWidth = parseInt(style.strokeWidth);
+					ctx.lineWidth = parseFloat(style.strokeWidth);
 					ctx.globalAlpha = style.strokeOpacity;
 
 					ctx.arc(0, 0, rx > ry ? ry : rx, 0, Math.PI * 2, true);
-					ctx.scale(1 / sx, 1 / sy);
+					ctx.scale(1 / ellipseScaleX, 1 / ellipseScaleY);
 					ctx.translate(-cx, -cy);
 					ctx.globalAlpha = this._strokeOpacity;
 					ctx.stroke();
@@ -219,11 +223,11 @@
 							&& !canDrawItalicText(fontFamily);
 					if (shouldTransform) {
 						// シミュレートが必要な場合は変形
-						ctx.setTransform(1, 0.0, -1 / 3, 1, y / 3, 0);
+						ctx.transform(1, 0, -1 / 3, 1, y / 3, 0);
 						ctx.font = ctx.font.replace('italic', '');
 						ctx.fillText(textContent, x, y);
 						// 変形を元に戻す
-						ctx.setTransform(1, 0, 0, 1, 0, 0);
+						ctx.transform(1, 0, 3, 1, -y / 3, 0);
 					} else {
 						ctx.fillText(textContent, x, y);
 					}
@@ -257,10 +261,10 @@
 					ctx.restore();
 					break;
 				case 'image':
-					var x = parseInt(element.getAttribute('x'));
-					var y = parseInt(element.getAttribute('y'));
-					var w = parseInt(element.getAttribute('width'));
-					var h = parseInt(element.getAttribute('height'));
+					var x = parseFloat(element.getAttribute('x'));
+					var y = parseFloat(element.getAttribute('y'));
+					var w = parseFloat(element.getAttribute('width'));
+					var h = parseFloat(element.getAttribute('height'));
 					var src = element.getAttributeNS(XLINKNS, 'href');
 					var tmpImg = document.createElement('img');
 					var imgDfd = h5.async.deferred();
@@ -354,21 +358,21 @@
 		 * <p>
 		 * 以下のようなデータを持つオブジェクトです
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	version: セーブデータのバージョン,
 		 * 	shapes: [shapeデータの配列]
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * shapeデータは、以下のようなデータです
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	type: ['path' | 'rect' | 'ellipse' | 'image' | 'text'],
 		 * 	data: (typeごとに異なります)
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * </p>
 		 *
@@ -387,6 +391,7 @@
 		 * セーブデータ形式のバージョン
 		 *
 		 * @memberOf DrawingSaveData
+		 * @type {string}
 		 */
 		version: '1'
 	});
@@ -449,11 +454,14 @@
 
 		/**
 		 * コマンド管理ロジックインスタンス
+		 * <p>
+		 * [init]{@link h5.ui.components.artboard.logic.DrawingLogic#init}の第3引数で設定したアートボードコマンドマネージャを持ちます
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
 		 * @instance
-		 * @type h5.ui.components.artboard.logic.CommandTransactionLogic
+		 * @type h5.ui.components.artboard.logic.ArtboardCommandLogic
 		 */
 		artboardCommandManager: null,
 
@@ -482,7 +490,8 @@
 		 * @instance
 		 * @param {DOM} drawingElement 図形描画領域レイヤ要素
 		 * @param {DOM} backgroundElement 背景領域レイヤ要素
-		 * @param {ArtboardCommandLogic} [artboardCommandManager] アートボードコマンドマネージャ
+		 * @param {h5.ui.components.artboard.logic.ArtboardCommandLogic} artboardCommandManager
+		 *            アートボードコマンドマネージャ
 		 */
 		init: function(drawingElement, backgroundElement, artboardCommandManager) {
 			// svg要素とcanvas要素を取得
@@ -553,6 +562,9 @@
 		//----------------------------
 		/**
 		 * パス(フリーハンド、直線、多角形)描画
+		 * <p>
+		 * {@link ArtPath}でパスを作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -592,6 +604,9 @@
 
 		/**
 		 * 長方形描画
+		 * <p>
+		 * {@link ArtRect}で長方形図形を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -623,6 +638,9 @@
 
 		/**
 		 * 正方形描画
+		 * <p>
+		 * {@link ArtRect}で正方形図形を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -639,6 +657,9 @@
 
 		/**
 		 * 楕円描画
+		 * <p>
+		 * {@link ArtEllipse}で楕円を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -669,6 +690,9 @@
 
 		/**
 		 * 真円描画
+		 * <p>
+		 * {@link ArtEllipse}で新円を作成して描画します。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -686,24 +710,27 @@
 		/**
 		 * 画像の配置
 		 * <p>
-		 * 画像をdivレイヤに配置します
+		 * {@link ArtImage}で画像図形を作成して描画します。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 * 	x: x座標,
 		 * 	y: y座標,
 		 * 	width: 幅,
 		 * 	height: 高さ,
-		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	id: 画像ID。idが指定された場合、imageSourceMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
+		 * <p>
+		 *            参照：[imageSourceMap]{@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}
+		 *            </p>
 		 * @returns {ArtImage}
 		 */
 		drawImage: function(data) {
@@ -739,14 +766,14 @@
 		/**
 		 * テキストの配置
 		 * <p>
-		 * svgレイヤに配置します
+		 * {@link ArtText}で文字列図形を作成して描画します。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
 		 *  x: 左上のx座標,
 		 *  y: 左上のy座標
@@ -756,7 +783,7 @@
 		 * 	fill: 色,
 		 * 	fillOpacity: 透明度
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 *
 		 * @returns {ArtImage}
 		 */
@@ -786,7 +813,7 @@
 		},
 
 		/**
-		 * ロジック管理下にある図形(Shape)を全て取得
+		 * ロジック管理下にある図形(Shape)を全て取得します
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -807,7 +834,7 @@
 		},
 
 		/**
-		 * 渡された図形のIDを返す。(ロジック管理下にある図形のみ)
+		 * 図形のIDを返します。(ロジック管理下にある図形のみ)
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -825,7 +852,7 @@
 		},
 
 		/**
-		 * 図形(Shape)をこのロジックの管理下に置く
+		 * 図形(Shape)をこのロジックの管理下に置きます
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @private
@@ -845,7 +872,8 @@
 		/**
 		 * 背景画像の設定
 		 * <p>
-		 * 画像IDまたはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
+		 * 画像ID([imageSourceMap]{@link h5.ui.components.artboard.logic.DrawingLogic#imageSourceMap}に登録された画像のID)
+		 * またはファイルパスと、画像の配置モードを指定したオブジェクトを渡してください
 		 * </p>
 		 * <p>
 		 * 画像の配置モード(fillMode)は以下のいずれかを文字列で指定します
@@ -865,15 +893,15 @@
 		 * @instance
 		 * @param {Object} data
 		 *
-		 * <pre>
+		 * <pre class="sh_javascript"><code>
 		 * {
-		 * 	id: 画像ID。idが指定された場合、imageSrcMapから描画する画像パスを探します
+		 * 	id: 画像ID。idが指定された場合、imageSourceMapから描画する画像パスを探します
 		 * 	// src: 画像パス。IDが指定されている場合はsrcの指定は無効です。
 		 * 	fillMode: 画像の配置モード('none'|'contain'|'containCenter'|'cover'|'stretch') 指定のない場合は'none'で描画します,
 		 * 	offsetX: 背景画像位置のx座標のオフセット(デフォルト:0),
 		 * 	offsetY: 背景画像位置のy座標のオフセット(デフォルト:0)
 		 * }
-		 * </pre>
+		 * </code></pre>
 		 */
 		setBackgroundImage: function(data) {
 			var id = data.id;
@@ -963,6 +991,9 @@
 
 		/**
 		 * 背景色の設定
+		 * <p>
+		 * 背景色の設定をします。引数にはCSSカラー形式の文字列を指定してください。
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1006,7 +1037,10 @@
 		},
 
 		/**
-		 * 背景画像をクリアします
+		 * 背景画像のクリア
+		 * <p>
+		 * 背景画像を削除します
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1104,17 +1138,17 @@
 				// containまたはcontainCenter
 				// アスペクト比を維持して画像がすべて含まれるように表示
 				var aspectRatio = layerW / layerH;
-				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-				if (aspectRatio < imgRate) {
+				var imgRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRatio) {
 					imgStyle.width = layerW;
-					imgStyle.height = layerW / imgRate;
+					imgStyle.height = layerW / imgRatio;
 				} else {
 					imgStyle.height = layerH;
-					imgStyle.width = layerH * imgRate;
+					imgStyle.width = layerH * imgRatio;
 				}
 				if (fillMode === 'containCenter') {
 					// 中央配置
-					if (aspectRatio < imgRate) {
+					if (aspectRatio < imgRatio) {
 						imgStyle.top += (layerH - imgStyle.height) / 2;
 					} else {
 						imgStyle.left += (layerW - imgStyle.width) / 2;
@@ -1124,13 +1158,13 @@
 			case 'cover':
 				// アスペクト比を維持して領域が画像で埋まるように表示
 				var aspectRatio = layerW / layerH;
-				var imgRate = imgElement.naturalWidth / imgElement.naturalHeight;
-				if (aspectRatio < imgRate) {
+				var imgRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+				if (aspectRatio < imgRatio) {
 					imgStyle.height = layerH;
-					imgStyle.width = layerH * imgRate;
+					imgStyle.width = layerH * imgRatio;
 				} else {
 					imgStyle.width = layerW;
-					imgStyle.height = layerW / imgRate;
+					imgStyle.height = layerW / imgRatio;
 				}
 				break;
 			case 'stretch':
@@ -1153,8 +1187,8 @@
 		 * useSrcオプションがtrueの場合、背景画像について画像IDではなくパス(srcの値)で保存します。
 		 * </p>
 		 * <p>
-		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSrcMapの登録が必要です。
-		 * 別ページで保存データを利用する場合などで同一のimageSrcMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
+		 * 画像IDで保存されたデータを復元する場合は、保存時と同一のimageSourceMapの登録が必要です。
+		 * 別ページで保存データを利用する場合などで同一のimageSourceMapを使用しない場合は、useSrcにtrueを指定してパスで保存したデータを使用してください。
 		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
@@ -1195,7 +1229,10 @@
 		},
 
 		/**
-		 * セーブデータををロードして描画します
+		 * セーブデータををロード
+		 * <p>
+		 * [save]{@link h5.ui.components.artboard.logic.DrawingLogic#save}で生成したセーブデータをロードして描画します
+		 * </p>
 		 *
 		 * @memberOf h5.ui.components.artboard.logic.DrawingLogic
 		 * @instance
@@ -1273,12 +1310,34 @@
 		 *            <p>
 		 *            このフラグをtrueにすることで、italic体を持たないフォントについて、斜体をシミュレートするように変形を行います。
 		 *            </p>
-		 * @param {Object} [processParameter.size] サイズオブジェクト。指定しない場合は範囲指定に合わせたサイズまたは描画領域のサイズで保存されます。
-		 * @param {number} processParameter.size.width 出力する画像の幅(px)
-		 * @param {number} processParameter.size.height 出力する画像の高さ(px)
+		 * @param {Object} [processParameter.size] サイズオブジェクト。指定しない場合は描画領域のサイズで保存されます。
+		 * @param {number} [processParameter.size.width] 出力する画像の幅(px)
+		 * @param {number} [processParameter.size.height] 出力する画像の高さ(px)
+		 * @param {number} [processParameter.size.keepAspectRatio]
+		 *            出力画像のアスペクト比を描画領域のサイズのアスペクト比と同じにするかどうか
+		 *            <h3>サイズ指定省略時の挙動について</h3>
+		 *            <p>
+		 *            サイズ指定(width,height,keepAspectRatio)を省略した場合は以下のように出力サイズを決定します。
+		 *            </p>
+		 *            <p>
+		 *            アスペクト保持指定(keepAspectRatio=true)の場合
+		 *            <ul>
+		 *            <li>高さ、幅のどちらかが指定されていれば指定されていない方をアスペクト比から計算
+		 *            <li>どちらも指定されている場合は指定幅に合わせて高さを計算
+		 *            <li>どちらも指定されていない場合は無視(元のボードのサイズで出力)
+		 *            </ul>
+		 *            </p>
+		 *            <p>
+		 *            アスペクト保持を指定しない(keepAspectRatio=false)場合
+		 *            <ul>
+		 *            <li>高さ、幅のどちらかが指定されていれば指定されていない方は元のボードサイズ
+		 *            <li>どちらも指定されている場合は指定されたサイズ
+		 *            <li>どちらも指定されていない場合は元のボードのサイズ
+		 *            </ul>
+		 *            </p>
 		 * @returns {Promise} doneハンドラに'data:'で始まる画像データURLを渡します
 		 */
-		// TODO trimオプションは実装済みだが、いったんAPIから外しています #83
+		// TODO trimオプションは実装済みですが、いったんAPIから外しています #83
 		// 自動トリム(図形描画領域を自動で計算してtrim)する機能を実装した時に復活させる
 		// 自動トリムは図形の線幅も考慮した矩形を取得する必要があり、ブラウザによって挙動が異なり、自動trim実装の差異は考慮する必要があります
 		// 例：path要素の矩形取得について
@@ -1306,71 +1365,104 @@
 			processParameter = processParameter || {};
 			// _shapeLayerはg要素なので親のsvgを取得してviewBoxを求める
 			var svg = $(this._shapeLayer).parents('svg')[0];
-			// canvasを作成
 			var viewBox = svg.getAttribute('viewBox');
 			var viewBoxValues = viewBox.split(' ');
-			var canvasWidth = parseInt(viewBoxValues[2]);
-			var canvasHeight = parseInt(viewBoxValues[3]);
-			var canvas = document.createElement('canvas');
-			canvas.setAttribute('width', canvasWidth);
-			canvas.setAttribute('height', canvasHeight);
-			var ctx = canvas.getContext('2d');
+			var viewBoxWidth = parseInt(viewBoxValues[2]);
+			var viewBoxHeight = parseInt(viewBoxValues[3]);
+			var aspectRatio = viewBoxWidth / viewBoxHeight;
+			var outputWidth, outputHeight;
+			var size = processParameter.size;
+			if (size) {
+				// サイズが指定されている場合は出力サイズを変更
+				var keepAspectRatio = size.keepAspectRatio;
+				if (size.keepAspectRatio) {
+					// アスペクト保持指定がある場合は幅、高さの指定されていない方を計算
+					// (両方指定されている場合は幅を基準に高さを計算)
+					if (size.width) {
+						outputWidth = size.width;
+						outputHeight = outputWidth / aspectRatio;
+					} else if (size.height) {
+						outputHeight = size.height;
+						outputWidth = outputHeight * aspectRatio;
+					}
+				} else {
+					outputWidth = size.width || viewBoxWidth;
+					outputHeight = size.height || viewBoxHeight;
+				}
+			} else {
+				outputWidth = viewBoxWidth;
+				outputHeight = viewBoxHeight;
+			}
 
+			// 出力先サイズに合わせたcanvas
+			// 背景画像はこっちに描画
+			var outputCanvas = document.createElement('canvas');
+			outputCanvas.width = outputWidth;
+			outputCanvas.height = outputHeight;
+			var ctx = outputCanvas.getContext('2d');
 			var dfd = h5.async.deferred();
 
 			// 背景を描画
+			// 背景はoutputCanvas(出力画像の元になるのcanvas)に描画
 			var background = this._getCurrentBackgroundData();
 			var backgroundDfd = h5.async.deferred();
 			if (background) {
 				if (background.color) {
 					ctx.fillStyle = background.color;
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					ctx.fillRect(0, 0, outputWidth, outputHeight);
 				}
 				var src = background.id ? this.imageSourceMap[background.id] : background.src;
 				if (src) {
 					var fillMode = background.fillMode;
 					var tmpImg = document.createElement('img');
 					tmpImg.onload = function() {
-						var x = background.offsetX;
-						var y = background.offsetY;
+						// 背景画像のfillMode計算は、出力先カンバスのサイズで設定されます
+						// 例えば100*100の入力元カンバスにfillMode:containCenterで200*100の画像が背景に使われていた場合
+						// 入力元カンバスには100*50サイズで(x,y)=(0,25)で描画されています
+						// これを500*200で出力すると、400*200のカンバスにfillMode:containCenterで描画した状態と同じになり、
+						// 400*200で(x,y)=(50,0)で描画されます
+						// 例えばfillMode:noneで描画されている画像は、出力先カンバスのサイズが変わっても出力画像のサイズは拡大または縮小されません
+						// なお、背景画像のオフセット位置は、出力先に合わせて拡大・縮小されます
+						var x = (outputWidth / viewBoxWidth) * background.offsetX;
+						var y = (outputHeight / viewBoxHeight) * background.offsetY;
 						switch (fillMode) {
 						case 'contain':
 						case 'containCenter':
-							var canvasRate = canvas.width / canvas.height;
-							var imgRate = this.width / this.height;
+							var canvasRatio = outputWidth / outputHeight;
+							var imgRatio = this.width / this.height;
 							var w, h;
-							if (canvasRate < imgRate) {
-								w = canvas.width;
-								h = w / imgRate;
+							if (canvasRatio < imgRatio) {
+								w = outputWidth;
+								h = w / imgRatio;
 							} else {
-								h = canvas.height;
-								w = h * imgRate;
+								h = outputHeight;
+								w = h * imgRatio;
 							}
 							if (fillMode === 'containCenter') {
 								// 中央配置
-								if (canvasRate < imgRate) {
-									y += (canvas.height - h) / 2;
+								if (canvasRatio < imgRatio) {
+									y += (outputHeight - h) / 2;
 								} else {
-									x += (canvas.width - w) / 2;
+									x += (outputWidth - w) / 2;
 								}
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'cover':
-							var canvasRate = canvas.width / canvas.height;
-							var imgRate = this.width / this.height;
+							var canvasRatio = outputWidth / outputHeight;
+							var imgRatio = this.width / this.height;
 							var w, h;
-							if (canvasRate < imgRate) {
-								h = canvas.height;
-								w = h * imgRate;
+							if (canvasRatio < imgRatio) {
+								h = outputWidth;
+								w = h * imgRatio;
 							} else {
-								w = canvas.width;
-								h = w / imgRate;
+								w = outputHeight;
+								h = w / imgRatio;
 							}
 							ctx.drawImage(this, x, y, w, h);
 							break;
 						case 'stretch':
-							ctx.drawImage(this, x, y, canvas.width, canvas.height);
+							ctx.drawImage(this, x, y, outputWidth, outputHeight);
 							break;
 						default:
 							// none
@@ -1390,41 +1482,33 @@
 			// 背景描画が終わったら図形をカンバスに描画
 			backgroundDfd.promise().then(
 					this.own(function() {
-						return this._canvasConvertLogic.drawSVGToCanvas(this._shapeLayer, canvas,
+						// 図形は、描画領域の座標が出力先カンバスの座標に変換されるようtransform設定
+						ctx.transform(outputWidth / viewBoxWidth, 0, 0, outputHeight
+								/ viewBoxHeight, 0, 0);
+						return this._canvasConvertLogic.drawSVGToCanvas(svg, outputCanvas,
 								processParameter);
-					})).then(
-					this.own(function() {
-						// カンバスを画像化
-						var size = processParameter.size;
-						// TODO trimは実装済みだが行わないようにしている #83
-						// var trim = processParameter.trim;
-						var trim = null;
-						if (size || trim) {
-							// sizeまたはtrimが指定されている場合
-							// 新しくcanvasを生成してサイズ変更とトリミングを行う
-							var orgCanvas = canvas;
-							canvas = document.createElement('canvas');
-							if (trim) {
-								var dx = trim.dx;
-								var dy = trim.dy;
-								var dh = trim.dh;
-								var dw = trim.dw;
-								// 出力サイズはsize指定があれば指定のサイズ、無い場合はtrimしたサイズ
-								var w = size ? size.width : dw;
-								var h = size ? size.height : dh;
-								canvas.setAttribute('width', w);
-								canvas.setAttribute('height', h);
-								canvas.getContext('2d').drawImage(orgCanvas, dx, dy, dw, dh, 0, 0,
-										w, h);
-							} else {
-								canvas.setAttribute('width', size.width);
-								canvas.setAttribute('height', size.height);
-								canvas.getContext('2d').drawImage(orgCanvas, 0, 0, size.width,
-										size.height);
-							}
-						}
-						dfd.resolve(this._canvasConvertLogic.toDataURL(canvas, returnType, 1));
-					}));
+					})).then(this.own(function() {
+				// カンバスを画像化
+				// TODO trimは実装済みだが行わないようにしている #83
+				// var trim = processParameter.trim;
+				var trim = null;
+				if (trim) {
+					// trimが指定されている場合
+					// 新しくcanvasを生成してサイズ変更とトリミングを行う
+					var canvas = document.createElement('canvas');
+					var dx = trim.dx;
+					var dy = trim.dy;
+					var dh = trim.dh;
+					var dw = trim.dw;
+					// 出力サイズはsize指定があれば指定のサイズ、無い場合はtrimしたサイズ
+					var w = size ? size.width : dw;
+					var h = size ? size.height : dh;
+					canvas.setAttribute('width', w);
+					canvas.setAttribute('height', h);
+					canvas.getContext('2d').drawImage(outputCanvas, dx, dy, dw, dh, 0, 0, w, h);
+				}
+				dfd.resolve(this._canvasConvertLogic.toDataURL(outputCanvas, returnType, 1));
+			}));
 			return dfd.promise();
 		}
 	};

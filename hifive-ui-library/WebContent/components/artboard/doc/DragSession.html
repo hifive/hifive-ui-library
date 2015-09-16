@@ -6,7 +6,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Cache-Control" content="no-cache">
 	<meta http-equiv="Expires" content="-1">
-	<title>JSDoc: Class: AppendCommand</title>
+	<title>JSDoc: Class: DragSession</title>
     <!--[if lt IE 9]>
     <script src="js/modernizr.js"></script>
     <![endif]-->
@@ -34,21 +34,21 @@
 
     <div id="main">
 
-        <h1 class="page-title">Class: AppendCommand</h1>
+        <h1 class="page-title">Class: DragSession</h1>
 
         
 
         <section>
 
         <header>
-            <h2>AppendCommand</h2>
+            <h2>DragSession</h2>
             
         </header>
 
         <article>
             <div class="container-overview">
             <dt>
-    <h4 class="name" id="AppendCommand"><span class="type-signature"></span>new AppendCommand</h4>
+    <h4 class="name" id="DragSession"><span class="type-signature"></span>new DragSession</h4>
     
     
 </dt>
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        図形要素の追加を行うコマンド
+        DragSession<p>図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。</p>
     </p>
     
     
@@ -86,18 +86,18 @@
 	
         <tr>
             
-                <td class="name"><code>commandData</code></td>
+                <td class="name"><code>shape</code></td>
             
             
             <td class="type">
-            Object
+            <a href="ArtShape.html">ArtShape</a>
             </td>
             
             
             
             
             
-            <td class="description last">コマンドデータオブジェクト。AppendCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。<pre class="sh_javascript"><code>{	shape: 追加するArtShape	layer: ArtShapeの要素を追加する対象の要素}</code></pre></td>
+            <td class="description last">ドラッグ操作対象の図形</td>
         </tr>
 	
 	
@@ -124,7 +124,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 176</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 177</li></ul></dd>
 	
 	-->
 
@@ -149,11 +149,7 @@
             </div>
 
             
-                <h3 class="subsection-title">Extends</h3>
 
-                <ul>
-                    <li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li>
-                </ul>
             
 
             
@@ -163,6 +159,57 @@
             
 
             
+
+                <h3 class="subsection-title">Members</h3>
+
+                <dl>
+<dt>
+    <h4 class="name" id="shape"><span class="type-signature"></span>shape<span class="type-signature"> :<a href="ArtShape.html">ArtShape</a></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        ドラッグ操作対象の図形
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 194</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr></dl>
 
             
 
@@ -171,7 +218,7 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="getShape"><span class="type-signature"></span>getShape</h4>
+    <h4 class="name" id="cancel"><span class="type-signature"></span>cancel</h4>
     
     
 </dt>
@@ -179,7 +226,7 @@
     
     
     <p class="description">
-        コマンドと紐づくArtShapeオブジェクトを取得する
+        ドラッグセッションを終了して位置を元に戻す<p>moveメソッドで移動させた処理を元に戻します。</p>
     </p>
     
     
@@ -207,7 +254,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 171</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 277</li></ul></dd>
 	
 	-->
 
@@ -235,11 +282,201 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type"><a href="ArtShape.html">ArtShape</a></span> 
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
 		
 	</dd>
 </dl>
 
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="end"><span class="type-signature"></span>end</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        ドラッグセッションを終了して位置を確定させる<p>moveメソッドを使って移動させた位置で、図形の位置を確定します。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 254</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="move"><span class="type-signature"></span>move</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        指定された位置に移動<p>このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(ArtShape)のmoveToやmoveByは呼ばれません。ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。</p><p>このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。</p><p>引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 235</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
     
     
 
