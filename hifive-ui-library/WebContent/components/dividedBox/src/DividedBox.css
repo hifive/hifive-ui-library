@@ -81,10 +81,10 @@
 	background-color: #eee;
 	width: 30px;
 	height: 30px;
+    margin-top: -15px; /* heightの半分 */
 	border-style: solid;
 	border-width: 1px;
 	border-radius: 15px;
-	margin-top: -15px;
 	-moz-border-radius: 15px;
 	-webkit-border-radius: 15px;
 	-o-border-radius: 15px;
@@ -97,7 +97,7 @@
 }
 
 .dividedBox.horizontal>.divider>.dividerHandler {
-	margin-left: -15px;
+	margin-left: -13px; /* -(divderHandlerのwidth - dviderのwidth) / 2 */
 }
 
 .dividedBox>.divider.fixedDivider {
