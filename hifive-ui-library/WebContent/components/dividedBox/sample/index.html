@@ -157,7 +157,7 @@
 				<div class="dividedBox horizontal">
 					<div class="box yellow">
 						<p>noFill指定のないボックス</p>
-						<p>ボックスの高さは100%()dividedBoxの高さと同じ)になります</p>
+						<p>ボックスの高さは100%(==dividedBoxの高さ)になります</p>
 					</div>
 					<div class="box noFill orange">
 						<p>noFill指定ボックス</p>
@@ -165,7 +165,7 @@
 					</div>
 					<div class="box last blue">
 						<p>noFill指定のないボックス</p>
-						<p>ボックスの高さは100%()dividedBoxの高さと同じ)になります</p>
+						<p>ボックスの高さは100%(==dividedBoxの高さ)になります</p>
 					</div>
 				</div>
 			</div>
@@ -188,6 +188,32 @@
 					<div class="box last blue">
 						<p>dividerを操作してボックスの領域を動かすことが出来ます</p>
 					</div>
+				</div>
+			</div>
+
+			<h3>keepSize指定</h3>
+			<p>
+				DividedBox適用時のボックスのサイズは自動で計算されます。例えば3つのボックスがあれば各ボックスのサイズはルートの1/3の大きさになります。
+			</p>
+			<p>
+				ただし、ボックス要素に<strong>keepSize</strong>クラスを指定すると、そのボックスのサイズは自動計算されずDividedBox適用前のサイズを保ちます。
+			</p>
+			<p>
+				この指定はDividedBox適用時にのみ意味のある指定です。適用後は通常のボックスと同じでdivider操作によるサイズ変更が可能になります。
+			</p>
+			<div class="sample keepSizeSample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*300" selected>auto×300px</option>
+						<option value="500*300">500px×300px</option>
+						<option value="600*300">600px×300px</option>
+						<option value="700*300">700px×300px</option></select></label>
+				<div class="dividedBox">
+					<div class="box green"></div>
+					<div class="box yellow keepSize">
+						<p>このボックスはDividedBox適用した時に適用前の幅が保たれます。適用後はサイズ変更可能です。</p>
+					</div>
+					<div class="box purple"></div>
 				</div>
 			</div>
 
@@ -215,7 +241,7 @@
 					<div class="box green "></div>
 					<div class="box purple fixedSize"></div>
 					<div class="box yellow fixedSize "></div>
-					<div class="box orange autoSize"></div>
+					<div class="box orange"></div>
 					<div class="box blue fixedSize"></div>
 					<div class="box green fixedSize"></div>
 				</div>

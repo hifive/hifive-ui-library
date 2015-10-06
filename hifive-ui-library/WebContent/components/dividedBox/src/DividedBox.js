@@ -90,7 +90,10 @@
 	var CLASS_FREEZE_SIZE = 'freezeSize';
 
 	/** クラス名：boxに指定。dividerによるサイズ変更不可 */
-	var CLASS_FIXED_BOX = 'fixedSize';
+	var CLASS_FIXED_SIZE = 'fixedSize';
+
+	/** クラス名：boxに指定。初期化時にサイズ変更しないボックスに指定。指定されたボックスはバインド前のサイズのまま。 */
+	var CLASS_KEEP_SIZE = 'keepSize';
 
 	/** クラス名：divderに指定。操作不可 */
 	var CLASS_FIXED_DIVIDER = 'fixedDivider';
@@ -208,6 +211,9 @@
 
 			// リフレッシュ
 			this.refresh();
+
+			// keepSizeクラスはバインド時とinsert時のみ計算で使用するのでここで削除
+			$boxes.removeClass(CLASS_KEEP_SIZE);
 		},
 
 		/**
@@ -276,9 +282,9 @@
 
 				// 固定dividerの決定
 				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可(fixedDivider)にする
-				appearedUnfix = appearedUnfix || !$prev.hasClass(CLASS_FIXED_BOX);
-				if (isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_BOX))) {
-					// 一番最後まで計算が終わって、かつ、最後のボックスがfixedBoxなら、そこから前にたどって、fixedDividerになるdividerを探す
+				appearedUnfix = appearedUnfix || !$prev.hasClass(CLASS_FIXED_SIZE);
+				if (isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_SIZE))) {
+					// 一番最後まで計算が終わって、かつ、最後のボックスがfixedSizeなら、そこから前にたどって、fixedDividerになるdividerを探す
 					// 最後のboxがfixedの時は、そのboxの前のdividerはfixedDivider
 					$divider.addClass(CLASS_FIXED_DIVIDER);
 					// fixedでないboxが出てくるまで、前のdividerを辿って全てfixedにする
@@ -291,14 +297,14 @@
 					while (true) {
 						$d.addClass(CLASS_FIXED_DIVIDER);
 						$p = this._getPrevBoxByDivider($d);
-						if (!$p.hasClass(CLASS_FIXED_BOX)) {
+						if (!$p.hasClass(CLASS_FIXED_SIZE)) {
 							break;
 						}
 						$d = this._getPrevDividerByBox($p);
 					}
 				} else {
 					// 前から辿ってfixedDividerかどうかの判定を行う
-					// あるdividerより前のボックスの中にfixedBoxでないボックスが一つもないならそのdividerはfixedDivder
+					// あるdividerより前のボックスの中にfixedSizeでないボックスが一つもないならそのdividerはfixedDivder
 					if (!isLast && !appearedUnfix) {
 						$divider.addClass(CLASS_FIXED_DIVIDER);
 					} else {
@@ -332,6 +338,9 @@
 			// ボックスのサイズを固定する(styleでwidht|heightが設定していある状態にする)
 			this._setOuterSize(box, this._getOuterSize(box));
 			this.refresh();
+
+			// keepSizeクラスはバインド時とinsert時のみ計算で使用するのでここで削除
+			$(box).removeClass(CLASS_KEEP_SIZE);
 		},
 
 		/**
@@ -516,10 +525,10 @@
 			var prevMove = -totalMove * partition;
 			var nextMove = totalMove + prevMove;
 
-			var isFixedSize = $targetBox.hasClass(CLASS_FIXED_BOX);
+			var isfixedSize = $targetBox.hasClass(CLASS_FIXED_SIZE);
 			// reisze対象のboxがfixedSizeの場合はfixedSize指定を一旦無視してリサイズする
-			if (isFixedSize) {
-				$targetBox.removeClass(CLASS_FIXED_BOX);
+			if (isfixedSize) {
+				$targetBox.removeClass(CLASS_FIXED_SIZE);
 			}
 			if (prevMove) {
 				this._move(prevMove, $prevDivider);
@@ -529,8 +538,8 @@
 			}
 
 			// 一旦外したfixedSize指定を再設定
-			if (isFixedSize) {
-				$targetBox.addClass(CLASS_FIXED_BOX);
+			if (isfixedSize) {
+				$targetBox.addClass(CLASS_FIXED_SIZE);
 			}
 		},
 
@@ -542,7 +551,7 @@
 		 */
 		fixSize: function(box) {
 			var $targetBox = this._getBoxElement(box);
-			$targetBox.addClass(CLASS_FIXED_BOX);
+			$targetBox.addClass(CLASS_FIXED_SIZE);
 			this.refresh();
 		},
 
@@ -554,7 +563,7 @@
 		 */
 		unfixSize: function(box) {
 			var $targetBox = this._getBoxElement(box);
-			$targetBox.removeClass(CLASS_FIXED_BOX);
+			$targetBox.removeClass(CLASS_FIXED_SIZE);
 			this.refresh();
 		},
 
@@ -725,7 +734,7 @@
 			var $groupLast = $dividerGroup.eq($dividerGroup.length - 1);
 			var $groupPrev = this._getPrevBoxByDivider($groupFirst);
 			var $groupNext = this._getNextBoxByDivider($groupLast);
-			var prevStart,nextEnd,lastPos;
+			var prevStart, nextEnd, lastPos;
 			if (isTrack) {
 				prevStart = trackingData.prevStart;
 				nextEnd = trackingData.nextEnd;
@@ -801,17 +810,17 @@
 
 			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
 
-			// 固定(fixed)でないボックスを拡大・縮小する
+			// サイズ変更しないボックス(fixedSize)以外のないボックスを拡大・縮小する
 			var $boxes = this._getBoxes();
-			var $unfixedBoxes = $boxes.not('.' + CLASS_FIXED_BOX);
+			var $unfixedSizeBoxes = $boxes.not('.' + CLASS_FIXED_SIZE + ',.' + CLASS_KEEP_SIZE);
 
 			var move = 0;
-			// 固定でないボックスのトータルサイズ
-			var unfixedBoxesTotalSize = 0;
-			$unfixedBoxes.each(function() {
-				unfixedBoxesTotalSize += $(this)[w_h]();
+			// サイズが固定でないボックスのトータルサイズ
+			var unfixedSizeBoxesTotalSize = 0;
+			$unfixedSizeBoxes.each(function() {
+				unfixedSizeBoxesTotalSize += $(this)[w_h]();
 			});
-			$unfixedBoxes.each(this.ownWithOrg(function(box) {
+			$unfixedSizeBoxes.each(this.ownWithOrg(function(box) {
 				var $box = $(box);
 				if (move) {
 					// dividerの移動量に合わせてボックスも移動
@@ -825,8 +834,11 @@
 				if (isDisplayNone) {
 					$divider.css('display', 'block');
 				}
-				// 各ボックスのサイズの比率で拡縮した時の位置にdividerを動かす
-				move += divSize * (this._getOuterSize($box) / unfixedBoxesTotalSize);
+				// 固定ボックス以外のボックスのサイズの比率で拡縮した時の位置にdividerを動かす
+				// 固定ボックス以外のボックスのサイズが全て0ならそれらのサイズは等分する
+				move += unfixedSizeBoxesTotalSize ? divSize
+						* (this._getOuterSize($box) / unfixedSizeBoxesTotalSize) : divSize
+						/ $unfixedSizeBoxes.length;
 
 				// グループ化されている(連動して動く)divider全て動かす
 				var $group = this._getDividerGroup($divider);
@@ -1111,7 +1123,7 @@
 			var $d = $divider;
 			var $b = this._getNextBoxByDivider($d);
 			while (true) {
-				if (!$b.hasClass(CLASS_FIXED_BOX)) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
 					break;
 				}
 				$result = $result.add($b);
@@ -1122,7 +1134,7 @@
 			$d = $divider;
 			$b = this._getPrevBoxByDivider($d);
 			while (true) {
-				if (!$b.hasClass(CLASS_FIXED_BOX)) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
 					break;
 				}
 				$result = $result.add($b);
