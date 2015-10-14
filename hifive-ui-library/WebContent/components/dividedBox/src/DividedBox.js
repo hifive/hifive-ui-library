@@ -244,9 +244,20 @@
 			}));
 
 			// dividerが間にないボックスを探して、ボックス間にdividerを追加
-			$boxes.filter(':not(.divider) + :not(.divider)').each(this.ownWithOrg(function(box) {
+			$boxes.slice(1).each(this.ownWithOrg(function(box, index) {
+				var $box = $(box);
+				var prevBox = $boxes[index];
+				var $prev = $box.prev();
+				var hasDivider = false;
+				while ($prev.length && !hasDivider && $prev[0] !== prevBox) {
+					hasDivider = $prev.is('.divider');
+					$prev = $prev.next();
+				}
+				if (hasDivider) {
+					return;
+				}
 				var $divider = $(this.view.get('divider'));
-				$(box).before($divider);
+				$box.before($divider);
 			}));
 
 			// dividerとボックスの配置
