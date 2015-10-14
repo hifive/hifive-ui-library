@@ -93,6 +93,23 @@ $(function() {
 				this._childDividedBoxControllers[i].refresh();
 			}
 			this.dividedBoxController.refresh();
+		},
+
+		'.showIndicator click': function(ctx, $el) {
+			var $target = $(this.dividedBoxController.rootElement);
+			this.currentIndicator = this.indicator({
+				target: $target
+			});
+			this.currentIndicator.show();
+			this.$find('.hideIndicator').css('display', 'inline-block');
+			$el.css('display', 'none');
+		},
+		'.hideIndicator click': function(ctx, $el) {
+			if (this.currentIndicator) {
+				this.currentIndicator.hide();
+			}
+			this.$find('.showIndicator').css('display', 'inline-block');
+			$el.css('display', 'none');
 		}
 	};
 	$('.sample').each(function() {

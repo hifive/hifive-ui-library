@@ -278,6 +278,31 @@
 			<div class="sample insertSample">
 				<div class="dividedBox vertical"></div>
 			</div>
+
+			<h4>ボックス除外要素</h4>
+			<p>DividedBoxをバインドすると、基本的にはバインド要素内の要素全てがボックスとして扱われます。</p>
+			<p>しかし、position:absoluteを指定している要素はボックスの対象になりません。</p>
+			<p>固定位置に表示する要素を置いたり、インジケータを出すことができます。</p>
+			<pre>dividedBox.insert(indexOrTargetBox, box);</pre>
+			<pre>dividedBox.remove(indexOrTargetBox); </pre>
+			<div class="sample absoluteSample">
+				<button class="refresh btn btn-default">refresh</button>
+				<label>サイズ変更<select name="size"><option
+							value="auto*300" selected>auto×300px</option>
+						<option value="500*300">500px×300px</option>
+						<option value="600*300">600px×300px</option>
+						<option value="700*300">700px×300px</option></select></label>
+				<button class="showIndicator btn btn-default">インジケータを表示</button>
+				<button class="hideIndicator btn btn-default" style="display: none">インジケータを非表示</button>
+				<div class="dividedBox" style="position: relative">
+					<div class="box green"></div>
+					<div class="blue"
+						style="position: absolute; height: 100px; z-index: 1">
+						この要素はposition:absoluteです</div>
+					<div class="box purple"></div>
+					<div class="box yellow"></div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
