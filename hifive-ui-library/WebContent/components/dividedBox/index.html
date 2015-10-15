@@ -27,12 +27,14 @@
 	<div class="container">
 		<div class="row">
 
-			<h3>ボックス区切り移動</h3>
+			<h3>ボックス区切り移動(DividedBox)</h3>
 
-			<p>実際の動作画面は以下のサンプルをご覧ください</p>
+			<p>DividedBoxは要素を区切り線で分割し、分割サイズを区切り線の操作で自由に変更できるようにすることができるUI部品です。</p>
+			<p>実際の動作画面、及び詳細な使い方については以下のサンプルをご覧ください</p>
 			<ul>
 				<li><a href="sample/index.html">ボックス区切り移動サンプル</a>
 				<li><a href="sample/state.html">StateBox使用サンプル</a>
+				<li><a href="sample/event.html">DividedBoxの上げるイベント</a>
 			</ul>
 
 			<h4>使用方法・制限事項</h4>
@@ -41,100 +43,51 @@
 					<ul>
 						<li>dividedBox/src/DividedBox.css</li>
 						<li>dividedBox/src/DividedBox.js</li>
-					</ul> デザインについては適宜、別定義によるオーバーライド等で変更してください。
-				<li>ルート要素をdividedBoxクラスとして、DividedBoxを適用する例です。<pre>
+					</ul>
+				</li>
+				<li><p>ルート要素をdividedBoxクラスとして、DividedBoxを適用する例です。</p>
+					<p>ルート要素直下にボックス要素を配置してください。DividedBoxを適用すると各ボックス間に移動可能な区切り線が作成されます。</p>
+					<pre>&lt;!-- html --&gt;
+&lt;div class=&quot;dividedBox&quot;&gt;
+  &lt;div&gt;ボックス１&lt;/div&gt;
+  &lt;div&gt;ボックス２&lt;/div&gt;
+  &lt;div&gt;ボックス３&lt;/div&gt;
+&lt;/div&gt;
+</pre> <pre>// javascript
 var dividedBoxControlelr = h5.core.controller('.dividedBox', h5.ui.components.DividedBox.DividedBox);
 </pre>
-					<p>ルート要素直下にボックス要素を配置してください。複数配置可能です。DividedBoxを適用すると各ボックス間に移動可能な区切り線が作成されます。
-					</li>
-				<li><p>ルート要素と各ボックス間、および各ボックスと区切り線の間に余白(margin、padding)は指定できません。</p></li>
-				<li><p>
-						ルート要素に<strong>vertical</strong>クラスを指定、もしくは指定しない場合は垂直配置(区切り線は縦)とみなします。
-					</p>
-					<p>
-						<strong>horizontal</strong>クラスを指定した場合は水平区切り(区切り線は横)とみなします。</li>
-				<li><p>
-						ルート要素に<strong>freezeSize</strong>クラスを指定すると、処理前の表示状態でルート要素のサイズを固定します。
-					</p>
-					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
-				<li><p>各ボックスのサイズは非分割方向(垂直区切りは縦、水平区切りは横)に要素を自動的に拡張されます。</p>
-					<p>
-						ボックスのサイズを変更したくない場合は<strong>noFill</strong>クラスをボックスに指定てください。
-					</p></li>
-				<li><p>
-						各ボックスに<strong>autoSize</strong>クラスを指定すると分割方向(垂直区切りは横、水平区切りは縦)の幅を自動で設定します。
-					</p>
-					<p>（autoSize以外のボックスを除いた、残り部分の幅をautoSizeのボックスで等分）</p>
-					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
-				<li><p>
-						ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、
-						DividedBoxControllerの<strong>refresh</strong>関数を呼び出してください。再計算して表示します。
-					</p>
-					<p>
-					<pre>dividedBoxController.refresh();</pre>
-					</p></li>
 				<li>
-					<p>コントローラーのinsert関数を呼び出すと、ボックスを追加することができます。</p>
-					<p>
-					<pre>dividedBoxController.insert(index, box);
-  // index = 対象要素インデックス(0～)
-  // box = 追加要素(DOM||jQuery||要素生成文字列)</pre>
-					</p>
-				</li>
-				<li><p>区切り線はdiv.divider、区切り線のハンドル用要素(中央の○)はCSS
-						div.dividerHandler で設定されています。</p>
-					<p>見た目を変更したい場合は適宜スタイルを上書きしてください。</li>
-			</ul>
+					<p>デザインについては適宜、別定義によるオーバーライド等で変更してください。</p>
+					<p>例：区切り線のハンドル用要素(中央の○)の高さと幅を20px、色を白に変更</p> <pre>.dividedBox&gt;.divider&gt;.dividerHandler {
+  background-color: #fff;
+  /* 円にするため、width=heightにして、角丸(border-radius)はその半分の値を指定 */
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -o-border-radius: 10px;
+  -ms-border-radius: 10px;
+}
 
-			<h4>使用方法・制限事項</h4>
-			<ul>
-				<li>本機能使用時は、以下のファイルを読み込んでください。
-					<ul>
-						<li>dividedBox/src/DividedBox.css</li>
-						<li>dividedBox/src/DividedBox.js</li>
-					</ul> デザインについては適宜、別定義によるオーバーライド等で変更してください。
-				<li>ルート要素をdividedBoxクラスとして、DividedBoxを適用する例です。<pre>
-var dividedBoxControlelr = h5.core.controller('.dividedBox', h5.ui.components.DividedBox.DividedBox);
-</pre>
-					<p>ルート要素直下にボックス要素を配置してください。複数配置可能です。DividedBoxを適用すると各ボックス間に移動可能な区切り線が作成されます。
-					</li>
-				<li><p>ルート要素と各ボックス間、および各ボックスと区切り線の間に余白(margin、padding)は指定できません。</p></li>
-				<li><p>
-						ルート要素に<strong>vertical</strong>クラスを指定、もしくは指定しない場合は垂直配置(区切り線は縦)とみなします。
-					</p>
-					<p>
-						<strong>horizontal</strong>クラスを指定した場合は水平区切り(区切り線は横)とみなします。</li>
-				<li><p>
-						ルート要素に<strong>freezeSize</strong>クラスを指定すると、処理前の表示状態でルート要素のサイズを固定します。
-					</p>
-					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
-				<li><p>各ボックスのサイズは非分割方向(垂直区切りは縦、水平区切りは横)に要素を自動的に拡張されます。</p>
-					<p>
-						ボックスのサイズを変更したくない場合は<strong>noFill</strong>クラスをボックスに指定てください。
-					</p></li>
-				<li><p>
-						各ボックスに<strong>autoSize</strong>クラスを指定すると分割方向(垂直区切りは横、水平区切りは縦)の幅を自動で設定します。
-					</p>
-					<p>（autoSize以外のボックスを除いた、残り部分の幅をautoSizeのボックスで等分）</p>
-					<p>指定しない場合は別途サイズ指定を行ってください。</p></li>
+.dividedBox.horizontal&gt;.divider&gt;.dividerHandler {
+  margin-left: -8px; /* -(divderHandlerのwidth - dviderのwidth) / 2 */
+}
+
+.dividedBox.vertical&gt;.divider&gt;.dividerHandler {
+  margin-top: -10px;  /* -(divderHandlerのheightの半分) / 2 */
+}</pre>
+				</li>
 				<li><p>
 						ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、
 						DividedBoxControllerの<strong>refresh</strong>関数を呼び出してください。再計算して表示します。
-					</p>
-					<p>
-					<pre>dividedBoxController.refresh();</pre>
-					</p></li>
-				<li>
-					<p>コントローラーのinsert関数を呼び出すと、ボックスを追加することができます。</p>
-					<p>
-					<pre>dividedBoxController.insert(index, box);
-  // index = 対象要素インデックス(0～)
-  // box = 追加要素(DOM||jQuery||要素生成文字列)</pre>
-					</p>
-				</li>
-				<li><p>区切り線はdiv.divider、区切り線のハンドル用要素(中央の○)はCSS
-						div.dividerHandler で設定されています。</p>
-					<p>見た目を変更したい場合は適宜スタイルを上書きしてください。</li>
+					</p> <pre>dividedBoxController.refresh();</pre></li>
+				<li>その他機能についてはサンプルをご覧ください
+					<ul>
+						<li><a href="sample/index.html">ボックス区切り移動サンプル</a>
+						<li><a href="sample/state.html">StateBox使用サンプル</a>
+						<li><a href="sample/event.html">DividedBoxの上げるイベント</a>
+					</ul>
 			</ul>
 		</div>
 	</div>

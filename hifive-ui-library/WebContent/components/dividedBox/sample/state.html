@@ -162,7 +162,7 @@ body {
 					<div data-state="mini" class="mini-width">mini state</div>
 					<div data-state="large" class="large-width">large state</div>
 				</div>
-				<div class="dividedBox fill vertical autoSize">
+				<div class="dividedBox fill vertical">
 					<div class="box fill green state-container">
 						<div data-state="middle" class="middle-height">middle state</div>
 						<div data-state="mini" class="mini-height">mini state</div>
@@ -198,12 +198,6 @@ body {
 				<p>左右(上下)にdividerがある場合、resize時に左右(上下)のdividerが動く割合を0.0～1.0を指定します。</p>
 				<p>0.0を指定した場合(デフォルト)は左(上)のdividerを固定して右(下)のdividerの位置が変更されます。</p>
 				<p>左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。</p>
-			</div>
-			<div>
-				<h4>boxSizeChangeイベント</h4>
-				<p>トラック操作やメソッド呼び出しによってボックスのサイズが変更された場合、そのボックスからboxSizeChangeイベントが上がります。</p>
-				<p>ボックスのサイズ変更時に何かしたい場合はこのboxSizeChangeイベントハンドラを記述するのがよいでしょう。</p>
-				<p>なお、上のサンプルではboxSizeChangeイベントハンドラでコンソールにログを出力しています。</p>
 			</div>
 		</div>
 	</div>
