@@ -38,6 +38,10 @@ body {
 	background-color: #EDAD0B;
 }
 
+.red {
+	background-color: #D45D87;
+}
+
 .fixedSize>* {
 	margin-right: 5px;
 }
