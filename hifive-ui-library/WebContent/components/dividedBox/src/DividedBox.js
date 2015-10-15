@@ -610,7 +610,6 @@
 			var $dividers = $dividerGroup.filter('.divider');
 			$dividerGroup.each(this.ownWithOrg(function(element) {
 				// dividerまたはbox要素
-				var $element = $(element);
 				if (!isAfter && element === $divider[0]) {
 					isAfter = true;
 				}
@@ -623,13 +622,14 @@
 			}));
 
 			// dividerのトラック操作が開始したことをイベントで通知
-			// 実際に操作しているdividerだけではなく、同時に動くdivider全てについてイベントをあげている
-			$dividers.each(this.ownWithOrg(function(divider) {
-				$(divider).trigger(EVENT_DIVIDER_TRACK_START, {
-					prev: this._getPrevBoxByDivider(divider),
-					next: this._getNextBoxByDivider(divider)
-				});
-			}));
+			// 同時に動くdividerがある場合でも実際に操作しているdividerからのみ上げる
+			// next,prevには実際にサイズが変更されるボックスが上がる
+			// (前後にfixedSizeのボックスがある場合、fixedSizeのボックスではなく、サイズが変わるボックスが対象)
+			$divider.trigger(EVENT_DIVIDER_TRACK_START, {
+				prev: $groupPrev[0],
+				next: $groupNext[0],
+				$dividers: $dividers
+			});
 
 			// 可動範囲をh5trackstartの時点で決定する
 			// 両サイドのボックスで最小サイズが指定されている場合は、両サイドが指定されたサイズより小さくならないようにする
@@ -639,7 +639,9 @@
 				prevStart: beforeWH + $groupPrev.position()[l_t]
 						+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0),
 				nextEnd: $groupNext.position()[l_t] + this._getOuterSize($groupNext) - afterWH
-						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0)
+						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0),
+				$groupPrev: $groupPrev,
+				$groupNext: $groupNext
 			};
 		},
 
@@ -663,15 +665,15 @@
 			if (move === 0) {
 				return;
 			}
-			this._trackingData.lastPos = $divider.position();
+			var trackingData = this._trackingData;
+			trackingData.lastPos = $divider.position();
 			this._move(move, $divider, this._trackingData);
-			this._trackingData.$dividers.each(this.ownWithOrg(function(divider) {
-				$(divider).trigger(EVENT_DIVIDER_TRACK_MOVE, {
-					prev: this._getPrevBoxByDivider(divider),
-					next: this._getNextBoxByDivider(divider),
-					moved: move
-				});
-			}));
+			$divider.trigger(EVENT_DIVIDER_TRACK_MOVE, {
+				prev: trackingData.$groupPrev[0],
+				next: trackingData.$groupNext[0],
+				$dividers: this._trackingData.$dividers,
+				moved: move
+			});
 		},
 
 		/**
@@ -681,13 +683,13 @@
 		 * @param context
 		 */
 		'> .divider h5trackend': function(context) {
-			this._trackingData.$dividers.each(this.ownWithOrg(function(divider) {
-				$(divider).trigger(EVENT_DIVIDER_TRACK_END, {
-					prev: this._getPrevBoxByDivider(divider),
-					next: this._getNextBoxByDivider(divider)
-				});
-			}));
-
+			var $divider = $(context.event.currentTarget);
+			var trackingData = this._trackingData;
+			$divider.trigger(EVENT_DIVIDER_TRACK_END, {
+				prev: trackingData.$groupPrev[0],
+				next: trackingData.$groupNext[0],
+				$dividers: this._trackingData.$dividers
+			});
 			// キャッシュした値のクリア
 			this._trackingData = null;
 		},
