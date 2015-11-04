@@ -18,11 +18,11 @@
 <script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
 <script src="/hifive-res/fw/current/h5.dev.js"></script>
 
-<script src="../src/ColorGraduate.js"></script>
+<script src="../src/ColorGradient.js"></script>
 
 <script>
 	$(function() {
-		var graduates = [{
+		var gradients = [{
 			position: 0,
 			color: 0xff0000,
 			alpha: 1
@@ -47,8 +47,8 @@
 			color: 0xff00ff,
 			alpha: 1
 		}];
-		var colorGraduateLogic = h5.core.logic(h5.ui.components.colorGraduate.ColorGraduate);
-		var colorGraduate = colorGraduateLogic.createColorGraduate(graduates);
+		var colorGradientLogic = h5.core.logic(h5.ui.components.colorGradient.ColorGradient);
+		var colorGradient = colorGradientLogic.createColorGradient(gradients);
 
 		function getRgba(color, alpha) {
 			var r = color >> 16;
@@ -63,21 +63,21 @@
 			return '#' + cssColor.substr(cssColor.length - 6, cssColor.length);
 		}
 
-		function setGraduateInputs() {
-			$('.graduateInput').remove();
-			for (var i = 0, l = graduates.length; i < l; i++) {
-				h5.core.view.append('.graduateInputList', 'graduateInput', {
-					graduate: graduates[i],
+		function setGradientInputs() {
+			$('.gradientInput').remove();
+			for (var i = 0, l = gradients.length; i < l; i++) {
+				h5.core.view.append('.gradientInputList', 'gradientInput', {
+					gradient: gradients[i],
 					getCssColor: getCssColor
 				});
 			}
 		}
 
-		function setGraduatePalet() {
+		function setGradientPalet() {
 			$('.colorPalet').remove();
 			var wrapperWidth = $('.colorPaletWrapper').width();
-			for (var i = 0, l = graduates.length; i < l; i++) {
-				var grad = graduates[i];
+			for (var i = 0, l = gradients.length; i < l; i++) {
+				var grad = gradients[i];
 				var color = grad.color;
 				var alpha = grad.alpha;
 				var $color = $('<div class="colorPalet">');
@@ -92,15 +92,15 @@
 
 		function showColor() {
 			var position = parseFloat($('.position').val()) / 100;
-			var color = colorGraduate.getColorAtPosition(position);
-			var alpha = colorGraduate.getAlphaAtPosition(position);
+			var color = colorGradient.getColorAtPosition(position);
+			var alpha = colorGradient.getAlphaAtPosition(position);
 			$('.result').css('background-color', getRgba(color, alpha));
 			$('.resultColor').text(getCssColor(color));
 			$('.resultAlpha').text(alpha);
 		}
 
-		setGraduateInputs();
-		setGraduatePalet();
+		setGradientInputs();
+		setGradientPalet();
 		showColor();
 
 		$('input[type="range"]').bind('change', function() {
@@ -109,9 +109,9 @@
 		$('input[type="range"]').bind('input', function() {
 			showColor();
 		});
-		$('.createGraduate').bind('click', function() {
-			graduates = [];
-			$('.graduateInput').each(function() {
+		$('.createGradient').bind('click', function() {
+			gradients = [];
+			$('.gradientInput').each(function() {
 				var $this = $(this);
 				var color = $.trim($(this).find('[name="color"]').val());
 				if (color.indexOf('#') === 0) {
@@ -120,28 +120,28 @@
 				color = parseInt(color, 16);
 				var position = $(this).find('[name="position"]').val() / 100;
 				var alpha = $(this).find('[name="alpha"]').val() / 100;
-				graduates.push({
+				gradients.push({
 					color: color,
 					position: position,
 					alpha: alpha
 				});
 			});
-			colorGraduate = colorGraduateLogic.createColorGraduate(graduates);
+			colorGradient = colorGradientLogic.createColorGradient(gradients);
 
-			setGraduateInputs();
-			setGraduatePalet();
+			setGradientInputs();
+			setGradientPalet();
 			showColor();
 		});
 		$(document).on('click', '.removeInput', function(ev) {
-			$(this).closest('.graduateInput').remove();
+			$(this).closest('.gradientInput').remove();
 		});
 		$(document).on('click', '.addInput', function(ev) {
-			var $graduateInput = $(this).closest('.graduateInput');
-			var prePos = parseInt($graduateInput.find('[name="position"]').val());
-			var nextPos = parseInt($graduateInput.next().find('[name="position"]').val());
+			var $gradientInput = $(this).closest('.gradientInput');
+			var prePos = parseInt($gradientInput.find('[name="position"]').val());
+			var nextPos = parseInt($gradientInput.next().find('[name="position"]').val());
 			var pos = (prePos + nextPos) / 200;
-			$graduateInput.after(h5.core.view.get('graduateInput', {
-				graduate: {
+			$gradientInput.after(h5.core.view.get('gradientInput', {
+				gradient: {
 					position: pos
 				},
 				getCssColor: getCssColor
@@ -169,7 +169,7 @@ input[type="range"] {
 	padding: 0;
 }
 
-.createGraduate {
+.createGradient {
 	position: absolute;
 	left: 240px;
 }
@@ -200,20 +200,20 @@ li>label {
 	display: block;
 }
 
-.graduateInputBtnWrapper {
+.gradientInputBtnWrapper {
 	position: absolute;
 	bottom: -25px;
 }
 </style>
 
-<script type="text/ejs" id="graduateInput">
-	<li class="graduateInput">
-		<label>色<input name="color" type="color" value="[%= getCssColor(graduate.color||0) %]"></label>
-		<label>alpha<input name="alpha" type="range" min="0" max="100" value="[%= 100*(graduate.alpha==null?1:graduate.alpha) %]"></label>
-		[% var disabled = graduate.position == 1 || graduate.position == 0 %]
-		<label>位置<input name="position" type="range" min="0" max="100" value="[%= 100*(graduate.position==null?1:graduate.position) %]" [%=disabled?'disabled':''%]></label>
-		<div class="graduateInputBtnWrapper">
-			[% if(graduate.position != 1){ %]
+<script type="text/ejs" id="gradientInput">
+	<li class="gradientInput">
+		<label>色<input name="color" type="color" value="[%= getCssColor(gradient.color||0) %]"></label>
+		<label>alpha<input name="alpha" type="range" min="0" max="100" value="[%= 100*(gradient.alpha==null?1:gradient.alpha) %]"></label>
+		[% var disabled = gradient.position == 1 || gradient.position == 0 %]
+		<label>位置<input name="position" type="range" min="0" max="100" value="[%= 100*(gradient.position==null?1:gradient.position) %]" [%=disabled?'disabled':''%]></label>
+		<div class="gradientInputBtnWrapper">
+			[% if(gradient.position != 1){ %]
 			<button class="addInput">↓追加</button>
 			[% } %]
 			[% if(!disabled){ %]
@@ -228,7 +228,7 @@ li>label {
 	<div>
 		<input class="position" type="range" min="0" max="100" value="50">
 		<div class="colorPaletWrapper"></div>
-		<!-- 		<button class="createGraduate">指定した色でColorGraduate作成</button> -->
+		<!-- 		<button class="createGradient">指定した色でColorGradient作成</button> -->
 		<div class="result-wrapper">
 			<div class="result"></div>
 			<p>
@@ -240,9 +240,9 @@ li>label {
 		</div>
 	</div>
 	<div>
-		<ul class="graduateInputList">
+		<ul class="gradientInputList">
 		</ul>
-		<button class="createGraduate">指定した色で作成</button>
+		<button class="createGradient">指定した色で作成</button>
 	</div>
 </body>
 </html>

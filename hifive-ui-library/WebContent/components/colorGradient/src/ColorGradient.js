@@ -22,13 +22,13 @@
 		return a * (1 - r) + b * r;
 	}
 
-	function ColorGraduate(graduateColors) {
-		var graduates = [];
+	function ColorGradient(gradientColors) {
+		var gradients = [];
 		// 色をRGBに分けて数値化する
-		for (var i = 0, l = graduateColors.length; i < l; i++) {
-			var grad = graduateColors[i];
+		for (var i = 0, l = gradientColors.length; i < l; i++) {
+			var grad = gradientColors[i];
 			var color = grad.color;
-			graduates.push({
+			gradients.push({
 				r: color >> 16,
 				g: (color >> 8) % 256,
 				b: color % 256,
@@ -37,21 +37,21 @@
 				position: grad.position
 			});
 		}
-		graduates.sort(function(a, b) {
+		gradients.sort(function(a, b) {
 			return a.position - b.position;
 		});
-		this._graduateColors = graduates;
+		this._gradientColors = gradients;
 	}
-	$.extend(ColorGraduate.prototype, {
+	$.extend(ColorGradient.prototype, {
 		getColorAtPosition: function(pos) {
-			var graduates = this._getGraduateAtPosition(pos);
-			if (graduates.length === 1) {
+			var gradients = this._getGradientAtPosition(pos);
+			if (gradients.length === 1) {
 				// 定義した位置がある場合
-				return graduates[0].color;
+				return gradients[0].color;
 			}
 			// 定義した位置が無い場合は周りから計算
-			var start = graduates[0];
-			var end = graduates[1];
+			var start = gradients[0];
+			var end = gradients[1];
 			var startPosition = start.position;
 			var endPosition = end.position;
 			var ratio = (pos - startPosition) / (endPosition - startPosition);
@@ -62,27 +62,27 @@
 			return (r << 16) + (g << 8) + b;
 		},
 		getAlphaAtPosition: function(pos) {
-			var graduates = this._getGraduateAtPosition(pos);
-			if (graduates.length === 1) {
+			var gradients = this._getGradientAtPosition(pos);
+			if (gradients.length === 1) {
 				// 定義した位置がある場合
-				return graduates[0].alpha;
+				return gradients[0].alpha;
 			}
 			// 定義した位置が無い場合は周りから計算
-			var start = graduates[0];
-			var end = graduates[1];
+			var start = gradients[0];
+			var end = gradients[1];
 			var startPosition = start.position;
 			var endPosition = end.position;
 			var ratio = (pos - startPosition) / (endPosition - startPosition);
 
 			return start.alpha * (1 - ratio) + end.alpha * ratio;
 		},
-		_getGraduateAtPosition: function(pos) {
+		_getGradientAtPosition: function(pos) {
 			var start, end;
-			for (var i = 0, l = this._graduateColors.length; i < l; i++) {
-				if (this._graduateColors[i].position < pos) {
-					start = this._graduateColors[i];
+			for (var i = 0, l = this._gradientColors.length; i < l; i++) {
+				if (this._gradientColors[i].position < pos) {
+					start = this._gradientColors[i];
 				} else {
-					end = this._graduateColors[i];
+					end = this._gradientColors[i];
 					break;
 				}
 			}
@@ -93,11 +93,11 @@
 		}
 	});
 
-	var colorGraduateLogic = {
-		__name: 'h5.ui.components.colorGraduate.ColorGraduate',
-		createColorGraduate: function(graduateColors) {
-			return new ColorGraduate(graduateColors);
+	var colorGradientLogic = {
+		__name: 'h5.ui.components.colorGradient.ColorGradient',
+		createColorGradient: function(gradientColors) {
+			return new ColorGradient(gradientColors);
 		}
 	};
-	h5.core.expose(colorGraduateLogic);
+	h5.core.expose(colorGradientLogic);
 })();
