@@ -1,6 +1,0 @@
-/**
- * EventDispatcher
- *
- * @class
- */
-function EventDispatcher() {}

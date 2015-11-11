@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="h5uijsbuilder" basedir="." default="build">
+	<property name="archives" value="WebContent/archives" />
+	<property name="lib.tool.dir" value="${basedir}/jstool" />
+	<property name="lib.project.dir" value="./lib" />
+	<property name="componentdir" value="${basedir}/WebContent/components" />
+	<property name="configBaseDir" value="${basedir}/config/build" />
+	<property name="constructionFile" value="h5ui-file-construction.xml"/>
+	<property name="jsTempFile" value="template/hifive-ui-js.vm" />
+	<property name="cssTempFile" value="template/hifive-ui-css.vm" />
+	<property name="minHeaderFile" value="template/min-header.vm" />
+
+	<path id="base.path">
+		<fileset dir="${lib.project.dir}" includes="**/*.jar" />
+	</path>
+
+	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpathref="base.path" />
+	<taskdef name="buildService" classname="com.htmlhifive.dev.service.ant.GenericBuilderServiceTask" classpathref="base.path" />
+
+	<target name="cleanBuild">
+		<delete>
+			<fileset dir="${archives}/current">
+				<include name="**" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="getComponentNames">
+		<!--
+		<input message="ビルドするコンポーネント名を入力してください(複数ある場合はカンマ区切り)" addproperty="targetComponents" />
+		<condition property="isNotEmpty">
+			<matches pattern="\w+" string="${targetComponents}" />
+		</condition>
+		<fail unless="isNotEmpty" message="空でないコンポーネント名を指定してください" />
+		-->
+		<!-- コンポーネント名列挙 -->
+		<property name="targetComponents" value="aceEditor,animate,appContainer,arrowbox,artboard,artboardViewer,calendar,carousel,chart,combobox,contextMenu,datagrid,dividedBox,graph,magnetContainer,popup,pdf,replaceBox,screen,tabbable,tileContainer,virtualScroll" />
+	</target>
+
+	<target name="build" depends="getComponentNames,getVersion,getGitHash">
+		<delete dir="${archives}/current"/>
+		<mkdir dir="${archives}/current" />
+		<buildService>
+			<buildParameter
+				tmpFiles="false"
+				cssName="hifive-ui.css"
+				devName="hifive-ui.dev.js"
+				releaseName="hifive-ui.js"
+				jsDir="${componentdir}"
+				cssDir="${componentdir}"
+				dstDir="${archives}/current"
+				version="v${version}"
+				configBaseDir="${configBaseDir}"
+				jsTemplateFile="${jsTempFile}"
+				cssTemplateFile="${cssTempFile}"
+				minHeaderFile="${minHeaderFile}"
+				moduleNames="${targetComponents}"
+				constructionFile="${constructionFile}"/>
+			<velocityParameter name="gitCommitId" value="${gitCommitId}" />
+		</buildService>
+	</target>
+
+	<target name="getVersion">
+		<tstamp>
+			<format property="version"  pattern="yyyyMMdd" />
+		</tstamp>
+	</target>
+
+	<target name="build-nightly" depends="getComponentNames,getVersion,getGitHash">
+		<delete dir="${archives}/v${version}"/>
+		<mkdir dir="${archives}/v${version}" />
+		<buildService>
+			<buildParameter
+				tmpFiles="false"
+				cssName="hifive-ui.v${version}.css"
+				devName="hifive-ui.dev.js"
+				releaseName="hifive-ui.v${version}.js"
+				jsDir="${componentdir}"
+				cssDir="${componentdir}"
+				dstDir="${archives}/v${version}"
+				version="v${version}"
+				configBaseDir="${configBaseDir}"
+				jsTemplateFile="${jsTempFile}"
+				cssTemplateFile="${cssTempFile}"
+				minHeaderFile="${minHeaderFile}"
+				moduleNames="${targetComponents}"
+				constructionFile="${constructionFile}"/>
+			<velocityParameter name="gitCommitId" value="${gitCommitId}" />
+		</buildService>
+	</target>
+
+	<target name="getGitHash">
+		<property name="git.dir" value="../.git/logs/HEAD" />
+		<available file="${git.dir}" property="git.exists" />
+		<fail unless="git.exists" message="${git.dir}が存在しません" />
+		<loadfile srcfile="${git.dir}" property="gitCommitId">
+			<filterchain>
+				<tailfilter lines="1" />
+				<replaceregex pattern="[A-z0-9]+ ([A-z0-9]+) .+" replace="\1" />
+			</filterchain>
+		</loadfile>
+		<echo message="gitCommitId: ${gitCommitId}" />
+	</target>
+</project>
