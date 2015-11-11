@@ -187,7 +187,7 @@
 
 			var $box = $('<div></div>').addClass(BOX_CLASS).css({
 				height: '100%',
-				float: 'left'
+				'float': 'left'
 			}).appendTo(this.rootElement);
 
 			var $bar = $('<div></div>').addClass(BAR_CLASS).css({
@@ -610,8 +610,8 @@
 			this._scrollStrategy = h5.ui.components.virtualScroll.createIndexBaseScrollStrategy();
 
 			//プルダウンを囲むdivへ grid layoutをバインドする
-			this._layout = h5.core
-					.controller(this.rootElement, h5.ui.components.combobox.ListLayoutController);
+			this._layout = h5.core.controller(this.rootElement,
+					h5.ui.components.combobox.ListLayoutController);
 
 			//ドロップダウンリストを初期化する
 			this._layout.init(this._dataSource, this.own(this.rendererFunction), 20,
@@ -630,7 +630,8 @@
 		createDataSource: function(args) {
 			if (args.data) {
 				//引数がdataの場合はlocalDataSourceを作成する
-				this._dataSource = h5.ui.components.virtualScroll.data.createLocalDataSource(args.data);
+				this._dataSource = h5.ui.components.virtualScroll.data
+						.createLocalDataSource(args.data);
 
 				//フィルター設定
 				if (args.filter && jQuery.isFunction(args.filter)) {
@@ -643,8 +644,8 @@
 
 			} else if (args.url) {
 				//引数がurlの場合はLazyLoadDataSourceを作成する
-				this._dataSource = h5.ui.components.virtualScroll.data.createLazyLoadDataSource(args.url,
-						args.ajaxSettings);
+				this._dataSource = h5.ui.components.virtualScroll.data.createLazyLoadDataSource(
+						args.url, args.ajaxSettings);
 				this._postData = args.postData;
 			}
 		},
@@ -823,7 +824,9 @@
 			this._$btn.css('z-index', '');
 		},
 		/**
-		 * ドロップダウンリストの表示、非表示を判定します <p> true：表示 false：非表示
+		 * ドロップダウンリストの表示、非表示を判定します
+		 * <p>
+		 * true：表示 false：非表示
 		 *
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
