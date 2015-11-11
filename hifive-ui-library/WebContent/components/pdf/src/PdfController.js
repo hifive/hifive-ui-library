@@ -206,7 +206,7 @@
 				canvasContext: this.canvas.getContext('2d'),
 				viewport: page.getViewport(this._scale)
 			});
-		},
+		}
 
 	//		fotToContents: function(){
 	//			var page = this._page;
