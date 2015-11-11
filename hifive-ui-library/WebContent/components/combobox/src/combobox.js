@@ -1030,7 +1030,7 @@
 			this._$overlay.css({
 				width: document.documentElement.scrollWidth, // innerやoffsetから取得すると余分な幅ができてスクロールバーが表示されてしまうため、scrollWidthから取得する
 				height: Math.max(document.documentElement.clientHeight,
-						document.documentElement.scrollHeight), //ie8対策 window.innerHeight→document.documentElement.clientHeight
+						document.documentElement.scrollHeight) //ie8対策 window.innerHeight→document.documentElement.clientHeight
 			});
 		},
 		/**
