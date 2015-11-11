@@ -1029,7 +1029,7 @@
 			},
 
 			ondataupdate : function(context) {
-			},
+			}
 		}
 	}
 
@@ -1061,24 +1061,24 @@
 			var g = createSvgElement('g');
 
 			var mainLine = createSvgElement('path', {
-				class : 'edge',
+				'class' : 'edge',
 				d : "M 0 0"
 			});
 			g.appendChild(mainLine);
 
 			var startArrow = createSvgElement('path', {
-				class : 'edge fromPointArrow',
+				'class' : 'edge fromPointArrow',
 				display : 'none'
 			});
 			g.appendChild(startArrow);
 			var endArrow = createSvgElement('path', {
-				class : 'edge endPointArrow',
+				'class' : 'edge endPointArrow',
 				display : 'none'
 			});
 			g.appendChild(endArrow);
 
 			var startRound = createSvgElement('circle', {
-				class : 'edge fromPointCircle',
+				'class' : 'edge fromPointCircle',
 				cx : '0',
 				cy : '0',
 				r : DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
@@ -1086,7 +1086,7 @@
 			});
 			g.appendChild(startRound);
 			var endRound = createSvgElement('circle', {
-				class : 'edge endPointCircle',
+				'class' : 'edge endPointCircle',
 				cx : '0',
 				cy : '0',
 				r : DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
@@ -1095,23 +1095,23 @@
 			g.appendChild(endRound);
 
 			var startDiamond = createSvgElement('path', {
-				class : 'edge fromPointDiamond',
+				'class' : 'edge fromPointDiamond',
 				display : 'none'
 			});
 			g.appendChild(startDiamond);
 			var endDiamond = createSvgElement('path', {
-				class : 'edge endPointDiamond',
+				'class' : 'edge endPointDiamond',
 				display : 'none'
 			});
 			g.appendChild(endDiamond);
 
 			var startRect = createSvgElement('path', {
-				class : 'edge fromPointRect',
+				'class' : 'edge fromPointRect',
 				display : 'none'
 			});
 			g.appendChild(startRect);
 			var endRect = createSvgElement('path', {
-				class : 'edge endPointRect',
+				'class' : 'edge endPointRect',
 				display : 'none'
 			});
 			g.appendChild(endRect);
@@ -4031,7 +4031,7 @@
 					var svg = createSvgElement('svg', {
 						width : '100%',
 						height : '100%',
-						class : name
+						'class' : name
 					}); // TODO width, heightを100%にするべきか
 
 					svg.style.position = 'absolute';
@@ -4055,7 +4055,7 @@
 						'-webkit-transform-origin' : '0% 0%', // CSS3
 						// Transformのデフォルトは中心なのでSVGに合わせて左上にする
 						'-moz-transform-origin' : '0% 0%',
-						'-ms-transform-origin' : '0% 0%',
+						'-ms-transform-origin' : '0% 0%'
 					});
 					$div.addClass(name);
 					return div;
