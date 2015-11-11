@@ -27,7 +27,7 @@
 				data: {
 					start: start,
 					end: end
-				},
+				}
 			}).done(function(data) {
 				def.resolve(data.list);
 			});
