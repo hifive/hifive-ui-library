@@ -671,7 +671,7 @@
 						$this.css({
 							top: parseInt(pos.top),
 							left: parseInt(pos.left),
-							position: 'absolute',
+							position: 'absolute'
 						});
 						if (!$this.css('z-index')) {
 							$this.css('z-index', 1);
