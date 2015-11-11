@@ -73,7 +73,7 @@
 			}, {
 				quality: quality,
 				destinationType: Camera.DestinationType.DATA_URL,
-				encodingType: Camera.EncodingType.JPEG,
+				encodingType: Camera.EncodingType.JPEG
 			});
 
 			return dfd.promise();
@@ -144,7 +144,7 @@
 			}
 
 			return JSON.parse(status);
-		},
+		}
 	};
 
 	h5.core.expose(pictureLogic);
@@ -213,7 +213,7 @@
 			var indicator = this.indicator({
 				target: document.body,
 				message: 'プレビューを準備中...',
-				promises: dfd.promise(),
+				promises: dfd.promise()
 			}).show();
 
 			var reader = new FileReader();
