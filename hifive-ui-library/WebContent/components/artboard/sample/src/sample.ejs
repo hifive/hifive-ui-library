@@ -7,7 +7,7 @@
 				<li  class="popup-open" data-popup-name="size-change-popup">サイズ変更</li>
 				<li class="select-all">すべて選択</li>
 				<li class="remove-all">全て削除</li>
-				<li class="popup-open" data-popup-name="background-popup">背景の設定…</li>
+				<li class="popup-open" data-popup-name="background-popup" data-popup-position="top">背景の設定…</li>
 			</ul>
 		</div>
 		<div class="undo border1 disabled"><img class="icon48" src="res/img/toolicon/undo.png"></div>
@@ -104,13 +104,13 @@
 				</div>
 			</div>
 			<div class="background-fillmode-wrapper display-none">
-				<label>fillMode</label>
+				<label>背景の配置(fillMode)</label>
 				<select class="background-fillmode-list">
-					<option value="none">none</option>
-					<option value="contain">contain</option>
-					<option value="containCenter">containCenter(中央配置)</option>
-					<option value="cover">cover</option>
-					<option value="stretch">stretch</option>
+					<option value="none">サイズ変更無しで配置(none)</option>
+					<option value="contain">背景画像全体が見えるように配置(contain)</option>
+					<option value="containCenter" selected>背景画像全体が見えるように中央配置(containCenter)</option>
+					<option value="cover">隙間が出ないように配置(cover)</option>
+					<option value="stretch">カンバスサイズと同じサイズで配置(stretch)</option>
 				</select>
 				<p>
 					オフセット

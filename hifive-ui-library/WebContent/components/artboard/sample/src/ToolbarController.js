@@ -514,10 +514,15 @@
 			// 背景画像設定ポップアップ
 			for (var i = 0, l = this._popupClasses.length; i < l; i++) {
 				var cls = this._popupClasses[i];
-				this._popupMap[cls] = h5.ui.popupManager.createPopup(cls, '', this.$find(
+				var popup = h5.ui.popupManager.createPopup(cls, '', this.$find(
 						'.popup-contents-wrapper').find('.' + cls), null, {
 					header: false
 				});
+				popup.getContents().css({
+					maxWidth: $(window).width(),
+					maxHeight: $(window).height()
+				});
+				this._popupMap[cls] = popup;
 			}
 
 			// テキスト入力要素
@@ -540,13 +545,14 @@
 				return;
 			}
 			var popupCls = $el.data('popup-name');
+			var position = $el.data('popup-position');
 			if (popupCls === 'saveData-popup') {
 				// セーブデータの表示
 				var saveNo = $el.parents('.saved-img-wrapper>*').find('[data-save-no]').data(
 						'save-no');
 				this.trigger('showSaveData', saveNo);
 			}
-			this._showPopup(popupCls);
+			this._showPopup(popupCls, position);
 		},
 
 		/**
@@ -1244,8 +1250,9 @@
 		 *
 		 * @param cls
 		 */
-		_showPopup: function(cls) {
+		_showPopup: function(cls, position) {
 			var popup = this._popupMap[cls];
+			popup.setPosition(position);
 			popup.show();
 		},
 		/**
