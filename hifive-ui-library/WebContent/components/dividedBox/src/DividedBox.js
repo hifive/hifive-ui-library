@@ -115,6 +115,8 @@
 
 	/** データ属性: ボックスの最小サイズ。このデータ属性で指定されたサイズ以下には動かないようになる */
 	var DATA_MIN_BOX_SIZE = 'min-size';
+	/** データ属性: ボックスの最大サイズ。このデータ属性で指定されたサイズ以上には動かないようになる */
+	var DATA_MAX_BOX_SIZE = 'max-size';
 
 	/**
 	 * データ属性: 実際のouterWidth|Heightと、dividedBoxが設定したouterSizeが異なってしまう場合に、
@@ -632,14 +634,27 @@
 			});
 
 			// 可動範囲をh5trackstartの時点で決定する
-			// 両サイドのボックスで最小サイズが指定されている場合は、両サイドが指定されたサイズより小さくならないようにする
+			// 両サイドのボックスで最小サイズ及び最大サイズが指定されている場合は、両サイドがその範囲のサイズを満たすようにする
+			var nextOuterSize = this._getOuterSize($groupNext);
+			var prevOuterSize = this._getOuterSize($groupPrev);
+			var prevStart = beforeWH + $groupPrev.position()[l_t]
+					+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0);
+			var afterMaxSize = $groupNext.data(DATA_MAX_BOX_SIZE);
+			if (afterMaxSize) {
+				prevStart = Math
+						.max(prevStart, this._lastPos[l_t] - (afterMaxSize - nextOuterSize));
+			}
+			var nextEnd = $groupNext.position()[l_t] + nextOuterSize - afterWH
+					- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0);
+			var prevMaxSize = $groupPrev.data(DATA_MAX_BOX_SIZE);
+			if (prevMaxSize) {
+				nextEnd = Math.min(nextEnd, this._lastPos[l_t] + (prevMaxSize - prevOuterSize));
+			}
 			this._trackingData = {
 				$dividerGroup: $dividerGroup,
 				$dividers: $dividers,
-				prevStart: beforeWH + $groupPrev.position()[l_t]
-						+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0),
-				nextEnd: $groupNext.position()[l_t] + this._getOuterSize($groupNext) - afterWH
-						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0),
+				prevStart: prevStart,
+				nextEnd: nextEnd,
 				$groupPrev: $groupPrev,
 				$groupNext: $groupNext
 			};
@@ -797,10 +812,21 @@
 				// 両サイドのボックスの最小サイズを考慮して可動範囲を決定
 				prevStart = $groupPrev.length ? $groupPrev.position()[l_t]
 						+ ($groupPrev.data(DATA_MIN_BOX_SIZE) || 0) : 0;
+				var afterMaxSize = $groupNext.data(DATA_MAX_BOX_SIZE);
+				if (afterMaxSize) {
+					prevStart = Math.max(prevStart, lastPos[l_t]
+							- (afterMaxSize - this._getOuterSize($groupNext)));
+				}
+
 				nextEnd = $groupNext.length ? ($groupNext.position()[l_t]
 						+ this._getOuterSize($groupNext) - (isVisibleDivider ? this
 						._getOuterSize($divider) : 0))
-						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0) : $divider.position()[l_t];
+						- ($groupNext.data(DATA_MIN_BOX_SIZE) || 0) : lastPos[l_t];
+				var prevMaxSize = $groupPrev.data(DATA_MAX_BOX_SIZE);
+				if (prevMaxSize) {
+					nextEnd = Math.min(nextEnd, lastPos[l_t]
+							+ (prevMaxSize - this._getOuterSize($groupPrev)));
+				}
 			}
 			var moved = lastPos[l_t] + move;
 			if (moved <= prevStart + 1) {
@@ -843,60 +869,23 @@
 			var l_t = this._l_t;
 			var w_h = this._w_h;
 			var $root = this._$root;
-			var outerW_H = this._outerW_H;
 			var adjustAreaWH = $root[w_h]();
-			// dividedBoxのサイズの差分
 			var divSize = adjustAreaWH - this._lastAdjustAreaWH;
 			if (divSize === 0) {
 				// サイズに差分が無いなら何もしない
 				return;
 			}
-			this._lastAdjustAreaWH = adjustAreaWH;
 
 			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
 
 			// サイズ変更しないボックス(fixedSize)以外のないボックスを拡大・縮小する
 			var $boxes = this._getBoxes();
-			var $unfixedSizeBoxes = $boxes.not('.' + CLASS_FIXED_SIZE + ',.' + CLASS_KEEP_SIZE);
 
-			var move = 0;
-			// サイズが固定でないボックスのトータルサイズ
-			var unfixedSizeBoxesTotalSize = 0;
-			$unfixedSizeBoxes.each(function() {
-				unfixedSizeBoxesTotalSize += $(this)[w_h]();
-			});
-			$unfixedSizeBoxes.each(this.ownWithOrg(function(box) {
-				var $box = $(box);
-				if (move) {
-					// dividerの移動量に合わせてボックスも移動
-					$box.css(l_t, '+=' + move);
-				}
-				var $divider = this._getNextDividerByBox($box);
-				if (!$divider.length) {
-					return;
-				}
-				var isDisplayNone = $divider.css('display') === 'none';
-				if (isDisplayNone) {
-					$divider.css('display', 'block');
-				}
-				// 固定ボックス以外のボックスのサイズの比率で拡縮した時の位置にdividerを動かす
-				// 固定ボックス以外のボックスのサイズが全て0ならそれらのサイズは等分する
-				move += unfixedSizeBoxesTotalSize ? divSize
-						* (this._getOuterSize($box) / unfixedSizeBoxesTotalSize) : divSize
-						/ $unfixedSizeBoxes.length;
+			// サイズ変更可能なボックスについてのサイズ調整
+			this._adjustUnfixedBoxSize(divSize);
+			this._lastAdjustAreaWH = adjustAreaWH;
 
-				// グループ化されている(連動して動く)divider全て動かす
-				var $group = this._getDividerGroup($divider);
-				if (move) {
-					$group.css(l_t, '+=' + move);
-				}
-
-				if (isDisplayNone) {
-					$divider.css('display', 'none');
-				}
-			}));
-
-			// 各ボックスのサイズ変更とdividerの移動
+			// 各ボックスの位置とサイズをdividerに合わせて変更
 			$boxes.each(this.ownWithOrg(function(box) {
 				var $box = $(box);
 				if ($box.data(DATA_HIDDEN)) {
@@ -934,6 +923,92 @@
 				// 計算したサイズを設定
 				this._setOuterSize($box, outerSize);
 			}));
+		},
+		/**
+		 * 現在のdividedBoxのサイズに合わせてサイズ変更可能なボックスについてサイズ変更、dividerの位置調整を行う
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 * @param {number} divSize 実際のルートサイズと、現在のボックス配置で使用されたルートサイズの差分
+		 */
+		_adjustUnfixedBoxSize: function(divSize) {
+			if (!divSize) {
+				return;
+			}
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+			var $root = this._$root;
+			var adjustAreaWH = $root[w_h]();
+			// 各ボックスの割合を保って、ボックスの幅を今の表示幅に合わせる
+
+			// サイズ変更しないボックス(fixedSize)以外のないボックスを拡大・縮小する
+			var $boxes = this._getBoxes();
+
+			var $unfixedSizeBoxes = $boxes.not('.' + CLASS_FIXED_SIZE + ',.' + CLASS_KEEP_SIZE);
+
+			var move = 0;
+			// サイズが固定でないボックスのトータルサイズ
+			var unfixedSizeBoxesTotalSize = 0;
+			$unfixedSizeBoxes.each(function() {
+				var $box = $(this);
+				var preSize = $box.data('pre-size');
+				if (preSize != null) {
+					$box[w_h](preSize);
+				}
+				unfixedSizeBoxesTotalSize += $box[w_h]();
+			});
+			// ボックスのサイズ計算がmin-sizeやmax-sizeの制限を破った場合、
+			// それらをKEEP_SIZE扱いにして再度残りのボックスでサイズを計算する
+			var shouldRecalcUnfixedBoxSize = false;
+			var remainSize = 0;
+			$unfixedSizeBoxes.each(this.ownWithOrg(function(box) {
+				var $box = $(box);
+
+				if (move) {
+					// dividerの移動量に合わせてボックスも移動
+					$box.css(l_t, '+=' + move);
+				}
+				// 固定ボックス以外のボックスのサイズの比率で拡縮した時の位置にdividerを動かす
+				// 固定ボックス以外のボックスのサイズが全て0ならそれらのサイズは等分する
+				var boxSize = $box.data('pre-size') || $box[w_h]();
+				$box.data('pre-size', boxSize);
+				var boxMove = unfixedSizeBoxesTotalSize ? divSize
+						* (boxSize / unfixedSizeBoxesTotalSize) : divSize
+						/ $unfixedSizeBoxes.length;
+				// 最小サイズと最大サイズを考慮
+				// 最小サイズ分は既に固定サイズとして扱っているため、計算した値にmin-sizeを加えた値をボックスサイズとする
+				var minSize = $box.data(DATA_MIN_BOX_SIZE);
+				var maxSize = $box.data(DATA_MAX_BOX_SIZE);
+				if (maxSize != null && maxSize < boxSize + boxMove) {
+					// 最大サイズがあり、計算結果が最大サイズより大きい場合は、最大サイズにする
+					shouldRecalcUnfixedBoxSize = true;
+					$box.addClass(CLASS_KEEP_SIZE);
+					boxMove = maxSize - boxSize;
+				} else if (minSize != null && boxSize + boxMove < minSize) {
+					shouldRecalcUnfixedBoxSize = true;
+					$box.addClass(CLASS_KEEP_SIZE);
+					boxMove = minSize - boxSize;
+				}
+				var $divider = this._getNextDividerByBox($box);
+				if (!$divider.length) {
+					// 動かせる最後のボックスなら余ったサイズまたははみ出たサイズを計算
+					remainSize = adjustAreaWH - (parseFloat($box.css(l_t)) + boxSize + boxMove);
+					return;
+				}
+				move += boxMove;
+
+				// グループ化されている(連動して動く)divider全て動かす
+				var $group = this._getDividerGroup($divider);
+				if (move) {
+					$group.css(l_t, '+=' + move);
+				}
+			}));
+
+			if (shouldRecalcUnfixedBoxSize) {
+				// min-size,max-sizeでサイズ変更に制限があるボックスがあった場合、
+				// それらを固定した状態で再計算
+				this._adjustUnfixedBoxSize(remainSize);
+			}
 		},
 
 		/**

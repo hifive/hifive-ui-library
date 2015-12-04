@@ -146,6 +146,32 @@
 				</div>
 			</div>
 
+			<h3>min-size/max-size指定</h3>
+			<p>
+				data属性として<strong>min-size</strong>、<strong>max-size</strong>を指定すると、そのボックスの最小サイズ、最大サイズを指定できます。
+			</p>
+			<div class="sample">
+				<button class="refresh btn btn-default">refresh</button>
+				<div class="dividedBox horizontal">
+					<div class="box yellow" data-min-size="100">
+						<p>data-min-size=100</p>
+						<p>このボックスは100pxより小さくできません</p>
+					</div>
+					<div class="box orange">
+						<p>指定無し</p>
+					</div>
+					<div class="box purple" data-min-size="50" data-max-size="300">
+						<p>data-mix-size=50 data-max-size=300</p>
+						<p>このボックスは50pxより小さくできません</p>
+						<p>このボックスは300pxより大きくできません</p>
+					</div>
+					<div class="box blue" data-max-size="300">
+						<p>data-max-size=300</p>
+						<p>このボックスは300pxより大きくできません</p>
+					</div>
+				</div>
+			</div>
+
 			<h3>noFill指定</h3>
 			<p>
 				中央のボックスに<strong>noFill</strong>クラスを指定しています。
@@ -238,7 +264,7 @@
 						<option value="600*300">600px×300px</option>
 						<option value="700*300">700px×300px</option></select></label>
 				<div class="dividedBox">
-					<div class="box green "></div>
+					<div class="box green"></div>
 					<div class="box purple fixedSize"></div>
 					<div class="box yellow fixedSize "></div>
 					<div class="box orange"></div>
