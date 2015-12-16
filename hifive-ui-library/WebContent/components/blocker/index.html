@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="src/blocker.css" rel="stylesheet">
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+
+<title>ブロッカー</title>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<h3>ブロッカー</h3>
+				<p>ブロッカーはある要素または画面全体に対して、ブロックを行う部品です。</p>
+				<p>ブロックされた要素の上にオーバレイを表示し、対象要素へのマウスやタッチイベントが効かないようにします。</p>
+				<p>また、input要素などに対してフォーカスが当たらない(あたっていたら外す)ように制御します。</p>
+				<p>また、ブロック要素の上にコンテンツを表示できます。</p>
+				<p>
+					<a href="sample/index.html">サンプルはこちら</a>
+				</p>
+
+				<span>使用方法・制限事項</span>
+				<ul>
+					<li>以下のファイルを読み込んで使用します。
+						<ul>
+							<li>components/blocker/src/blocker.js</li>
+							<li>components/blocker/src/blocker.css</li>
+						</ul>
+					<li>デザインについては適宜、別定義によるオーバーライド等で変更してください。</li>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

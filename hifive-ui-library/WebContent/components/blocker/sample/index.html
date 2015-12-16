@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<style type="text/css">
+</style>
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<link href="../src/blocker.css" rel="stylesheet">
+<script src="../src/blocker.js"></script>
+<style>
+.blocker-target {
+	background-color: rgb(204, 255, 85);
+	width: 95%;
+	height: 220px;
+	margin: 5px auto;
+	padding: 2px;
+}
+
+.btn {
+	display: inline-block;
+	margin: 3px;
+}
+</style>
+<script src="sample.js"></script>
+
+<title>ブロッカーサンプル</title>
+</head>
+<body>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<h3>ブロッカーサンプル</h3>
+
+				<span>使用方法・制限事項</span>
+				<ul>
+
+				</ul>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-12 sample">
+				<h4>ブロッカーの表示・非表示</h4>
+				<p>ブロッカーを表示したターゲット内の要素の操作をブロックします。</p>
+				<p>また、オーバーレイの位置と大きさはブラウザウィンドウのリサイズやスマートデバイスの画面の回転に追従します。</p>
+				<div class="btn-wrapper">
+					<button class="btn btn-default show-blocker">show</button>
+					<button class="btn btn-default hide-blocker">hide</button>
+				</div>
+				<div class="blocker-target">
+					<div class="form-group">
+						<input type="text" class="form-control" style="width: 400px"
+							placeholder="ブロック中はフォーカスを当てられません" /><br> <select
+							class="form-control">
+							<option>ブロック中は選択できません</option>
+							<option></option>
+							<option></option>
+						</select>
+						<p>
+							<button class="btn btn-default">Hello World</button>
+							ブロック中はボタンクリックできません。
+						</p>
+						<div
+							style="overflow-y: scroll; height: 60px; width: 400px; margin-left: 1em; background-color: #fff;">
+							<p>ブロック中はスクロールできません</p>
+							<p>a</p>
+							<p>b</p>
+							<p>c</p>
+							<p>d</p>
+							<p>e</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-xs-12 sample">
+				<h4>スクリーンロック</h4>
+				<p>画面全体をブロックします。ページのスクロール操作もブロックします</p>
+				<button class="btn btn-default show-blocker" data-target="body" data-timeout="1000">show(1秒で消えます)</button>
+			</div>
+			<div class="col-xs-12 sample">
+				<h4>ブロッカーにプロミスを設定</h4>
+				<p>プロミスがresolveまたはrejectされたタイミングでブロッカーが除去されます</p>
+				<div class="blocker-target">
+					<button class="btn btn-default show-blocker" data-promises="true">show</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
