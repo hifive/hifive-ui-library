@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet" href="/hifive/archives/current/h5.css" />
+
+<!-- ライブラリCSS・JS -->
+
+<!-- IE8以下なら1系、それ以外なら2系のjQueryを使用する -->
+<!--[if lt IE 9]>
+<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<script src="/hifive/archives/current/ejs-h5mod.js"></script>
+<script src="/hifive/archives/current/h5.dev.js"></script>
+
+<script src="../src/FocusController.js"></script>
+<!-- ユーザCSS・JS -->
+<script>
+	$(function() {
+		h5.core.controller('.content', h5.ui.components.focus.FocusController);
+		$('input').each(function(){
+			this.value = 'tabIndex=' + this.tabIndex;
+		});
+	});
+</script>
+<style>
+input {
+	margin: 10px;
+}
+
+.content {
+	margin: 5px;
+	width: 300px;
+	border: 1px solid #ccc;
+}
+</style>
+<title>forcus</title>
+</head>
+<body>
+	<div class="container">
+		<div class="content">
+			<label>ForcusControllerをバインドしている領域</label>
+			<input type="text" tabindex="1" /><input type="text" /> <input
+				type="text" tabindex="3" /> <input type="text" /><input
+				type="text" tabindex="-1" /><input type="text" tabindex="5" />
+		</div>
+		<input type="text" tabindex="2" /> <input type="text" tabindex="4" />
+		<input type="text" tabindex="6" />
+	</div>
+</body>
+</html>
