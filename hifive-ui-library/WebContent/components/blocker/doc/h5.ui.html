@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Namespace: ui</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <script src="scripts/jquery.js"> </script>
+    <script src="scripts/extension.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+</head>
+
+<body>
+<div id="container">
+	<nav>
+		<div class="module-search-header">
+			<div class="h5-searchBox">
+				<input type="text" placeholder="Search...">
+				<button class="clear">×</button>
+			</div>
+		</div>
+		<div class="module-nav show"><a href="" class="show-modules">一覧</a></div>
+		<div class="module-nav hide"><a href="" class="hide-modules">一覧</a></div>
+		<div class="module-list-wrapper hidden-mobile">
+		    <h3>Classes</h3><ul><li><a href="Blocker.html">Blocker</a></li></ul><h3>Namespaces</h3><ul><li><a href="h5.ui.html">h5.ui</a></li></ul>
+	    </div>
+	</nav>
+	<div id="main">
+	    <h1 class="page-title">Namespace: ui</h1>
+	    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        ui
+        </h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="blocker.js.html">blocker.js</a>, <a href="blocker.js.html#line1374">line 1374</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".blocker"><span class="type-signature">(static) </span>blocker<span class="signature">(param, option<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Blocker.html">Blocker</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    指定された要素に対して、ブロッカー(画面ブロック)の表示や非表示を行うためのオブジェクトを取得します。<p>第1引数にブロッカーの設定を記述したパラメータオブジェクトを指定してください。<p><strong>第1引数にブロッカーのターゲットを指定する方法は非推奨です。</strong></p><pre><code>h5.ui.blocker({	target: 'body'});// h5.ui.blocker('body'); 非推奨</code></pre>targetに<strong>document</strong>、<strong>window</strong>または<strong>body</strong>を指定しかつ、blockオプションがtrueの場合、「スクリーンロック」として動作します。<br>上記以外のDOM要素を指定した場合は、指定した要素上にブロッカーを表示します。<p><strong>スクリーンロック</strong>とは、コンテンツ領域(スクロールしないと見えない領域も全て含めた領域)全体にオーバーレイを、表示領域(画面に見えている領域)中央にメッセージが表示し、画面を操作できないようにすることです。スマートフォン等タッチ操作に対応する端末の場合、スクロール操作も禁止します。<h4>スクリーンロック中の制限事項</h4><ul><li>Android4.xにてorientationchangeイベント発生直後にブロッカーのDOM要素の書き換えを行うと画面の再描画が起こらなくなってしまうため、orientationchangeイベント発生から1秒間percent()/massage()での画面の書き換えをブロックします。<br>orientationchagenイベント発生から1秒以内にpercent()/message()で値を設定した場合、最後に設定された値が画面に反映されます。</li><li>WindowsPhone 7ではscrollイベントを抑止できないため、ブロッカー背後の要素がスクロールしてしまいます。ただし、クリック等その他のイベントはキャンセルされます。</li></ul><h4>使用例</h4><strong>スクリーンロックとして表示する</strong><br><pre>var blocker = h5.ui.blocker({	target: document}).show();</pre><strong>パラメータにPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する</strong><br>resolve() または reject() が実行されると、画面からブロッカーを除去します。<pre>var df = $.Deferred();var blocker = h5.ui.blocker({	target: document,	promises: df.promise()}).show();setTimeout(function() {	df.resolve(); // ここでブロッカーが除去される}, 2000);</pre><strong>パラメータに複数のPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する</strong><br>Promiseオブジェクトを複数指定すると、全てのPromiseオブジェクトでresolve()が実行されるか、またはいずれかのPromiseオブジェクトでfail()が実行されるタイミングでブロッカーを画面から除去します。<pre>var df = $.Deferred();var df2 = $.Deferred();var blocker = h5.ui.blocker({	target: document,	promises: [df.promise(), df2.promise()]}).show();setTimeout(function() {	df.resolve();}, 2000);setTimeout(function() {	df.resolve(); // ここでブロッカーが除去される}, 4000);</pre>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>param</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">パラメータオブジェクト
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>target</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">ブロッカーを表示する対象のDOM要素、jQueryオブジェクトまたはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fadeIn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">ブロッカーをフェードで表示する場合、表示までの時間をミリ秒(ms)で指定する (デフォルト:フェードしない)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fadeOut</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">ブロッカーをフェードで非表示にする場合、非表示までの時間をミリ秒(ms)で指定する (デフォルト:しない)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>promises</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Promise</span>
+|
+
+<span class="param-type">Array.&lt;Promise></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Promiseオブジェクト (Promiseの状態に合わせて自動でブロッカーの非表示を行う)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>theme</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">テーマクラス名 (ブロッカーのにスタイル定義の基点となるクラス名 (デフォルト:'a')</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>option</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">第1引数にターゲット(param.target)を指定して、第2引数にオプションオブジェクトを指定できます。<strong>ただしこの指定方法は非推奨です。</strong><br>           第2引数のオプションオブジェクトの構造は、パラメータオブジェクトと同様です。</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Blocker.html">Blocker</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="blocker.js.html">blocker.js</a>, <a href="blocker.js.html#line1275">line 1275</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+	</div>
+
+	<br class="clear">
+
+	<footer>
+	    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Fri Dec 18 2015 12:11:43 GMT+0900 (JST)
+	</footer>
+</div>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

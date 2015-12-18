@@ -1,4 +1,47 @@
-/*
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: blocker.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <script src="scripts/jquery.js"> </script>
+    <script src="scripts/extension.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+</head>
+
+<body>
+<div id="container">
+	<nav>
+		<div class="module-search-header">
+			<div class="h5-searchBox">
+				<input type="text" placeholder="Search...">
+				<button class="clear">×</button>
+			</div>
+		</div>
+		<div class="module-nav show"><a href="" class="show-modules">一覧</a></div>
+		<div class="module-nav hide"><a href="" class="hide-modules">一覧</a></div>
+		<div class="module-list-wrapper hidden-mobile">
+		    <h3>Classes</h3><ul><li><a href="Blocker.html">Blocker</a></li></ul><h3>Namespaces</h3><ul><li><a href="h5.ui.html">h5.ui</a></li></ul>
+	    </div>
+	</nav>
+	<div id="main">
+	    <h1 class="page-title">Source: blocker.js</h1>
+	    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
  * Copyright (C) 2015 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,16 +96,16 @@
 
 	/**
 	 * インジケータ - オーバーレイのクラス名
-	 * <p>
+	 * &lt;p>
 	 * IE6でのみ使用する。
 	 */
 	var CLASS_SKIN = 'skin';
 
 	/**
 	 * アニメーション(fadeIn,fadeOut)するときの1フレームの時間(ms)
-	 * <p>
+	 * &lt;p>
 	 * jQuery.fx.intervalがデフォルトで13なので、それに倣って13を指定している
-	 * </p>
+	 * &lt;/p>
 	 */
 	var ANIMATION_INTERVAL = 13;
 
@@ -105,31 +148,31 @@
 	/**
 	 * 対象ブラウザがIE6以前のブラウザか
 	 */
-	var isLegacyIE = h5ua.isIE && h5ua.browserVersion <= 6;
+	var isLegacyIE = h5ua.isIE &amp;&amp; h5ua.browserVersion &lt;= 6;
 
 	/**
 	 * position:fixedでブロッカーを描画するかのフラグ。
-	 * <p>
+	 * &lt;p>
 	 * 自動更新またはアップデート可能なブラウザは、最新のブラウザであるものとして判定しない。(常にposition:fixedは有効とする)
-	 * <p>
+	 * &lt;p>
 	 * 以下の理由から、機能ベースでの判定は行わない。
-	 * <ul>
-	 * <li>$.support.fixedPosition()にバグがあり、モバイルブラウザの判定が正しくない。</li>
-	 * <li>jQuery1.8では、$.support.fixedPosition()が無くなっている。 (fixedPositionを判定するAPIが無い)</li>
-	 * <li>機能ベースでモバイル・デスクトップの両方を検知するのは困難。</li>
-	 * </ul>
-	 * <p>
-	 * <b>position:fixedについて</b>
-	 * <ul>
-	 * <li>position:fixed対応表: http://caniuse.com/css-fixed</li>
-	 * <li>Androidは2.2からposition:fixedをサポートしており、2.2と2.3はmetaタグに「user-scalable=no」が設定されていないと機能しない。<br>
-	 * http://blog.webcreativepark.net/2011/12/07-052517.html </li>
-	 * <li>Androidのデフォルトブラウザでposition:fixedを使用すると、2.xはkeyframesとtransformをposition:fixedで使用すると正しい位置に表示されないバグが、4.xは画面の向きが変更されると描画が崩れるバグがあるため使用しない。
-	 * <li>Windows Phoneは7.0/7.5ともに未サポート https://github.com/jquery/jquery-mobile/issues/3489</li>
-	 * <ul>
+	 * &lt;ul>
+	 * &lt;li>$.support.fixedPosition()にバグがあり、モバイルブラウザの判定が正しくない。&lt;/li>
+	 * &lt;li>jQuery1.8では、$.support.fixedPosition()が無くなっている。 (fixedPositionを判定するAPIが無い)&lt;/li>
+	 * &lt;li>機能ベースでモバイル・デスクトップの両方を検知するのは困難。&lt;/li>
+	 * &lt;/ul>
+	 * &lt;p>
+	 * &lt;b>position:fixedについて&lt;/b>
+	 * &lt;ul>
+	 * &lt;li>position:fixed対応表: http://caniuse.com/css-fixed&lt;/li>
+	 * &lt;li>Androidは2.2からposition:fixedをサポートしており、2.2と2.3はmetaタグに「user-scalable=no」が設定されていないと機能しない。&lt;br>
+	 * http://blog.webcreativepark.net/2011/12/07-052517.html &lt;/li>
+	 * &lt;li>Androidのデフォルトブラウザでposition:fixedを使用すると、2.xはkeyframesとtransformをposition:fixedで使用すると正しい位置に表示されないバグが、4.xは画面の向きが変更されると描画が崩れるバグがあるため使用しない。
+	 * &lt;li>Windows Phoneは7.0/7.5ともに未サポート https://github.com/jquery/jquery-mobile/issues/3489&lt;/li>
+	 * &lt;ul>
 	 */
 	var usePositionFixed = !(h5ua.isAndroidDefaultBrowser
-			|| (h5ua.isiOS && h5ua.browserVersion < 5) || isLegacyIE || compatMode || h5ua.isWindowsPhone);
+			|| (h5ua.isiOS &amp;&amp; h5ua.browserVersion &lt; 5) || isLegacyIE || compatMode || h5ua.isWindowsPhone);
 
 	/**
 	 * ウィンドウの高さを取得するメソッド
@@ -163,9 +206,9 @@
 	// -------------------------------------- ここから -------------------------------------- //
 	/**
 	 * ノードからドキュメントを取得。
-	 * <p>
+	 * &lt;p>
 	 * 引数がdocumentノードなら引数をそのまま、ノードならownerDocument、windowオブジェクトならそのdocumentを返します。nodeがいずれにも該当しない場合はnullを返します。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {DOM} node
@@ -189,9 +232,9 @@
 	}
 	/**
 	 * 引数が配列かどうか判定
-	 * <p>
+	 * &lt;p>
 	 * Array.isArrayがあるブラウザの場合はisArray===Array.isArrayです
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {Any} obj
@@ -273,18 +316,18 @@
 
 	/**
 	 * 指定されたCSS3プロパティをサポートしているか判定します。
-	 * <p>
+	 * &lt;p>
 	 * プレフィックスなし、プレフィックスありでサポート判定を行います。
-	 * <p>
+	 * &lt;p>
 	 * 判定に使用するプレフィックス
-	 * <ul>
-	 * <li>Khtml (Safari2以前)</li>
-	 * <li>ms (IE)</li>
-	 * <li>O (Opera)</li>
-	 * <li>Moz (Firefox)</li>
-	 * <li>Webkit (Safari2以降/Chrome)</li>
-	 * </ul>
-	 * <p>
+	 * &lt;ul>
+	 * &lt;li>Khtml (Safari2以前)&lt;/li>
+	 * &lt;li>ms (IE)&lt;/li>
+	 * &lt;li>O (Opera)&lt;/li>
+	 * &lt;li>Moz (Firefox)&lt;/li>
+	 * &lt;li>Webkit (Safari2以降/Chrome)&lt;/li>
+	 * &lt;/ul>
+	 * &lt;p>
 	 * ※Chrome20にて、WebKitプレフィックスはデバッグでの表示上は小文字(webkitXxxxx)だが、先頭文字が小文字または大文字でも正しく判定される。
 	 * しかし、古いバージョンでは確認できていないため『Webkit』で判定する。
 	 */
@@ -306,7 +349,7 @@
 			propCamel = propCamel.charAt(0).toUpperCase() + propCamel.slice(1);
 
 			// ベンダープレフィックスありでサポートしているか判定
-			for (var i = 0; i < len; i++) {
+			for (var i = 0; i &lt; len; i++) {
 				if (prefixes[i] + propCamel in div.style) {
 					return true;
 				}
@@ -319,7 +362,7 @@
 	/**
 	 * 任意要素のスクロールサイズ(scrollWidth/Height：見た目でなくコンテンツ全体のサイズ)を取得します。
 	 * IE6は内包する要素の方が小さい場合にscrollサイズがclientサイズより小さくなってしまうバグがあります（本来はscroll===client）。
-	 * そこで、IE6の場合はscrollとclientのうち大きい方のサイズを返します。<br>
+	 * そこで、IE6の場合はscrollとclientのうち大きい方のサイズを返します。&lt;br>
 	 * また、scrollW/Hは整数を返しますが、内部的にはサイズが小数になっている場合があります。Chrome22, Firefox20,
 	 * Opera12ではscrollサイズをセットしても問題ありませんが、IEの場合
 	 * (内部サイズが小数のときに)scrollW/Hの大きさでオーバーレイのサイズを設定すると意図しないスクロールバーが出てしまう場合があります。
@@ -336,7 +379,7 @@
 		if (isLegacyIE) {
 			retW = Math.max(retW, elem.clientWidth);
 			retH = Math.max(retH, elem.clientHeight);
-		} else if (h5ua.isIE && typeof getComputedStyle === 'function') {
+		} else if (h5ua.isIE &amp;&amp; typeof getComputedStyle === 'function') {
 			//getComputedStyleが未定義な環境(IE)でエラーにならないように、typeofを使って判定
 
 			//IE9以上(かつIE9モード以上)。この場合、ボックスサイズが小数になる可能性がある
@@ -365,16 +408,16 @@
 
 	/**
 	 * ドキュメント(コンテンツ全体)の高さまたは幅を取得します。
-	 * <p>
+	 * &lt;p>
 	 * ウィンドウの高さを取得したい場合は引数に"Height"を、 ウィンドウの幅を取得したい場合は引数に"Width"を指定して下さい。
-	 * <p>
+	 * &lt;p>
 	 * 以下のバグがあるため自前で計算を行う。
-	 * <p>
-	 * 1.6.4/1.7.1/1.8.0は正しい値を返すが1.7.1ではバグがあるため正しい値を返さない。<br>
-	 * http://bugs.jquery.com/ticket/3838<br>
+	 * &lt;p>
+	 * 1.6.4/1.7.1/1.8.0は正しい値を返すが1.7.1ではバグがあるため正しい値を返さない。&lt;br>
+	 * http://bugs.jquery.com/ticket/3838&lt;br>
 	 * http://pastebin.com/MaUuLjU2
-	 * <p>
-	 * IE6だと同一要素に対してスタイルにwidthとpaddingを指定するとサイズがおかしくなる。<br>
+	 * &lt;p>
+	 * IE6だと同一要素に対してスタイルにwidthとpaddingを指定するとサイズがおかしくなる。&lt;br>
 	 * http://hiromedo-net.sakura.ne.jp/memoblog/?p=47
 	 */
 	function documentSize(propName) {
@@ -403,10 +446,10 @@
 
 	/**
 	 * スクロールバーの幅も含めた、ウィンドウ幅または高さを取得します。
-	 * <p>
+	 * &lt;p>
 	 * ウィンドウの高さを取得したい場合は引数に"Height"を、 ウィンドウの幅を取得したい場合は引数に"Width"を指定して下さい。
-	 * <p>
-	 * jQuery1.8からQuirksモードをサポートしていないため、$(window).height()からウィンドウサイズを取得できない(0を返す)ため、自前で計算を行う。<br>
+	 * &lt;p>
+	 * jQuery1.8からQuirksモードをサポートしていないため、$(window).height()からウィンドウサイズを取得できない(0を返す)ため、自前で計算を行う。&lt;br>
 	 * http://blog.jquery.com/2012/08/30/jquery-1-8-1-released/
 	 */
 	function windowSize(propName) {
@@ -422,7 +465,7 @@
 
 	/**
 	 * Y方向またはX方向のスクロール量を取得します。
-	 * <p>
+	 * &lt;p>
 	 * Y方向のスクロール量を取得したい場合は引数に"Top"を、 X方向のスクロール量を取得したい場合は引数に"Left"を指定して下さい。
 	 */
 	function scrollPosition(propName) {
@@ -447,22 +490,22 @@
 
 	/**
 	 * 指定された要素の左上からの絶対座標を取得します。
-	 * <p>
+	 * &lt;p>
 	 * 1.8.xのjQuery.offset()は、Quirksモードでのスクロール量の計算が正しく行われないため自前で計算する。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * 絶対座標は、
 	 *
-	 * <pre>
+	 * &lt;pre>
 	 * getBoundingClinetRectの値 + スクロール量 - clientTop / Left
-	 * </pre>
+	 * &lt;/pre>
 	 *
 	 * で計算します。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * IE6の場合、BODY要素についてgetBoundingClientRect()の値が正しく計算できず、
 	 * また、HTML要素のmargin,borderが表示されないので、BODY要素の場合は、htmlのpadding～bodyのborderまでを加えた値を計算して返します。
-	 * </p>
+	 * &lt;/p>
 	 */
 	function getOffset(element) {
 		var elem = $(element)[0];
@@ -472,7 +515,7 @@
 			top: 0,
 			left: 0
 		};
-		if (elem === body && isLegacyIE) {
+		if (elem === body &amp;&amp; isLegacyIE) {
 			return {
 				top: parseFloat(html.currentStyle.paddingTop || 0)
 						+ parseFloat(body.currentStyle.marginTop || 0)
@@ -522,9 +565,9 @@
 
 	/**
 	 * getComputedStyleがあるブラウザについて、getComputedStyleを呼び出した結果を返します。
-	 * <p>
+	 * &lt;p>
 	 * 渡されたエレメントが属するdocumentツリーのwindowオブジェクトのgetComputedStyleを使用します
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {DOM} elem
@@ -536,12 +579,12 @@
 
 	/**
 	 * スタイルを取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、jQuery.css()を使って取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param elem {DOM}
@@ -557,12 +600,12 @@
 
 	/**
 	 * 要素のheight(offsetHeight)を取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、height()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {DOM} elem
@@ -579,12 +622,12 @@
 
 	/**
 	 * 要素のwidth(offsetWidth)を取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、width()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {DOM} elem
@@ -601,12 +644,12 @@
 
 	/**
 	 * 要素のouterHeightを取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、outerHeight()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @private
 	 * @param {DOM} elem
@@ -630,12 +673,12 @@
 
 	/**
 	 * 要素のouterWidthを取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、outerWidth()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @param {DOM} elem
 	 * @param {Boolean} [includeMargin=true] maginを含めるかどうか
@@ -657,12 +700,12 @@
 
 	/**
 	 * 要素のinnerHeightを取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、innerHeight()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @param {DOM} elem
 	 * @returns {Number} 引数で渡された要素のinnerHeight
@@ -678,12 +721,12 @@
 
 	/**
 	 * 要素のinnerWidthを取得する
-	 * <p>
+	 * &lt;p>
 	 * IEでjQuery1.8.X～1.10.Xを使用した時、ポップアップウィンドウ内の要素についてスタイルを取得しようとするとエラーになるため、ラップしている。
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
 	 * getComputedStyleがないブラウザについては、innerWidth()で取得した値を返す。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @param {DOM} elem
 	 * @returns {Number} 引数で渡された要素のinnerWidth
@@ -804,9 +847,9 @@
 
 	/**
 	 * ブロッカー(画面ブロック)の表示や非表示を行うクラス。
-	 * <p>
+	 * &lt;p>
 	 * このクラスは自分でnewすることはありません。{@link h5.ui.blocker}の戻り値がBlockerクラスです。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @class
 	 * @name Blocker
@@ -841,7 +884,7 @@
 		var doc = getDocumentOf($t[0]);
 
 		// 別ウィンドウのwindow又はdocumentが指定されていた場合は、そのwindow,documentのbodyに出す
-		if (doc !== window.document && ($t[0] === doc || getWindowOfDocument(doc) === $t[0])) {
+		if (doc !== window.document &amp;&amp; ($t[0] === doc || getWindowOfDocument(doc) === $t[0])) {
 			$t = $(doc.body);
 		}
 
@@ -898,7 +941,7 @@
 		// http://www.ninxit.com/blog/2008/04/07/ie6-https-iframe/
 		var srcVal = 'https' === this._document.location.protocol ? 'return:false' : 'about:blank';
 
-		for (var i = 0, len = this._$target.length; i < len; i++) {
+		for (var i = 0, len = this._$target.length; i &lt; len; i++) {
 			this._$overlay = this._$overlay
 					.add((settings.block ? $(doc.createElement('div')) : $()).addClass(
 							CLASS_INDICATOR_ROOT).addClass(settings.theme).addClass(CLASS_OVERLAY)
@@ -908,7 +951,7 @@
 					CLASS_INDICATOR_ROOT).addClass(CLASS_SKIN).css('display', 'none'));
 		}
 
-		var position = this._isScreenLock && usePositionFixed ? 'fixed' : 'absolute';
+		var position = this._isScreenLock &amp;&amp; usePositionFixed ? 'fixed' : 'absolute';
 		// オーバーレイ・コンテンツにpositionを設定する
 		this._$overlay.css('position', position);
 
@@ -922,7 +965,7 @@
 		if (isArray(promises)) {
 			// プロミスでないものを除去
 			promises = $.map(promises, function(item, idx) {
-				return item && isFunction(item.promise) ? item : null;
+				return item &amp;&amp; isFunction(item.promise) ? item : null;
 			});
 
 			if (promises.length > 0) {
@@ -931,7 +974,7 @@
 				registerCallbacksSilently(h5.async.when(promises), pipeMethod, [promiseCallback,
 						promiseCallback]);
 			}
-		} else if (promises && isFunction(promises.promise)) {
+		} else if (promises &amp;&amp; isFunction(promises.promise)) {
 			// CFHの発火を阻害しないようにpipeを呼び出し。
 			registerCallbacksSilently(promises, pipeMethod, [promiseCallback, promiseCallback]);
 		}
@@ -971,7 +1014,7 @@
 			// position:absoluteの子要素を親要素からの相対位置で表示するため、親要素がposition:staticの場合はrelativeに変更する(親要素がbody(スクリーンロック)の場合は変更しない)
 			// また、IEのレイアウトバグを回避するためzoom:1を設定する
 			var targetPosition = getComputedStyleValue($target[0], 'position');
-			if (!this._isScreenLock && targetPosition === 'static') {
+			if (!this._isScreenLock &amp;&amp; targetPosition === 'static') {
 				// ターゲットのposition/zoomを記憶させておく
 				this._targetPosition = targetPosition;
 				this._zoom = getComputedStyleValue($target[0], 'zoom');
@@ -989,7 +1032,7 @@
 			Array.prototype.push.apply(elems, this._$overlay.toArray());
 			var $elems = $(elems);
 
-			if (fadeInTime < 0) {
+			if (fadeInTime &lt; 0) {
 				$elems.css('display', 'block');
 				cb();
 			} else {
@@ -1059,7 +1102,7 @@
 				}
 			};
 
-			if (fadeOutTime < 0) {
+			if (fadeOutTime &lt; 0) {
 				$elems.css('display', 'none');
 				cb();
 			} else {
@@ -1071,9 +1114,9 @@
 
 		/**
 		 * コンテンツの設定
-		 * <p>
+		 * &lt;p>
 		 * ブロッカーの上に表示するコンテンツ要素を設定します。コンテンツ要素も同様にブロッカーのshow/hideのタイミングで表示/非表示が切り替わります。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf Blocker
 		 * @param {DOM|jQuery|stirng}
@@ -1084,9 +1127,9 @@
 
 		/**
 		 * オーバーレイのサイズを再計算します。
-		 * <p>
+		 * &lt;p>
 		 * position:fixedで表示している場合は再計算しません。また、オーバレイ非表示の場合は何もしません。
-		 * <p>
+		 * &lt;p>
 		 * position:absoluteの場合は高さのみ再計算を行い、IE6以下の標準モード及びQuirksモードの場合は高さと幅の両方を再計算します。
 		 *
 		 * @memberOf Blocker
@@ -1097,7 +1140,7 @@
 			// スクリーンロックでpoisition:fixedが使用可能なブラウザの場合は、オーバレイをposition:fixedで表示している
 			// オーバレイをposition:fixedで表示している場合は何もしない
 			// また、オーバレイを表示していない(block:false)ブロッカーなら何もしない
-			if ((this._isScreenLock && usePositionFixed) || this._$overlay.length === 0) {
+			if ((this._isScreenLock &amp;&amp; usePositionFixed) || this._$overlay.length === 0) {
 				return;
 			}
 
@@ -1181,7 +1224,7 @@
 
 		/**
 		 * scroll/touchmoveイベントハンドラ
-		 * <p>
+		 * &lt;p>
 		 * タッチまたはホイールスクロールの停止を検知します
 		 */
 		_handleScrollEvent: function() {
@@ -1201,7 +1244,7 @@
 		},
 		/**
 		 * orientationChange/resizeイベントハンドラ
-		 * <p>
+		 * &lt;p>
 		 * orientationChange/resizeイベントが発生した1秒後に、ブロッカーとオーバーレイを画面サイズに合わせて再描画し、 コンテンツの位置を再計算する
 		 *
 		 * @memberOf Blocker
@@ -1257,7 +1300,7 @@
 							// ただし、$target内でも$content内であればフォーカスを当てられる
 							var $element = $(element);
 							return element.tabIndex !== -1
-									&& (!$element.closest($target).length || $element
+									&amp;&amp; (!$element.closest($target).length || $element
 											.closest($content).length);
 						});
 				$focusable.sort(function(a, b) {
@@ -1274,44 +1317,44 @@
 
 	/**
 	 * 指定された要素に対して、ブロッカー(画面ブロック)の表示や非表示を行うためのオブジェクトを取得します。
-	 * <p>
+	 * &lt;p>
 	 * 第1引数にブロッカーの設定を記述したパラメータオブジェクトを指定してください。
-	 * <p>
-	 * <strong>第1引数にブロッカーのターゲットを指定する方法は非推奨です。</strong>
-	 * </p>
+	 * &lt;p>
+	 * &lt;strong>第1引数にブロッカーのターゲットを指定する方法は非推奨です。&lt;/strong>
+	 * &lt;/p>
 	 *
-	 * <pre><code>
+	 * &lt;pre>&lt;code>
 	 * h5.ui.blocker({
 	 * 	target: 'body'
 	 * });
 	 *
 	 * // h5.ui.blocker('body'); 非推奨
-	 * </code></pre>
+	 * &lt;/code>&lt;/pre>
 	 *
-	 * targetに<strong>document</strong>、<strong>window</strong>または<strong>body</strong>を指定しかつ、blockオプションがtrueの場合、「スクリーンロック」として動作します。<br>
+	 * targetに&lt;strong>document&lt;/strong>、&lt;strong>window&lt;/strong>または&lt;strong>body&lt;/strong>を指定しかつ、blockオプションがtrueの場合、「スクリーンロック」として動作します。&lt;br>
 	 * 上記以外のDOM要素を指定した場合は、指定した要素上にブロッカーを表示します。
-	 * <p>
-	 * <strong>スクリーンロック</strong>とは、コンテンツ領域(スクロールしないと見えない領域も全て含めた領域)全体にオーバーレイを、表示領域(画面に見えている領域)中央にメッセージが表示し、画面を操作できないようにすることです。スマートフォン等タッチ操作に対応する端末の場合、スクロール操作も禁止します。
-	 * <h4>スクリーンロック中の制限事項</h4>
-	 * <ul>
-	 * <li>Android
-	 * 4.xにてorientationchangeイベント発生直後にブロッカーのDOM要素の書き換えを行うと画面の再描画が起こらなくなってしまうため、orientationchangeイベント発生から1秒間percent()/massage()での画面の書き換えをブロックします。<br>
-	 * orientationchagenイベント発生から1秒以内にpercent()/message()で値を設定した場合、最後に設定された値が画面に反映されます。</li>
-	 * <li>WindowsPhone 7ではscrollイベントを抑止できないため、ブロッカー背後の要素がスクロールしてしまいます。ただし、クリック等その他のイベントはキャンセルされます。</li>
-	 * </ul>
-	 * <h4>使用例</h4>
-	 * <strong>スクリーンロックとして表示する</strong><br>
+	 * &lt;p>
+	 * &lt;strong>スクリーンロック&lt;/strong>とは、コンテンツ領域(スクロールしないと見えない領域も全て含めた領域)全体にオーバーレイを、表示領域(画面に見えている領域)中央にメッセージが表示し、画面を操作できないようにすることです。スマートフォン等タッチ操作に対応する端末の場合、スクロール操作も禁止します。
+	 * &lt;h4>スクリーンロック中の制限事項&lt;/h4>
+	 * &lt;ul>
+	 * &lt;li>Android
+	 * 4.xにてorientationchangeイベント発生直後にブロッカーのDOM要素の書き換えを行うと画面の再描画が起こらなくなってしまうため、orientationchangeイベント発生から1秒間percent()/massage()での画面の書き換えをブロックします。&lt;br>
+	 * orientationchagenイベント発生から1秒以内にpercent()/message()で値を設定した場合、最後に設定された値が画面に反映されます。&lt;/li>
+	 * &lt;li>WindowsPhone 7ではscrollイベントを抑止できないため、ブロッカー背後の要素がスクロールしてしまいます。ただし、クリック等その他のイベントはキャンセルされます。&lt;/li>
+	 * &lt;/ul>
+	 * &lt;h4>使用例&lt;/h4>
+	 * &lt;strong>スクリーンロックとして表示する&lt;/strong>&lt;br>
 	 *
-	 * <pre>
+	 * &lt;pre>
 	 * var blocker = h5.ui.blocker({
 	 * 	target: document
 	 * }).show();
-	 * </pre>
+	 * &lt;/pre>
 	 *
-	 * <strong>パラメータにPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する</strong><br>
+	 * &lt;strong>パラメータにPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する&lt;/strong>&lt;br>
 	 * resolve() または reject() が実行されると、画面からブロッカーを除去します。
 	 *
-	 * <pre>
+	 * &lt;pre>
 	 * var df = $.Deferred();
 	 * var blocker = h5.ui.blocker({
 	 * 	target: document,
@@ -1321,12 +1364,12 @@
 	 * setTimeout(function() {
 	 * 	df.resolve(); // ここでブロッカーが除去される
 	 * }, 2000);
-	 * </pre>
+	 * &lt;/pre>
 	 *
-	 * <strong>パラメータに複数のPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する</strong><br>
+	 * &lt;strong>パラメータに複数のPromiseオブジェクトを指定して、done()/fail()の実行と同時にブロッカーを除去する&lt;/strong>&lt;br>
 	 * Promiseオブジェクトを複数指定すると、全てのPromiseオブジェクトでresolve()が実行されるか、またはいずれかのPromiseオブジェクトでfail()が実行されるタイミングでブロッカーを画面から除去します。
 	 *
-	 * <pre>
+	 * &lt;pre>
 	 * var df = $.Deferred();
 	 * var df2 = $.Deferred();
 	 * var blocker = h5.ui.blocker({
@@ -1341,7 +1384,7 @@
 	 * setTimeout(function() {
 	 * 	df.resolve(); // ここでブロッカーが除去される
 	 * }, 4000);
-	 * </pre>
+	 * &lt;/pre>
 	 *
 	 * @memberOf h5.ui
 	 * @name blocker
@@ -1352,7 +1395,7 @@
 	 * @param {Number} [param.fadeOut] ブロッカーをフェードで非表示にする場合、非表示までの時間をミリ秒(ms)で指定する (デフォルト:しない)
 	 * @param {Promise|Promise[]} [param.promises] Promiseオブジェクト (Promiseの状態に合わせて自動でブロッカーの非表示を行う)
 	 * @param {String} [param.theme] テーマクラス名 (ブロッカーのにスタイル定義の基点となるクラス名 (デフォルト:'a')
-	 * @param {Object} [option] 第1引数にターゲット(param.target)を指定して、第2引数にオプションオブジェクトを指定できます。<strong>ただしこの指定方法は非推奨です。</strong><br>
+	 * @param {Object} [option] 第1引数にターゲット(param.target)を指定して、第2引数にオプションオブジェクトを指定できます。&lt;strong>ただしこの指定方法は非推奨です。&lt;/strong>&lt;br>
 	 *            第2引数のオプションオブジェクトの構造は、パラメータオブジェクトと同様です。
 	 * @returns {Blocker}
 	 */
@@ -1378,3 +1421,23 @@
 		blocker: blocker
 	});
 })();
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+	</div>
+
+	<br class="clear">
+
+	<footer>
+	    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Fri Dec 18 2015 12:11:43 GMT+0900 (JST)
+	</footer>
+</div>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
