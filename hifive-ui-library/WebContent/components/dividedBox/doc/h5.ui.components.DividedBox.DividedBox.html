@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: DividedBox</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <script src="scripts/jquery.js"> </script>
+    <script src="scripts/extension.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+</head>
+
+<body>
+<div id="container">
+	<nav>
+		<div class="module-search-header">
+			<div class="h5-searchBox">
+				<input type="text" placeholder="Search...">
+				<button class="clear">×</button>
+			</div>
+		</div>
+		<div class="module-nav show"><a href="" class="show-modules">一覧</a></div>
+		<div class="module-nav hide"><a href="" class="hide-modules">一覧</a></div>
+		<div class="module-list-wrapper hidden-mobile">
+		    <h3>Classes</h3><ul><li><a href="h5.ui.components.DividedBox.DividedBox.html">h5.ui.components.DividedBox.DividedBox</a></li><li><a href="h5.ui.components.DividedBox.StateBox.html">h5.ui.components.DividedBox.StateBox</a></li></ul>
+	    </div>
+	</nav>
+	<div id="main">
+	    <h1 class="page-title">Class: DividedBox</h1>
+	    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        DividedBox
+        </h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+
+    <h4 class="name" id="DividedBox"><span class="type-signature"></span>new DividedBox<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    要素のボックス区切り移動を行うコンポーネント<p>使用方法やサンプルについては以下を参照してください。</p><ul><li><a href="../index.html">ボックス区切り移動(DividedBox)</a><li><a href="../sample">ボックス区切り移動サンプル</a></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line199">line 199</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".fitToContents"><span class="type-signature">(static) </span>fitToContents<span class="signature">(box, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスの中身の大きさを自動取得し、そのサイズにリサイズする
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><a href="h5.ui.components.DividedBox.DividedBox.html#.resize">resize</a>のオプションと同じです</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line560">line 560</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".fixSize"><span class="type-signature">(static) </span>fixSize<span class="signature">(box)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスを今のサイズで固定にする<p>指定されたボックスのサイズを固定にします。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line718">line 718</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.unfixSize">h5.ui.components.DividedBox.DividedBox.unfixSize</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".hide"><span class="type-signature">(static) </span>hide<span class="signature">(box, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスを非表示にします<p>非表示にしたボックスを再度表示する場合は、<a href="h5.ui.components.DividedBox.DividedBox.html#.show">h5.ui.components.DividedBox.DividedBox.show</a>を使用してください</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><a href="h5.ui.components.DividedBox.DividedBox.html#.resize">resize</a>のオプションと同じです</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line603">line 603</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.show">h5.ui.components.DividedBox.DividedBox.show</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".hideDivider"><span class="type-signature">(static) </span>hideDivider<span class="signature">(divider, forwardAdjust<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    指定された区切り線を非表示にする<p>区切り線の指定は区切り線のインデックス(一番左または一番上が0)及び、その区切り線の要素または区切り線の要素を表すセレクタで指定できます。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>divider</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">dividerのindexまたはdivider要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forwardAdjust</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">区切り線を非表示にするとき、区切り線分の幅をどちらのボックスで埋めるか。左(上)で埋める場合はtrueを指定。</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line749">line 749</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.showDivider">h5.ui.components.DividedBox.DividedBox.showDivider</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".insert"><span class="type-signature">(static) </span>insert<span class="signature">(index, box)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスの追加<p>新しく追加するボックス要素と、追加位置をインデックス指定してボックスを追加できます。インデックス指定は一番左(または一番上)にする場合は0です。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">何番目に追加するか(追加した要素が何番目に来るか)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">追加するボックス要素</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line471">line 471</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".maximize"><span class="type-signature">(static) </span>maximize<span class="signature">(box, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスの最大化<p>指定されたボックスの両サイドの区切り線を最大まで広げます。data-max-sizeが指定されている場合、最大でもそのサイズにしかなりません。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><a href="h5.ui.components.DividedBox.DividedBox.html#.resize">resize</a>のオプションと同じです</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line547">line 547</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".minimize"><span class="type-signature">(static) </span>minimize<span class="signature">(box, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスの最小化<p>指定されたボックスを最小サイズにします。data-min-size指定されているボックスはそのサイズに、そうでない場合はサイズ0になります。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><a href="h5.ui.components.DividedBox.DividedBox.html#.resize">resize</a>のオプションと同じです</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line533">line 533</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".refresh"><span class="type-signature">(static) </span>refresh<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスと区切り線の位置とサイズを再計算して最適化する<p>ルート要素のサイズが変更された場合や、ルート要素に要素を追加した場合など、ボックスと区切り線表示の再計算を行いたい場合に実行してください。</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line354">line 354</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".remove"><span class="type-signature">(static) </span>remove<span class="signature">(index)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスの削除<p>指定されたインデックスのボックスを削除します。インデックスは一番左(または一番上)側のボックスが0です。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>index</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">何番目のボックスを削除するか</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line499">line 499</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".resize"><span class="type-signature">(static) </span>resize<span class="signature">(box, size, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスのサイズを変更する<p>指定されたボックスが指定されたサイズになるように、そのボックスを区切っている区切り線を動かします。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>size</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">リサイズするサイズ(px)</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">リサイズオプション
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>partition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
+            
+
+            <td class="description last"><p>           左右(上下)に区切り線がある場合、resize時に左右(上下)の区切り線が動く割合を0.0～1.0を指定します。           </p>           <p>           0.0を指定した場合(デフォルト)は左(上)の区切り線を固定して右(下)の区切り線の位置が変更されます。           </p>           <p>           左右(上下)のどちらかにしか区切り線が無い場合はこのオプションは無視されてresize時に位置が変更される区切り線は自動で決定されます。           </p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line646">line 646</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".show"><span class="type-signature">(static) </span>show<span class="signature">(box, opt)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    非表示にしたボックスを表示します
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><a href="h5.ui.components.DividedBox.DividedBox.html#.resize">resize</a>のオプションと同じです</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line572">line 572</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.hide">h5.ui.components.DividedBox.DividedBox.hide</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".showDivider"><span class="type-signature">(static) </span>showDivider<span class="signature">(dividerのindexまたはdivider要素またはセレクタ, forwardAdjust<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    指定された区切り線を表示する<p>区切り線の指定は区切り線のインデックス(一番左または一番上が0)及び、その区切り線の要素または区切り線の要素を表すセレクタで指定できます。</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>dividerのindexまたはdivider要素またはセレクタ</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>forwardAdjust</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">区切り線を表示するとき、区切り線分の幅をどちらのボックスがずらすか。左(上)をずらす場合はtrueを指定。</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line780">line 780</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.hideDivider">h5.ui.components.DividedBox.DividedBox.hideDivider</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".unfixSize"><span class="type-signature">(static) </span>unfixSize<span class="signature">(box)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    ボックスのサイズ固定を解除する
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">index</span>
+|
+
+<span class="param-type">DOM</span>
+|
+
+<span class="param-type">jQuery</span>
+|
+
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">boxのindexまたはbox要素またはセレクタ</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="DividedBox.js.html">DividedBox.js</a>, <a href="DividedBox.js.html#line731">line 731</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="h5.ui.components.DividedBox.DividedBox.html#.fixSize">h5.ui.components.DividedBox.DividedBox.fixSize</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+	</div>
+
+	<br class="clear">
+
+	<footer>
+	    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Fri Dec 18 2015 10:59:15 GMT+0900 (JST)
+	</footer>
+</div>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

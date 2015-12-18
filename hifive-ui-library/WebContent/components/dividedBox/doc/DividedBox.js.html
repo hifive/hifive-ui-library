@@ -1,4 +1,47 @@
-/*
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: DividedBox.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <script src="scripts/jquery.js"> </script>
+    <script src="scripts/extension.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+</head>
+
+<body>
+<div id="container">
+	<nav>
+		<div class="module-search-header">
+			<div class="h5-searchBox">
+				<input type="text" placeholder="Search...">
+				<button class="clear">×</button>
+			</div>
+		</div>
+		<div class="module-nav show"><a href="" class="show-modules">一覧</a></div>
+		<div class="module-nav hide"><a href="" class="hide-modules">一覧</a></div>
+		<div class="module-list-wrapper hidden-mobile">
+		    <h3>Classes</h3><ul><li><a href="h5.ui.components.DividedBox.DividedBox.html">h5.ui.components.DividedBox.DividedBox</a></li><li><a href="h5.ui.components.DividedBox.StateBox.html">h5.ui.components.DividedBox.StateBox</a></li></ul>
+	    </div>
+	</nav>
+	<div id="main">
+	    <h1 class="page-title">Source: DividedBox.js</h1>
+	    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
  * Copyright (C) 2012-2014 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +66,9 @@
 
 	/**
 	 * ある要素の状態(State)を管理するためのコンポーネントです。
-	 * <p>
-	 * 詳細は<a href="../sample/state.html">ボックス区切り移動サンプル(StateBox使用)</a>をご覧ください
-	 * </p>
+	 * &lt;p>
+	 * 詳細は&lt;a href="../sample/state.html">ボックス区切り移動サンプル(StateBox使用)&lt;/a>をご覧ください
+	 * &lt;/p>
 	 *
 	 * @class
 	 * @name h5.ui.components.DividedBox.StateBox
@@ -63,9 +106,9 @@
 
 		/**
 		 * ステートの切り替え
-		 * <p>
+		 * &lt;p>
 		 * ステート名を指定し、ステートを切り替えます
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.StateBox
 		 * @param {string} state ステート名
@@ -98,9 +141,9 @@
 
 		/**
 		 * 現在のステートのコンテンツ領域のサイズを取得
-		 * <p>
+		 * &lt;p>
 		 * 現在のステートにおけるコンテンツ領域のサイズをwidth,heightを持つオブジェクトで返します。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.StateBox
 		 * @returns {Object}
@@ -198,13 +241,13 @@
 
 	/**
 	 * 要素のボックス区切り移動を行うコンポーネント
-	 * <p>
+	 * &lt;p>
 	 * 使用方法やサンプルについては以下を参照してください。
-	 * </p>
-	 * <ul>
-	 * <li><a href="../index.html">ボックス区切り移動(DividedBox)</a>
-	 * <li><a href="../sample">ボックス区切り移動サンプル</a>
-	 * </ul>
+	 * &lt;/p>
+	 * &lt;ul>
+	 * &lt;li>&lt;a href="../index.html">ボックス区切り移動(DividedBox)&lt;/a>
+	 * &lt;li>&lt;a href="../sample">ボックス区切り移動サンプル&lt;/a>
+	 * &lt;/ul>
 	 *
 	 * @class
 	 * @name h5.ui.components.DividedBox.DividedBox
@@ -272,7 +315,7 @@
 			this.view
 					.register(
 							'divider',
-							'<div class="divider" style="position:absolute"><div style="height:50%;"></div><div class="dividerHandler"></div></div>');
+							'&lt;div class="divider" style="position:absolute">&lt;div style="height:50%;">&lt;/div>&lt;div class="dividerHandler">&lt;/div>&lt;/div>');
 
 			var $root = this._$root = $(this.rootElement);
 			var type = this._type = $root.hasClass(CLASS_VERTICAL) ? 'y' : 'x';
@@ -327,7 +370,7 @@
 			// 追加して削除することで、実際に置いた時のサイズを取得
 			var totalDividerSize = 0;
 			if ($boxes.length > 1) {
-				var $tmpDivider = $('<div class="divider"></div>');
+				var $tmpDivider = $('&lt;div class="divider">&lt;/div>');
 				$(this.rootElement).append($tmpDivider);
 				totalDividerSize = $tmpDivider[w_h]() * ($boxes.length - 1);
 				$tmpDivider.remove();
@@ -345,9 +388,9 @@
 
 		/**
 		 * ボックスと区切り線の位置とサイズを再計算して最適化する
-		 * <p>
+		 * &lt;p>
 		 * ルート要素のサイズが変更された場合や、ルート要素に要素を追加した場合など、ボックスと区切り線表示の再計算を行いたい場合に実行してください。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 */
@@ -373,7 +416,7 @@
 				var prevBox = $boxes[index];
 				var $prev = $box.prev();
 				var hasDivider = false;
-				while ($prev.length && !hasDivider && $prev[0] !== prevBox) {
+				while ($prev.length &amp;&amp; !hasDivider &amp;&amp; $prev[0] !== prevBox) {
 					hasDivider = $prev.is('.divider');
 					$prev = $prev.next();
 				}
@@ -401,9 +444,9 @@
 				}
 
 				// dividerの位置調整
-				var dividerTop = (type === 'y' && $prev.length) ? $prev.position().top
+				var dividerTop = (type === 'y' &amp;&amp; $prev.length) ? $prev.position().top
 						+ this._getOuterSize($prev) : 0;
-				var dividerLeft = (type === 'x' && $prev.length) ? $prev.position().left
+				var dividerLeft = (type === 'x' &amp;&amp; $prev.length) ? $prev.position().left
 						+ this._getOuterSize($prev) : 0;
 				$divider.css({
 					top: dividerTop,
@@ -424,7 +467,7 @@
 				// 固定dividerの決定
 				// 操作するとfixedSizeのboxのサイズが変わってしまうような位置のdividerは操作不可(fixedDivider)にする
 				appearedUnfix = appearedUnfix || !$prev.hasClass(CLASS_FIXED_SIZE);
-				if (isLast && (!appearedUnfix || $next.hasClass(CLASS_FIXED_SIZE))) {
+				if (isLast &amp;&amp; (!appearedUnfix || $next.hasClass(CLASS_FIXED_SIZE))) {
 					// 一番最後まで計算が終わって、かつ、最後のボックスがfixedSizeなら、そこから前にたどって、fixedDividerになるdividerを探す
 					// 最後のboxがfixedの時は、そのboxの前のdividerはfixedDivider
 					$divider.addClass(CLASS_FIXED_DIVIDER);
@@ -446,7 +489,7 @@
 				} else {
 					// 前から辿ってfixedDividerかどうかの判定を行う
 					// あるdividerより前のボックスの中にfixedSizeでないボックスが一つもないならそのdividerはfixedDivder
-					if (!isLast && !appearedUnfix) {
+					if (!isLast &amp;&amp; !appearedUnfix) {
 						$divider.addClass(CLASS_FIXED_DIVIDER);
 					} else {
 						$divider.removeClass(CLASS_FIXED_DIVIDER);
@@ -460,9 +503,9 @@
 
 		/**
 		 * ボックスの追加
-		 * <p>
+		 * &lt;p>
 		 * 新しく追加するボックス要素と、追加位置をインデックス指定してボックスを追加できます。インデックス指定は一番左(または一番上)にする場合は0です。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {Integer} index 何番目に追加するか(追加した要素が何番目に来るか)
@@ -489,9 +532,9 @@
 
 		/**
 		 * ボックスの削除
-		 * <p>
+		 * &lt;p>
 		 * 指定されたインデックスのボックスを削除します。インデックスは一番左(または一番上)側のボックスが0です。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {Integer} index 何番目のボックスを削除するか
@@ -522,9 +565,9 @@
 
 		/**
 		 * ボックスの最小化
-		 * <p>
+		 * &lt;p>
 		 * 指定されたボックスを最小サイズにします。data-min-size指定されているボックスはそのサイズに、そうでない場合はサイズ0になります。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
@@ -536,9 +579,9 @@
 
 		/**
 		 * ボックスの最大化
-		 * <p>
+		 * &lt;p>
 		 * 指定されたボックスの両サイドの区切り線を最大まで広げます。data-max-sizeが指定されている場合、最大でもそのサイズにしかなりません。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
@@ -591,9 +634,9 @@
 
 		/**
 		 * ボックスを非表示にします
-		 * <p>
+		 * &lt;p>
 		 * 非表示にしたボックスを再度表示する場合は、{@link h5.ui.components.DividedBox.DividedBox.show}を使用してください
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @see {@link h5.ui.components.DividedBox.DividedBox.show}
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -624,24 +667,24 @@
 
 		/**
 		 * ボックスのサイズを変更する
-		 * <p>
+		 * &lt;p>
 		 * 指定されたボックスが指定されたサイズになるように、そのボックスを区切っている区切り線を動かします。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {index|DOM|jQuery|String} box boxのindexまたはbox要素またはセレクタ
 		 * @param {Number} size リサイズするサイズ(px)
 		 * @param {Object} opt リサイズオプション
 		 * @param {Number} [opt.partition=0]
-		 *            <p>
+		 *            &lt;p>
 		 *            左右(上下)に区切り線がある場合、resize時に左右(上下)の区切り線が動く割合を0.0～1.0を指定します。
-		 *            </p>
-		 *            <p>
+		 *            &lt;/p>
+		 *            &lt;p>
 		 *            0.0を指定した場合(デフォルト)は左(上)の区切り線を固定して右(下)の区切り線の位置が変更されます。
-		 *            </p>
-		 *            <p>
+		 *            &lt;/p>
+		 *            &lt;p>
 		 *            左右(上下)のどちらかにしか区切り線が無い場合はこのオプションは無視されてresize時に位置が変更される区切り線は自動で決定されます。
-		 *            </p>
+		 *            &lt;/p>
 		 */
 		resize: function(box, size, opt) {
 			var opt = opt || {};
@@ -655,7 +698,7 @@
 			var $prevDivider = this._getPrevDividerByBox($targetBox);
 			var $nextDivider = this._getNextDividerByBox($targetBox);
 
-			if (!$prevDivider.length && !$nextDivider.length) {
+			if (!$prevDivider.length &amp;&amp; !$nextDivider.length) {
 				// dividerが無い場合は何もしない
 				return;
 			}
@@ -667,7 +710,7 @@
 
 				// FIXME StateBoxが子コントローラだった場合はgetControllers()で取得できないので、data属性を使って取得
 				var stateBox = $targetBox.data('h5controller-statebox-instance');
-				if (stateBox && stateBox.getContentsSize) {
+				if (stateBox &amp;&amp; stateBox.getContentsSize) {
 					// 中身のサイズ(StateBoxのコンテンツのサイズ)を取得
 					size = stateBox.getContentsSize()[this._w_h];
 				} else {
@@ -707,9 +750,9 @@
 
 		/**
 		 * ボックスを今のサイズで固定にする
-		 * <p>
+		 * &lt;p>
 		 * 指定されたボックスのサイズを固定にします。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @see {@link h5.ui.components.DividedBox.DividedBox.unfixSize}
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -736,9 +779,9 @@
 
 		/**
 		 * 指定された区切り線を非表示にする
-		 * <p>
+		 * &lt;p>
 		 * 区切り線の指定は区切り線のインデックス(一番左または一番上が0)及び、その区切り線の要素または区切り線の要素を表すセレクタで指定できます。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @see {@link h5.ui.components.DividedBox.DividedBox.showDivider}
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -767,9 +810,9 @@
 
 		/**
 		 * 指定された区切り線を表示する
-		 * <p>
+		 * &lt;p>
 		 * 区切り線の指定は区切り線のインデックス(一番左または一番上が0)及び、その区切り線の要素または区切り線の要素を表すセレクタで指定できます。
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @see {@link h5.ui.components.DividedBox.DividedBox.hideDivider}
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -825,7 +868,7 @@
 			var $dividers = $dividerGroup.filter('.divider');
 			$dividerGroup.each(this.ownWithOrg(function(element) {
 				// dividerまたはbox要素
-				if (!isAfter && element === $divider[0]) {
+				if (!isAfter &amp;&amp; element === $divider[0]) {
 					isAfter = true;
 				}
 				if (!isAfter) {
@@ -989,25 +1032,25 @@
 				}
 			}
 			var moved = lastPos[l_t] + move;
-			if (moved <= prevStart + 1) {
+			if (moved &lt;= prevStart + 1) {
 				move = prevStart - lastPos[l_t];
-				if (move <= -1 && isTrack)
+				if (move &lt;= -1 &amp;&amp; isTrack)
 					return;
 			} else if (moved >= nextEnd - 1) {
 				move = nextEnd - lastPos[l_t];
-				if (move >= 1 && isTrack) {
+				if (move >= 1 &amp;&amp; isTrack) {
 					return;
 				}
 			}
 
 			var prevWH = this._getOuterSize($groupPrev) + move;
-			if (prevWH < 0) {
+			if (prevWH &lt; 0) {
 				prevWH = 0;
 				move = -this._getOuterSize($groupPrev);
 			}
 
 			var nextWH = this._getOuterSize($groupNext) - move;
-			if (nextWH < 0) {
+			if (nextWH &lt; 0) {
 				nextWH = 0;
 			}
 
@@ -1140,12 +1183,12 @@
 				// 最小サイズ分は既に固定サイズとして扱っているため、計算した値にmin-sizeを加えた値をボックスサイズとする
 				var minSize = $box.data(DATA_MIN_BOX_SIZE);
 				var maxSize = $box.data(DATA_MAX_BOX_SIZE);
-				if (maxSize != null && maxSize < boxSize + boxMove) {
+				if (maxSize != null &amp;&amp; maxSize &lt; boxSize + boxMove) {
 					// 最大サイズがあり、計算結果が最大サイズより大きい場合は、最大サイズにする
 					shouldRecalcUnfixedBoxSize = true;
 					$box.addClass(CLASS_KEEP_SIZE);
 					boxMove = maxSize - boxSize;
-				} else if (minSize != null && boxSize + boxMove < minSize) {
+				} else if (minSize != null &amp;&amp; boxSize + boxMove &lt; minSize) {
 					shouldRecalcUnfixedBoxSize = true;
 					$box.addClass(CLASS_KEEP_SIZE);
 					boxMove = minSize - boxSize;
@@ -1205,7 +1248,7 @@
 			var mbp = $box[outerW_H](true) - $box[w_h]();
 			var after = (outerSize - mbp);
 
-			if (after < 0) {
+			if (after &lt; 0) {
 				// 設定したいouterSizeが、margin,border,paddingの合計値未満の場合、width|heightの設定値は負の値になる
 				// 負の値を設定しても0を指定した場合と変わらない
 				// dividedBoxで使用するボックスのサイズは設定されたサイズを使用する必要があるため、
@@ -1230,9 +1273,9 @@
 
 		/**
 		 * エレメント内のホワイトスペース(===空のTEXT_NODE)を削除
-		 * <p>
+		 * &lt;p>
 		 * prototype.js v1.5.0のElement.cleanWhitespace()相当のことを行っている
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -1242,7 +1285,7 @@
 			var node = element.firstChild;
 			while (node) {
 				var nextNode = node.nextSibling;
-				if (node.nodeType === 3 && !/\S/.test(node.nodeValue))
+				if (node.nodeType === 3 &amp;&amp; !/\S/.test(node.nodeValue))
 					element.removeChild(node);
 				node = nextNode;
 			}
@@ -1311,9 +1354,9 @@
 
 		/**
 		 * 指定されたdividerの前のボックスを返す
-		 * <p>
+		 * &lt;p>
 		 * ただし非表示のボックスは除いてその前のボックスを返す
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -1324,7 +1367,7 @@
 			var $box = $divider.prevAll('.' + CLASS_MANAGED + ':first');
 			// hidden状態ならその前のboxを返す。
 			// 無い場合は空のjQueryオブジェクトを返す
-			if ($box.length && $box.data(DATA_HIDDEN)) {
+			if ($box.length &amp;&amp; $box.data(DATA_HIDDEN)) {
 				return this._getPrevBoxByDivider($box.prev());
 			}
 			return $box;
@@ -1332,9 +1375,9 @@
 
 		/**
 		 * 指定されたdividerの次のボックスを返す
-		 * <p>
+		 * &lt;p>
 		 * ただし非表示のボックスは除く
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -1345,7 +1388,7 @@
 			var $box = $divider.nextAll('.' + CLASS_MANAGED + ':first');
 			// hidden状態ならその次のboxを返す。
 			// 無い場合は空のjQueryオブジェクトを返す
-			if ($box.length && $box.data(DATA_HIDDEN)) {
+			if ($box.length &amp;&amp; $box.data(DATA_HIDDEN)) {
 				return this._getNextBoxByDivider($box.next());
 			}
 			return $box;
@@ -1353,9 +1396,9 @@
 
 		/**
 		 * 指定されたボックスの前のdividerを返す
-		 * <p>
+		 * &lt;p>
 		 * ただし非表示のdividerは除いてその前のdividerを返す
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -1367,7 +1410,7 @@
 			// dividerの前にボックスがない(先頭要素)、またはdividerの前のボックスがhiddenなら
 			// dividerは無効なので空jQueryを返す
 			if ($divider.length
-					&& (!$divider.prevAll('.' + CLASS_MANAGED).length || $divider.prevAll(
+					&amp;&amp; (!$divider.prevAll('.' + CLASS_MANAGED).length || $divider.prevAll(
 							'.' + CLASS_MANAGED + ':first').data(DATA_HIDDEN))) {
 				return $();
 			}
@@ -1376,9 +1419,9 @@
 
 		/**
 		 * 指定されたボックスの次のdividerを返す
-		 * <p>
+		 * &lt;p>
 		 * ただし非表示のdividerは除いてその次のdividerを返す
-		 * </p>
+		 * &lt;/p>
 		 *
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
@@ -1388,7 +1431,7 @@
 			var $box = $(box);
 			var $divider = $box.nextAll('.divider:first');
 			// 次のボックスがhiddenならその次のdividerを返す
-			if ($divider.length && $divider.next().data(DATA_HIDDEN)) {
+			if ($divider.length &amp;&amp; $divider.next().data(DATA_HIDDEN)) {
 				return this._getNextDividerByBox($divider.next());
 			}
 			return $divider;
@@ -1405,7 +1448,7 @@
 			var $d = $divider;
 			var $b = this._getNextBoxByDivider($d);
 			while (true) {
-				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) &amp;&amp; !$b.hasClass(CLASS_KEEP_SIZE)) {
 					break;
 				}
 				$result = $result.add($b);
@@ -1416,7 +1459,7 @@
 			$d = $divider;
 			$b = this._getPrevBoxByDivider($d);
 			while (true) {
-				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) &amp;&amp; !$b.hasClass(CLASS_KEEP_SIZE)) {
 					break;
 				}
 				$result = $result.add($b);
@@ -1444,3 +1487,23 @@
 
 	h5.core.expose(dividedBoxController);
 })();
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+	</div>
+
+	<br class="clear">
+
+	<footer>
+	    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Fri Dec 18 2015 10:59:15 GMT+0900 (JST)
+	</footer>
+</div>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
