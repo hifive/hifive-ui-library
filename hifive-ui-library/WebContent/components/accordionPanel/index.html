@@ -2,25 +2,105 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
 
-<meta name="viewport" content="width = device-width, user-scalable = yes">
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
 
-<style>
-li {
-	line-height: 1.5em;
-}
-</style>
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
 <title>AccordionPanel</title>
 </head>
 <body>
-	<h2>AccordionPanel</h2>
-	<p>業務画面によくある分割レイアウト支援コンテナです</p>
-	<p>
-		サンプルは<a href="sample/">こちら</a>
-	</p>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<h2>AccordionPanel</h2>
+				<p>業務画面によくある分割レイアウト支援コンテナです</p>
+				<p>
+					サンプルは<a href="sample/">こちら</a>
+				</p>
+				<p>
+					APIドキュメントは<a
+						href="doc/h5.ui.components.AccordionPanel.AccordionPanelController.html">こちら</a>
+				</p>
 
-	<h3>使用方法</h3>
-	<ul>
-	</ul>
+				<h3>使用方法</h3>
+				<ul>
+					<li>本機能使用時は、以下のファイルを読み込んでください。
+						<ul>
+							<li>dividedBox/src/DividedBox.css</li>
+							<li>dividedBox/src/DividedBox.js</li>
+							<li>accodionPanel/src/AccordionPanel.css</li>
+							<li>accodionPanel/src/AccordionPanel.js</li>
+						</ul>
+					</li>
+					<li><p>AccodionPanelは、最小化可能なパネルで構成する分割レイアウトの作成を行う部品です。DividedBoxを使用します。</p>
+						<p>
+							DividedBoxについては<a href="../dividedBox">こちら</a>
+						</p></li>
+					<li>
+						<p>使用例
+						<pre>&lt;!-- html -- &gt;
+&lt;div class=&quot;accordionPanel&quot;&gt;
+  &lt;div class=&quot;dividedBox&quot;&gt;
+    &lt;div class=&quot;panelBox&quot; data-default-state=&quot;normal&quot;
+      data-box-name=&quot;ボックス１&quot;&gt;
+      &lt;div&gt;パネルの中身。&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;panelBox&quot; data-default-state=&quot;min&quot;
+      data-box-name=&quot;ボックス２&quot;&gt;
+      &lt;div&gt;パネルの中身。最小化状態で表示&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre> <pre>// javascript
+ var accodionPanelController = h5.core.controller(&#039;.accordionPanel&#039;, h5.ui.components.AccordionPanel.AccordionPanelController);
+</pre>
+					</li>
+					<li>
+						<p>AccodionPanelControllerをバインドした要素以下にあるdividedBoxクラス要素が分割レイアウトの対象になります。</p>
+						<p>分割単位となる要素をボックスと言います。またボックスにdividedBoxクラスを指定することで、分割レイアウトを入れ子にすることもできます。</p>
+						<p>ボックスにpanelBoxクラスを指定すると、最小化可能なボックスになります。このようなボックスをパネルボックスと言います。</p>
+						<p>パネルボックスには以下のようなデータ属性を指定できます。</p>
+						<dl>
+							<dt>data-box-name</dt>
+							<dd>パネルボックスのタイトル指定。タイトルはパネルボックス上部のバーに表示されます。</dd>
+							<dt>data-default-state</dt>
+							<dd>初期状態の定義。normalまたはminを指定します。normalは通常表示、minは最小化状態。</dd>
+							<dt>data-normal-state-size</dt>
+							<dd>最小化状態から通常表示する時のサイズです。通常表示する時のサイズは最小化状態にする前のサイズに戻りますが、デフォルトがmin状態の場合はこの属性を参照します。</dd>
+							<dt>data-state-change-direction</dt>
+							<dd>forwardまたはbackwardを指定します。最小化や通常表示にするときに、どちら側を基準にサイズ変更するかを指定します。デフォルトはforwardで、前側を基準に後ろ側のdividerが動きます。</dd>
+						</dl>
+					</li>
+					<li>
+						<p>デザインについては適宜、別定義によるオーバーライド等で変更してください。</p>
+						<p>例：区切り線の色を白に変更</p> <pre>.dividedBox&gt;.divider&gt;.dividerHandler {
+  background-color: #fff;
+}
+</pre>
+					</li>
+					<li><p>
+							ウィンドウサイズ変更等でルート要素のサイズが変更され、要素内容にずれが生じるような場合は、 AccodionPanelの<strong>refresh</strong>関数を呼び出してください。再計算して表示します。
+						</p> <pre>accodionPanelController.refresh();</pre></li>
+					<li><p>下のようにしてメソッド呼び出しでパネルボックスの状態を切り替えることもできます。</p> <pre>// panelBoxはパネルボックス要素またはパネルボックスを指すセレクタ
+// stateはminまたはnormal
+accodionPanelController.changeState(panelBox, state);</pre></li>
+				</ul>
+			</div>
+		</div>
+	</div>
 </body>
 </html>

@@ -7,16 +7,13 @@
 	//
 	// =========================================================================
 
-	var DIVIDER_SIZE = 4;
-	var DEFAULT_NORMAL_SIZE = 100;
-
 	var CLASS_PANELBOX = 'panelBox';
 	var CLASS_DIVIDEDBOX = 'dividedBox';
 
 	var NORMAL_STATE = 'normal';
 	var MIN_STATE = 'min';
 
-	var NORMAL_STATE_SIZE_DATA_NAME = 'normalStateSize';
+	var NORMAL_STATE_SIZE_DATA_NAME = 'normal-state-size';
 
 	var DATA_DIVIDED_BOX_INSTANCE = 'h5controller-dividedbox-instance';
 	var DATA_STATE_BOX_INSTANCE = 'h5controller-statebox-instance';
@@ -45,12 +42,29 @@
 	//
 	// =========================================================================
 
+	/**
+	 * 業務画面によくある分割レイアウトを支援するコンテナです
+	 * <p>
+	 * 使用方法については<a href="../">こちら</a>をご覧ください。
+	 * </p>
+	 * <p>
+	 * 動作サンプルは<a href="../sample">こちら</a>をご覧ください。
+	 * </p>
+	 *
+	 * @class
+	 * @name h5.ui.components.AccordionPanel.AccordionPanelController
+	 */
 	var accordionPanelController = {
 		/**
-		 * @memberOf h5.ui.components.AccordionPanel.
+		 * @private
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
 		 */
 		__name: 'h5.ui.components.AccordionPanel.AccordionPanelController',
 
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		__init: function() {
 			// テンプレートの登録
 			this.view
@@ -63,7 +77,7 @@
 			var promises = [];
 
 			// StateBox のバインド
-			var stateBoxDef = h5.ui.container.StateBox;
+			var stateBoxDef = h5.ui.components.DividedBox.StateBox;
 			this.$find('.' + CLASS_PANELBOX).each(this.own(function(i, elem) {
 				this._setMinimizableBox(elem);
 				// min-sizeが指定されていなければボックスの高さ(幅)+1px分を指定
@@ -76,8 +90,11 @@
 				promises.push(controller.readyPromise);
 			}));
 
+
+
+			var dfd = h5.async.deferred();
 			// DividedBox のバインド
-			var dbBoxDef = h5.ui.container.DividedBox;
+			var dbBoxDef = h5.ui.components.DividedBox.DividedBox;
 			this.$find('.' + CLASS_DIVIDEDBOX).each(this.own(function(i, elem) {
 				// dividedBoxが入れ子になっている場合について、子のdividedBoxでかつboxHeaderを含むdividedBoxならmin-sizeを指定する
 				if ($(elem).find('.' + CLASS_DIVIDEDBOX).length) {
@@ -97,18 +114,20 @@
 				this._dividedBoxControllers.push(controller);
 				promises.push(controller.readyPromise);
 			}));
-
 			return h5.async.when(promises);
 		},
 
+		/**
+		 * @private
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		__ready: function() {
-			this._isAllReady = true;
-
 			// manageChildする
 			for (var i = 0, l = this._bindedControllers.length; i < l; i++) {
 				this.manageChild(this._bindedControllers[i]);
 			}
-			this._defaultLayoutData = this._getLayoutData();
+			// TODO デフォルトで設定するレイアウト対応
+			//			this._defaultLayoutData = this._getLayoutData();
 
 			// 各dividedBoxについて位置やdividerの表示非表示の調整
 			var $dividedBoxRoot = this.$find('.' + CLASS_DIVIDEDBOX);
@@ -125,8 +144,9 @@
 		// --- イベントハンドラ --- //
 
 		/**
-		 * 変更ボタン
+		 * ステート変更ボタン
 		 *
+		 * @private
 		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
 		 */
 		'.changeStateButton click': function(context, $el) {
@@ -144,7 +164,7 @@
 		},
 
 		'{rootElement} state-change': function(context) {
-			if (!this._isAllReady) {
+			if (!this.isReady) {
 				return;
 			}
 
@@ -173,8 +193,15 @@
 
 		// ---- Public メソッド ---- //
 		/**
-		 * 指定した box要素 の state を変更します。
+		 * 指定したボックスのステートを変更します。
+		 * <p>
+		 * 第1引数のボックスはステートを変更したいボックス要素をセレクタ、DOM要素またはjQueryオブジェクトで指定します。
+		 * </p>
+		 * <p>
+		 * 第2引数のstateは"normal"または"min"を指定します。
+		 * </p>
 		 *
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
 		 * @param {string|Element|jQuery} boxSelector state を変更する box要素 のセレクタ
 		 * @param {string} state state（"normal" または "min" を指定する）
 		 */
@@ -195,7 +222,7 @@
 			}
 
 			var $stateBox = $(boxSelector);
-			var $dividedBox = $stateBox.parent().closest('.dividedBox');
+			var $dividedBox = $stateBox.parent().closest('.' + CLASS_DIVIDEDBOX);
 			var isVertical = $dividedBox.hasClass('vertical');
 			var w_h = isVertical ? 'height' : 'width';
 			var innerW_H = isVertical ? 'innerHeight' : 'innerWidth';
@@ -254,8 +281,8 @@
 			// 自分より前が全て最小化されていたら前側にfitToContentsする
 			// 自分より後ろが全て最小化されていたら後ろ側にfitToContentsする
 			// 前後共に全て最小化されている場合、または、前後共に最小化されていないボックスがある場合は要素に指定されている側にfitToContentsする
-			var isPrevAllFixed = !$stateBox.prevAll('.panelBox:not(.fixedSize)').length;
-			var isNextAllFixed = !$stateBox.nextAll('.panelBox:not(.fixedSize)').length;
+			var isPrevAllFixed = !$stateBox.prevAll('.dividedbox-managed:not(.fixedSize)').length;
+			var isNextAllFixed = !$stateBox.nextAll('.dividedbox-managed:not(.fixedSize)').length;
 			if (isPrevAllFixed !== isNextAllFixed) {
 				partition = isPrevAllFixed ? 0 : 1;
 			}
@@ -326,7 +353,15 @@
 			}
 		},
 
-		refresh: function(context) {
+		/**
+		 * AccodionPanel内のすべてのボックスと区切り線の位置とサイズを再計算して最適化する
+		 * <p>
+		 * ルート要素のサイズが変更された場合や、ルート要素に要素を追加した場合など、ボックスと区切り線表示の再計算を行いたい場合に実行してください。
+		 * </p>
+		 *
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
+		refresh: function() {
 			for (var i = 0, controllers = this._dividedBoxControllers, l = controllers.length; i < l; i++) {
 				controllers[i].refresh();
 			}
@@ -334,30 +369,46 @@
 
 		// --- Private プロパティ --- //
 
+		/**
+		 * AccordinPanelがバインドした全てのStateBoxとDividedBoxのコントローラインスタンスリスト
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		_bindedControllers: null,
 
+		/**
+		 * AccordinPanelがバインドした全てのDividedBoxのコントローラインスタンスリスト
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		_dividedBoxControllers: null,
 
-		_isAllReady: false,
-
-		_isResizing: false,
-
-		_defaultLayoutData: null,
-
-		_isDisableResize: false,
+		// TODO 初期配置(各dividerの位置、ステート)の設定ができるようにする
+		//		_defaultLayoutData: null,
 
 		// --- Private メソッド --- //
-		_setDividedBoxesSize: function(dividedBoxController, sizeArray) {
-			// 最初にリフレッシュする
-			dividedBoxController.refresh();
 
-			// 最後のまで resize すると崩れる
-			for (var i = 0, len = sizeArray.length - 1; i < len; i++) {
-				var size = sizeArray[i];
-				dividedBoxController.resize(i, size);
-			}
-		},
+		// TODO 初期配置用メソッド。サイズリストを配列で取ってdividerの位置を調整する
+		//		_setDividedBoxesSize: function(dividedBoxController, sizeArray) {
+		//			// 最初にリフレッシュする
+		//			dividedBoxController.refresh();
+		//
+		//			// 最後のまで resize すると崩れる
+		//			for (var i = 0, len = sizeArray.length - 1; i < len; i++) {
+		//				var size = sizeArray[i];
+		//				dividedBoxController.resize(i, size);
+		//			}
+		//		},
 
+		/**
+		 * 指定されたボックスを最小化可能にする。ステート未定義のボックスについては自動生成する。
+		 *
+		 * @private
+		 * @param {DOM} ボックス要素
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		_setMinimizableBox: function(elem) {
 			var $box = $(elem);
 
@@ -389,8 +440,15 @@
 			}
 		},
 
+		/**
+		 * dividedBox内のボックスのサイズを調整する
+		 *
+		 * @private
+		 * @param {jQuery} $boxes dividedBox内のボックス
+		 * @param {Controller} dividedBoxController DividedBoxインスタンス
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		_adjustBoxes: function($boxes, dividedBoxController) {
-			/* jshint maxcomplexity: 24, maxdepth: 3 */
 			var stateList = $boxes.map(function(i, boxElem) {
 				var $box = $(boxElem);
 				var controller = $box.data(DATA_STATE_BOX_INSTANCE);
@@ -450,6 +508,14 @@
 			}
 		},
 
+
+		/**
+		 * 全てのボックスが最小化されているときのサイズ調整
+		 *
+		 * @private
+		 * @param {Controller} dividedBoxCtrl DividedBoxインスタンス
+		 * @memberOf h5.ui.components.AccordionPanel.AccordionPanelController
+		 */
 		_allMinStateAdjust: function(dividedBoxCtrl) {
 			// 全てmin状態になった場合は再度位置計算する
 			// 後ろのボックスからチェックして、最小化方向がbackwardのものは後ろ側に配置
@@ -465,7 +531,6 @@
 			var pos = $dividedBox[innerW_H]();
 			var fpos = 0;
 			var backwardMinLastBoxIndex = boxesLength;
-			var $backwardMinLastBox = null;
 			for (var i = boxesLength - 1; i >= 0; i--) {
 				var $b = $boxes.eq(i);
 				var $divider = $b.prev('.divider');
@@ -473,7 +538,6 @@
 					pos -= $b[outerW_H]();
 					$b.css(l_t, pos);
 					$divider.css(l_t, pos);
-					$backwardMinLastBox = $b;
 					backwardMinLastBoxIndex--;
 				} else {
 					// 残りはforward方向に寄せる
@@ -490,140 +554,56 @@
 			// 各ボックスを寄せた時に隙間ができるが、DividedBox部品は隙間に対応していない
 			// (隙間がある状態でのリサイズなどに対応していない)ため、AccordionPanel部品で制御する。
 			// refreshによる位置計算でここで計算した配置がずれないようにするためにダミーのボックスを追加する
-			var $dummy = $('<div class="accodionDummyBox autoSize"></div>');
-			if ($backwardMinLastBox) {
-				$backwardMinLastBox.before($dummy);
-			} else {
-				$dividedBox.append($dummy);
-				backwardMinLastBoxIndex = boxesLength - 1;
-			}
+			var $dummy = $('<div class="accodionDummyBox keepSize"></div>');
 			$dummy.css(w_h, pos - fpos - 4);
+			dividedBoxCtrl.insert(backwardMinLastBoxIndex, $dummy);
 			dividedBoxCtrl.refresh();
 			// 新規追加されたdividerを隠す
 			// 第２引数にtrueを指定して後ろ側を動かさないようにする
-			dividedBoxCtrl.hideDivider(backwardMinLastBoxIndex, true);
+			var dummyDividerIndex = backwardMinLastBoxIndex === boxesLength ? boxesLength - 1
+					: backwardMinLastBoxIndex;
+			dividedBoxCtrl.hideDivider(dummyDividerIndex, true);
 			// 新規追加されたdividerにクラスを当てる
-			$dividedBox.find('>.divider').eq(backwardMinLastBoxIndex).addClass(
-					'accordionDummyDivider');
-		},
-
-		_resizeDividedBoxContents: function($el) {
-			/* jshint maxdepth: 3 */
-			if (this._isDisableResize) {
-				return;
-			}
-
-			var inLoop = this._isResizing;
-			this._isResizing = true;
-
-			var $boxes = $el.children(DIVIDED_BOXES_SELECTOR);
-			var controller = $el.data(DATA_DIVIDED_BOX_INSTANCE);
-
-			var stateList = $boxes.map(function(i, boxElem) {
-				var $box = $(boxElem);
-				var stateBoxController = $box.data(DATA_STATE_BOX_INSTANCE);
-				if (stateBoxController == null) {
-					return NORMAL_STATE;
-				}
-				return stateBoxController.getState();
-			});
-
-			controller.refresh();
-
-			var i, state;
-
-			var lastIndex = $boxes.length - 1;
-			var lastNormalIndex = null;
-
-			// 一番最後の normal を探す
-			for (i = lastIndex; 0 <= i; i--) {
-				state = stateList[i];
-				if (state === NORMAL_STATE) {
-					lastNormalIndex = i;
-					break;
-				}
-			}
-
-			// normal がなかったら最後一個前を normal 扱いにする
-			if (lastNormalIndex == null) {
-				lastNormalIndex = lastIndex - 1;
-			}
-
-			// lastNormalIndex より後は下（右）方向に fitToContents
-			for (i = lastIndex; lastNormalIndex < i; i--) {
-				controller.fitToContents(i, {
-					partition: 1
-				});
-			}
-
-			// lastNormalIndex より前の min を上（左）方向に fitToContents
-			for (i = 0; i < lastNormalIndex; i++) {
-				state = stateList[i];
-				if (state === MIN_STATE) {
-					controller.fitToContents(i, {
-						partition: 0
-					});
-				}
-			}
-
-
-			var selector = '.' + CLASS_DIVIDEDBOX;
-
-			$el.find(selector).each(this.own(function(i, child) {
-				var $child = $(child);
-				if (!$child.parent().closest(selector).is($el)) {
-					return;
-				}
-
-				if ($child.is(':hidden')) {
-					return;
-				}
-
-				this._resizeDividedBoxContents($child);
-			}));
-
-			if (!inLoop) {
-				this._refreshGrid();
-				this._isResizing = false;
-			}
-		},
-
-		_getLayoutData: function() {
-			var layoutData = [];
-
-			var $dividedBoxes = this.$find('.dividedBox');
-			$dividedBoxes.each(function(i, dividedBox) {
-				var $dividedBox = $(dividedBox);
-				var isVertical = $dividedBox.hasClass('vertical');
-				var sizeMethod = isVertical ? 'outerHeight' : 'outerWidth';
-
-				var dividedBoxData = [];
-
-				$dividedBox.children(DIVIDED_BOXES_SELECTOR).each(function(j, box) {
-					var $box = $(box);
-					var size = $box[sizeMethod]();
-
-					var boxData = {};
-
-					var stateBoxController = $box.data(DATA_STATE_BOX_INSTANCE);
-					if (stateBoxController == null) {
-						boxData.size = size;
-					} else if (stateBoxController.getState() === MIN_STATE) {
-						boxData.state = MIN_STATE;
-						boxData.normalStateSize = $box.data(NORMAL_STATE_SIZE_DATA_NAME);
-					} else {
-						boxData.state = NORMAL_STATE;
-						boxData.size = size;
-					}
-
-					dividedBoxData.push(boxData);
-				});
-
-				layoutData.push(dividedBoxData);
-			});
-
-			return layoutData;
+			$dividedBox.find('>.divider').eq(dummyDividerIndex).addClass('accordionDummyDivider');
 		}
+
+	// TODO 現在のレイアウト状態を取得する。取得したレイアウト状態から、現在のレイアウトを復元できるようにする。
+	//		_getLayoutData: function() {
+	//			var layoutData = [];
+	//
+	//			var $dividedBoxes = this.$find('.' + CLASS_DIVIDEDBOX);
+	//			$dividedBoxes.each(function(i, dividedBox) {
+	//				var $dividedBox = $(dividedBox);
+	//				var isVertical = $dividedBox.hasClass('vertical');
+	//				var sizeMethod = isVertical ? 'outerHeight' : 'outerWidth';
+	//
+	//				var dividedBoxData = [];
+	//
+	//				$dividedBox.children(DIVIDED_BOXES_SELECTOR).each(function(j, box) {
+	//					var $box = $(box);
+	//					var size = $box[sizeMethod]();
+	//
+	//					var boxData = {};
+	//
+	//					var stateBoxController = $box.data(DATA_STATE_BOX_INSTANCE);
+	//					if (stateBoxController == null) {
+	//						boxData.size = size;
+	//					} else if (stateBoxController.getState() === MIN_STATE) {
+	//						boxData.state = MIN_STATE;
+	//						boxData.normalStateSize = $box.data(NORMAL_STATE_SIZE_DATA_NAME);
+	//					} else {
+	//						boxData.state = NORMAL_STATE;
+	//						boxData.size = size;
+	//					}
+	//
+	//					dividedBoxData.push(boxData);
+	//				});
+	//
+	//				layoutData.push(dividedBoxData);
+	//			});
+	//
+	//			return layoutData;
+	//		}
 	};
 
 	// =========================================================================

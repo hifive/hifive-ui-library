@@ -67,41 +67,161 @@
 </style>
 <title></title>
 </head>
-<body>
-	<h1>サンプル</h1>
-	<h2>縦と横の入れ子</h2>
-	<div class="sampleWrapper">
-		<div class="dividedBox">
-			<div class="box panelBox" data-default-state="normal"
-				data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox" data-default-state="min"
-				data-box-name="ボックス２">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="dividedBox fill vertical autoSize">
+<body class="container">
+	<div class="row">
+		<h1>サンプル</h1>
+		<a href="../">AccodionPanelトップへ</a>
+		<h2>縦と横の入れ子</h2>
+		<div class="sampleWrapper">
+			<div class="dividedBox">
 				<div class="box panelBox" data-default-state="normal"
 					data-box-name="ボックス１">
 					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
 				</div>
 				<div class="box panelBox" data-default-state="min"
 					data-box-name="ボックス２">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="dividedBox fill vertical autoSize">
+					<div class="box panelBox" data-default-state="normal"
+						data-box-name="ボックス１">
+						<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+					</div>
+					<div class="box panelBox" data-default-state="min"
+						data-box-name="ボックス２">
+						<div class="contentWrapper">
+							<p>右上のボタンを押すと最小化/復元をすることができます</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>あ</p>
+							<p>一番下</p>
+						</div>
+					</div>
+					<div class="box panelBox autoSize" data-box-name="ボックス３">
+						<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<h2>縦積み</h2>
+		<div class="sampleWrapper">
+			<div class="dividedBox vertical autoSize">
+				<div class="box panelBox" data-default-state="normal"
+					data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox" data-default-state="normal"
+					data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox autoSize" data-box-name="ボックス３">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox autoSize" data-box-name="ボックス４">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+			</div>
+		</div>
+
+		<h2>横積み</h2>
+		<div class="sampleWrapper">
+			<div class="dividedBox autoSize">
+				<div class="box panelBox autoSize" data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox autoSize" data-box-name="ボックス２">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox autoSize" data-box-name="ボックス３">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box panelBox autoSize" data-box-name="ボックス４">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+			</div>
+		</div>
+
+		<h2>サイズ変更方向指定</h2>
+		<h3>forward指定とbackward指定</h3>
+		<p>
+			<code>data-change-state=forward=&quot;backward&quot;</code>
+			を指定すると、最小化/復元の時に前方向(縦済みなら上、横積みなら左)のdividerが動きます
+		</p>
+		<p>ただし最初のボックスや最後のボックス、前のボックスが全て最小化されている場合など、動ける方向が決まってる場合は指定した方向は無視されます。</p>
+		<div class="sampleWrapper">
+			<div class="dividedBox">
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="forward" data-box-name="ボックス１">
 					<div class="contentWrapper">
-						<p>右上のボタンを押すと最小化/復元をすることができます</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>あ</p>
-						<p>一番下</p>
+						<p>forward指定</p>
+						<p>最小化・復元で、右側のdividerが動きます</p>
+					</div>
+				</div>
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="forward" data-box-name="ボックス２">
+					<div class="contentWrapper">
+						<p>forward指定</p>
+						<p>最小化・復元で、右側のdividerが動きます</p>
+					</div>
+				</div>
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="backward" data-box-name="ボックス３">
+					<div class="contentWrapper">
+						<p>backward指定</p>
+						<p>最小化・復元で、左側のdividerが動きます</p>
+					</div>
+				</div>
+				<div class="box panelBox autoSize"
+					data-state-change-direction="backward" data-box-name="ボックス４">
+					<div class="contentWrapper">
+						<p>backward指定</p>
+						<p>最小化・復元で、左側のdividerが動きます</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<h3>全てbackward指定</h3>
+		<div class="sampleWrapper">
+			<div class="dividedBox">
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="backward" data-box-name="ボックス１">
+					<div class="contentWrapper">左端のボックスなので右側のdividerが動きます</div>
+				</div>
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="backward" data-box-name="ボックス２">
+					<div class="contentWrapper">最小化・復元で、左側のdividerが動きます</div>
+				</div>
+				<div class="box panelBox autoSize" data-default-state="normal"
+					data-state-change-direction="backward" data-box-name="ボックス３">
+					<div class="contentWrapper">最小化・復元で、左側のdividerが動きます</div>
+				</div>
+				<div class="box panelBox autoSize"
+					data-state-change-direction="backward" data-box-name="ボックス４">
+					<div class="contentWrapper">右端のボックスなので左側のdividerが動きます</div>
+				</div>
+			</div>
+		</div>
+
+		<h2>縦積み(通常のボックスと混在)</h2>
+		<div class="sampleWrapper">
+			<div class="dividedBox fill vertical autoSize">
+				<div class="box panelBox" data-default-state="normal"
+					data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
+				</div>
+				<div class="box" data-default-state="min" data-box-name="ボックス２">
+					<div class="contentWrapper">
+						<p>通常のボックスも混在できます</p>
 					</div>
 				</div>
 				<div class="box panelBox autoSize" data-box-name="ボックス３">
@@ -109,139 +229,22 @@
 				</div>
 			</div>
 		</div>
-	</div>
 
-	<h2>縦積み</h2>
-	<div class="sampleWrapper">
-		<div class="dividedBox vertical autoSize">
-			<div class="box panelBox" data-default-state="normal"
-				data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox" data-default-state="normal"
-				data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス３">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス４">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-		</div>
-	</div>
-
-	<h2>横積み</h2>
-	<div class="sampleWrapper">
-		<div class="dividedBox autoSize">
-			<div class="box panelBox autoSize" data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス２">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス３">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス４">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-		</div>
-	</div>
-
-	<h2>サイズ変更方向指定</h2>
-	<h3>forward指定とbackward指定</h3>
-	<p>
-		<code>data-change-state=forward=&quot;backward&quot;</code>
-		を指定すると、最小化/復元の時に前方向(縦済みなら上、横積みなら左)のdividerが動きます
-	</p>
-	<p>ただし最初のボックスや最後のボックス、前のボックスが全て最小化されている場合など、動ける方向が決まってる場合は指定した方向は無視されます。</p>
-	<div class="sampleWrapper">
-		<div class="dividedBox">
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="forward" data-box-name="ボックス１">
-				<div class="contentWrapper">
-					<p>forward指定</p>
-					<p>最小化・復元で、左側のdividerが動きます</p>
+		<h2>横積み(通常のボックスと混在)</h2>
+		<div class="sampleWrapper">
+			<div class="dividedBox fill autoSize">
+				<div class="box panelBox" data-default-state="normal"
+					data-box-name="ボックス１">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
 				</div>
-			</div>
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="forward" data-box-name="ボックス２">
-				<div class="contentWrapper">
-					<p>forward指定</p>
-					<p>最小化・復元で、左側のdividerが動きます</p>
+				<div class="box" data-default-state="min" data-box-name="ボックス２">
+					<div class="contentWrapper">
+						<p>通常のボックスも混在できます</p>
+					</div>
 				</div>
-			</div>
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="backward" data-box-name="ボックス３">
-				<div class="contentWrapper">
-					<p>backward指定</p>
-					<p>最小化・復元で、右側のdividerが動きます</p>
+				<div class="box panelBox autoSize" data-box-name="ボックス３">
+					<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
 				</div>
-			</div>
-			<div class="box panelBox autoSize"
-				data-state-change-direction="backward" data-box-name="ボックス４">
-				<div class="contentWrapper">
-					<p>backward指定</p>
-					<p>最小化・復元で、右側のdividerが動きます</p>
-				</div>
-			</div>
-		</div>
-	</div>
-	<h3>全てbackward指定</h3>
-	<div class="sampleWrapper">
-		<div class="dividedBox">
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="backward" data-box-name="ボックス１">
-				<div class="contentWrapper">左端のボックスなので右側のdividerが動きます</div>
-			</div>
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="backward" data-box-name="ボックス２">
-				<div class="contentWrapper">最小化・復元で、左側のdividerが動きます</div>
-			</div>
-			<div class="box panelBox autoSize" data-default-state="normal"
-				data-state-change-direction="backward" data-box-name="ボックス３">
-				<div class="contentWrapper">最小化・復元で、左側のdividerが動きます</div>
-			</div>
-			<div class="box panelBox autoSize"
-				data-state-change-direction="backward" data-box-name="ボックス４">
-				<div class="contentWrapper">右端のボックスなので左側のdividerが動きます</div>
-			</div>
-		</div>
-	</div>
-
-	<h2>縦積み(通常のボックスと混在)</h2>
-	<div class="sampleWrapper">
-		<div class="dividedBox fill vertical autoSize">
-			<div class="box panelBox" data-default-state="normal"
-				data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box" data-default-state="min" data-box-name="ボックス２">
-				<div class="contentWrapper">
-					<p>通常のボックスも混在できます</p>
-				</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス３">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-		</div>
-	</div>
-
-	<h2>横積み(通常のボックスと混在)</h2>
-	<div class="sampleWrapper">
-		<div class="dividedBox fill autoSize">
-			<div class="box panelBox" data-default-state="normal"
-				data-box-name="ボックス１">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
-			</div>
-			<div class="box" data-default-state="min" data-box-name="ボックス２">
-				<div class="contentWrapper">
-					<p>通常のボックスも混在できます</p>
-				</div>
-			</div>
-			<div class="box panelBox autoSize" data-box-name="ボックス３">
-				<div class="contentWrapper">右上のボタンを押すと最小化/復元をすることができます</div>
 			</div>
 		</div>
 	</div>

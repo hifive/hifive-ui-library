@@ -22,10 +22,6 @@
 	display: none;
 }
 
-.dividedBox>.panelBox {
-	position: relative;
-}
-
 .dividedBox.horizontal>.panelBox {
 	height: 100%;
 }
