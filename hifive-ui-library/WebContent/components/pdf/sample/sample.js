@@ -77,7 +77,7 @@
 		 */
 		'.zoom-minus click': function() {
 			this.pdfController.zoom(-0.1);
-		},
+		}
 	};
 	h5.core.expose(controller);
 })();
