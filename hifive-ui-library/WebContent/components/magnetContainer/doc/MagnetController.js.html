@@ -1,4 +1,47 @@
-/*
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: MagnetController.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+
+    <script src="scripts/jquery.js"> </script>
+    <script src="scripts/extension.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+</head>
+
+<body>
+<div id="container">
+	<nav>
+		<div class="module-search-header">
+			<div class="h5-searchBox">
+				<input type="text" placeholder="Search...">
+				<button class="clear">×</button>
+			</div>
+		</div>
+		<div class="module-nav show"><a href="" class="show-modules">一覧</a></div>
+		<div class="module-nav hide"><a href="" class="hide-modules">一覧</a></div>
+		<div class="module-list-wrapper hidden-mobile">
+		    <h3>Classes</h3><ul><li><a href="h5.ui.components.MagnetContainer.MagnetController.html">h5.ui.components.MagnetContainer.MagnetController</a></li></ul>
+	    </div>
+	</nav>
+	<div id="main">
+	    <h1 class="page-title">Source: MagnetController.js</h1>
+	    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
  * Copyright (C) 2012-2014 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,9 +72,9 @@
 
 	/**
 	 * くっつく場所の定数
-	 * <p>
+	 * &lt;p>
 	 * マグネットコンテナが上げる引数に使用される、要素がくっついた時の位置を表す定数を格納するオブジェクト。
-	 * </p>
+	 * &lt;/p>
 	 *
 	 * @type {Object}
 	 */
@@ -46,100 +89,100 @@
 
 	/**
 	 * 要素のトラック移動及び、要素同士が近づいたら磁石のようにくっつくような挙動をさせるコンポーネント
-	 * <p>
+	 * &lt;p>
 	 * このコントローラのバインド対象要素の子要素をマグネット要素として扱い、マグネット要素をトラック移動可能にします。さらに、マグネット要素同士が近づいた時に磁石のようにくっつく挙動をするようになります。
-	 * </p>
-	 * <p>
-	 * 使用方法は<a href="../">マグネットコンテナ</a>を参照してください。
-	 * </p>
-	 * <p>
-	 * <a href="../sample">動作サンプルはこちら</a>
-	 * </p>
-	 * <p>
+	 * &lt;/p>
+	 * &lt;p>
+	 * 使用方法は&lt;a href="../">マグネットコンテナ&lt;/a>を参照してください。
+	 * &lt;/p>
+	 * &lt;p>
+	 * &lt;a href="../sample">動作サンプルはこちら&lt;/a>
+	 * &lt;/p>
+	 * &lt;p>
 	 * このコントローラをバインドすると、マグネット要素操作時に以下のイベントがあがるようになります
-	 * </p>
-	 * <dl>
-	 * <dt>magnet</dt>
-	 * <dd>マグネット要素同士がくっついた時に上げるイベント。</dd>
-	 * <dd>トラック移動したマグネット要素ではなく、トラック移動した要素がくっついた要素から上がるイベントです。</dd>
-	 * <dd>magnetイベント引数には以下のようなオブジェクトが渡されます。</dd>
-	 * <dd>
+	 * &lt;/p>
+	 * &lt;dl>
+	 * &lt;dt>magnet&lt;/dt>
+	 * &lt;dd>マグネット要素同士がくっついた時に上げるイベント。&lt;/dd>
+	 * &lt;dd>トラック移動したマグネット要素ではなく、トラック移動した要素がくっついた要素から上がるイベントです。&lt;/dd>
+	 * &lt;dd>magnetイベント引数には以下のようなオブジェクトが渡されます。&lt;/dd>
+	 * &lt;dd>
 	 *
-	 * <pre class="javascript_sh"><code>
+	 * &lt;pre class="javascript_sh">&lt;code>
 	 * {
 	 * 	$target: $target, // 移動させた要素(jQueryオブジェクト)
 	 * 	$group: $group, // くっついた要素を含む、その要素とつながっている要素(jQueryオブジェクト)
 	 * 	MAGNET_PLACE: MAGNET_PLACE // 要素のくっついた位置を表す定数
 	 * 	place: place, // 移動させた要素がくっついた要素から見て、移動した要素がくっついた位置を表したMAGNET_PLACEに定義されている数値
 	 * }
-	 * </code></pre>
+	 * &lt;/code>&lt;/pre>
 	 *
-	 * <dd>MAGNET_PLACEは以下のような定数を保持しています。</dd>
-	 * <dd><table><thead>
-	 * <tr>
-	 * <th>プロパティ名</th>
-	 * <th>値</th>
-	 * <th>意味</th>
-	 * </tr>
-	 * </thead><tbody>
-	 * <tr>
-	 * <th>NONE</th>
-	 * <td>0</td>
-	 * <td>どこにもくっついていない状態</td>
-	 * </tr>
-	 * <tr>
-	 * <th>TOP</th>
-	 * <td>1</td>
-	 * <td>上部にくっついた</td>
-	 * </tr>
-	 * <tr>
-	 * <th>RIGHT</th>
-	 * <td>2</td>
-	 * <td>右にくっついた</td>
-	 * </tr>
-	 * <tr>
-	 * <th>BOTTOM</th>
-	 * <td>3</td>
-	 * <td>下にくっついた</td>
-	 * </tr>
-	 * <tr>
-	 * <th>LEFT</th>
-	 * <td>4</td>
-	 * <td>左にくっついた</td>
-	 * </tr>
-	 * <tr>
-	 * <th>PILED</th>
-	 * <td>5</td>
-	 * <td>重なった</td>
-	 * </tr>
-	 * </table></dd>
-	 * <dt>unmagnet</dt>
-	 * <dd>くっついているコンテナがトラック移動で剥がされた時に、トラック移動したマグネット要素からunmagnetイベントが上がります。</dd>
-	 * <dd>イベント引数はありません。</dd>
-	 * <dt>piled</dt>
-	 * <dd>マグネット要素を移動して、他のマグネット要素と重なった時に上がるイベントです。</dd>
-	 * <dd>トラック移動したマグネット要素から上がります。</dd>
-	 * <dd>イベント引数は以下のようなオブジェクトです。</dd>
-	 * <dd>
+	 * &lt;dd>MAGNET_PLACEは以下のような定数を保持しています。&lt;/dd>
+	 * &lt;dd>&lt;table>&lt;thead>
+	 * &lt;tr>
+	 * &lt;th>プロパティ名&lt;/th>
+	 * &lt;th>値&lt;/th>
+	 * &lt;th>意味&lt;/th>
+	 * &lt;/tr>
+	 * &lt;/thead>&lt;tbody>
+	 * &lt;tr>
+	 * &lt;th>NONE&lt;/th>
+	 * &lt;td>0&lt;/td>
+	 * &lt;td>どこにもくっついていない状態&lt;/td>
+	 * &lt;/tr>
+	 * &lt;tr>
+	 * &lt;th>TOP&lt;/th>
+	 * &lt;td>1&lt;/td>
+	 * &lt;td>上部にくっついた&lt;/td>
+	 * &lt;/tr>
+	 * &lt;tr>
+	 * &lt;th>RIGHT&lt;/th>
+	 * &lt;td>2&lt;/td>
+	 * &lt;td>右にくっついた&lt;/td>
+	 * &lt;/tr>
+	 * &lt;tr>
+	 * &lt;th>BOTTOM&lt;/th>
+	 * &lt;td>3&lt;/td>
+	 * &lt;td>下にくっついた&lt;/td>
+	 * &lt;/tr>
+	 * &lt;tr>
+	 * &lt;th>LEFT&lt;/th>
+	 * &lt;td>4&lt;/td>
+	 * &lt;td>左にくっついた&lt;/td>
+	 * &lt;/tr>
+	 * &lt;tr>
+	 * &lt;th>PILED&lt;/th>
+	 * &lt;td>5&lt;/td>
+	 * &lt;td>重なった&lt;/td>
+	 * &lt;/tr>
+	 * &lt;/table>&lt;/dd>
+	 * &lt;dt>unmagnet&lt;/dt>
+	 * &lt;dd>くっついているコンテナがトラック移動で剥がされた時に、トラック移動したマグネット要素からunmagnetイベントが上がります。&lt;/dd>
+	 * &lt;dd>イベント引数はありません。&lt;/dd>
+	 * &lt;dt>piled&lt;/dt>
+	 * &lt;dd>マグネット要素を移動して、他のマグネット要素と重なった時に上がるイベントです。&lt;/dd>
+	 * &lt;dd>トラック移動したマグネット要素から上がります。&lt;/dd>
+	 * &lt;dd>イベント引数は以下のようなオブジェクトです。&lt;/dd>
+	 * &lt;dd>
 	 *
-	 * <pre class="javascript_sh"><code>
+	 * &lt;pre class="javascript_sh">&lt;code>
 	 * {
 	 * 	$target: $target, // 移動させた要素(jQueryオブジェクト)
 	 * 	$piled: $piled, // 移動させた要素と重なった要素(jQueryオブジェクト)
 	 * }
-	 * </code></pre>
+	 * &lt;/code>&lt;/pre>
 	 *
-	 * </dd>
-	 * <dt>h5mag-trackstart</dt>
-	 * <dd>マグネット要素のトラック移動が開始された時に、その要素からh5mag-trackstartイベントが上がります。</dd>
-	 * <dd>イベント引数には、元のh5trackstartイベントオブジェクトが渡されます</dd>
-	 * <dt>h5mag-trackmove</dt>
-	 * <dd>マグネット要素のトラック移動時に、その要素からh5mag-trackmoveイベントが上がります。</dd>
-	 * <dd>イベント引数には、元のh5trackmoveイベントオブジェクトが渡されます</dd>
-	 * <dt>h5mag-trackend</dt>
-	 * <dd>マグネット要素のトラック移動終了時に、その要素からh5mag-trackendイベントが上がります。</dd>
-	 * <dd>イベント引数には、元のh5trackendイベントオブジェクトが渡されます</dd>
-	 * </dl>
+	 * &lt;/dd>
+	 * &lt;dt>h5mag-trackstart&lt;/dt>
+	 * &lt;dd>マグネット要素のトラック移動が開始された時に、その要素からh5mag-trackstartイベントが上がります。&lt;/dd>
+	 * &lt;dd>イベント引数には、元のh5trackstartイベントオブジェクトが渡されます&lt;/dd>
+	 * &lt;dt>h5mag-trackmove&lt;/dt>
+	 * &lt;dd>マグネット要素のトラック移動時に、その要素からh5mag-trackmoveイベントが上がります。&lt;/dd>
+	 * &lt;dd>イベント引数には、元のh5trackmoveイベントオブジェクトが渡されます&lt;/dd>
+	 * &lt;dt>h5mag-trackend&lt;/dt>
+	 * &lt;dd>マグネット要素のトラック移動終了時に、その要素からh5mag-trackendイベントが上がります。&lt;/dd>
+	 * &lt;dd>イベント引数には、元のh5trackendイベントオブジェクトが渡されます&lt;/dd>
+	 * &lt;/dl>
 	 *
 	 * @class
 	 * @name h5.ui.components.MagnetContainer.MagnetController
@@ -147,21 +190,21 @@
 	var controller = {
 		/**
 		 * マグネットコンテナの設定オブジェクト
-		 * <p>
+		 * &lt;p>
 		 * 以下のプロパティが設定可能です。
-		 * </p>
-		 * <dl>
-		 * <dt>ignorePattern</dt>
-		 * <dd>string|DOM|jQuery
-		 * <dd>マグネットコンテナの制御対象外にする要素。セレクタもDOM要素も指定可能です。jQuery.is()で判定します。デフォルトnull。</dd>
-		 * <dt>replaceMode</dt>
-		 * <dd>boolean</dd>
-		 * <dd>コンテナ同士がくっついている箇所に別のコンテナを重なるように移動した時、重なったコンテナ同士の位置の入れ替えを行うかどうか。デフォルトはfalseです。</dd>
-		 * <dt>pileMode</dt>
-		 * <dd>boolean</dd>
-		 * <dd>コンテナ同士がくっついている箇所に別のコンテナを重なるように移動した時、移動したコンテナを同じ個所にくっつけるかどうか。デフォルトはtrueです。</dd>
-		 * <dd>pipeModeをtrueに設定した場合は、replaceModeの設定は無視されて、pipeModeの設定が優先されます。</dd>
-		 * </dl>
+		 * &lt;/p>
+		 * &lt;dl>
+		 * &lt;dt>ignorePattern&lt;/dt>
+		 * &lt;dd>string|DOM|jQuery
+		 * &lt;dd>マグネットコンテナの制御対象外にする要素。セレクタもDOM要素も指定可能です。jQuery.is()で判定します。デフォルトnull。&lt;/dd>
+		 * &lt;dt>replaceMode&lt;/dt>
+		 * &lt;dd>boolean&lt;/dd>
+		 * &lt;dd>コンテナ同士がくっついている箇所に別のコンテナを重なるように移動した時、重なったコンテナ同士の位置の入れ替えを行うかどうか。デフォルトはfalseです。&lt;/dd>
+		 * &lt;dt>pileMode&lt;/dt>
+		 * &lt;dd>boolean&lt;/dd>
+		 * &lt;dd>コンテナ同士がくっついている箇所に別のコンテナを重なるように移動した時、移動したコンテナを同じ個所にくっつけるかどうか。デフォルトはtrueです。&lt;/dd>
+		 * &lt;dd>pipeModeをtrueに設定した場合は、replaceModeの設定は無視されて、pipeModeの設定が優先されます。&lt;/dd>
+		 * &lt;/dl>
 		 *
 		 * @memberOf h5.ui.components.MagnetContainer.MagnetController
 		 * @type {Object}
@@ -217,7 +260,7 @@
 		__ready: function(context) {
 			// rootElement直下の要素であっても、コンテナとして扱わない要素(selectorやDOMなど$().isで判定できるもの)を登録
 			// (context.evArgで渡した場合はここで設定するが、バインド済みのコントローラに設定してもよい)
-			if (context.evArg && context.evArg.ignorePattern) {
+			if (context.evArg &amp;&amp; context.evArg.ignorePattern) {
 				this.ignorePattern = context.evArg.ignorePattern;
 			}
 		},
@@ -234,7 +277,7 @@
 			if ($target.hasClass('h5mag-groupContainer') || $target.is(this.ignorePattern)) {
 				return;
 			}
-			var isTrigger = context.evArg && context.evArg.triggerForGroupCheck;
+			var isTrigger = context.evArg &amp;&amp; context.evArg.triggerForGroupCheck;
 			var event = context.event;
 			event.preventDefault();
 			event.stopPropagation();
@@ -313,7 +356,7 @@
 			event.preventDefault();
 			event.stopPropagation();
 
-			var isTrigger = context.evArg && context.evArg.triggerForGroupCheck;
+			var isTrigger = context.evArg &amp;&amp; context.evArg.triggerForGroupCheck;
 			// トリガされたものじゃないならイベントを上げる
 			if (!isTrigger) {
 				$target.trigger('h5mag-trackmove', event);
@@ -357,7 +400,7 @@
 
 					// 既にその場所にくっついているものがあったら、場所を移動
 					var $already = result.$already;
-					if ($already && this.config.replaceMode) {
+					if ($already &amp;&amp; this.config.replaceMode) {
 						var originalPos = dragInfo.originalPos;
 						$already.css({
 							top: originalPos.top,
@@ -382,7 +425,7 @@
 							$already.trigger('h5trackend', evArg);
 						}
 						// キャッシュした位置情報の再計算
-						for (var i = 0, l = containerMapList.length; i < l; i++) {
+						for (var i = 0, l = containerMapList.length; i &lt; l; i++) {
 							var $container = containerMapList[i].$container;
 							if ($container.is($already)) {
 								var map = containerMapList[i];
@@ -456,7 +499,7 @@
 			var dragInfo = $target.data('h5mag-draginfo');
 			$target.data('h5mag-draginfo', null);
 
-			var isTrigger = context.evArg && context.evArg.triggerForGroupCheck;
+			var isTrigger = context.evArg &amp;&amp; context.evArg.triggerForGroupCheck;
 
 			if (!dragInfo.isMoved) {
 				// 動いていないなら何もしない
@@ -467,7 +510,7 @@
 			// (入れ替え時に作られたグループで$targetが属してしまった場合)
 			this._removeMagnetGroup($target.attr('data-h5mag-group-id'));
 
-			if (dragInfo && dragInfo.isMagnetting) {
+			if (dragInfo &amp;&amp; dragInfo.isMagnetting) {
 				// くっついた方向にくっついたコンテナを覚えさせておく
 				var $attachContainers = null;
 				var magnetResult = dragInfo.magnetResult;
@@ -484,7 +527,7 @@
 						});
 					}
 				} else {
-					for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.PILED; place <= l; place++) {
+					for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.PILED; place &lt;= l; place++) {
 						var $adj = magnetResult[place];
 						if ($adj) {
 							$attachContainers = $attachContainers ? $attachContainers.add($adj)
@@ -504,7 +547,7 @@
 							.done(
 									function() {
 										// アニメーションが終わってからくっついたイベントを上げる
-										for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place <= l; place++) {
+										for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place &lt;= l; place++) {
 											var $adj = magnetResult[place];
 											if ($adj) {
 												$adj.trigger('magnet', {
@@ -649,7 +692,7 @@
 				count: 0
 			};
 			var detectionDist = MAGNET_DIST;
-			for (var i = 0, l = containerMapList.length; i < l; i++) {
+			for (var i = 0, l = containerMapList.length; i &lt; l; i++) {
 				var $container = containerMapList[i].$container;
 				var map = containerMapList[i];
 
@@ -660,7 +703,7 @@
 
 				var place = MAGNET_PLACE.NONE;
 
-				if (Math.abs(dx) <= detectionDist && Math.abs(dy) <= detectionDist) {
+				if (Math.abs(dx) &lt;= detectionDist &amp;&amp; Math.abs(dy) &lt;= detectionDist) {
 					// 重なった場合
 					// $targetと同じ位置にくっつく
 					place = MAGNET_PLACE.PILED;
@@ -670,9 +713,9 @@
 							y: dy
 						};
 					}
-				} else if (Math.abs(dx) <= detectionDist) {
+				} else if (Math.abs(dx) &lt;= detectionDist) {
 					// 縦にくっつくかどうかの判定
-					if (dy < 0 && Math.abs(map.height + dy) <= detectionDist) {
+					if (dy &lt; 0 &amp;&amp; Math.abs(map.height + dy) &lt;= detectionDist) {
 						// $targetの上と$containerの下がくっつく
 						place = MAGNET_PLACE.TOP;
 						if (!ret.dist) {
@@ -681,7 +724,7 @@
 								y: map.height + dy
 							};
 						}
-					} else if (dy >= 0 && Math.abs(dy - $target.height()) <= detectionDist) {
+					} else if (dy >= 0 &amp;&amp; Math.abs(dy - $target.height()) &lt;= detectionDist) {
 						// $targetの下と$containerの上がくっつく
 						place = MAGNET_PLACE.BOTTOM;
 						if (!ret.dist) {
@@ -691,9 +734,9 @@
 							};
 						}
 					}
-				} else if (Math.abs(dy) <= detectionDist) {
+				} else if (Math.abs(dy) &lt;= detectionDist) {
 					// 横にくっつくかどうかの判定
-					if (dx < 0 && Math.abs(map.width + dx) <= detectionDist) {
+					if (dx &lt; 0 &amp;&amp; Math.abs(map.width + dx) &lt;= detectionDist) {
 						// $targetの左と$containerの右がくっつく
 						place = MAGNET_PLACE.LEFT;
 						if (!ret.dist) {
@@ -702,7 +745,7 @@
 								y: dy
 							};
 						}
-					} else if (dx >= 0 && Math.abs(dx - $target.width()) <= detectionDist) {
+					} else if (dx >= 0 &amp;&amp; Math.abs(dx - $target.width()) &lt;= detectionDist) {
 						// $targetの右と$containerの左がくっつく
 						place = MAGNET_PLACE.RIGHT;
 						if (!ret.dist) {
@@ -716,14 +759,14 @@
 				if (place) {
 					// 既にその場所にくっついている要素を取得
 					// 重ねる時は、いくつでも重なっていいのでこの判定はしない(重ねるモードの時は入れ替えも起きない)
-					if (!ret.$already && !this.config.pileMode) {
+					if (!ret.$already &amp;&amp; !this.config.pileMode) {
 						var $already = $container.data('h5mag-adj-' + ((place + 1) % 4 + 1));
-						if ($already && $already[0] !== $target[0]) {
+						if ($already &amp;&amp; $already[0] !== $target[0]) {
 							ret.$already = $already;
 						}
 					}
 
-					if (ret.$already && !this.config.replaceMode) {
+					if (ret.$already &amp;&amp; !this.config.replaceMode) {
 						// 既にその場にくっついている要素がある場合で入れ替えモードでない場合は、そこにはくっつかない。
 						// (入れ替えモードでない場合は既にある場所とはくっつかない)
 						continue;
@@ -754,10 +797,10 @@
 		_enumerate: function($target) {
 			var $groupElements = null;
 			function enumerate($elm) {
-				for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place <= l; place++) {
+				for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place &lt;= l; place++) {
 					var $adj = $elm.data('h5mag-adj-' + place);
 					if ($adj) {
-						if ($groupElements && $groupElements.filter($adj).length) {
+						if ($groupElements &amp;&amp; $groupElements.filter($adj).length) {
 							continue;
 						}
 						$groupElements = $groupElements ? $groupElements.add($adj) : $adj;
@@ -796,11 +839,11 @@
 					}
 
 					var groupId = $this.attr('data-h5mag-group-id');
-					if (groupId && $.inArray(groupId, oldGroupIds) !== -1) {
+					if (groupId &amp;&amp; $.inArray(groupId, oldGroupIds) !== -1) {
 						oldGroupIds.push(groupId);
 					}
 				});
-				for (var i = 0, l = oldGroupIds.length; i < l; i++) {
+				for (var i = 0, l = oldGroupIds.length; i &lt; l; i++) {
 					this._removeMagnetGroup(oldGroupIds[i]);
 				}
 			}
@@ -852,7 +895,7 @@
 
 			var $adjs = null;
 			// 隣接コンテナ情報の削除
-			for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place <= l; place++) {
+			for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place &lt;= l; place++) {
 				var $adj = $target.data('h5mag-adj-' + place);
 				if (!$adj) {
 					continue;
@@ -889,7 +932,7 @@
 		 * @param groupId
 		 */
 		_addGroupWrap: function(top, left, groupId, rect, layer) {
-			var $wrap = $('<div></div>');
+			var $wrap = $('&lt;div>&lt;/div>');
 			$wrap.attr('data-h5mag-group-id', groupId);
 			$wrap.addClass('h5mag-groupContainer');
 			$wrap.addClass('h5mag-groupWrap');
@@ -905,7 +948,7 @@
 			});
 			$(this.rootElement).append($wrap);
 
-			var $handle = $('<div></div>');
+			var $handle = $('&lt;div>&lt;/div>');
 			$handle.attr('data-h5mag-group-id', groupId);
 			$handle.addClass('h5mag-groupContainer');
 			$handle.addClass('h5mag-groupHandle');
@@ -962,9 +1005,9 @@
 			var $next = null;
 			$target.each(function() {
 				var $this = $(this);
-				for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place <= l; place++) {
+				for (var place = MAGNET_PLACE.TOP, l = MAGNET_PLACE.LEFT; place &lt;= l; place++) {
 					var $adj = $this.data('h5mag-adj-' + place);
-					if ($animated && $animated.filter($adj).length || $target.filter($adj).length) {
+					if ($animated &amp;&amp; $animated.filter($adj).length || $target.filter($adj).length) {
 						// 既にアニメーション済みの要素だったら何もしない
 						continue;
 					}
@@ -1039,4 +1082,23 @@
 	};
 
 	h5.core.expose(controller);
-})();
+})();</code></pre>
+        </article>
+    </section>
+
+
+
+
+	</div>
+
+	<br class="clear">
+
+	<footer>
+	    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Mon Dec 21 2015 11:20:46 GMT+0900 (JST)
+	</footer>
+</div>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
