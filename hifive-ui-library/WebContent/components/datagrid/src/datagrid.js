@@ -2520,14 +2520,14 @@
 				$wrap.css({
 					height: '100%',
 					width: width - 4,
-					float: 'left'
+					'float': 'left'
 				});
 
 				var $resizableBar = $('<div></div>');
 
 				$resizableBar.addClass(RESIZABLE_BAR_CLASS).css({
 					cursor: 'col-resize',
-					float: 'right',
+					'float': 'right',
 					height: '100%',
 					width: 4
 				});
@@ -3439,7 +3439,7 @@
 		 * </ul>
 		 * </dd>
 		 * </dl>
-		 * 
+		 *
 		 * @param {object} initParams 初期化パラメータ
 		 * @return {Promise} 初期化完了を表す Promise オブジェクト
 		 */
@@ -3946,7 +3946,7 @@
 		 * </ul>
 		 * </dd>
 		 * </dl>
-		 * 
+		 *
 		 * @param {object} initParams 初期化パラメータ
 		 * @return {Promise} 初期化完了を表す Promise オブジェクト
 		 */
@@ -3971,7 +3971,7 @@
 
 		/**
 		 * 行を選択します。
-		 * 
+		 *
 		 * @param {*} dataId 選択したい行の dataId
 		 */
 		selectData: function(dataId) {
@@ -3994,7 +3994,7 @@
 
 		/**
 		 * 行の選択を解除します。
-		 * 
+		 *
 		 * @param {*} dataId 選択を解除したい行の dataId
 		 */
 		unselectData: function(dataId) {
@@ -4014,7 +4014,7 @@
 
 		/**
 		 * 行の選択状態を取得します。
-		 * 
+		 *
 		 * @return {boolean} 選択されていれば true、そうでなければ false
 		 */
 		isSelectedData: function(dataId) {
@@ -4027,7 +4027,7 @@
 
 		/**
 		 * 選択されているすべての行の dataId を取得します。
-		 * 
+		 *
 		 * @return {Array.<*>} 選択されているすべての行の dataId の配列
 		 */
 		getSelectedDataIds: function() {
@@ -4036,7 +4036,7 @@
 
 		/**
 		 * ページを移動します。
-		 * 
+		 *
 		 * @param {number} pageNumber 移動先のページ番号
 		 */
 		movePage: function(pageNumber) {
@@ -4065,7 +4065,7 @@
 
 		/**
 		 * 現在のページ番号を取得します。
-		 * 
+		 *
 		 * @return {number} 現在のページ番号
 		 */
 		getCurrentPage: function() {
@@ -4078,7 +4078,7 @@
 
 		/**
 		 * ソートします。
-		 * 
+		 *
 		 * @param {string=} propertyName ソートするプロパティ名（指定しなかった場合はソートの解除）
 		 * @param {boolean=} [isDesc=false] ソート順が降順であるか否か（降順の場合 true、デフォルトは false）
 		 */
@@ -4121,7 +4121,7 @@
 
 		/**
 		 * リクエストデータを変更します。
-		 * 
+		 *
 		 * @param {object} requestData リクエストデータ
 		 */
 		changeRequestData: function(requestData) {
@@ -4135,7 +4135,7 @@
 
 		/**
 		 * 列の幅を変更します。
-		 * 
+		 *
 		 * @param {string} widthKey 変更したい列の widthKey
 		 * @param {number} width 列幅
 		 */
@@ -4145,7 +4145,7 @@
 
 		/**
 		 * rowId からデータオブジェクトを取得します。 キャッシュされていない rowId を指定すると例外を投げます。
-		 * 
+		 *
 		 * @param {number} rowId 行ID
 		 */
 		getCachedData: function(rowId) {
@@ -4631,7 +4631,7 @@
 		 * </ul>
 		 * </dd>
 		 * </dl>
-		 * 
+		 *
 		 * @param {object} initParams 初期化パラメータ
 		 * @return {Promise} 初期化完了を表す Promise オブジェクト
 		 */
@@ -4656,7 +4656,7 @@
 
 		/**
 		 * 行を選択します。
-		 * 
+		 *
 		 * @param {*} dataId 選択したい行の dataId
 		 */
 		selectData: function(dataId) {
@@ -4679,7 +4679,7 @@
 
 		/**
 		 * 行の選択を解除します。
-		 * 
+		 *
 		 * @param {*} dataId 選択を解除したい行の dataId
 		 */
 		unselectData: function(dataId) {
@@ -4699,7 +4699,7 @@
 
 		/**
 		 * 行の選択状態を取得します。
-		 * 
+		 *
 		 * @return {boolean} 選択されていれば true、そうでなければ false
 		 */
 		isSelectedData: function(dataId) {
@@ -4712,7 +4712,7 @@
 
 		/**
 		 * 選択されているすべての行の dataId を取得します。
-		 * 
+		 *
 		 * @return {Array.<*>} 選択されているすべての行の dataId の配列
 		 */
 		getSelectedDataIds: function() {
@@ -4721,7 +4721,7 @@
 
 		/**
 		 * ソートします。
-		 * 
+		 *
 		 * @param {string=} propertyName ソートするプロパティ名（指定しなかった場合はソートの解除）
 		 * @param {boolean=} [isDesc=false] ソート順が降順であるか否か（降順の場合 true、デフォルトは false）
 		 */
@@ -4763,7 +4763,7 @@
 
 		/**
 		 * リクエストデータを変更する
-		 * 
+		 *
 		 * @param {object} requestData リクエストデータ
 		 */
 		changeRequestData: function(requestData) {
@@ -4777,7 +4777,7 @@
 
 		/**
 		 * 列の幅を変更する
-		 * 
+		 *
 		 * @param widthKey 変更したい列の widthKey
 		 * @param width 列幅
 		 */
@@ -4787,7 +4787,7 @@
 
 		/**
 		 * rowId からデータオブジェクトを取得します。 キャッシュされていない rowId を指定すると例外を投げます。
-		 * 
+		 *
 		 * @param {number} rowId 行ID
 		 */
 		getCachedData: function(rowId) {
@@ -5096,7 +5096,7 @@
 
 		/**
 		 * リクエストデータを変更する
-		 * 
+		 *
 		 * @param {object} requestData リクエストデータ
 		 */
 		changeRequestData: function(requestData) {
