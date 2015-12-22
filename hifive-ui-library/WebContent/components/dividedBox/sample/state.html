@@ -12,39 +12,20 @@
 <link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
 	rel="stylesheet">
 <link href="../src/DividedBox.css" rel="stylesheet">
+<link href="sample.css" rel="stylesheet">
 
 <style type="text/css">
 body {
 	padding: 1em;
 }
 
-.sample>._dividedBox {
+.sample>.dividedBox {
 	margin: 10px 0;
 	height: 300px;
 }
 
 .box,.box>* {
 	box-sizing: border-box;
-}
-
-.yellow {
-	background-color: #FFF280;
-}
-
-.green {
-	background-color: #B2CF3E;
-}
-
-.purple {
-	background-color: #B492CC;
-}
-
-.blue {
-	background-color: #6EB7DB;
-}
-
-.orange {
-	background-color: #EDAD0B;
 }
 
 .mini-height {
@@ -111,7 +92,31 @@ body {
 <body class="container">
 	<div class="row">
 		<h3>ボックス区切り移動サンプル(StateBox使用)</h3>
-
+		<p>DividedBoxのボックスサイズ変更やdividerの表示/非表示を行うメソッド、及び、StateBoxのサンプルです。</p>
+		<p>StateBoxは、ある要素の状態(State)を管理するためのコンポーネントです。</p>
+		<p>以下のように要素を定義します。</p>
+		<p>
+		<pre>
+&lt;div class=&quot;stateBox&quot;&gt;
+  &lt;div data-state=&quot;middle&quot;&gt;middle state&lt;/div&gt;
+  &lt;div data-state=&quot;mini&quot;&gt;mini state&lt;/div&gt;
+  &lt;div data-state=&quot;large&quot;&gt;large state&lt;/div&gt;
+&lt;/div&gt;
+</pre>
+		</p>
+		<p>
+			state名を<strong>data-state</strong>に指定します。state名は任意です。StateBoxは現在設定されているstate要素のみを表示してその他を非表示にします。またstateを切り替えることが出来ます。
+		</p>
+		<p>StateBoxControllerを上記のような要素にバインドして使用します。</p>
+		<p>
+		<pre>var stateBoxController = h5.core.controller('.stateBox', h5.ui.components.DividedBox.StateBox);</pre>
+		</p>
+		<p>デフォルトでは、一番上に定義されたstate(上記例の場合はmiddle)が設定されます。</p>
+		<p>stateの切り替えは以下のようにして行います。</p>
+		<p>
+		<pre>stateBoxController.setState('mini');</pre>
+		</p>
+		<p>下のサンプルは、各ボックスにStateBoxをバインドしてあります。</p>
 		<div class="sample">
 			<!-- 			<label><input type="checkbox" name="auto-adjust" checked>state-changeイベントを拾って自動でsetWidth|setHeightする</label> -->
 			<div class="control-group">
@@ -144,14 +149,20 @@ body {
 					type="text" name=index " size="2" value="0">
 					<button class="btn btn-default hide-divider">DividedBox.hideDivider(index)</button>
 					<button class="btn btn-default show-divider">DividedBox.showDivider(index)</button></label>
+				<label style="margin-left: 3em">第２引数にtrueを指定
+					<button class="btn btn-default hide-divider" data-fix-prev="true">DividedBox.hideDivider(index,
+						true)</button>
+					<button class="btn btn-default show-divider" data-fix-prev="true">DividedBox.showDivider(index,
+						true)</button>
+				</label>
 			</div>
-			<div class="_dividedBox horizontal">
+			<div class="dividedBox horizontal">
 				<div class="box yellow state-container">
 					<div data-state="middle" class="middle-width">middle state</div>
 					<div data-state="mini" class="mini-width">mini state</div>
 					<div data-state="large" class="large-width">large state</div>
 				</div>
-				<div class="_dividedBox fill vertical autoSize">
+				<div class="dividedBox fill vertical">
 					<div class="box fill green state-container">
 						<div data-state="middle" class="middle-height">middle state</div>
 						<div data-state="mini" class="mini-height">mini state</div>
@@ -189,5 +200,6 @@ body {
 				<p>左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。</p>
 			</div>
 		</div>
+	</div>
 </body>
 </html>

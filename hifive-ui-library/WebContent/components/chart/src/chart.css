@@ -29,7 +29,6 @@ v\:shape, v\:line, v\:fill, v\:stroke,
 
 v\:group#h5_chart {
 	left: 0px;
-	position: relative;
 }
 
 svg {
@@ -40,6 +39,12 @@ svg {
 	position: absolute;
 	left: 50px;
 	zoom: 1;
+}
+
+#h5_chart .vml_move {
+/* 	position: absolute; */
+	/*left: 50px;*/
+/* 	overflow: hidden; */
 }
 
 #h5_chart .candleStickChart {
