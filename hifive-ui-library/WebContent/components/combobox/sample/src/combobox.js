@@ -56,7 +56,7 @@
 	// =========================================================================
 	/**
 	 * コンボボックスのドロップダウンリストの表示を管理するコントローラ
-	 *
+	 * 
 	 * @class
 	 * @memberOf h5.ui.components.combobox
 	 * @name h5.ui.components.combobox.ListLayoutController
@@ -74,7 +74,7 @@
 		// --- Property --- //
 		/**
 		 * 表示データ
-		 *
+		 * 
 		 * @private
 		 * @type DataModel
 		 * @name _source
@@ -84,7 +84,7 @@
 
 		/**
 		 * 行の高さ
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _rowHeight
@@ -94,7 +94,7 @@
 
 		/**
 		 * スクロール量とデータ描画位置を管理するコントローラ（IndexBaseScrollStrategy）
-		 *
+		 * 
 		 * @private
 		 * @type Controloler
 		 * @name _scrollStrategy
@@ -104,7 +104,7 @@
 
 		/**
 		 * データの描画開始位置
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _start
@@ -114,7 +114,7 @@
 
 		/**
 		 * データの描画終了位置
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _end
@@ -124,7 +124,7 @@
 
 		/**
 		 * データ描画タイマーID
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _renderWaitTimerId
@@ -134,7 +134,7 @@
 
 		/**
 		 * データの変更イベントハンドラ
-		 *
+		 * 
 		 * @private
 		 * @type Function
 		 * @name _changeSourceHandler
@@ -144,7 +144,7 @@
 
 		/**
 		 * 初期化処理のDeferredオブジェクト
-		 *
+		 * 
 		 * @private
 		 * @type Deferred
 		 * @name _initializeDeferred
@@ -154,7 +154,7 @@
 
 		/**
 		 * 描画領域のコントローラ
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _boxController
@@ -164,7 +164,7 @@
 
 		/**
 		 * スクロールのコントローラ
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _barController
@@ -174,7 +174,7 @@
 
 		/**
 		 * 描画領域エレメント
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name boxRootElement
@@ -184,7 +184,7 @@
 
 		/**
 		 * スクロールエレメント
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name barRootElement
@@ -202,7 +202,7 @@
 		 * 描画終了後はrenderListイベントが発生する
 		 * <p>
 		 * ロード完了後はloadDataEndイベントが発生する
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
@@ -264,7 +264,7 @@
 		 * スクロール処理
 		 * <p>
 		 * スクロール量にあわせてスクロールバーのスクロール位置を調整し、リスト内容を再描画する
-		 *
+		 * 
 		 * @private
 		 * @param {Number} scrollDiff スクロール量
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
@@ -314,7 +314,7 @@
 		// 柏村追記：プライベートメソッド化
 		/**
 		 * 表示行数を取得する
-		 *
+		 * 
 		 * @private
 		 * @param {Object} windowSize rootElementの高さ
 		 * @returns {Number} 表示行数
@@ -328,7 +328,7 @@
 
 		/**
 		 * Controllerのconstructライフサイクル。
-		 *
+		 * 
 		 * @private
 		 * @param {Object} context
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
@@ -336,13 +336,13 @@
 		__construct: function(context) {
 			this._initializeDeferred = h5.async.deferred();
 
-			this.__construct_box && this.__construct_box(context);
-			this.__construct_bar && this.__construct_bar(context);
+			this.__construct_box(context);
+			this.__construct_bar(context);
 		},
 
 		/**
 		 * Controllerのinitライフサイクル。必要な要素の生成、コントローラ化を行う。
-		 *
+		 * 
 		 * @private
 		 * @param {Object} context
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
@@ -378,14 +378,14 @@
 
 
 			//			return this._barController.initPromise.then(function() {
-			var boxWidth = $root.width() - h5.ui.components.virtualScroll.getScrollBarWidth();
+			var boxWidth = $root.width() - h5.ui.components.combobox.getScrollBarWidth();
 			$box.width(boxWidth);
 			//			});
 		},
 
 		/**
 		 * Controllerのunbindライフサイクル。初期化時に生成した要素の削除を行う
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
@@ -447,7 +447,7 @@
 		 * 初期化時処理
 		 * <p>
 		 * 処理に必要なプライベート変数を設定する
-		 *
+		 * 
 		 * @param {DataModel} source データモデル
 		 * @param {Function} renderer 描画関数
 		 * @param {Number} rowHeight 行の高さ
@@ -486,7 +486,7 @@
 		 * スクロールをリフレッシュする
 		 * <p>
 		 * スクロール位置を先頭へ戻す
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
 		refresh: function() {
@@ -496,7 +496,7 @@
 
 		/**
 		 * 描画領域を隠してローディング表示を描画する
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
 		beginLoad: function() {
@@ -505,7 +505,7 @@
 
 		/**
 		 * ローディング表示をする DIV のエレメントを取得する
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
 		getLoadingInfoDiv: function() {
@@ -514,7 +514,7 @@
 
 		/**
 		 * 行数を指定してスクロールを行う
-		 *
+		 * 
 		 * @param {Number} diff 行数
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
@@ -526,7 +526,7 @@
 
 		/**
 		 * 検索条件を変更する
-		 *
+		 * 
 		 * @param {Object} searchOptions 検索条件
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
@@ -540,7 +540,7 @@
 
 		/**
 		 * データを設定する
-		 *
+		 * 
 		 * @param {DataModel} dataSource データモデル
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
@@ -557,7 +557,7 @@
 
 		/**
 		 * 初期化処理のPromiseを取得する
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
 		 */
 		getInitializePromise: function() {
@@ -684,7 +684,7 @@
 	// =========================================================================
 	/**
 	 * ドロップダウンリストを制御するコントローラ
-	 *
+	 * 
 	 * @class
 	 * @memberOf h5.ui.components.combobox
 	 * @name DropDownListController
@@ -694,7 +694,7 @@
 
 		/**
 		 * コンボボックスのテキストボックス
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$root
@@ -704,7 +704,7 @@
 
 		/**
 		 * コンボボックスのドロップダウンリスト
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$root
@@ -714,7 +714,7 @@
 
 		/**
 		 * htmlのbody
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$btn
@@ -724,7 +724,7 @@
 
 		/**
 		 * コンボボックスのドロップダウンボタン
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$btn
@@ -734,7 +734,7 @@
 
 		/**
 		 * オーバーレイ
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$overlay
@@ -744,7 +744,7 @@
 
 		/**
 		 * 一回の読込みでドロップダウンに表示するアイテム数
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _maxItems
@@ -754,7 +754,7 @@
 
 		/**
 		 * テキストボックスに適用したスタイル情報
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _restoreStyles
@@ -764,7 +764,7 @@
 
 		/**
 		 * リストアイテムに表示するテキストを生成する関数
-		 *
+		 * 
 		 * @private
 		 * @type Function
 		 * @name _listItemTextFormatter
@@ -774,7 +774,7 @@
 
 		/**
 		 * 検索対象に含めるプロパティ名
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _searchProps
@@ -784,7 +784,7 @@
 
 		/**
 		 * メニューの左枠線幅
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _rootLeftBorderWidth
@@ -794,7 +794,7 @@
 
 		/**
 		 * メニューの右枠線幅
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _rootRightBorderWidth
@@ -804,7 +804,7 @@
 
 		/**
 		 * リサイズタイマーID
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _resizeTimerId
@@ -814,7 +814,7 @@
 
 		/**
 		 * 仮想スクロール
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _virtualScroll
@@ -824,7 +824,7 @@
 
 		/**
 		 * postする値を格納するhidden要素
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$hiddenElement
@@ -834,7 +834,7 @@
 
 		/**
 		 * ドロップダウンリストの表示を管理するコントローラ
-		 *
+		 * 
 		 * @private
 		 * @type Controller
 		 * @name _layout
@@ -844,7 +844,7 @@
 
 		/**
 		 * 表示データを管理するデータモデル
-		 *
+		 * 
 		 * @private
 		 * @type DataModel
 		 * @name _dataSource
@@ -854,7 +854,7 @@
 
 		/**
 		 * スクロール量とデータ描画位置を管理するコントローラ（IndexBaseScrollStrategy）
-		 *
+		 * 
 		 * @private
 		 * @type Controloler
 		 * @name _scrollStrategy
@@ -864,7 +864,7 @@
 
 		/**
 		 * データ全体の長さ
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _dataTotalLength
@@ -876,7 +876,7 @@
 		 * 検索条件
 		 * <p>
 		 * コンボボックス作成時に任意で指定される検索条件. _postDataが指定された場合は、フィルター条件にデフォルトで含める
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _postData
@@ -886,7 +886,7 @@
 
 		/**
 		 * リストの表示方向
-		 *
+		 * 
 		 * @private
 		 * @type String
 		 * @name _listPosition
@@ -896,7 +896,7 @@
 
 		/**
 		 * 描画されているliタグ
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _$renderMenuList
@@ -906,7 +906,7 @@
 
 		/**
 		 * 直前のリスト内でのマウスの位置
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _mousePos
@@ -916,7 +916,7 @@
 
 		/**
 		 * 選択されているli要素
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _selectedLineObj
@@ -926,7 +926,7 @@
 
 		/**
 		 * ハイライト要素
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _selectedLineObj
@@ -938,7 +938,7 @@
 		 * ドロップダウンリスト表示フラグ
 		 * <p>
 		 * true:表示する false:表示しない
-		 *
+		 * 
 		 * @private
 		 * @type Boolean
 		 * @name _disabled
@@ -948,7 +948,7 @@
 
 		/**
 		 * マウスポインタの位置
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _lastMousePos
@@ -958,7 +958,7 @@
 
 		/**
 		 * 描画開始位置
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _dataStartIndex
@@ -968,7 +968,7 @@
 
 		/**
 		 * 描画終了位置
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _dataEndIndex
@@ -978,7 +978,7 @@
 
 		/**
 		 * 総件数設定イベントハンドラ
-		 *
+		 * 
 		 * @private
 		 * @type Function
 		 * @name _setDataTotalLengthWrapper
@@ -990,7 +990,7 @@
 
 		/**
 		 * 指定されたデータからドロップダウンリストのリストアイテムを生成します
-		 *
+		 * 
 		 * @param args
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1000,7 +1000,7 @@
 			this._createDataSource(args);
 
 			//3bchi-grid strategyを取得
-			this._scrollStrategy = h5.ui.components.virtualScroll.createIndexBaseScrollStrategy();
+			this._scrollStrategy = h5.ui.components.combobox.createIndexBaseScrollStrategy();
 
 			//プルダウンを囲むdivへ3bchi-grid layoutをバインドする
 			//			this._layout = h5.core.controller(this.rootElement_dropdown,
@@ -1016,7 +1016,7 @@
 
 		/**
 		 * 指定されたデータからDataSourceを初期化します
-		 *
+		 * 
 		 * @param args
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1052,7 +1052,7 @@
 
 		/**
 		 * 描画されているliタグでハイライト対象を検索し、該当ありの場合にハイライトします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		_searchHighlightLi: function() {
@@ -1079,7 +1079,7 @@
 
 		/**
 		 * テキストの入力値完全一致するユニークな行があるか
-		 *
+		 * 
 		 * @param val
 		 * @returns {Boolean}
 		 */
@@ -1089,7 +1089,7 @@
 
 		/**
 		 * テキストボックスにフォーカスをあてる
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		_focusText: function() {
@@ -1100,7 +1100,7 @@
 
 		/**
 		 * オーバーレイ要素のサイズをウィンドウサイズに合わせます
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		_resizeOverlay: function() {
@@ -1114,7 +1114,7 @@
 		},
 		/**
 		 * ドロップダウンリストの幅をテキストボックス+ボタンの幅に合わせます
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		_resizeMenu: function() {
@@ -1124,7 +1124,7 @@
 
 		/**
 		 * 指定した要素を選択状態にします
-		 *
+		 * 
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1134,7 +1134,7 @@
 		},
 		/**
 		 * ハイライト表示を除去します
-		 *
+		 * 
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1145,7 +1145,7 @@
 		},
 		/**
 		 * ドロップダウンリスト要素と 引数の要素を比較し、valueが同じ要素の表示順をhighlightIndexに保持します
-		 *
+		 * 
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1165,7 +1165,7 @@
 		 * オーバーレイクリックイベント ドロップダウンリストを非表示にします
 		 * <p>
 		 * ルート要素上でクリックされた場合は、カーソルを末尾に移動します
-		 *
+		 * 
 		 * @param ev
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1180,7 +1180,7 @@
 		 * ドロップダウンボタン押下イベント
 		 * <p>
 		 * ドロップダウンリストを表示または非表示にします
-		 *
+		 * 
 		 * @param event
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1216,7 +1216,7 @@
 
 		/**
 		 * Controllerのinitライフサイクル。必要な要素の生成、コントローラ化を行う。
-		 *
+		 * 
 		 * @private
 		 * @param {Object} context
 		 * @memberOf h5.ui.components.combobox.ListLayoutController
@@ -1248,7 +1248,7 @@
 
 		/**
 		 * Controllerのunbindライフサイクル。初期化時に生成した要素の削除を行う
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1267,7 +1267,7 @@
 
 		/**
 		 * オーバーレイのサイズとドロップダウンリストの幅をリサイズします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		'{window} resize': function() {
@@ -1281,7 +1281,7 @@
 
 		/**
 		 * マウス上のリストアイテムを選択状態(ハイライト)にします
-		 *
+		 * 
 		 * @param context
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
@@ -1311,7 +1311,7 @@
 		},
 		/**
 		 * 選択中の値をテキストボックスに反映します
-		 *
+		 * 
 		 * @param context
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
@@ -1335,7 +1335,7 @@
 		},
 		/**
 		 * ドロップダウンリストの末尾に検索結果を追加(遅延表示)します
-		 *
+		 * 
 		 * @param context
 		 * @param $el
 		 * @memberOf h5.ui.components.combobox.DropDownListController
@@ -1349,7 +1349,7 @@
 		 * ドロップダウンリスト描画範囲変更イベント
 		 * <p>
 		 * 描画されているliタグを取得します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		'{rootElement} renderList': function(context) {
@@ -1400,7 +1400,7 @@
 
 		/**
 		 * 指定されたデータからDataSourceを生成し、ListLayoutへ再設定します
-		 *
+		 * 
 		 * @param args
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
@@ -1416,7 +1416,7 @@
 
 		/**
 		 * ドロップダウンリストの総数を設定する
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		setDataTotalLength: function() {
@@ -1425,7 +1425,7 @@
 
 		/**
 		 * 引数に指定した値と前方一致するリストアイテムを候補として表示します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		narrowDown: function() {
@@ -1456,7 +1456,7 @@
 		 * <li>ドロップダウンリストのスクロール位置を先頭に設定する</li>
 		 * <li>選択状態を解除する</li>
 		 * </ul>
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDown ListController
 		 */
 		resetMenu: function() {
@@ -1474,7 +1474,7 @@
 
 		/**
 		 * ドロップダウンリストを表示します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		showMenu: function() {
@@ -1502,7 +1502,7 @@
 		},
 		/**
 		 * ドロップダウンリストを非表示にします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		hideMenu: function() {
@@ -1519,7 +1519,7 @@
 		},
 		/**
 		 * ドロップダウンリストの表示、非表示を判定します <pr> true：表示 false：非表示
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		isShowMenu: function() {
@@ -1531,7 +1531,7 @@
 		 * 現在選択中のリストアイテムの次にあるリストアイテムを選択状態にします
 		 * <p>
 		 * 何も選択されていない場合は先頭の要素を選択状態にします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		highlightNext: function() {
@@ -1585,7 +1585,7 @@
 
 		/**
 		 * 現在選択中のリストアイテムの前にあるリストアイテムを選択状態にします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		highlightPrev: function() {
@@ -1640,7 +1640,7 @@
 
 		/**
 		 * 選択中の値をテキストボックスに反映します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		selectMenu: function() {
@@ -1658,7 +1658,7 @@
 		},
 		/**
 		 * hidden要素にvalueを反映する
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		setHiddentValue: function(value) {
@@ -1674,7 +1674,7 @@
 
 		/**
 		 * コンボボックスデータのリストを取得します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		getBaseDataList: function() {
@@ -1683,7 +1683,7 @@
 
 		/**
 		 * 選択（click または enter）されたli要素のdataを返します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		getSelectedLiData: function() {
@@ -1694,7 +1694,7 @@
 		},
 		/**
 		 * 選択（click または enter）されたli要素を設定します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		setSelectedLi: function($li, indexOfData) {
@@ -1703,7 +1703,7 @@
 		},
 		/**
 		 * 選択li要素をクリアします <pr>
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.DropDownListController
 		 */
 		clearSelectedLi: function() {
@@ -1750,8 +1750,8 @@
 
 	//	var dropDownListController = h5.ui.components.combobox.DropDownListController;
 	//	var listLayoutController = h5.ui.components.combobox.ListLayoutController;
-	var scrollBoxController = h5.ui.components.virtualScroll.VirtualScrollBoxController;
-	var scrollBarController = h5.ui.components.virtualScroll.VerticalScrollBarController;
+	var scrollBoxController = h5.ui.components.combobox.VirtualScrollBoxController;
+	var scrollBarController = h5.ui.components.combobox.VerticalScrollBarController;
 
 	// =========================================================================
 	//
@@ -1784,7 +1784,7 @@
 	// =========================================================================
 	/**
 	 * コンボボックス全体を管理するコントローラ
-	 *
+	 * 
 	 * @class h5.ui.components.combobox.ComboBoxRootController
 	 */
 	var comboBoxRootController = $.extend({}, dropDownListControllerDef, listLayoutController,
@@ -1834,7 +1834,7 @@
 				 * ドロップダウンボタン押下イベント
 				 * <p>
 				 * ドロップダウンリストを表示または非表示にします
-				 *
+				 * 
 				 * @param event
 				 * @memberOf h5.ui.components.combobox.ComboBoxRootController
 				 */
@@ -1849,7 +1849,7 @@
 
 				/**
 				 * Controllerのunbindライフサイクル。初期化時に生成した要素の削除を行う
-				 *
+				 * 
 				 * @private
 				 * @memberOf h5.ui.components.combobox.ComboBoxRootController
 				 */
@@ -1944,7 +1944,7 @@
 	// =========================================================================
 	/**
 	 * コンボボックス機能を制御するコントローラ
-	 *
+	 * 
 	 * @class
 	 * @memberOf h5.ui.components.combobox
 	 * @name ComboBoxController
@@ -1953,7 +1953,7 @@
 		__name: 'h5.ui.components.combobox.ComboBoxController',
 		/**
 		 * ドロップダウンリストコントローラ
-		 *
+		 * 
 		 * @private
 		 * @type Controller
 		 * @name _dropDownListController
@@ -1962,7 +1962,7 @@
 		_dropDownListController: null,
 		/**
 		 * 絞り込みタイマーID
-		 *
+		 * 
 		 * @private
 		 * @type Number
 		 * @name _narrowDounId
@@ -1971,7 +1971,7 @@
 		_narrowDounId: null,
 		/**
 		 * jQuery化したルート要素
-		 *
+		 * 
 		 * @private
 		 * @type jQuery
 		 * @name _$input
@@ -1980,7 +1980,7 @@
 		_$input: null,
 		/**
 		 * jQuery化したフォーム要素
-		 *
+		 * 
 		 * @private
 		 * @type jQuery
 		 * @name _$form
@@ -1989,7 +1989,7 @@
 		_$form: null,
 		/**
 		 * コンボボックスの選択値を格納する隠し要素
-		 *
+		 * 
 		 * @private
 		 * @type jQuery
 		 * @name _$hiddenElement
@@ -1998,7 +1998,7 @@
 		_$hiddenElement: null,
 		/**
 		 * hiddenタグが最初から用意されているか
-		 *
+		 * 
 		 * @private
 		 * @type jQuery
 		 * @name _$hiddenElement
@@ -2007,7 +2007,7 @@
 		_hasOrgHiddenElm: false,
 		/**
 		 * コントローラ化前のinput要素のstyle
-		 *
+		 * 
 		 * @private
 		 * @type Object
 		 * @name _restoreStyles
@@ -2017,7 +2017,7 @@
 
 		/**
 		 * 送信イベントハンドラ。hidden値をサーバに送る
-		 *
+		 * 
 		 * @private
 		 * @type Function
 		 * @name _onsubmitWrapper
@@ -2027,7 +2027,7 @@
 
 		/**
 		 * コンボボックスがdisableかどうか
-		 *
+		 * 
 		 * @private
 		 * @type Boolean
 		 * @name _disabled
@@ -2039,7 +2039,7 @@
 
 		/**
 		 * Controllerのconstructライフサイクル。deferredとPromiseの生成を行う
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2050,7 +2050,7 @@
 
 		/**
 		 * Controllerのinitライフサイクル。必要な要素の生成、コントローラ化を行う。
-		 *
+		 * 
 		 * @private
 		 * @returns {Promise} comboboxRootControllerのreadyPromiseオブジェクト
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
@@ -2119,7 +2119,7 @@
 
 		/**
 		 * Controllerのunbindライフサイクル。初期化時に生成した要素の削除を行う
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2149,7 +2149,7 @@
 
 		/**
 		 * コンボボックスのボタンを生成して追加する
-		 *
+		 * 
 		 * @private
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2232,7 +2232,7 @@
 
 		/**
 		 * 指定した要素が入力要素かどうかチェックします
-		 *
+		 * 
 		 * @private
 		 * @returns {Boolean} 入力要素かどうか
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
@@ -2257,7 +2257,7 @@
 		 * 所属するformのsubmitイベント
 		 * <p>
 		 * コンボボックスのinput要素をformから削除します
-		 *
+		 * 
 		 * @parent {jQuerEvent} event イベントオブジェクト
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2281,7 +2281,7 @@
 
 		/**
 		 * hidden要素が最初から設定されている場合は、それを取得する
-		 *
+		 * 
 		 * @returns {jQuery} hidden要素のjQueryオブジェクト。ない場合はnull
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2297,7 +2297,7 @@
 
 		/**
 		 * hidden要素を生成する
-		 *
+		 * 
 		 * @returns {jQuery} 生成したhidden要素のjQueryオブジェクト
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2416,7 +2416,7 @@
 
 		/**
 		 * コンボボックスを初期化する。コントローラ化された時点で必要な要素は加わっているので、ドロップダウンリストの初期化のみを行う。
-		 *
+		 * 
 		 * @param {Object} args 設定パラメータオブジェクト
 		 * @returns {Promise} すべての処理の終了を待つPromiseオブジェクト
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
@@ -2434,7 +2434,7 @@
 
 		/**
 		 * コンボボックス機能を無効にします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
 		disable: function() {
@@ -2447,7 +2447,7 @@
 		},
 		/**
 		 * コンボボックスの機能を有効にします
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
 		enable: function() {
@@ -2460,7 +2460,7 @@
 		},
 		/**
 		 * コンボボックスを破棄します
-		 *
+		 * 
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
 		destroy: function() {
@@ -2471,7 +2471,7 @@
 		 * 指定されたデータからドロップダウンリストのリストアイテムを再生成します
 		 * <p>
 		 * テキストボックスに入力がある場合は、その値で検索を実行します。
-		 *
+		 * 
 		 * @param {Object} args init時に渡すものと同じパラメータオブジェクト
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2482,7 +2482,7 @@
 
 		/**
 		 * テキストボックスに入力されている値を取得する
-		 *
+		 * 
 		 * @returns {String} テキストボックスに入力されている値
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2492,7 +2492,7 @@
 
 		/**
 		 * hiddenに設定されている値を取得する
-		 *
+		 * 
 		 * @returns {String} hiddenに設定されている値
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2502,7 +2502,7 @@
 
 		/**
 		 * hiddenに値を設定する
-		 *
+		 * 
 		 * @param {String} value hiddenに設定する値
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2512,7 +2512,7 @@
 
 		/**
 		 * 絞込用のフィルター関数をセットする
-		 *
+		 * 
 		 * @param {Function} filter 絞込用のフィルター関数
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2522,7 +2522,7 @@
 
 		/**
 		 * ドロップダウンリストの位置を設定します
-		 *
+		 * 
 		 * @param {String} listPosition ドロップダウンリストの位置
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2532,7 +2532,7 @@
 
 		/**
 		 * 選択中のデータオブジェクトを返します
-		 *
+		 * 
 		 * @returns {Object} 選択中のデータオブジェクト。未選択ならnull
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
@@ -2542,7 +2542,7 @@
 
 		/**
 		 * リストの表示するデータのリストを返します
-		 *
+		 * 
 		 * @param {Object} リストの表示するデータ
 		 * @memberOf h5.ui.components.combobox.ComboBoxController
 		 */
