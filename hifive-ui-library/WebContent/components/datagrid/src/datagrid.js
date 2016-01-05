@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 NS Solutions Corporation
+ * Copyright (C) 2014-2016 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6919,6 +6919,17 @@
 				var aValue = a[propertyName];
 				var bValue = b[propertyName];
 
+				// MEMO: 文字列と null を比較するとおかしくなるので特別扱いする
+				if (aValue == null && bValue != null) {
+					return isDesc ? -1 : 1;
+				}
+				if (aValue != null && bValue == null) {
+					return isDesc ? 1 : -1;
+				}
+				if (aValue == null && bValue == null) {
+					continue;
+				}
+
 				if (aValue < bValue) {
 					return isDesc ? 1 : -1;
 				}
@@ -7133,10 +7144,18 @@
 				var args = argsToArray(arguments);
 				var rejectArgs = args.slice(1);
 
+
 				var failResult = {
 					isAborted: this._isAborted,
 					args: rejectArgs
 				};
+
+				var arg = rejectArgs[0];
+
+
+				if (arg != null && typeof arg.isAborted === 'boolean' && $.isArray(arg.args)) {
+					failResult = arg;
+				}
 
 				this._deferred.rejectWith(context, [failResult]);
 			}));
@@ -7232,31 +7251,41 @@
 			 */
 			then: function(done, fail) {
 
-				var wrapedDone = function(/* var_args */) {
-					try {
-						return done.apply(this, arguments);
-					} catch (e) {
-						log.error('convert: Error -> Fail Promise; {0}', e.message);
+				var wrapedDone = null;
+				if (done != null) {
+					wrapedDone = function(/* var_args */) {
+						try {
+							return done.apply(this, arguments);
+						} catch (e) {
+							log.error('convert: Error -> Fail Promise; {0}', e.message);
+							if (e.stack != null) {
+								log.error(e.stack);
+							}
 
-						var deferred = h5.async.deferred();
-						deferred.reject(e);
-						return deferred.promise();
-					}
-				};
-
-				var wrapedFail = function(/* var_args */) {
-					try {
-						return fail.apply(this, arguments);
-					} catch (e) {
-						log.warn('Overwrite Fail Args: {0}', argsToArray(arguments));
-						log.error('convert: Error -> Fail Promise; {0}', e.message);
-						if (e.stack != null) {
-							log.error(e.stack);
+							var deferred = h5.async.deferred();
+							deferred.reject(e);
+							return deferred.promise();
 						}
+					};
+				}
 
-						return e;
-					}
-				};
+
+				var wrapedFail = null;
+				if (fail != null) {
+					wrapedFail = function(/* var_args */) {
+						try {
+							return fail.apply(this, arguments);
+						} catch (e) {
+							log.warn('Overwrite Fail Args: {0}', argsToArray(arguments));
+							log.error('convert: Error -> Fail Promise; {0}', e.message);
+							if (e.stack != null) {
+								log.error(e.stack);
+							}
+
+							return e;
+						}
+					};
+				}
 
 				// MEMO: 関数が Promise を返すパターンだと引き継げてないかも
 				var thenPromise = this._deferred.then(wrapedDone, wrapedFail);
@@ -8595,7 +8624,7 @@
 
 			// --- Public Method --- //
 
-			Set: function() {
+			getSourceDataSet: function() {
 				return $.extend(true, {}, this._sourceDataSet);
 			},
 
@@ -10285,8 +10314,9 @@
 
 				this._isChangingSearchParam = true;
 
-				var teardown = this.own(function() {
+				var teardown = this.own(function(arg) {
 					this._isChangingSearchParam = false;
+					return arg;
 				});
 
 				this.dispatchEvent({
@@ -10301,11 +10331,19 @@
 						searchParam: searchParam,
 						fetchParam: fetchParam
 					});
-				}), this.own(function() {
+				}), this.own(function(e) {
+					var cause = null;
+
+					if (e.isAborted) {
+						cause = e;
+					} else if (e.args[0] instanceof Error) {
+						cause = e.args[0];
+					}
 
 					this.dispatchEvent({
 						type: 'changeSearchError',
-						searchParam: searchParam
+						searchParam: searchParam,
+						cause: cause
 					});
 				})).always(this.own(function() {
 					this.dispatchEvent({
@@ -10607,8 +10645,9 @@
 				this._requestPromise = searchPromise;
 
 
-				var teardown = this.own(function() {
+				var teardown = this.own(function(arg) {
 					this._requestPromise = null;
+					return arg;
 				});
 
 				return searchPromise.then(this.own(function(searchResult) {
@@ -10798,6 +10837,12 @@
 				delete this._dataSet[changeEvent.dataId];
 				delete this._idToIndex[changeEvent.dataId];
 				this._cache.splice(index, 1);
+
+				// 削除されたあとの要素の index をつめる
+				for (var i = index, len = this._cache.length; i < len; i++) {
+					var data = this._cache[i];
+					this._idToIndex[data.dataId] = i;
+				}
 			},
 
 			/**
@@ -10908,16 +10953,32 @@
 		 * @class データを遅延で読み込む {@DataSearcher} です。
 		 * @extends DataSearcher
 		 * @param {DataSource} dataSource データソース
+		 * @param {Object=} [param] パラメータ
+		 * @param {Length=} [param.fetchUnit] フェッチをする際のデータを要求する単位
 		 */
-		function LazyFetchDataSearcher(dataSource) {
+		function LazyFetchDataSearcher(dataSource, param) {
 			var validator = ctx.argsValidator('constructor');
 
 			validator.arg('dataSource', dataSource, function(v) {
 				v.notNull();
 				v.instanceOf(DataSource);
 			});
+			validator.arg('param', param, function(v) {
+				v.nullable();
+				v.plainObject();
+
+				v.property('fetchUnit', function(v) {
+					v.nullable();
+					type.validateLength(v);
+					v.positiveNumber();
+				});
+			});
 
 			this._dataSource = dataSource;
+			if (param != null && param.fetchUnit != null) {
+				this._fetchUnit = param.fetchUnit;
+			}
+
 			this._searchParam = null;
 
 			this._count = 0;
@@ -12024,6 +12085,7 @@
 		 * @method
 		 * @memberOf DataSelector#
 		 * @param {DataId} dataId データのID
+		 * @returns {boolean} 選択状態に変更があったら true, そうでなければ false
 		 */
 		'select',
 
@@ -12033,6 +12095,7 @@
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
+		 * @returns {boolean} 選択状態に変更があったら true, そうでなければ false
 		 * @throws {NotSupported}
 		 */
 		'selectAll',
@@ -12044,6 +12107,7 @@
 		 * @method
 		 * @memberOf DataSelector#
 		 * @param {DataId} dataId データのID
+		 * @returns {boolean} 選択状態に変更があったら true, そうでなければ false
 		 */
 		'unselect',
 
@@ -12053,6 +12117,7 @@
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
+		 * @returns {boolean} 選択状態に変更があったら true, そうでなければ false
 		 */
 		'unselectAll',
 
@@ -12143,7 +12208,10 @@
 				var validator = ctx.argsValidator('public');
 				validator.arg('dataId', dataId, type.validateDataId);
 
+				var old = this._selectedDataId;
 				this._selectedDataId = dataId;
+
+				return old !== dataId;
 			},
 
 			selectAll: function() {
@@ -12154,13 +12222,19 @@
 				var validator = ctx.argsValidator('public');
 				validator.arg('dataId', dataId, type.validateDataId);
 
-				if (dataId === this._selectedDataId) {
-					this._selectedDataId = null;
+				if (dataId !== this._selectedDataId) {
+					return false;
 				}
+
+				this._selectedDataId = null;
+				return true;
 			},
 
 			unselectAll: function() {
+				var old = this._selectedDataId;
 				this._selectedDataId = null;
+
+				return old != null;
 			},
 
 			isSelected: function(dataId) {
@@ -12235,32 +12309,48 @@
 				var validator = ctx.argsValidator('public');
 				validator.arg('dataId', dataId, type.validateDataId);
 
+				var isSelected = this.isSelected(dataId);
+
 				if (this._isDefaultUnselected) {
 					this._inverseSet[dataId] = true;
 				} else {
 					delete this._inverseSet[dataId];
 				}
+
+				return !isSelected;
 			},
 
 			selectAll: function() {
+				var old = !this._isDefaultUnselected && $.isEmptyObject(this._inverseSet);
+
 				this._isDefaultUnselected = false;
 				this._inverseSet = {};
+
+				return !old;
 			},
 
 			unselect: function(dataId) {
 				var validator = ctx.argsValidator('public');
 				validator.arg('dataId', dataId, type.validateDataId);
 
+				var isSelected = this.isSelected(dataId);
+
 				if (this._isDefaultUnselected) {
 					delete this._inverseSet[dataId];
 				} else {
 					this._inverseSet[dataId] = true;
 				}
+
+				return isSelected;
 			},
 
 			unselectAll: function() {
+				var old = this._isDefaultUnselected && $.isEmptyObject(this._inverseSet);
+
 				this._isDefaultUnselected = true;
 				this._inverseSet = {};
+
+				return !old;
 			},
 
 			isSelected: function(dataId) {
@@ -12400,17 +12490,29 @@
 				}
 
 				this._isSelecting = true;
-				this._focusedCell = {
+
+				var oldFocusedCell = this._focusedCell;
+				var newFocusedCell = {
 					row: row,
 					column: column
 				};
-				this._selectedRange = {
+
+				var oldRange = this._selectedRange;
+				var newRange = {
 					rowIndex: row,
 					rowLength: 1,
 					columnIndex: column,
 					columnLength: 1
 				};
 
+				var isSameFocus = util.deepEquals(oldFocusedCell, newFocusedCell);
+				var isSameRange = util.deepEquals(oldRange, newRange);
+				if (isSameFocus && isSameRange) {
+					return;
+				}
+
+				this._focusedCell = newFocusedCell;
+				this._selectedRange = newRange;
 				this._dispatchChangeCellSelectEvent();
 			},
 
@@ -12505,11 +12607,19 @@
 
 			/**
 			 * マークとフォーカスを解除します。
+			 * 
+			 * @fires CellSelector#changeCellSelect
 			 */
 			reset: function() {
+				var hasChange = this._focusedCell != null || this._selectedRange != null;
+
 				this._focusedCell = null;
 				this._selectedRange = null;
 				this._isSelecting = false;
+
+				if (hasChange) {
+					this._dispatchChangeCellSelectEvent();
+				}
 			},
 
 			/**
@@ -16071,6 +16181,10 @@
 		},
 
 		__dispose: function() {
+			if (this._dataMapper == null) {
+				return;
+			}
+
 			this._dataMapper.dispose();
 			this._dataFocus.dispose();
 			this._dataSelector.dispose();
@@ -16212,7 +16326,9 @@
 			if (param.searcher.type === 'all') {
 				searcher = new datagrid.data._privateClass.AllFetchSearcher(dataSource);
 			} else if (param.searcher.type === 'lazy') {
-				searcher = new datagrid.data._privateClass.LazyFetchSearcher(dataSource);
+				var searcherParam = param.searcher.param;
+				searcher = new datagrid.data._privateClass.LazyFetchSearcher(dataSource,
+						searcherParam);
 			}
 
 			var mapperParam = param.mapper.param;
@@ -16601,16 +16717,20 @@
 		 * @param {DataId} dataId 選択するデータのID
 		 */
 		selectData: function(dataId) {
-			this._dipatchChangeDataSelectEvent();
-			this._dataSelector.select(dataId);
+			var hasChange = this._dataSelector.select(dataId);
+			if (hasChange) {
+				this._dipatchChangeDataSelectEvent();
+			}
 		},
 
 		/**
 		 * すべてのデータを選択します。
 		 */
 		selectDataAll: function() {
-			this._dipatchChangeDataSelectEvent();
-			this._dataSelector.selectAll();
+			var hasChange = this._dataSelector.selectAll();
+			if (hasChange) {
+				this._dipatchChangeDataSelectEvent();
+			}
 		},
 
 		/**
@@ -16620,15 +16740,20 @@
 		 */
 		unselectData: function(dataId) {
 			this._dipatchChangeDataSelectEvent();
-			this._dataSelector.unselect(dataId);
+			var hasChange = this._dataSelector.unselect(dataId);
+			if (hasChange) {
+				this._dipatchChangeDataSelectEvent();
+			}
 		},
 
 		/**
 		 * すべてのデータの選択を解除します。
 		 */
 		unselectDataAll: function() {
-			this._dipatchChangeDataSelectEvent();
-			this._dataSelector.unselectAll();
+			var hasChange = this._dataSelector.unselectAll();
+			if (hasChange) {
+				this._dipatchChangeDataSelectEvent();
+			}
 		},
 
 		/**
@@ -16655,13 +16780,17 @@
 		},
 
 		focusData: function(dataId) {
-			this._dispatchChangeDataFocusEvent();
-			this._dataFocus.select(dataId);
+			var hasChange = this._dataFocus.select(dataId);
+			if (hasChange) {
+				this._dispatchChangeDataFocusEvent();
+			}
 		},
 
 		resetDataFocus: function() {
-			this._dispatchChangeDataFocusEvent();
-			this._dataFocus.unselectAll();
+			var hasChange = this._dataFocus.unselectAll();
+			if (hasChange) {
+				this._dispatchChangeDataFocusEvent();
+			}
 		},
 
 		getFocusedDataId: function() {
@@ -16671,11 +16800,37 @@
 
 
 		focusCell: function(row, column) {
+			if (row < 0 || this.getTotalRows() <= row) {
+				throw error.IndexOutOfBounds.createError(row);
+			}
+			if (column < 0 || this.getTotalColumns() <= column) {
+				throw error.IndexOutOfBounds.createError(column);
+			}
 			this._cellSelector.focus(row, column);
 		},
 
 		isSelectingRange: function() {
 			return this._cellSelector.isSelecting();
+		},
+
+		selectRange: function(rowIndex, rowLength, columnIndex, columnLength) {
+			if (rowIndex < 0) {
+				throw error.IndexOutOfBounds.createError(rowIndex);
+			}
+			if (columnIndex < 0) {
+				throw error.IndexOutOfBounds.createError(columnIndex);
+			}
+
+			var rowLast = rowIndex + rowLength - 1;
+			if (this.getTotalRows() <= rowLast) {
+				throw error.IndexOutOfBounds.createError(rowLast);
+			}
+			var columnLast = columnIndex + columnLength - 1;
+			if (this.getTotalColumns() <= columnLast) {
+				throw error.IndexOutOfBounds.createError(columnLast);
+			}
+
+			this._cellSelector.selectRange(rowIndex, rowLength, columnIndex, columnLength);
 		},
 
 		selectRangeStart: function(row, column) {
@@ -16827,11 +16982,15 @@
 		},
 
 		getSelectedRangeCopyText: function() {
-			var param = {
-				selected: this.getSelectedRange()
-			};
+			var selectedRange = this.getSelectedRange();
+			if (selectedRange == null) {
+				return '';
+			}
 
-			var request = this.request(param);
+			var request = this.request({
+				selected: selectedRange
+			});
+
 			var gridRange = request.getRangeSet().selected;
 			return gridRange.getCopyText();
 		},
@@ -17290,8 +17449,14 @@
 						classes.push('gridPropertyHeader');
 					}
 
+
+					var disabled = false;
+					if (disableInput != null) {
+						disabled = disableInput(cell);
+					}
+
 					util.forEach(cellClassDefinition, function(predicate, className) {
-						if (predicate(cell)) {
+						if (predicate(cell, disabled)) {
 							classes.push(escapeHtml(className));
 						}
 					});
@@ -17325,11 +17490,6 @@
 					var formatter = formatterSet[cell.propertyName];
 					if (formatter == null) {
 						formatter = defaultFormatter;
-					}
-
-					var disabled = false;
-					if (disableInput != null) {
-						disabled = disableInput(cell);
 					}
 
 					html += formatter(cell, disabled, divHeight, divWidth);
@@ -19987,6 +20147,11 @@
 				event.stopPropagation();
 				$(this.rootElement).focus();
 			}
+
+			// SPACE
+			if (keycode === 32) {
+				event.stopPropagation();
+			}
 		},
 
 		'.gridCell > :text focusin': function(context, $el) {
@@ -20085,7 +20250,7 @@
 			}
 
 			// 上下左右キー
-			if (37 <= keycode && keycode <= 40 && context.event.target === this.rootElement) {
+			if (37 <= keycode && keycode <= 40 && event.target === this.rootElement) {
 				event.preventDefault();
 				this._keydownArrowThrottle.call(event);
 				return;
@@ -20201,15 +20366,20 @@
 		},
 
 		'.gridCellFrame mousedown': function(context, $el) {
+			var event = context.event;
+
+			// 現在の位置を記憶する
+			this._pageX = event.pageX;
+			this._pageY = event.pageY;
 
 			// gridCell または gridBorder 以外での mousedown は無視する
-			var $target = $(context.event.target);
+			var $target = $(event.target);
 			if (!$target.hasClass('gridCell') && !$target.hasClass('gridBorder')) {
 				return;
 			}
 
 			// テキスト選択を避けるために preventDefault
-			context.event.preventDefault();
+			event.preventDefault();
 
 			var row = $el.data('h5DynGridRow');
 			var column = $el.data('h5DynGridColumn');
@@ -20257,6 +20427,10 @@
 			var event = context.event;
 			var evArg = context.evArg;
 
+			if (this._pageX === event.pageX && this._pageY === event.pageY) {
+				return;
+			}
+
 			var pageX = event.pageX;
 			if (pageX == null) {
 				pageX = evArg.pageX;
@@ -20280,6 +20454,9 @@
 
 			this._isSelectStartHeaderRows = null;
 			this._isSelectStartHeaderColumns = null;
+
+			this._pageX = null;
+			this._pageY = null;
 		},
 
 		'{this._gridLogic} changeGrid': function(context) {
@@ -20395,6 +20572,11 @@
 		_isSelectStartHeaderColumns: null,
 
 
+		_pageX: null,
+
+		_pageY: null,
+
+
 		_activateDeferred: null,
 
 		_readyLogicDeferred: null,
@@ -20507,10 +20689,11 @@
 		},
 
 		_triggerKeydownArrow: function(event) {
-			/* jshint maxcomplexity: 17 */
+			/* jshint maxcomplexity: 21 */
 
 			var keycode = event.which;
 			var shiftKey = event.shiftKey;
+			var ctrlKey = event.ctrlKey;
 
 			if (shiftKey) {
 				var result;
@@ -20558,18 +20741,35 @@
 			var row = focusedCell.row;
 			var column = focusedCell.column;
 
-			if (keycode === 37) { // arrow-left
-				column -= 1;
-			} else if (keycode === 38) { // arrow-up
-				row -= 1;
-			} else if (keycode === 39) { // arrow-right
-				column += 1;
-			} else if (keycode === 40) { // arrow-down
-				row += 1;
-			}
-
 			var totalRows = this._gridLogic.getTotalRows();
 			var totalColumns = this._gridLogic.getTotalColumns();
+
+			if (keycode === 37) { // arrow-left
+				if (ctrlKey) {
+					column = 0;
+				} else {
+					column -= 1;
+				}
+			} else if (keycode === 38) { // arrow-up
+				if (ctrlKey) {
+					row = 0;
+				} else {
+					row -= 1;
+				}
+			} else if (keycode === 39) { // arrow-right
+				if (ctrlKey) {
+					column = totalColumns - 1;
+				} else {
+					column += 1;
+				}
+			} else if (keycode === 40) { // arrow-down
+				if (ctrlKey) {
+					row = totalRows - 1;
+				} else {
+					row += 1;
+				}
+			}
+
 
 			if (row < 0) {
 				row = 0;
@@ -20781,6 +20981,12 @@
 		},
 
 		_render: function(renderRange) {
+			var focused = document.activeElement;
+			var $root = $(this.rootElement);
+			if ($root.find(focused) && $(focused).is(':input')) {
+				focused.blur();
+			}
+
 			var rangeStr = util.toVerboseString(renderRange, 1);
 			this.log.trace('Grid Render: {0}', rangeStr);
 
@@ -21312,6 +21518,11 @@
 				var oldData = cell.editedData;
 				var propertyName = cell.propertyName;
 
+				var oldValue = oldData[propertyName];
+				if (util.deepEquals(oldValue, value)) {
+					return;
+				}
+
 				var logic = this._gridLogic;
 				var dataSource = logic.getDataSource();
 
@@ -21565,6 +21776,15 @@
 		 */
 		isActive: function() {
 			return this._viewController.isActive();
+		},
+
+		/**
+		 * データ数を返します。
+		 * 
+		 * @returns {Length} データ数
+		 */
+		getDataCount: function() {
+			return this._gridLogic.getDataCount();
 		},
 
 		/**
@@ -21850,6 +22070,28 @@
 			this._gridLogic.setColumnWidth(column, width);
 		},
 
+		/**
+		 * @param {Index} rowIndex
+		 * @param {Length} rowLength
+		 * @param {Index} columnIndex
+		 * @param {Length} columnLength
+		 */
+		selectRange: function(rowIndex, rowLength, columnIndex, columnLength) {
+			this._gridLogic.selectRange(rowIndex, rowLength, columnIndex, columnLength);
+		},
+
+		/**
+		 * @param {Index} row
+		 * @param {Index} column
+		 */
+		focusCell: function(row, column) {
+			this._gridLogic.focusCell(row, column);
+		},
+
+		resetCellSelect: function() {
+			this._gridLogic.resetCellSelect();
+		},
+
 
 		// --- Event Handler --- //
 
@@ -21869,7 +22111,8 @@
 
 		'{this._gridLogic} changeSearchError': function(context) {
 			this.trigger('gridChangeSearchError', {
-				searchParam: context.event.searchParam
+				searchParam: context.event.searchParam,
+				cause: context.event.cause
 			});
 		},
 
@@ -21931,6 +22174,30 @@
 					v.notNull();
 					v.plainObject();
 
+					v.or(function(v) {
+						v.check('AllFetchSearcherParam', function(v) {
+							v.property('type', function(v) {
+								v.notNull();
+								v.equal('all');
+							});
+						});
+						v.check('LazyFetchSearcherParam', function(v) {
+							v.property('type', function(v) {
+								v.notNull();
+								v.equal('lazy');
+							});
+							v.property('property', function(v) {
+								v.nullable();
+								v.plainObject();
+
+								v.property('fetchUnit', function(v) {
+									v.nullable();
+									v.integer();
+									v.positiveNumber();
+								});
+							});
+						});
+					});
 					v.property('type', function(v) {
 						v.notNull();
 						v.any(['all', 'lazy']);
