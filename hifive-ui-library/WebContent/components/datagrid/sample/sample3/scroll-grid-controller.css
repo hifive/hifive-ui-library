@@ -19,11 +19,6 @@ body{
 	margin: 0 auto;
 }
 
-/* FIXME ? */
-#grid .table {
-	margin-bottom: 0;
-}
-
 #grid td {
 	border: solid 1px #888;
 }
@@ -31,11 +26,6 @@ body{
 #grid .gridSelectedData {
 	background-color: #1E90FF;
 	color: white;
-}
-
-/* FIXME ? */
-#grid td.grid-marked {
-	background-color: #B2E0FF;
 }
 
 #grid input[type="checkbox"] {

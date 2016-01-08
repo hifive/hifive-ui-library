@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<title>ScrollGrid のサンプル</title>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>横スクロールグリッド</title>
 
-		<link rel="stylesheet" type="text/css" href="./sample4.css">
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+<link href="../../src/datagrid.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="./sample4.css">
 
-		<!--[if lt IE 9]>
+<!--[if lt IE 9]>
 		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
 		<![endif]-->
-		<!--[if gte IE 9]><!-->
-		<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
-		<!--<![endif]-->
-		<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
-		<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
 
-		<script type="text/javascript" src="../../../virtualScroll/src/data-source.js"></script>
-		<script type="text/javascript" src="../../../virtualScroll/src/virtual-scroll.js"></script>
-		<script type="text/javascript" src="../../src/datagrid.js"></script>
+<!-- grid必要ライブラリ -->
+<script type="text/javascript" src="../../src/datagrid.js"></script>
 
-		<script type="text/javascript" src="./sample4.js"></script>
-	</head>
-	<body>
-		<h2>HorizontalScrollGrid のサンプル</h2>
-		<div id="grid"></div>
-	</body>
+<script src="data.js"></script>
+<script type="text/javascript" src="sample4.js"></script>
+</head>
+<body>
+	<h2>HorizontalScrollGrid のサンプル</h2>
+	<div id="grid"></div>
+</body>
 </html>

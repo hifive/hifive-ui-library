@@ -75,11 +75,31 @@
 	//	var data = [];
 	//	var sorted = [];
 
+	// ランダム日時作成
+	function createRandomDateTime() {
+		var now = new Date();
+		var time = now.getTime() + random(100) * 1000 * 60 * 60 * 24;
+		var date = new Date(time);
+
+		var year = String(date.getFullYear());
+		var month = String(date.getMonth() + 1);
+		var day = String(date.getDate());
+
+		month = '0' + month;
+		month = month.substring(month.length - 2);
+
+		day = '0' + day;
+		day = day.substring(day.length - 2);
+
+		return year + '/' + month + '/' + day;
+	}
+
 	// サンプルデータ作成
 	function createData(num) {
 		var data = [];
 		for (var i = 0; i < num; i++) {
 			var record = {
+				date: createRandomDateTime(),
 				id: 'J' + ('00000' + i).slice(-5).toString(),
 				name: getName(),
 				place: getPlace(),

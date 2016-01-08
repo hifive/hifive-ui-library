@@ -127,23 +127,6 @@
 
 		// --- プロパティ --- //
 
-		// --- プライベートなメソッド --- //
-
-		/**
-		 * 選択社員IDの表示を更新する
-		 *
-		 * @memberOf datagrid.sample.scrollGridController
-		 * @param
-		 */
-		_updateSelectDataIds: function() {
-			var selectedDataIds = this._gridController.getSelectedDataIdAll();
-			if (selectedDataIds.length < 15) {
-				this.$find('#selectedDataIds').text(selectedDataIds);
-			} else {
-				this.$find('#selectedDataIds').text(selectedDataIds.slice(0, 14) + '....');
-			}
-		},
-
 		// --- ライフサイクル関連メソッド --- //
 		/**
 		 * 初期処理
@@ -259,6 +242,21 @@
 		},
 
 		// --- Private Method --- //
+
+		/**
+		 * 選択社員IDの表示を更新する
+		 *
+		 * @memberOf datagrid.sample.scrollGridController
+		 * @param
+		 */
+		_updateSelectDataIds: function() {
+			var selectedDataIds = this._gridController.getSelectedDataIdAll();
+			if (selectedDataIds.length < 15) {
+				this.$find('#selectedDataIds').text(selectedDataIds);
+			} else {
+				this.$find('#selectedDataIds').text(selectedDataIds.slice(0, 14) + '....');
+			}
+		},
 
 		_getGridCell: function($gridCellFrame) {
 			if (!$gridCellFrame.hasClass('gridCellFrame')) {

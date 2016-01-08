@@ -28,22 +28,26 @@
 	border: solid 1px #888;
 }
 
-#grid td.grid-selected {
+#grid .gridSelectedCell {
 	background-color: #1E90FF;
 	color: white;
 }
 
-#grid td input[type="checkbox"] {
-	vertical-align: middle;
-}
-
-#grid div.grid-cell {
+#grid .gridCell {
 	text-align: center;
 	white-space: nowrap;
 }
 
-#grid .grid-main-box td[data-h5-dyn-grid-property-name="col6"] div.grid-cell {
-	text-align: right;
-	padding-right: 5px;
+#grid .gridHeaderColumn {
+	background-color: rgb(89, 87, 87);
+	border-bottom-style: double;
+	color : whitesmoke;
 }
 
+#grid .gridMainBox td:nth-of-type(odd) {
+	background-color: #f9f9f9;
+}
+
+#grid .gridHeaderRowsBox td:nth-of-type(odd) {
+	background-color: #f9f9f9;
+}
