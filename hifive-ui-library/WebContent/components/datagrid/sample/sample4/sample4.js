@@ -140,6 +140,20 @@
 			this.setData(num);
 		},
 
+		/**
+		 * グリッドセルを mosuedown
+		 *
+		 * @memberOf datagrid.sample.scrollGridController
+		 * @param context
+		 * @param $el
+		 */
+		'.gridCellFrame mousedown': function(context, $el) {
+			// 対象のグリッドセルを取得
+			var cell = this._getGridCell($el);
+			// グリッドセルのデータを表示
+			this._showGridCell(cell);
+		},
+
 		// --- Public Method --- //
 		init: function(num) {
 			// サンプルデータ生成
@@ -155,7 +169,44 @@
 			datagrid.util.delay(1000, this.own(function() {
 				this._gridController.search({});
 			}));
+		},
+
+		setData: function(num) {
+			// TODO clear() を呼ばないと表示が更新されない
+			this._gridController.clear();
+
+			// サンプルデータ生成
+			var data = sample.createData(num);
+			// dataSource 取得
+			var dataSource = this._gridController.getDataSource();
+			// dataAccessor 取得
+			var dataAccessor = dataSource.getDataAccessor();
+			// data を設定(内部で search が走る)
+			dataAccessor.setSourceDataSet(data);
+			// data を設定後、選択状態を全て解除する
+			this._gridController.unselectDataAll();
+
+			// searchして描画を更新
+			// TODO refresh() では更新されない
+			this._gridController.search({});
+		},
+
+		// --- Private Method --- //
+
+		_getGridCell: function($gridCellFrame) {
+			if (!$gridCellFrame.hasClass('gridCellFrame')) {
+				return;
+			}
+			// row,column からセルデータを取得
+			var row = $gridCellFrame.data('h5DynGridRow');
+			var column = $gridCellFrame.data('h5DynGridColumn');
+			return this._gridController.getGridCell(row, column);
+		},
+
+		_showGridCell: function(cell) {
+			this.$find('.gridCellInfo').text(JSON.stringify(cell.editedData, null, '\n'));
 		}
+
 	};
 
 	$(function() {

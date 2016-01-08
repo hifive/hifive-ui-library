@@ -26,7 +26,7 @@ body {
 #grid {
 	margin: 0 auto;
 	width: 1000px;
-	height: 600px;
+	height: 420px;
 }
 
 #grid td {
@@ -55,4 +55,12 @@ body {
 
 #grid .gridHeaderRowsBox td:nth-of-type(odd) {
 	background-color: #f9f9f9;
+}
+
+/*---------- グリッドレコード情報 ----------*/
+.gridCellInfo{
+	height: 200px;
+	border: solid 1px;
+	overflow: auto;
+	white-space: pre;
 }
