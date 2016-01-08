@@ -18,6 +18,11 @@
  * hifive
  */
 
+body {
+	padding-top: 25px;
+	background-color: white;
+}
+
 #grid {
 	margin: 0 auto;
 	width: 1000px;
