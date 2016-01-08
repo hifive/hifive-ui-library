@@ -16,7 +16,6 @@ body{
 /*---------- グリッド共通 ----------*/
 #grid {
 	height: 600px;
-	width: 800px;
 	margin: 0 auto;
 }
 
@@ -71,4 +70,12 @@ body{
 	margin-left: 5px;
 	text-align: left;
 	white-space: nowrap;
+}
+
+/*---------- グリッドレコード情報 ----------*/
+.gridCellInfo{
+	height: 400px;
+	border: solid 1px;
+	overflow-x: auto;
+	white-space: pre;
 }

@@ -106,7 +106,7 @@
 	 * <p>
 	 * 具体的には Object#toString() の結果の [object {TYPE}] の {TYPE} 部分を返します。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Object} value 値
@@ -119,7 +119,7 @@
 
 	/**
 	 * RegExp オブジェクトであるか判定します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} value 値
@@ -131,7 +131,7 @@
 
 	/**
 	 * Date オブジェクトであるか判定します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} value 値
@@ -143,7 +143,7 @@
 
 	/**
 	 * Error オブジェクトであるか判定します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} value 値
@@ -158,7 +158,7 @@
 	 * <p>
 	 * jQuery の $.isPlainObject() では constructor という名前のプロパティを持つオブジェクトを正しく判定できないために作成したメソッドです。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} value 値
@@ -204,7 +204,7 @@
 	 * <p>
 	 * callback の引数の順が逆になっていること、null や undefined を渡してもエラーとならないことが、 $.each() と異なります。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Collection} collection コレクション
@@ -225,7 +225,7 @@
 	 * <p>
 	 * null や undefined を渡してもエラーとならないことが、 $.map() と異なります。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Collection} collection コレクション
@@ -248,7 +248,7 @@
 
 	/**
 	 * すべての要素が条件を満たすか確認します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Collection} collection コレクション
@@ -274,7 +274,7 @@
 
 	/**
 	 * 要素がひとつでも条件を満たすか確認します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Collection} collection コレクション
@@ -303,7 +303,7 @@
 
 	/**
 	 * this に context をバインドした関数を返します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {context} context this にバインドする値
@@ -323,7 +323,7 @@
 	 * <p>
 	 * 関数以外のものが渡されたり、名前がわからなかった場合は空文字列を返します。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Function} f
@@ -350,7 +350,7 @@
 
 	/**
 	 * クラス名を返します。 判定できなかった場合は Object が返ります。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} target 変換する値
@@ -380,7 +380,7 @@
 
 	/**
 	 * 値を詳細な情報を含む文字列表現に変換します。 この際 string であればダブルクォートで囲み、オブジェクトであればそのプロパティの値も文字列変換されます。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} target 変換する値
@@ -410,7 +410,7 @@
 			return String(target);
 		}
 		if (_depth < 0) {
-			// toString が関数以外の値で上書きされていた場合は '#{CLASSNAME}#' を返す  
+			// toString が関数以外の値で上書きされていた場合は '#{CLASSNAME}#' を返す
 			if (!$.isFunction(target.toString)) {
 				return '#' + className(target) + '#';
 			}
@@ -447,7 +447,7 @@
 
 	/**
 	 * デフォルトの toString() となっている object と配列に対し、 toVerboseString() を実行する h5.u.str.format() 関数です。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {string} pattern パターン文字列
@@ -488,7 +488,7 @@
 	 * <p>
 	 * Object#hasOwnProperty と同じですが、こちらは hasOwnProperty という名前のプロパティを持っている場合でも利用できます。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Object} obj
@@ -843,7 +843,7 @@
 
 	/**
 	 * Validator の設定を読み込みます。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util.validator
 	 */
@@ -870,7 +870,7 @@
 
 	/**
 	 * 汎用の検証用オブジェクトを作成します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util.validator
 	 * @param {string} category 検証のカテゴリ
@@ -882,7 +882,7 @@
 
 	/**
 	 * 引数の検証用オブジェクトを作成します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util.validator
 	 * @param {string} category 検証のカテゴリ
@@ -914,7 +914,7 @@
 
 		/**
 		 * 値がある（null または undefined でない）ことを検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		notNull: {
@@ -926,7 +926,7 @@
 
 		/**
 		 * undefined でないことを検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		notUndefined: {
@@ -938,7 +938,7 @@
 
 		/**
 		 * 指定した値と等しい値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {*} arg 等しいか確認する値
 		 */
@@ -951,7 +951,7 @@
 
 		/**
 		 * 指定した値と等しくない値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {*} arg 等しくないか確認する値
 		 */
@@ -964,7 +964,7 @@
 
 		/**
 		 * typeof によって検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {string} type タイプ
 		 */
@@ -978,7 +978,7 @@
 
 		/**
 		 * instanceof によって検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {function(new)} constructor コンストラクタ
 		 */
@@ -992,7 +992,7 @@
 
 		/**
 		 * 整数であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		integer: {
@@ -1004,7 +1004,7 @@
 		},
 		/**
 		 * 正の数であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		positiveNumber: {
@@ -1016,7 +1016,7 @@
 
 		/**
 		 * 負の数であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		negativeNumber: {
@@ -1028,7 +1028,7 @@
 
 		/**
 		 * 指定した値以上の数値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {number} number 基準とする値
 		 */
@@ -1042,7 +1042,7 @@
 
 		/**
 		 * 指定した値以下の数値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		max: {
@@ -1055,7 +1055,7 @@
 
 		/**
 		 * 指定した値を越える数値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {number} number 基準とする値
 		 */
@@ -1069,7 +1069,7 @@
 
 		/**
 		 * 指定した値未満の数値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {number} number 基準とする値
 		 */
@@ -1083,7 +1083,7 @@
 
 		/**
 		 * 有限の値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		finite: {
@@ -1098,7 +1098,7 @@
 		 * <p>
 		 * equal では NaN であることを判定できないために用意された検証です。
 		 * </p>
-		 * 
+		 *
 		 * @method
 		 */
 		isNaN: {
@@ -1110,7 +1110,7 @@
 
 		/**
 		 * NaN 以外の値であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		notNaN: {
@@ -1122,7 +1122,7 @@
 
 		/**
 		 * 指定した正規表現にマッチする値であるか検証する。
-		 * 
+		 *
 		 * @method
 		 * @param {RegExp} regexp 正規表現
 		 */
@@ -1136,7 +1136,7 @@
 
 		/**
 		 * 配列であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		array: {
@@ -1148,7 +1148,7 @@
 
 		/**
 		 * 関数であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		func: {
@@ -1160,7 +1160,7 @@
 
 		/**
 		 * RegExp であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		regexp: {
@@ -1172,7 +1172,7 @@
 
 		/**
 		 * Date であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		date: {
@@ -1184,7 +1184,7 @@
 
 		/**
 		 * Error であるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		error: {
@@ -1196,7 +1196,7 @@
 
 		/**
 		 * プレーンオブジェクトであるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		plainObject: {
@@ -1208,7 +1208,7 @@
 
 		/**
 		 * jQuery オブジェクトであるか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		jQueryObject: {
@@ -1220,7 +1220,7 @@
 
 		/**
 		 * 指定した名前のメソッドを持っているか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {string} name メソッド名
 		 */
@@ -1234,7 +1234,7 @@
 
 		/**
 		 * 指定した Mixin のインタフェースを持っているか検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {Mixin} mixin ミックスイン
 		 */
@@ -1247,7 +1247,7 @@
 
 		/**
 		 * EventDispatcher のインターフェイースを持っているか検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		eventDispatcher: {
@@ -1259,7 +1259,7 @@
 
 		/**
 		 * ObservableItem であるかを検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		observableItem: {
@@ -1271,7 +1271,7 @@
 
 		/**
 		 * ObservableArray であるかを検証します。
-		 * 
+		 *
 		 * @method
 		 */
 		observableArray: {
@@ -1284,7 +1284,7 @@
 
 		/**
 		 * 指定した配列のどれかの値であることを検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {Array} values 取り得る値の配列
 		 */
@@ -1301,7 +1301,7 @@
 
 		/**
 		 * 指定した抽象メソッド群を実装していることを検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {AbstractMethodSet} abstractMethodSet 抽象メソッド群
 		 */
@@ -1323,7 +1323,7 @@
 
 		/**
 		 * 検証用の関数を指定して検証します。
-		 * 
+		 *
 		 * @method
 		 * @param {string} describe 検証を説明する文字列
 		 * @param {function(*): boolean} validateFuncion 検証用関数
@@ -1364,7 +1364,7 @@
 
 	/**
 	 * このコンストラクタはユーザが直接呼び出すことはありません。
-	 * 
+	 *
 	 * @constructor ValidationContext
 	 * @class 検証のコンテキストを表現するクラスです。
 	 * @param {string} targetPath 検証するターゲットのパス
@@ -1387,7 +1387,7 @@
 		 * <p>
 		 * もし値が null または undefined であった場合は以降の検証はスキップします。
 		 * </p>
-		 * 
+		 *
 		 * @param {boolean} [denyUndefined=false] undefined を拒否するか
 		 */
 		nullable: function(denyUndefined) {
@@ -1411,7 +1411,7 @@
 
 		/**
 		 * 指定したプロパティの値を検証します。
-		 * 
+		 *
 		 * @param {string} propertyName 検証するプロパティの名前
 		 * @param {function(ValidationContext)} validateProperty 検証が定義された関数
 		 */
@@ -1442,7 +1442,7 @@
 
 		/**
 		 * 指定したインデックスの値を検証します。
-		 * 
+		 *
 		 * @param {number} index 検証するインデックス（整数）
 		 * @param {function(ValidationContext)} validateValue 検証が定義された関数
 		 */
@@ -1464,7 +1464,7 @@
 
 		/**
 		 * 各キーの値を検証します。
-		 * 
+		 *
 		 * @param {function(ValidationContext)} validateKey 検証が定義された関数
 		 */
 		keys: function(validateKey) {
@@ -1516,7 +1516,7 @@
 
 		/**
 		 * 各値を検証します。
-		 * 
+		 *
 		 * @param {function(ValidationContext)} validateKey 検証が定義された関数
 		 */
 		values: function(validateValue) {
@@ -1561,7 +1561,7 @@
 
 		/**
 		 * or 条件で検証します。
-		 * 
+		 *
 		 * @param {function(ValidationContext)} validate 検証が定義された関数
 		 */
 		or: function(validate) {
@@ -1589,7 +1589,7 @@
 
 		/**
 		 * and 条件で検証します。
-		 * 
+		 *
 		 * @param {function(ValidationContext)} validate 検証が定義された関数
 		 */
 		and: function(validate) {
@@ -1694,7 +1694,7 @@
 
 	/**
 	 * このコンストラクタはユーザが直接呼び出すことはありません。
-	 * 
+	 *
 	 * @class 検証を行うためのクラスです
 	 * @constructor Validator
 	 * @param {string} category
@@ -1712,7 +1712,7 @@
 
 		/**
 		 * Eclipse のアウトライン用のコメントです。
-		 * 
+		 *
 		 * @private
 		 * @memberOf _Validator
 		 */
@@ -1747,7 +1747,7 @@
 
 		/**
 		 * 検証が有効になっているかを返します。
-		 * 
+		 *
 		 * @returns {boolean} 検証が有効となっていれば true、そうでなければ false
 		 */
 		isEnabled: function() {
@@ -1765,7 +1765,7 @@
 
 	/**
 	 * このコンストラクタはユーザが直接呼び出すことはありません。
-	 * 
+	 *
 	 * @class 引数の検証を行うためのクラスです
 	 * @constructor ArgumentsValidator
 	 * @param {string} category
@@ -1784,7 +1784,7 @@
 
 		/**
 		 * Eclipse のアウトライン用のコメントです。
-		 * 
+		 *
 		 * @private
 		 * @memberOf _ArgumentsValidator
 		 */
@@ -1795,7 +1795,7 @@
 
 		/**
 		 * 引数を検証します。
-		 * 
+		 *
 		 * @param {string} name 引数の名前
 		 * @param {*} value 引数の値
 		 * @param {function(Validator)} validate 検証が定義された関数
@@ -1822,7 +1822,7 @@
 
 		/**
 		 * 可変長引数を検証します。
-		 * 
+		 *
 		 * @param {Array.<*>} args 可変長引数
 		 * @param {function(Validator)} validate 検証が定義された関数
 		 */
@@ -1848,7 +1848,7 @@
 
 		/**
 		 * 検証が有効になっているかを返します。
-		 * 
+		 *
 		 * @returns {boolean} 検証が有効となっていれば true、そうでなければ false
 		 */
 		isEnabled: function() {
@@ -1933,7 +1933,7 @@
 	 * <p>
 	 * 継承のために利用する関数で、IE8以前では Object.create() が利用できないため自前で定義しています。
 	 * </p>
-	 * 
+	 *
 	 * @private
 	 */
 	function createObject(proto) {
@@ -1948,7 +1948,7 @@
 	 * IE8 との互換性のため constructor プロパティの enumerable 属性を指定できないため、 for-in に constructor
 	 * プロパティがでてきてしまうことに注意してください。
 	 * </p>
-	 * 
+	 *
 	 * @private
 	 */
 	function extendClass(constructor, superConstructor) {
@@ -1959,7 +1959,7 @@
 
 	/**
 	 * 定義したクラスの toString のデフォルト実装です。
-	 * 
+	 *
 	 * @private
 	 */
 	function defaultToString() {
@@ -1969,7 +1969,7 @@
 
 	/**
 	 * インターフェースを定義します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {string} interfaceName インターフェース名
@@ -2008,7 +2008,7 @@
 
 	/**
 	 * 抽象クラスを定義します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {string} className クラスの名前
@@ -2129,7 +2129,7 @@
 
 	/**
 	 * クラスを定義します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {string} className クラスの名前
@@ -2264,7 +2264,7 @@
 
 	/**
 	 * このコンストラクタはユーザが直接呼び出すことはありません。
-	 * 
+	 *
 	 * @class 抽象メソッドの集合を表すクラスです。
 	 * @constructor AbstractMethodSet
 	 * @param {string} name 抽象メソッドの集合の名前
@@ -2297,7 +2297,7 @@
 
 		/**
 		 * このメンバは eclipse のアウトライン用です。
-		 * 
+		 *
 		 * @private
 		 * @memberOf _AbstractMethodSet
 		 */
@@ -2305,7 +2305,7 @@
 
 		/**
 		 * 集合の名前を返す。
-		 * 
+		 *
 		 * @returns {string} 集合の名前
 		 */
 		toString: function() {
@@ -2314,7 +2314,7 @@
 
 		/**
 		 * この集合が持つ抽象メソッドのうち実装されていないものをひとつ返す。
-		 * 
+		 *
 		 * @param {Object} obj 実装メソッドがあるか探す対象
 		 * @returns {string} 実装されていないメソッド名、ひとつもなかった場合は null を返す
 		 */
@@ -2337,7 +2337,7 @@
 
 		/**
 		 * この集合が持つ抽象メソッドのうち実装されていないものを全て返す。
-		 * 
+		 *
 		 * @param {Object} obj 実装メソッドがあるか探す対象
 		 * @returns {Array.<string>} 実装されていないメソッド名の配列
 		 */
@@ -2437,7 +2437,7 @@
 
 	/**
 	 * hifive がロジックとコントローラに提供している own(), ownWithOrg() を自作のクラスで利用するための Mixin です。
-	 * 
+	 *
 	 * @mixin
 	 * @name OwnSupport
 	 */
@@ -2445,7 +2445,7 @@
 
 		/**
 		 * 指定された関数に対して、コンテキスト(this)をロジックに変更して実行する関数を返します。
-		 * 
+		 *
 		 * @memberOf OwnSupport#
 		 * @param {function} func 関数
 		 * @returns {function} コンテキスト(this)をこのオブジェクトに変更した関数
@@ -2456,7 +2456,7 @@
 
 		/**
 		 * 指定された関数に対して、コンテキスト(this)をロジックに変更し、元々のthisを第1引数に加えて実行する関数を返します。
-		 * 
+		 *
 		 * @memberOf OwnSupport#
 		 * @param {function} func 関数
 		 * @returns {function} コンテキスト(this)をこのオブジェクトに変更し、元々のthisを第1引数に加えた関数
@@ -2480,7 +2480,7 @@
 	 * 具体的には、まず __dispose() メソッドを持つ場合は、そのメソッドを呼び出します。<br>
 	 * その後に全てのプロパティを削除します。
 	 * </p>
-	 * 
+	 *
 	 * @mixin
 	 * @name Disposable
 	 */
@@ -2553,7 +2553,7 @@
 
 		/**
 		 * OwnSupport の Mixin です。
-		 * 
+		 *
 		 * @type Mixin
 		 * @memberOf h5.ui.components.datagrid.util
 		 */
@@ -2561,7 +2561,7 @@
 
 		/**
 		 * Disposable の Mixin です。
-		 * 
+		 *
 		 * @type Mixin
 		 * @memberOf h5.ui.components.datagrid.util
 		 */
@@ -2702,7 +2702,7 @@
 	 * <p>
 	 * 子要素を追って見るのは PlainObject と Array に限られ、それ以外は === 演算子によって比較します。 また、循環参照がある場合は常に false を返します。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {*} a 比較対象その1
@@ -2718,7 +2718,7 @@
 	 * <p>
 	 * PlainObject でないものを引数として渡すとエラーとなります。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Object} obj オブジェクト
@@ -2744,7 +2744,7 @@
 
 	/**
 	 * コレクションの各値を関数で処理して、新たなオブジェクトを作成します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Object|Array.<*>} collection 対象のオブジェクト、または配列
@@ -2841,7 +2841,7 @@
 	 * 見つからなかった場合のインデックスは指定した値の直後の値を指します。<br>
 	 * また、関数の実行中にソート済み配列でないことがわかったら例外を投げます。（あくまでわかったらであり、確実ではないことに注意してください）
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Array.<*>} sortedArray ソート済みの配列
@@ -2925,7 +2925,7 @@
 	 * <p>
 	 * setTimeout() とは関数に引数が渡せる部分と戻り値として Promise を返す部分が異なります。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {number} wait 待機する時間
@@ -2978,7 +2978,7 @@
 	 * <p>
 	 * 渡した関数が例外を投げた場合は、次の呼び出し時も処理を実行しようとします。
 	 * </p>
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {function} onceFunction 一度だけ実行したい関数
@@ -3002,7 +3002,7 @@
 
 	/**
 	 * エラー定義のセットを作成します。
-	 * 
+	 *
 	 * @public
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {string} category エラーカテゴリ
@@ -3057,7 +3057,7 @@
 
 	/**
 	 * イベントリスナをまとめて登録するためのオブジェクトを作成します。。
-	 * 
+	 *
 	 * @memberOf h5.ui.components.datagrid.util
 	 * @param {Object} context イベントリスナの this にセットするオブジェクト
 	 * @returns {EventListenerSet} イベントリスナの集合
@@ -3122,7 +3122,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @class エラー定義を表すクラスです。
 		 * @constructor ErrorDefinition
 		 * @param {string} category エラーカテゴリ
@@ -3160,7 +3160,7 @@
 
 			/**
 			 * このメンバは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _ErrorDefinition
 			 */
@@ -3168,7 +3168,7 @@
 
 			/**
 			 * 注釈付きエラーを生成します。
-			 * 
+			 *
 			 * @param {Array.<string>} var_args パターンに渡すパラメータ
 			 * @returns {Error} 注釈付きエラー
 			 */
@@ -3190,7 +3190,7 @@
 
 			/**
 			 * この定義から生成されたエラーであるかを判定します。
-			 * 
+			 *
 			 * @param {Error} e エラー
 			 * @returns {boolean} この定義から生成されたエラーであるか否か
 			 */
@@ -3225,7 +3225,7 @@
 	 * <p>
 	 * 通常の関数の他に、'propagate' と文字列を指定することもでき、その場合はイベントをそのまま自分のイベントして伝搬させます。
 	 * </p>
-	 * 
+	 *
 	 * @typeof {function(Event)|string} EventListener
 	 * @memberOf EventListenerSet
 	 */
@@ -3236,7 +3236,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @class イベントリスナをまとめて登録（削除）するためのクラスです。
 		 * @constructor EventListenerSet
 		 * @param {Object} context イベントリスナの this にセットするオブジェクト
@@ -3260,7 +3260,7 @@
 
 			/**
 			 * このメンバは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _EventListenerSet
 			 */
@@ -3271,7 +3271,7 @@
 
 			/**
 			 * イベントリスナをまとめて登録します。
-			 * 
+			 *
 			 * @param {Object.<string, Object.<string, EventListener>>} listenersDefinition
 			 *            イベントリスナの定義オブジェクト
 			 */
@@ -3388,7 +3388,7 @@
 
 			/**
 			 * イベントリスナを登録します。
-			 * 
+			 *
 			 * @private
 			 * @param {EventDispatcher} eventDispatcher イベントディスパッチャ
 			 * @param {string} type タイプ
@@ -3466,7 +3466,7 @@
 		 * <li>cooling: 実行後、waitだけ時間経つまでの状態</li>
 		 * </ul>
 		 * </p>
-		 * 
+		 *
 		 * @typedef {string} ThrottleStateString
 		 * @memberOf Throttle
 		 */
@@ -3480,7 +3480,7 @@
 		 * <p>
 		 * 新しい引数をそのまま利用します。
 		 * </p>
-		 * 
+		 *
 		 * @private
 		 * @param {Array.<*>=} beforeArgs 以前の引数
 		 * @param {Array.<*>} args 新しい引数
@@ -3500,7 +3500,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor Throttle
 		 * @class 処理の実行回数を絞るためのクラスです。
 		 *        <p>
@@ -3577,7 +3577,7 @@
 
 			/**
 			 * このメンバは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _Throttle
 			 */
@@ -3773,7 +3773,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor Repeat
 		 * @class 処理を一定の時間をあけて繰り返し実行するためのクラスです。
 		 * @param {number} firstWait 最初の処理から次の処理までの時間（ミリ秒）
@@ -3793,7 +3793,7 @@
 
 			/**
 			 * このメンバは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _Repeat
 			 */
@@ -3952,7 +3952,7 @@
 
 	/**
 	 * インデックスを表す型です。
-	 * 
+	 *
 	 * @typedef {number} Index
 	 */
 
@@ -3967,7 +3967,7 @@
 
 	/**
 	 * 長さを表す型です。
-	 * 
+	 *
 	 * @typedef {number} Length
 	 */
 
@@ -3984,7 +3984,7 @@
 
 	/**
 	 * データを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} Data
 	 */
 
@@ -3997,7 +3997,7 @@
 
 	/**
 	 * データが持つ値を表す型です。
-	 * 
+	 *
 	 * @typedef {*} Value
 	 */
 
@@ -4012,7 +4012,7 @@
 	 * <p>
 	 * JSON Patch の関係でスラッシュ "/" を含むことができません。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} DataId
 	 */
 
@@ -4029,7 +4029,7 @@
 	 * <p>
 	 * JSON Patch の関係でスラッシュ "/" を含むことができません。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} PropertyName
 	 */
 
@@ -4043,7 +4043,7 @@
 
 	/**
 	 * データのIDとデータ自身のマッピングを表す型です。
-	 * 
+	 *
 	 * @typedef {Object.<DataId, Data>} DataSet
 	 */
 
@@ -4059,7 +4059,7 @@
 
 	/**
 	 * データに対するフィルタ関数の型です。
-	 * 
+	 *
 	 * @typedef {function(Data): boolean} DataFilterPredicate
 	 */
 
@@ -4072,7 +4072,7 @@
 
 	/**
 	 * 値に対するフィルタ関数の型です。
-	 * 
+	 *
 	 * @typedef {function(Value): boolean} ValueFilterPredicate
 	 */
 
@@ -4085,7 +4085,7 @@
 
 	/**
 	 * ローカルで実行可能なプロパティに対するフィルタのパラメータを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} LocalValueFilterParam
 	 * @property {PropertyName} property
 	 * @property {Value=} value
@@ -4113,7 +4113,7 @@
 
 	/**
 	 * ローカルで実行可能なフィルタのパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {LocalValueFilterParam|DataFilterPredicate} LocalFilterParam
 	 */
 
@@ -4136,7 +4136,7 @@
 	 * <li>desc: 降順</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} OrderString
 	 */
 
@@ -4150,7 +4150,7 @@
 
 	/**
 	 * ソートのパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {Object} SortParam
 	 * @property {PropertyName} property ソートするプロパティ名
 	 * @property {OrderString} order ソートで並べる順
@@ -4168,7 +4168,7 @@
 
 	/**
 	 * ツリーのパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {Object} TreeParam
 	 * @property {PropertyName} parentProperty
 	 * @property {Object.<DataId, boolean>} openParents
@@ -4192,7 +4192,7 @@
 
 	/**
 	 * ローカルでの検索のパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {Object} LocalSearchParam
 	 * @property {Array.<LocalFilterParam>=} filter
 	 * @property {Array.<SortParam>=} sort
@@ -4225,7 +4225,7 @@
 
 	/**
 	 * 一般的なフィルタのパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {Object} FilterParam
 	 * @property {string} key
 	 * @property {Value} value
@@ -4233,7 +4233,7 @@
 
 	/**
 	 * サーバでのでの検索のパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {Object} ServerSearchParam
 	 * @property {Array.<FilterParam>=} filter
 	 * @property {Array.<SortParam>=} sort
@@ -4260,7 +4260,7 @@
 
 	/**
 	 * 検索のパラメータとなる型です。
-	 * 
+	 *
 	 * @typedef {LocalSearchParam|ServerSearchParam} SearchParam
 	 */
 
@@ -4275,7 +4275,7 @@
 
 	/**
 	 * {@link DataAccessor} によるデータ検索のフェッチを行うためのパラメータを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} FetchParam
 	 */
 
@@ -4288,7 +4288,7 @@
 
 	/**
 	 * 1次元の検索結果のフェッチ可能な限界を表す型です。
-	 * 
+	 *
 	 * @typedef {Length} FetchLimit1D
 	 */
 
@@ -4298,7 +4298,7 @@
 
 	/**
 	 * 検索結果のフェッチ可能な限界を表す型です。
-	 * 
+	 *
 	 * @typedef {FetchLimit1D} FetchLimit1D
 	 */
 
@@ -4312,7 +4312,7 @@
 
 	/**
 	 * データ検索の初期データを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} InitialData
 	 * @property {FetchRange} fetchRange
 	 * @property {boolean} isAllData
@@ -4364,7 +4364,7 @@
 
 	/**
 	 * データ検索の結果を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} SearchResult
 	 * @property {FetchLimit} fetchLimit
 	 * @property {FetchParam} fetchParam
@@ -4388,7 +4388,7 @@
 
 	/**
 	 * 編集を反映したデータ検索の結果を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} EditedSearchResult
 	 * @property {FetchLimit} fetchLimit
 	 * @property {FetchParam} fetchParam
@@ -4413,7 +4413,7 @@
 
 	/**
 	 * 1次元の検索結果に対するフェッチの範囲指定を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} FetchRange1D
 	 * @property {Index} index 取得を開始する位置
 	 * @property {Length} length 取得する長さ
@@ -4432,7 +4432,7 @@
 	// MEMO: スプレッドシートでは2次元の範囲指定があり得る
 	/**
 	 * フェッチの範囲指定を表す型です。
-	 * 
+	 *
 	 * @typedef {FetchRange1D} FetchRange
 	 */
 
@@ -4447,7 +4447,7 @@
 
 	/**
 	 * フェッチの結果を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} FetchResult
 	 * @property {FetchParam} fetchParam フェッチ条件
 	 * @property {FetchRange} fetchRange フェッチ範囲
@@ -4471,7 +4471,7 @@
 
 	/**
 	 * 編集を反映したフェッチの結果を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} EditedFetchResult
 	 * @property {FetchParam} fetchParam フェッチ条件
 	 * @property {FetchRange} fetchRange フェッチ範囲
@@ -4495,7 +4495,7 @@
 
 	/**
 	 * jQuery の ajax 関数に渡すことができる設定の型です。
-	 * 
+	 *
 	 * @typedef {Object} AjaxSetting
 	 */
 
@@ -4669,7 +4669,7 @@
 	 * <li>removed: データが削除された</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} EditStatusString
 	 */
 
@@ -4683,7 +4683,7 @@
 
 	/**
 	 * ツリーに関して各データに付与するメタデータを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} TreeMetadata
 	 * @property {TreePath} path 自分から親を辿っていった dataId の配列
 	 * @property {boolean} hasChild 子を持っているか
@@ -4711,7 +4711,7 @@
 
 	/**
 	 * 編集結果を反映したデータの型です。
-	 * 
+	 *
 	 * @typedef {Object} EditedData
 	 * @property {DataId} dataId データのID
 	 * @property {EditStatusString} editStatus 編集ステータス
@@ -4749,7 +4749,7 @@
 
 	/**
 	 * データの追加を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} AddDataEvent
 	 * @property {string} type "addData"
 	 * @property {DataId} dataId データのID
@@ -4774,7 +4774,7 @@
 
 	/**
 	 * データの削除を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} RemoveDataEvent
 	 * @property {string} type "removeData"
 	 * @property {DataId} dataId データのID
@@ -4799,7 +4799,7 @@
 
 	/**
 	 * データの値の変更を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ReplaceValueEvent
 	 * @property {string} type "replaceValue"
 	 * @property {DataId} dataId データのID
@@ -4831,7 +4831,7 @@
 
 	/**
 	 * データに関する3種類の変更（Add,Remove,Replace）を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {AddDataEvent|RemoveDataEvent|ReplaceValueEvent} ChangeDataEvent
 	 * @property {Index=} index
 	 */
@@ -4862,7 +4862,7 @@
 	 * <li>unknown: 理由がわからないデータの変更（サーバなど）</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} ChangeTypeString
 	 */
 
@@ -4876,7 +4876,7 @@
 
 	/**
 	 * 編集による一連の変更を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} EditEvent
 	 * @property {string} type "edit"
 	 * @property {ChangeTypeString} changeType 変更のタイプ
@@ -4906,7 +4906,7 @@
 
 	/**
 	 * 元データの一連の変更を表現するイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeSourceEvent
 	 * @property {string} type "changeSource"
 	 * @property {ChangeTypeString} changeType 変更のタイプ
@@ -4936,14 +4936,14 @@
 
 	/**
 	 * コミットが開始されたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} CommitStartEvent
 	 * @property {string} type "commitStart"
 	 */
 
 	/**
 	 * コミットが成功したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} CommitSuccessEvent
 	 * @property {string} type "commitSuccess"
 	 * @property {*} result コミットの結果
@@ -4951,7 +4951,7 @@
 
 	/**
 	 * コミットが失敗したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} CommitErrorEvent
 	 * @property {string} type "commitError"
 	 */
@@ -4961,28 +4961,28 @@
 	 * <p>
 	 * このイベントはコミットの成否に関わらず発火されます。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} CommitCompleteEvent
 	 * @property {string} type "commitComplete"
 	 */
 
 	/**
 	 * ロールバックが行われたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} RollbackEvent
 	 * @property {string} type "rollback"
 	 */
 
 	/**
 	 * 検索の準備ができたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ReadySearchEvent
 	 * @property {string} type "readySearch"
 	 */
 
 	/**
 	 * 検索条件の変更を開始したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeSearchStartEvent
 	 * @property {string} type "changeSearchStart"
 	 * @property {SearchParam} searchParam
@@ -5005,7 +5005,7 @@
 
 	/**
 	 * 検索条件の変更が成功したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeSearchSuccessEvent
 	 * @property {string} type "changeSearchSuccess"
 	 * @property {SearchParam} searchParam
@@ -5028,7 +5028,7 @@
 
 	/**
 	 * 検索条件の変更が失敗したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeSearchErrorEvent
 	 * @property {string} type "changeSearchError"
 	 * @property {SearchParam} searchParam
@@ -5054,7 +5054,7 @@
 	 * <p>
 	 * このイベントは検索条件変更の成否に関わらず発火されます。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} ChangeSearchCompleteEvent
 	 * @property {string} type "changeSearchComplete"
 	 * @property {SearchParam} searchParam
@@ -5077,21 +5077,21 @@
 
 	/**
 	 * 検索結果のリフレッシュが開始されたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} RefreshSearchStartEvent
 	 * @property {string} type "refreshSearchStart"
 	 */
 
 	/**
 	 * 検索結果のリフレッシュが成功したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} RefreshSearchSuccessEvent
 	 * @property {string} type "refreshSearchSuccess"
 	 */
 
 	/**
 	 * 検索結果のリフレッシュが失敗したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} RefreshSearchErrorEvent
 	 * @property {string} type "refreshSearchError"
 	 */
@@ -5101,7 +5101,7 @@
 	 * <p>
 	 * このイベントはリフレッシュの成否に関わらず発火されます。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} RefreshSearchCompleteEvent
 	 * @property {string} type "refreshSearchComplete"
 	 */
@@ -5109,7 +5109,7 @@
 
 	/**
 	 * ツリー構造の位置を表現するパスを表す型です。
-	 * 
+	 *
 	 * @typedef {Array.<DataId>} TreePath
 	 */
 
@@ -5127,7 +5127,7 @@
 	 * <p>
 	 * 先頭に必ずスラッシュがあります。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} PatchPath
 	 */
 
@@ -5141,7 +5141,7 @@
 
 	/**
 	 * JSON Patch の add を表現する型です。
-	 * 
+	 *
 	 * @typedef {Object} AddPatch
 	 * @property {string} op "add"
 	 * @property {PatchPath} path 追加するパス
@@ -5166,7 +5166,7 @@
 
 	/**
 	 * JSON Patch の remove を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} RemovePatch
 	 * @property {string} op "remove"
 	 * @property {PatchPath} path
@@ -5189,7 +5189,7 @@
 
 	/**
 	 * JSON Patch の replace を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} ReplacePatch
 	 * @property {string} op "replace"
 	 * @property {PatchPath} path 置き換えるパス
@@ -5214,7 +5214,7 @@
 
 	/**
 	 * JSON Patch の test を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} TestPatch
 	 * @property {string} op "test"
 	 * @property {PatchPath} path テストするパス
@@ -5239,7 +5239,7 @@
 
 	/**
 	 * JSON Patch のひとつのパッチを表す型です。
-	 * 
+	 *
 	 * @typedef {AddPatch|RemovePatch|ReplacePatch|TestPatch} Patch
 	 */
 
@@ -5257,7 +5257,7 @@
 
 	/**
 	 * データへの参照を表現する型です。
-	 * 
+	 *
 	 * @typedef {Object} DataReference
 	 * @property {boolean} isLoaded ロード済みであるか否か
 	 * @property {?EditedData} data データ
@@ -5309,7 +5309,7 @@
 	 * <p>
 	 * tree の設定によって treePath を付与するための型になります。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} LocalSearchedData
 	 * @property {DataId} dataId
 	 * @property {Data} data
@@ -5333,7 +5333,7 @@
 
 	/**
 	 * 参照するデータIDの変更を開始したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeDataIdStartEvent
 	 * @property {string} type "changeDataIdStart"
 	 * @property {DataId} dataId データのID
@@ -5354,7 +5354,7 @@
 
 	/**
 	 * 参照するデータIDの変更が成功したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeDataIdSuccessEvent
 	 * @property {DataId} dataId データのID
 	 */
@@ -5374,7 +5374,7 @@
 
 	/**
 	 * 参照するデータIDの変更が失敗したことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeDataIdErrorEvent
 	 * @property {DataId} dataId データのID
 	 */
@@ -5397,7 +5397,7 @@
 	 * <p>
 	 * このイベントは変更の成否にかかわらず発火します。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} ChangeDataIdCompleteEvent
 	 * @property {DataId} dataId データのID
 	 */
@@ -5417,7 +5417,7 @@
 
 	/**
 	 * スクロール位置を表す型です。
-	 * 
+	 *
 	 * @typedef {number} ScrollPosition
 	 */
 
@@ -5433,7 +5433,7 @@
 
 	/**
 	 * ピクセル数によって表現されたサイズの型です。
-	 * 
+	 *
 	 * @typedef {number} PixelSize
 	 */
 
@@ -5449,7 +5449,7 @@
 
 	/**
 	 * ピクセル数によって表現された位置の型です。
-	 * 
+	 *
 	 * @typedef {number} PixelPosition
 	 */
 
@@ -5466,7 +5466,7 @@
 	 * <p>
 	 * {@link PixelPostion} に加えて最後であることを示す文字列 "last" を含む型となります。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string|PixelPosition} DisplayPosition
 	 */
 
@@ -5482,7 +5482,7 @@
 
 	/**
 	 * データ選択の結果を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} DataSelectResult
 	 * @property {boolean} isDefaultUnselected デフォルトで選択解除状態であれば true、選択状態であれば false
 	 * @property {Array.<DataId>} invertedIds デフォルトと逆の状態となっている dataId の配列
@@ -5509,7 +5509,7 @@
 
 	/**
 	 * ひとつのセルの位置を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} CellPosition
 	 * @property {Index} row
 	 * @property {Index} column
@@ -5527,7 +5527,7 @@
 
 	/**
 	 * 複数のセルの範囲を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} CellRange
 	 * @property {Index} rowIndex
 	 * @property {Length} rowLength
@@ -5550,7 +5550,7 @@
 
 	/**
 	 * セルに対する選択が変更されたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ChangeCellSelectEvent
 	 * @property {string} type "changeCellSelect"
 	 * @property {CellPosition} focusedCell フォーカスされているセル
@@ -5577,7 +5577,7 @@
 	 * <p>
 	 * 実際には {@link DataId} や {@link PropertyName} などが割り当たる想定です。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} SizeKey
 	 */
 
@@ -5590,7 +5590,7 @@
 
 	/**
 	 * 表示に必要な範囲を表現する型です。
-	 * 
+	 *
 	 * @typedef {Object} DisplayRange
 	 * @property {Index} index
 	 * @property {Length} length
@@ -5618,7 +5618,7 @@
 	 * <li>horizontal</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} DirectionString
 	 */
 
@@ -5818,7 +5818,7 @@
 
 	/**
 	 * CSS における class名 を表す型です。
-	 * 
+	 *
 	 * @typedef {string} ClassName
 	 */
 
@@ -6049,7 +6049,7 @@
 
 	/**
 	 * {@link GridLogic} の準備ができたことを表すイベントの型です。
-	 * 
+	 *
 	 * @typedef {Object} ReadyGridLogicEvent
 	 * @property {string} type "readyGridLogic"
 	 */
@@ -6058,7 +6058,7 @@
 	// TODO: 行追加なども追加する
 	/**
 	 * グリッドに関するひとつの変更を表す型です。
-	 * 
+	 *
 	 * @typedef {ChangeSourceEvent|EditEvent|RollbackEvent|ChangeRowHeightEvent|ChangeColumnWidthEvent|ChangeDataSelectEvent|ChangeCellSelectEvent|ChangePropertyEvent}
 	 *          GridChange
 	 */
@@ -6080,7 +6080,7 @@
 	 * <p>
 	 * このイベントは変更とは非同期に発生し、一回のイベントループで発生した変更をまとめて通知します。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {Object} ChangeGridEvent
 	 * @property {string} type "changeGrid"
 	 * @property {Array.<GridChange>} changes 一連の変更を表す配列
@@ -6115,7 +6115,7 @@
 	 * <li>lazy</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} SearcherTypeString
 	 */
 
@@ -6154,7 +6154,7 @@
 	 * <li>property</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} MapperTypeString
 	 */
 
@@ -6168,7 +6168,7 @@
 
 	/**
 	 * Mapper の設定用パラメータを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} MapperParam
 	 * @property {MapperTypeString} type
 	 * @property {Object} param
@@ -6196,7 +6196,7 @@
 	 * <li>pixel</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} ScrollTypeString
 	 */
 
@@ -6210,7 +6210,7 @@
 
 	/**
 	 * Scroll方法のパラメータを表す型です。
-	 * 
+	 *
 	 * @typedef {Object} ScrollParam
 	 * @property {ScrollTypeString} vertical
 	 * @property {ScrollTypeString} horizontal
@@ -6228,7 +6228,7 @@
 
 	/**
 	 * {@link GridLogic} の初期化で渡すパラメータの型です。
-	 * 
+	 *
 	 * @typedef {Object} GridLogicParam
 	 * @property {SearcherTypeString} searcher
 	 * @property {MapperParam} mapper
@@ -6248,7 +6248,7 @@
 
 	/**
 	 * セルのデータからセルの表示HTMLに変換するフォーマッタの型です。
-	 * 
+	 *
 	 * @typedef {function(GridCell, boolean, PixelSize, PixelSize): string} CellFormatter
 	 */
 
@@ -6261,7 +6261,7 @@
 
 	/**
 	 * セルのイベントハンドラを表す型です。
-	 * 
+	 *
 	 * @typedef {function(Context, JQueryObject)} CellEventHandler
 	 */
 
@@ -6277,7 +6277,7 @@
 	 * <p>
 	 * ユーザに部分一致文字列をフィルタ条件として入力させる UI とするパラメータです。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} PartialMatchFilterUIString
 	 */
 
@@ -6293,7 +6293,7 @@
 	 * そのプロパティにおいて、存在する値の集合からフィルタ条件をユーザに選択させる UI とするパラメータです。 <br>
 	 * データを遅延ロードしている場合に選択することはできません。
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string} DistinctValuesFilterUIString
 	 */
 
@@ -6305,7 +6305,7 @@
 
 	/**
 	 * フィルタ可能な値の配列を表す型です。
-	 * 
+	 *
 	 * @typedef {Array.<Value>} ValueArrayFilterUIParam
 	 */
 
@@ -6327,7 +6327,7 @@
 	 * <li>値の配列: 指定した配列の値から選択してもらう UI</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {PartialMatchFilterUIString|DistinctValuesFilterUIString|ValueArrayFilterUIParam}
 	 *          FilterUIParam
 	 */
@@ -6344,7 +6344,7 @@
 
 	/**
 	 * プロパティごとのUI上の設定を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} PropertyUIParam
 	 * @property {CellFormatter=} formatter
 	 * @property {CellEventHandler=} changeHandler
@@ -6388,7 +6388,7 @@
 
 	/**
 	 * セルにクラスを追加するか判断するための関数を表す型です。
-	 * 
+	 *
 	 * @typedef {function(GridCell): boolean> CellClassPredicate
 	 */
 
@@ -6401,7 +6401,7 @@
 
 	/**
 	 * 各セルにあてるクラスを決めるための設定を表す型です。
-	 * 
+	 *
 	 * @typedef {Object.<string, CellClassPredicate>} CellClassDefinition
 	 */
 
@@ -6426,7 +6426,7 @@
 	 * <li>css: CSSで設定された値をそのまま利用する</li>
 	 * </ul>
 	 * </p>
-	 * 
+	 *
 	 * @typedef {string|number} GridAreaSize
 	 */
 
@@ -6442,13 +6442,13 @@
 
 	/**
 	 * 入力を disabled にするかを判別する関数の型です。
-	 * 
+	 *
 	 * @typedef {function(GridCell): boolean} DisableInputPredicate
 	 */
 
 	/**
 	 * {@link TableGridViewController} の設定を表す型です。
-	 * 
+	 *
 	 * @typedef {Object} TableGridViewControllerParam
 	 * @property {GridAreaSize} gridHeight
 	 * @property {GridAreaSize} gridWidth
@@ -7086,7 +7086,7 @@
 
 	/**
 	 * 失敗時にコールバック関数に引数として渡されるオブジェクトの型です。
-	 * 
+	 *
 	 * @typedef {Object} FailResult
 	 * @property {boolean} isAborted 中断されたことによる失敗であれば true、そうでなければ false
 	 * @property {Array.<*>} args reject されたときに渡された引数
@@ -7098,7 +7098,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor AbortablePromise
 		 * @class 中止を指示することが可能な Promise です。失敗時のコールバックでは中断されたことによる失敗かを知るために
 		 *        {@link AbortablePromise.FailResult FailResult} 型のオブジェクトが渡されます。
@@ -7246,7 +7246,7 @@
 			 * <p>
 			 * 失敗時のコールバック関数に渡される引数は {@link AbortablePromise.FailResult FailResult} 型のオブジェクトとなります。
 			 * </p>
-			 * 
+			 *
 			 * @returns {AbortablePromise} 中断可能なプロミスオブジェクト
 			 */
 			then: function(done, fail) {
@@ -7297,7 +7297,7 @@
 
 			/**
 			 * abort() のできない素のプロミスオブジェクトを返します。
-			 * 
+			 *
 			 * @returns {Promise} プロミスオブジェクト
 			 */
 			promise: function() {
@@ -7344,7 +7344,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor Edit
 		 * @class データの集合に対する編集状態を表現するクラスです。
 		 * @mixes EventDispatcher
@@ -7369,7 +7369,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _Edit
 			 */
@@ -7379,21 +7379,21 @@
 			// --- Public Event --- //
 			/**
 			 * データが追加されたことを表すイベントです。
-			 * 
+			 *
 			 * @event Edit#addData
 			 * @type {AddDataEvent}
 			 */
 
 			/**
 			 * データが削除されたこと表すイベントです。
-			 * 
+			 *
 			 * @event Edit#removeData
 			 * @type {RemoveDataEvent}
 			 */
 
 			/**
 			 * データが置換されたことを表すイベントです。
-			 * 
+			 *
 			 * @event Edit#replaceValue
 			 * @type {ReplaceValueEvent}
 			 */
@@ -7401,7 +7401,7 @@
 			// --- Public Method --- //
 			/**
 			 * dataId として用いるプロパティの名前を返します。
-			 * 
+			 *
 			 * @returns {PropertyName} dataId として用いるプロパティの名前
 			 */
 			getIdProperty: function() {
@@ -7410,7 +7410,7 @@
 
 			/**
 			 * 編集による変更があるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} 変更があれば true、そうでなければ false
 			 */
 			hasChange: function() {
@@ -7470,7 +7470,7 @@
 
 			/**
 			 * データを追加します。
-			 * 
+			 *
 			 * @fires Edit#addData
 			 * @param {Data} data 追加するデータ
 			 * @throws {NotFoundIdProperty} dataId となるプロパティを data が持っていなかった場合
@@ -7553,7 +7553,7 @@
 
 			/**
 			 * データを削除します。
-			 * 
+			 *
 			 * @fires Edit#removeData
 			 * @param {Data} data 削除するデータ
 			 * @throws {NotFoundIdProperty} dataId となるプロパティを data が持っていなかった場合
@@ -7596,7 +7596,7 @@
 			 * <p>
 			 * oldValue と newValue には同じ値を指定することはできません。 指定した場合は例外を投げます。
 			 * </p>
-			 * 
+			 *
 			 * @fires Edit#replaceValue
 			 * @param {Data} oldData 置き換えるデータ
 			 * @param {PropertyName} propertyName プロパティ名
@@ -7739,7 +7739,7 @@
 
 			/**
 			 * 編集によって追加されたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {DataSet} 追加されたデータ一覧（IDがキーでデータ自体が値となったオブジェクト）
 			 */
 			getAddedDataSet: function() {
@@ -7748,7 +7748,7 @@
 
 			/**
 			 * 編集によって削除されたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {DataSet} 削除されたデータ一覧（IDがキーでデータ自体が値となったオブジェクト）
 			 */
 			getRemovedDataSet: function() {
@@ -7757,7 +7757,7 @@
 
 			/**
 			 * 編集によって値が書き換えられたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {Object.<DataId, {original: Data, edited: Data}>} 値が書き換えられたデータの一覧
 			 */
 			getReplacedDataSet: function() {
@@ -7766,7 +7766,7 @@
 
 			/**
 			 * データに編集を適用します。
-			 * 
+			 *
 			 * @param {Data} data 編集を適用するデータ
 			 * @returns {EditedData} 編集を適用した結果
 			 * @throws {NotFoundIdProperty} dataId となるプロパティを data が持っていなかった場合
@@ -7821,7 +7821,7 @@
 
 			/**
 			 * 編集状態を JSON Patch 形式に変換して返します。
-			 * 
+			 *
 			 * @returns {Array.<Patch>} JSON Patch 形式のオブジェクト
 			 */
 			calcPatch: function() {
@@ -7915,7 +7915,7 @@
 
 			/**
 			 * データから ID を取り出します。
-			 * 
+			 *
 			 * @private
 			 * @param {Data} data データ
 			 * @throws {NotFoundIdProperty} dataId となるプロパティを data が持っていなかった場合
@@ -7958,7 +7958,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor EditCommand
 		 * @abstract
 		 * @class ひとつの編集コマンドを表現するクラスです。
@@ -7968,7 +7968,7 @@
 		var abstractMethods = [
 		/**
 		 * コマンドを適用します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @memberOf EditCommand#
@@ -7979,7 +7979,7 @@
 
 		/**
 		 * コマンドの適用による変更を戻します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @memberOf EditCommand#
@@ -7994,7 +7994,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _EditCommand
 			 */
@@ -8015,7 +8015,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor AddDataCommand
 		 * @class データを追加する編集コマンドです。
 		 * @extends EditCommand
@@ -8034,7 +8034,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _AddDataCommand
 			 */
@@ -8060,7 +8060,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor RemoveDataCommand
 		 * @class データを削除する編集コマンドです。
 		 * @extends EditCommand
@@ -8079,7 +8079,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _RemoveDataCommand
 			 */
@@ -8105,7 +8105,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor ReplaceValueCommand
 		 * @class データの値を置き換える編集コマンドです。
 		 * @extends EditCommand
@@ -8130,7 +8130,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _RemoveDataCommand
 			 */
@@ -8177,7 +8177,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor BatchCommand
 		 * @class 複数の編集コマンドをまとめて実行する編集コマンドです。
 		 * @extends EditCommand
@@ -8204,7 +8204,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _RemoveDataCommand
 			 */
@@ -8253,7 +8253,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor EditCommandBuilder
 		 * @class 編集コマンド作成するためのクラスです。
 		 */
@@ -8268,7 +8268,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _EditCommandBuilder
 			 */
@@ -8279,7 +8279,7 @@
 
 			/**
 			 * データを追加する操作を追加します。
-			 * 
+			 *
 			 * @param {Data} data 追加するデータ
 			 * @returns {EditCommandBuilder} このオブジェクト自体
 			 */
@@ -8291,7 +8291,7 @@
 
 			/**
 			 * データを削除する操作を追加します。
-			 * 
+			 *
 			 * @param {Data} data 削除するデータ
 			 * @returns {EditCommandBuilder} このオブジェクト自体
 			 */
@@ -8303,7 +8303,7 @@
 
 			/**
 			 * 値を置き換える操作を追加します。
-			 * 
+			 *
 			 * @param {Data} oldData 置き換えるでーたq
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {Value} newValue 新しい値
@@ -8319,7 +8319,7 @@
 
 			/**
 			 * これまで登録した操作を実行する編集コマンドを返します。
-			 * 
+			 *
 			 * @returns {EditCommand} 編集コマンド
 			 */
 			toCommand: function() {
@@ -8356,7 +8356,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor DataAccessor
 		 * @abstract
 		 * @class データへのアクセス方法を定めるクラスです。
@@ -8370,7 +8370,7 @@
 
 		/**
 		 * 検索を行います。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -8386,7 +8386,7 @@
 		 * <p>
 		 * fetchParam は検索の結果によって得ることができます。
 		 * </p>
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -8400,7 +8400,7 @@
 
 		/**
 		 * IDを指定してデータを取得します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -8413,7 +8413,7 @@
 
 		/**
 		 * 編集結果をコミットします。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -8430,7 +8430,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _DataAcceccor
 			 */
@@ -8441,7 +8441,7 @@
 
 			/**
 			 * 元データが変化したことを表すイベントです。
-			 * 
+			 *
 			 * @event DataAccessor#changeSource
 			 * @type {ChangeSourceEvent}
 			 */
@@ -8452,7 +8452,7 @@
 			 * <p>
 			 * サブクラスから呼び出してもらうことを想定したメソッドです。
 			 * </p>
-			 * 
+			 *
 			 * @protected
 			 * @param {Array.<ChangeDataEvent>} changes
 			 */
@@ -8489,7 +8489,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor ArrayDataAccessor
 		 * @class 元データとして配列を利用する DataAccessor です。
 		 * @extends DataAccessor
@@ -8522,7 +8522,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _LocalDataAccessor
 			 */
@@ -8628,6 +8628,14 @@
 				return $.extend(true, {}, this._sourceDataSet);
 			},
 
+			setSourceDataSet: function(sourceDataArray) {
+				this._sourceDataSet = util.mapObject(sourceDataArray, this.own(function(data) {
+					return {
+						key: data[this._idProperty],
+						value: data
+					};
+				}));
+			},
 
 			// --- Private Property --- //
 
@@ -8656,7 +8664,7 @@
 
 	/**
 	 * h5.ajax メソッド に渡すパラメータの型です。
-	 * 
+	 *
 	 * @typedef {Object} AjaxSetting
 	 * @memberOf AjaxDataAccessor
 	 */
@@ -8665,7 +8673,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor AjaxDataAccessor
 		 * @class 元データとしてAJAXでサーバにアクセスする DataAccessor です。
 		 * @extends DataAccessor
@@ -8722,7 +8730,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _AjaxDataAccessor
 			 */
@@ -8900,7 +8908,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor DataSource
 		 * @class 元データを管理するクラスです。データへのアクセスと編集状態の管理について責任を持ちます。
 		 * @mixes EventDispatcher
@@ -8958,7 +8966,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @memberOf _DataSource
 			 * @private
 			 */
@@ -8971,14 +8979,14 @@
 
 			/**
 			 * 編集によってデータが変更されたことを表すイベントです。
-			 * 
+			 *
 			 * @event DataSource#edit
 			 * @type {EditEvent}
 			 */
 
 			/**
 			 * 元データが変化したことを表すイベントです。
-			 * 
+			 *
 			 * @event DataSource#changeSource
 			 * @type {ChangeSourceEvent}
 			 */
@@ -8987,21 +8995,21 @@
 			// -- Sync Event -- //
 			/**
 			 * コミットが開始されたことを表すイベントです。
-			 * 
+			 *
 			 * @event DataSource#commitStart
 			 * @type {CommitStartEvent}
 			 */
 
 			/**
 			 * コミットが成功したことを表すイベントです。
-			 * 
+			 *
 			 * @event DataSource#commitSuccess
 			 * @type {CommitSuccessEvent}
 			 */
 
 			/**
 			 * コミットが失敗したことを表すイベントです。
-			 * 
+			 *
 			 * @event DataSource#commitError
 			 * @type {CommitErrorEvent}
 			 */
@@ -9011,7 +9019,7 @@
 			 * <p>
 			 * このイベントはコミットの成否に関わらず呼び出されます。
 			 * </p>
-			 * 
+			 *
 			 * @event DataSource#commitComplete
 			 * @type {CommitCompleteEvent}
 			 */
@@ -9019,7 +9027,7 @@
 			// MEMO: コミットの中止について考える
 			/**
 			 * ロールバックされたことを表すイベント。
-			 * 
+			 *
 			 * @event DataSource#rollback
 			 * @type {RollbackEvent}
 			 */
@@ -9028,17 +9036,21 @@
 			// --- Public Method --- //
 			/**
 			 * IDとなるプロパティ名を返します。
-			 * 
+			 *
 			 * @returns {PropertyName} IDとなるプロパティ名
 			 */
 			getIdProperty: function() {
 				return this._edit.getIdProperty();
 			},
 
+			getDataAccessor: function() {
+				return this._dataAccessor;
+			},
+
 			// -- データを参照するメソッド -- //
 			/**
 			 * データを検索します。
-			 * 
+			 *
 			 * @param {SearchParam} searchParam 検索パラメータ
 			 * @returns {AbortablePromise.<EditedSearchResult>} 検索結果を返す Promise オブジェクト
 			 */
@@ -9069,7 +9081,7 @@
 
 			/**
 			 * 検索したデータをフェッチします。
-			 * 
+			 *
 			 * @param {FetchParam} fetchParam フェッチパラメータ
 			 * @param {FetchRange} fetchRange フェッチで取得する範囲
 			 * @returns {AbortablePromise.<EditedFetchResult>} フェッチ結果を返す Promise オブジェクト
@@ -9097,7 +9109,7 @@
 
 			/**
 			 * IDを指定してデータを取得します。
-			 * 
+			 *
 			 * @param {DataId} dataId データのID
 			 * @returns {AbortablePromise.<EditedData>} データを返す Promise オブジェクト
 			 */
@@ -9117,7 +9129,7 @@
 
 			/**
 			 * コミット前の変更で追加されたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {DataSet} 追加されたデータ一覧（IDがキーでデータ自体が値となったオブジェクト）
 			 */
 			getAddedDataSet: function() {
@@ -9126,7 +9138,7 @@
 
 			/**
 			 * コミット前の変更で削除されたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {DataSet} 削除されたデータ一覧（IDがキーでデータ自体が値となったオブジェクト）
 			 */
 			getRemovedDataSet: function() {
@@ -9135,7 +9147,7 @@
 
 			/**
 			 * コミット前の変更で値が書き換えられたデータの一覧を返します。
-			 * 
+			 *
 			 * @returns {Object.<DataId, {original: Data, edited: Data}>} 値が書き換えられたデータの一覧
 			 */
 			getReplacedDataSet: function() {
@@ -9144,7 +9156,7 @@
 
 			/**
 			 * データに編集を適用して返します。
-			 * 
+			 *
 			 * @param {Data} data 編集を適用するデータ
 			 * @returns {EditedData} 編集の結果
 			 */
@@ -9160,7 +9172,7 @@
 
 			/**
 			 * コミット前の変更があるかを返す。
-			 * 
+			 *
 			 * @returns {boolean} コミット前の変更があれば true、そうでなければ false
 			 */
 			hasChange: function() {
@@ -9169,7 +9181,7 @@
 
 			/**
 			 * コミット前の変更を JSON Patch 形式に変換して返します。
-			 * 
+			 *
 			 * @returns {Array.<Patch>} JSON Patch 形式のオブジェクト
 			 */
 			calcPatch: function() {
@@ -9178,7 +9190,7 @@
 
 			/**
 			 * コミットをしている途中であるかを返す。
-			 * 
+			 *
 			 * @returns {boolean} コミットをしている途中であれば true、そうでなければ false
 			 */
 			isCommitting: function() {
@@ -9187,7 +9199,7 @@
 
 			/**
 			 * UNDO 操作が可能な状態であるかを返す。
-			 * 
+			 *
 			 * @returns {boolean} 操作可能であれば true、そうでなければ false
 			 */
 			canUndo: function() {
@@ -9196,7 +9208,7 @@
 
 			/**
 			 * REDO 操作が可能な状態であるかを返す。
-			 * 
+			 *
 			 * @returns {boolean} 操作可能であれば true、そうでなければ false
 			 */
 			canRedo: function() {
@@ -9208,7 +9220,7 @@
 
 			/**
 			 * 編集コマンドを作成するためのオブジェクトを返します。
-			 * 
+			 *
 			 * @returns {EditCommandBuilder} 編集コマンドを作成するためのオブジェクト
 			 */
 			commandBuilder: function() {
@@ -9217,7 +9229,7 @@
 
 			/**
 			 * データを編集する。
-			 * 
+			 *
 			 * @param {EditCommand} editCommand 編集コマンド
 			 */
 			edit: function(editCommand) {
@@ -9279,7 +9291,7 @@
 			 * <li>commitSuccess/commitError イベントのどちらかが発火</li>
 			 * <li>commitComplete イベントの発火</li>
 			 * </p>
-			 * 
+			 *
 			 * @fires DataSource#commitStart
 			 * @fires DataSource#commitSuccess
 			 * @fires DataSource#commitError
@@ -9338,7 +9350,7 @@
 
 			/**
 			 * コミット前の編集をまとめて取り消す。
-			 * 
+			 *
 			 * @fires DataSource#rollback
 			 */
 			rollback: function() {
@@ -9503,7 +9515,7 @@
 
 			/**
 			 * 検索のパラメータを返します。
-			 * 
+			 *
 			 * @returns {SearchParam} 検索のパラメータ
 			 */
 			getSearchParam: function() {
@@ -9512,7 +9524,7 @@
 
 			/**
 			 * フェッチのパラメータを返します。
-			 * 
+			 *
 			 * @returns {FetchParam} フェッチのパラメータ
 			 */
 			getFetchParam: function() {
@@ -9521,7 +9533,7 @@
 
 			/**
 			 * フェッチの範囲を返します。
-			 * 
+			 *
 			 * @returns {FetchRange} 検索の範囲
 			 */
 			getFetchRange: function() {
@@ -9530,7 +9542,7 @@
 
 			/**
 			 * 指定したインデックスのデータがロード済みであるかを返します。
-			 * 
+			 *
 			 * @param {Index} インデックス
 			 * @returns {boolean} ロード済であれば true、そうでなければ false
 			 */
@@ -9548,7 +9560,7 @@
 
 			/**
 			 * すべてのデータがロード済みであるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} すべてロード済みであれば true、そうでなければ false
 			 */
 			isLoadedAll: function() {
@@ -9559,7 +9571,7 @@
 
 			/**
 			 * ロード済みのデータを同期的に取得します。
-			 * 
+			 *
 			 * @param {Index} index インデックス
 			 */
 			getLoadedData: function(index) {
@@ -9573,7 +9585,7 @@
 
 			/**
 			 * データに対する参照の配列を返します。
-			 * 
+			 *
 			 * @returns {Array.<DataReference>} 参照の配列
 			 */
 			getDataReferences: function() {
@@ -9636,7 +9648,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor DataSearcher
 		 * @class データの検索を管理するクラスです。
 		 * @mixes EventDispatcher
@@ -9649,7 +9661,7 @@
 
 		/**
 		 * データのIDを持つプロパティ名を返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9661,7 +9673,7 @@
 
 		/**
 		 * 検索の準備ができているか返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9673,7 +9685,7 @@
 
 		/**
 		 * 検索パラメータの変更中であるかを返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9685,7 +9697,7 @@
 
 		/**
 		 * リフレッシュ中であるかを返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9697,7 +9709,7 @@
 
 		/**
 		 * 現在の検索パラメータを返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9709,7 +9721,7 @@
 
 		/**
 		 * 現在のフェッチパラメータを返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9721,7 +9733,7 @@
 
 		/**
 		 * 検索結果に含まれるデータの数を返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9733,7 +9745,7 @@
 
 		/**
 		 * 範囲を指定してデータへの参照を返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9746,7 +9758,7 @@
 
 		/**
 		 * データIDを指定をしてデータの参照を返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9759,7 +9771,7 @@
 
 		/**
 		 * データソースを取得します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9771,7 +9783,7 @@
 
 		/**
 		 * 検索結果に含まれるすべてのデータのIDを返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9785,7 +9797,7 @@
 
 		/**
 		 * フィルタ前のすべてのデータの集合を返します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9798,7 +9810,7 @@
 
 		/**
 		 * 検索パラメータの初期設定をします。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9811,7 +9823,7 @@
 
 		/**
 		 * 検索パラメータを変更します。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9828,7 +9840,7 @@
 
 		/**
 		 * リフレッシュします。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9844,7 +9856,7 @@
 
 		/**
 		 * 検索条件とデータをクリアします。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9858,7 +9870,7 @@
 
 		/**
 		 * ツリーを開きます。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9872,7 +9884,7 @@
 
 		/**
 		 * ツリーを閉じます。
-		 * 
+		 *
 		 * @method
 		 * @public
 		 * @abstract
@@ -9891,7 +9903,7 @@
 
 			/**
 			 * このコメントは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _DataSearcher
 			 */
@@ -9901,28 +9913,28 @@
 
 		/**
 		 * 検索の準備ができたことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#readySearch
 		 * @type {ReadySearchEvent}
 		 */
 
 		/**
 		 * 検索条件の変更を開始したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#changeSearchStart
 		 * @type {ChangeSearchStartEvent}
 		 */
 
 		/**
 		 * 検索条件の変更が成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#changeSearchSuccess
 		 * @type {ChangeSearchSuccessEvent}
 		 */
 
 		/**
 		 * 検索条件の変更が失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#changeSearchError
 		 * @type {ChangeSearchErrorEvent}
 		 */
@@ -9932,7 +9944,7 @@
 		 * <p>
 		 * このイベントは検索条件の変更の成否に関わらず発生します。
 		 * </p>
-		 * 
+		 *
 		 * @event DataSearcher#changeSearchComplete
 		 * @type {ChangeSearchCompleteEvent}
 		 */
@@ -9940,21 +9952,21 @@
 
 		/**
 		 * データのリフレッシュを開始したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#refreshSearchStart
 		 * @type {RefreshSearchStartEvent}
 		 */
 
 		/**
 		 * データのリフレッシュが成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#refreshSearchSuccess
 		 * @type {RefreshSearchSuccessEvent}
 		 */
 
 		/**
 		 * データのリフレッシュが失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#refreshSearchError
 		 * @type {RefreshSearchErrorEvent}
 		 */
@@ -9964,7 +9976,7 @@
 		 * <p>
 		 * このイベントはリフレッシュの成否に関わらず発生します。
 		 * </p>
-		 * 
+		 *
 		 * @event DataSearcher#refreshSearchComplete
 		 * @type {RefreshSearchCompleteEvent}
 		 */
@@ -9973,35 +9985,35 @@
 		// -- DataSource から伝搬してきたイベント -- //
 		/**
 		 * 編集によってデータが変更されたことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#edit
 		 * @type {EditEvent}
 		 */
 
 		/**
 		 * 元データが変化したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#changeSource
 		 * @type {ChangeSourceEvent}
 		 */
 
 		/**
 		 * コミットが開始されたことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#commitStart
 		 * @type {CommitStartEvent}
 		 */
 
 		/**
 		 * コミットが成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#commitSuccess
 		 * @type {CommitSuccessEvent}
 		 */
 
 		/**
 		 * コミットが失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event DataSearcher#commitError
 		 * @type {CommitErrorEvent}
 		 */
@@ -10011,14 +10023,14 @@
 		 * <p>
 		 * このイベントはコミットの成否に関わらず呼び出されます。
 		 * </p>
-		 * 
+		 *
 		 * @event DataSearcher#commitComplete
 		 * @type {CommitCompleteEvent}
 		 */
 
 		/**
 		 * ロールバックされたことを表すイベント。
-		 * 
+		 *
 		 * @event DataSearcher#rollback
 		 * @type {RollbackEvent}
 		 */
@@ -10042,7 +10054,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor AllFetchSearcher
 		 * @class 最初にすべてのデータを読み込んだ上で、検索を行う {@DataSearcher} です。
 		 * @extends DataSearcher
@@ -10163,7 +10175,7 @@
 
 			/**
 			 * このコメントは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _AllFetchSearcher
 			 */
@@ -10889,7 +10901,7 @@
 
 			/**
 			 * {@link ChangeEvent} に index を付与します。
-			 * 
+			 *
 			 * @private
 			 * @param {ChangeDataEvent} changeEvent
 			 * @returns {ChangeDataEvent}
@@ -10948,7 +10960,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor LazyFetchSearcher
 		 * @class データを遅延で読み込む {@DataSearcher} です。
 		 * @extends DataSearcher
@@ -11089,7 +11101,7 @@
 
 			/**
 			 * このコメントは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _LazyFetchSearcher
 			 */
@@ -11617,7 +11629,7 @@
 
 			/**
 			 * {@link ChangeEvent} に index を付与します。
-			 * 
+			 *
 			 * @private
 			 * @param {ChangeDataEvent} changeEvent
 			 * @returns {?ChangeDataEvent} index を付与した Event オブジェクト（indexがわからない場合は null）
@@ -11660,7 +11672,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor SingleDataSearcher
 		 * @class 特定のIDのデータへの参照を表現するクラスです。
 		 * @mixes EventDispatcher
@@ -11723,7 +11735,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _SingleDataSearcher
 			 */
@@ -11756,7 +11768,7 @@
 			// --- Public Method --- //
 			/**
 			 * データがロード済みであるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} ロード済みであれば true、そうでなければ false
 			 */
 			isLoaded: function() {
@@ -11765,7 +11777,7 @@
 
 			/**
 			 * 参照しているIDを返します。
-			 * 
+			 *
 			 * @returns {DataId} 参照しているID
 			 */
 			getDataId: function() {
@@ -11774,7 +11786,7 @@
 
 			/**
 			 * 参照しているデータを返します。
-			 * 
+			 *
 			 * @returns {EditedData} 参照しているデータ
 			 */
 			getData: function() {
@@ -11783,7 +11795,7 @@
 
 			/**
 			 * データソースを返します。
-			 * 
+			 *
 			 * @returns {DataSource} データソース
 			 */
 			getDataSource: function() {
@@ -11792,7 +11804,7 @@
 
 			/**
 			 * 参照する ID を変更します。
-			 * 
+			 *
 			 * @param {DataId} dataId データのID
 			 * @fires SingleDataSearcher#changeDataIdStart
 			 * @fires SingleDataSearcher#changeDataIdSuccess
@@ -11808,7 +11820,7 @@
 
 			/**
 			 * 参照する ID の変更の途中であるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} 変更の途中であれば true、そうでなければ false
 			 */
 			isChangingDataId: function() {
@@ -11817,7 +11829,7 @@
 
 			/**
 			 * 値を置き換えます。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @param {Value} oldValue
 			 * @param {Value} newValue
@@ -12069,7 +12081,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor DataSelector
 		 * @class データの選択を管理するクラスです。
 		 * @mixes Disposable
@@ -12080,7 +12092,7 @@
 
 		/**
 		 * データを選択します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12091,7 +12103,7 @@
 
 		/**
 		 * すべてのデータを選択します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12102,7 +12114,7 @@
 
 		/**
 		 * データの選択を解除します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12113,7 +12125,7 @@
 
 		/**
 		 * すべてのデータの選択を解除します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12123,7 +12135,7 @@
 
 		/**
 		 * データが選択されているか返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12134,7 +12146,7 @@
 
 		/**
 		 * 選択されているデータのIDの一覧を返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12145,7 +12157,7 @@
 
 		/**
 		 * 選択の結果を返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @memberOf DataSelector#
@@ -12158,7 +12170,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _DataSelector
 			 */
@@ -12180,7 +12192,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor SingleDataSelector
 		 * @class ひとつのデータのみを選択できる {@link DataSelector} です。
 		 * @extends DataSelector
@@ -12195,7 +12207,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _SingleDataSelector
 			 */
@@ -12279,7 +12291,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor MultiDataSelector
 		 * @class 複数のデータを選択できる {@link DataSelector} です。
 		 * @extends DataSelector
@@ -12296,7 +12308,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _MultiDataSelector
 			 */
@@ -12429,7 +12441,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor CellSelector
 		 * @class セルのフォーカスとマークを管理するクラスです。
 		 * @mixes EventDispatcher
@@ -12448,7 +12460,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _CellSelector
 			 */
@@ -12459,7 +12471,7 @@
 
 			/**
 			 * マークが変更されたことを表すイベントです。
-			 * 
+			 *
 			 * @event CellSelector#changeCellSelect
 			 * @type {ChangeCellSelectEvent}
 			 */
@@ -12468,7 +12480,7 @@
 			// --- Public Method --- //
 			/**
 			 * セルの選択操作中であるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} 現在選択中であれば true、そうでなければ false
 			 */
 			isSelecting: function() {
@@ -12477,7 +12489,7 @@
 
 			/**
 			 * 選択操作を開始します。
-			 * 
+			 *
 			 * @fires CellSelector#changeCellSelect
 			 * @param {Index} row
 			 * @param {Index} column
@@ -12518,7 +12530,7 @@
 
 			/**
 			 * 選択操作中に移動します。
-			 * 
+			 *
 			 * @fires CellSelector#changeCellSelect
 			 * @param {Index} row
 			 * @param {Index} column
@@ -12558,7 +12570,7 @@
 
 			/**
 			 * 一括で範囲選択を行います。
-			 * 
+			 *
 			 * @param {Index} rowIndex
 			 * @param {Length} rowLength
 			 * @param {Index} columnIndex
@@ -12583,7 +12595,7 @@
 
 			/**
 			 * 特定のセルにフォーカスします。
-			 * 
+			 *
 			 * @fires CellSelector#changeCellSelect
 			 * @param {Index} row
 			 * @param {Index} column
@@ -12607,7 +12619,7 @@
 
 			/**
 			 * マークとフォーカスを解除します。
-			 * 
+			 *
 			 * @fires CellSelector#changeCellSelect
 			 */
 			reset: function() {
@@ -12624,7 +12636,7 @@
 
 			/**
 			 * フォーカスしたセルを返します。
-			 * 
+			 *
 			 * @returns {?CellPosition} フォーカスしたセル
 			 */
 			getFocusedCell: function() {
@@ -12636,7 +12648,7 @@
 
 			/**
 			 * 選択された範囲を返します。
-			 * 
+			 *
 			 * @returns {?CellRange} 選択した範囲
 			 */
 			getSelectedRange: function() {
@@ -12695,7 +12707,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor SizeHolder
 		 * @class セルのサイズを管理するクラスです。
 		 * @param {PixelSize} defaultSize デフォルトのサイズ
@@ -12715,7 +12727,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _SizeHolder
 			 */
@@ -12729,7 +12741,7 @@
 			 * <p>
 			 * キーにはプロパティ名やデータのIDが入る想定です。
 			 * </p>
-			 * 
+			 *
 			 * @param {SizeKey} key サイズを保存するキー
 			 * @param {PixelSize} size サイズ
 			 */
@@ -12748,7 +12760,7 @@
 
 			/**
 			 * 指定したキーのサイズを取得します。
-			 * 
+			 *
 			 * @param {SizeKey} key サイズが保存されているキー
 			 */
 			getSize: function(key) {
@@ -12812,7 +12824,7 @@
 
 		/**
 		 * セルの数を返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12823,7 +12835,7 @@
 
 		/**
 		 * セルすべてをあわせたサイズを返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12834,7 +12846,7 @@
 
 		/**
 		 * セルのデフォルトのサイズを返します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12845,7 +12857,7 @@
 
 		/**
 		 * インデックスからピクセル単位の位置に変換します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12878,7 +12890,7 @@
 
 		/**
 		 * 表示領域に入るセルの数を計算します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12893,7 +12905,7 @@
 
 		/**
 		 * 最後の表示領域に入るセルの数を計算します。
-		 * 
+		 *
 		 * @public
 		 * @method
 		 * @abstract
@@ -12908,7 +12920,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _CellSizeSet
 			 */
@@ -12956,7 +12968,7 @@
 
 			/**
 			 * セルのサイズをセットします。
-			 * 
+			 *
 			 * @param {PixelSize} size
 			 */
 			setSize: function(size) {
@@ -12968,7 +12980,7 @@
 
 			/**
 			 * セルの数をセットします。
-			 * 
+			 *
 			 * @param {Length} cells
 			 */
 			setCells: function(cells) {
@@ -13098,7 +13110,7 @@
 
 			/**
 			 * すべてのセルのサイズをセットします。
-			 * 
+			 *
 			 * @param {Array.<PixelSize>} sizeArray
 			 */
 			setSizeArray: function(sizeArray) {
@@ -13439,7 +13451,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _IndexScrollCalculator
 			 */
@@ -13517,7 +13529,7 @@
 
 			/**
 			 * 次の要素にスクロールする際のスクロール位置を返します。
-			 * 
+			 *
 			 * @param {PixelSize} displayAreaSize 表示領域のサイズ
 			 * @param {ScrollPosition} position 現在のスクロール位置
 			 * @returns {ScrollPosition} 次の要素のスクロール位置
@@ -13535,7 +13547,7 @@
 
 			/**
 			 * 前の要素にスクロールする際のスクロール位置を返します。
-			 * 
+			 *
 			 * @param {PixelSize} displayAreaSize 表示領域のサイズ
 			 * @param {ScrollPosition} position 現在のスクロール位置
 			 * @returns {ScrollPosition} 前の要素のスクロール位置
@@ -13582,7 +13594,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _PixelScrollCalculator
 			 */
@@ -13654,7 +13666,7 @@
 
 			/**
 			 * 次の要素にスクロールする際のスクロール位置を返します。
-			 * 
+			 *
 			 * @param {PixelSize} displayAreaSize 表示領域のピクセル数
 			 * @param {ScrollPosition} position 現在のスクロール位置
 			 * @returns {ScrollPosition} 次の要素のスクロール位置
@@ -13685,7 +13697,7 @@
 
 			/**
 			 * 前の要素にスクロールする際のスクロール位置を返します。
-			 * 
+			 *
 			 * @param {PixelSize} displayAreaSize 表示領域のピクセル数
 			 * @param {ScrollPosition} position 現在のスクロール位置
 			 * @returns {ScrollPosition} 前の要素のスクロール位置
@@ -13819,7 +13831,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor GridRange
 		 * @class 範囲を表現するクラス
 		 * @param {GridRangeParam} param
@@ -13857,7 +13869,7 @@
 
 			/**
 			 * この範囲の開始地点の行番号を返します。
-			 * 
+			 *
 			 * @returns {Index} 開始地点の行番号
 			 */
 			getRowStartIndex: function() {
@@ -13866,7 +13878,7 @@
 
 			/**
 			 * この範囲に含まれる行数を返します。
-			 * 
+			 *
 			 * @returns {Length} 範囲に含まれる行数
 			 */
 			getRowLength: function() {
@@ -13879,7 +13891,7 @@
 
 			/**
 			 * この範囲の開始地点の列番号を返します。
-			 * 
+			 *
 			 * @returns {Index} 開始地点の列番号
 			 */
 			getColumnStartIndex: function() {
@@ -13888,7 +13900,7 @@
 
 			/**
 			 * この範囲に含まれる列数を返します。
-			 * 
+			 *
 			 * @returns {Length} 範囲に含まれる列数
 			 */
 			getColumnLength: function() {
@@ -13904,7 +13916,7 @@
 
 			/**
 			 * 返した範囲がもとの要求からどれぐらい縦にずれているかを返します。
-			 * 
+			 *
 			 * @returns {PixelPosition} ずれているピクセル数（予定より上から開始だと負）
 			 */
 			getTop: function() {
@@ -13913,7 +13925,7 @@
 
 			/**
 			 * 返した範囲がもとの要求からどれぐらい横にずれているかを返します。
-			 * 
+			 *
 			 * @returns {PixelPosition} ずれているピクセル数（予定より左から開始だと負）
 			 */
 			getLeft: function() {
@@ -13922,7 +13934,7 @@
 
 			/**
 			 * セルを取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か
 			 * @param {Index} j 範囲内の何列目か
 			 * @returns {GridCell} セル
@@ -13938,7 +13950,7 @@
 
 			/**
 			 * すべてのセルがロード済みであるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} すべてのセルがロード済みであれば true、そうでなければ false
 			 */
 			isAllLoaded: function() {
@@ -13960,7 +13972,7 @@
 
 			/**
 			 * 行の高さを取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か（整数）
 			 * @returns {PixelSize} 行の高さ（整数）
 			 */
@@ -13974,7 +13986,7 @@
 
 			/**
 			 * 列の幅を取得します。
-			 * 
+			 *
 			 * @param {Index} j 範囲内の何列目か
 			 * @returns {PixelSize} 列の高さ
 			 */
@@ -13988,7 +14000,7 @@
 
 			/**
 			 * 範囲全体の高さを取得します。
-			 * 
+			 *
 			 * @returns {PixelSize} 範囲全体の高さ
 			 */
 			getRangeHeight: function() {
@@ -14003,7 +14015,7 @@
 
 			/**
 			 * 範囲全体の幅を取得します。
-			 * 
+			 *
 			 * @returns {PixelSize} 範囲全体の幅
 			 */
 			getRangeWidth: function() {
@@ -14018,7 +14030,7 @@
 
 			/**
 			 * この範囲のコピー用のテキストを取得します。
-			 * 
+			 *
 			 * @returns {string} コピー用テキスト（TSV形式）
 			 */
 			getCopyText: function() {
@@ -14054,7 +14066,7 @@
 
 			/**
 			 * 指定したセルの上の罫線を取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か（整数）
 			 * @param {Index} j 範囲内の何列目か（整数）
 			 * @returns {GridBorder} 罫線情報
@@ -14070,7 +14082,7 @@
 
 			/**
 			 * 指定したセルの下の罫線を取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か（整数）
 			 * @param {Index} j 範囲内の何列目か（整数）
 			 * @returns {GridBorder} 罫線情報
@@ -14086,7 +14098,7 @@
 
 			/**
 			 * 指定したセルの左の罫線を取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か（整数）
 			 * @param {Index} j 範囲内の何列目か（整数）
 			 * @returns {GridBorder} 罫線情報
@@ -14102,7 +14114,7 @@
 
 			/**
 			 * 指定したセルの右の罫線を取得します。
-			 * 
+			 *
 			 * @param {Index} i 範囲内の何行目か（整数）
 			 * @param {Index} j 範囲内の何列目か（整数）
 			 * @returns {GridBorder} 罫線情報
@@ -14118,7 +14130,7 @@
 
 			/**
 			 * 指定したプロパティのソートの並び順を返します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @returns {?OrderString} 並び順
 			 */
@@ -14254,7 +14266,7 @@
 
 			/**
 			 * 現時点での {@link GridRange} の集合を返します。
-			 * 
+			 *
 			 * @returns {GridRangeSet} リクエストに対応する {@link GridRange} の集合
 			 */
 			getRangeSet: function() {
@@ -14263,7 +14275,7 @@
 
 			/**
 			 * 現時点でリクエストされた範囲のデータがすべてロードされているかを返します。
-			 * 
+			 *
 			 * @returns {boolean} すべてのデータがロードされていれば true、そうでなければ false
 			 */
 			isAllDataLoaded: function() {
@@ -14272,7 +14284,7 @@
 
 			/**
 			 * リクエストされた範囲のデータのうち未ロードのものを取得します。
-			 * 
+			 *
 			 * @returns {AbortablePromise.<GridRangeSet>} すべてのデータがロードされた {@link GridRange} の集合
 			 */
 			fetchRangeSet: function() {
@@ -14346,7 +14358,7 @@
 
 			/**
 			 * 階層の最大の深さを返します。
-			 * 
+			 *
 			 * @returns {Length}
 			 */
 			getMaxDepth: function() {
@@ -14355,7 +14367,7 @@
 
 			/**
 			 * 指定したプロパティについて挿入可能なインデックスの一覧を返します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @returns {Array.<Index>}
 			 */
@@ -14405,7 +14417,7 @@
 
 			/**
 			 * 末端のプロパティを順序通りに並べて返します。
-			 * 
+			 *
 			 * @returns {Array.<PropertyName>}
 			 */
 			getLeafProperties: function() {
@@ -14418,7 +14430,7 @@
 			 * 2次元配列となっており、プロパティが増えると縦に増えていく構造となっています。<br>
 			 * 縦にデータが並ぶ場合は転置して利用してください。
 			 * </p>
-			 * 
+			 *
 			 * @returns {Array.<Array.<PropertyHeaderCell>>}
 			 */
 			getHeaderStructure: function() {
@@ -14434,7 +14446,7 @@
 
 			/**
 			 * 指定したプロパティのルートプロパティが表示されているかを返します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @returns {boolean} 指定したプロパティのルートが含まれていれば true、そうでなければ false
 			 */
@@ -14457,7 +14469,7 @@
 
 			/**
 			 * 指定したプロパティが末端のプロパティであるか返します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @returns {boolean} 末端のプロパティであれば true、そうでなければ false
 			 */
@@ -14474,7 +14486,7 @@
 
 			/**
 			 * プロパティを追加します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @param {Index} insertIndex
 			 * @throws {NotFoundProperty}
@@ -14525,7 +14537,7 @@
 
 			/**
 			 * プロパティを移動します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @param {Index} insertIndex
 			 * @throws {NotFoundProperty}
@@ -14567,7 +14579,7 @@
 
 			/**
 			 * プロパティを削除します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName
 			 * @throws {NotFoundProperty}
 			 */
@@ -14833,7 +14845,7 @@
 
 			/**
 			 * Eclipse のアウトライン用のコメントです。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _GridDataMapper
 			 */
@@ -15050,7 +15062,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor PropertyGridDataMapper
 		 * @class 各プロパティをひとつの列、または行として扱う {@link GridDataMapper} です。
 		 * @extends GridDataMapper
@@ -15174,7 +15186,7 @@
 
 			/**
 			 * このコメントは eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _PropertyGridDataMapper
 			 */
@@ -15184,7 +15196,7 @@
 
 			/**
 			 * プロパティの並びまたはサイズが変更されたことを表すイベントです。
-			 * 
+			 *
 			 * @event ProepertyGridDataMapper#changeProperty
 			 */
 
@@ -15196,7 +15208,7 @@
 
 			/**
 			 * ヘッダ行の数を返します。
-			 * 
+			 *
 			 * @returns {Length} ヘッダ行の数
 			 */
 			getHeaderRows: function() {
@@ -15208,7 +15220,7 @@
 
 			/**
 			 * ヘッダ列の数を返します。
-			 * 
+			 *
 			 * @returns {Length} ヘッダ列の数
 			 */
 			getHeaderColumns: function() {
@@ -15220,7 +15232,7 @@
 
 			/**
 			 * 全体の行数を返します。
-			 * 
+			 *
 			 * @returns {Length} 行の数
 			 */
 			getTotalRows: function() {
@@ -15232,7 +15244,7 @@
 
 			/**
 			 * 全体の列数を返します。
-			 * 
+			 *
 			 * @returns {Length} 列の数
 			 */
 			getTotalColumns: function() {
@@ -15244,7 +15256,7 @@
 
 			/**
 			 * データを取得するためのリクエストを行います。
-			 * 
+			 *
 			 * @param {GridRequestParam} requestParam リクエストのパラメータ
 			 * @returns {GridRequest} リクエスト
 			 */
@@ -15330,7 +15342,7 @@
 
 			/**
 			 * 指定したプロパティの挿入可能なインデックスを取得します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @returns {Array.<Index>} 挿入可能なインデックスの配列
 			 */
@@ -15361,7 +15373,7 @@
 
 			/**
 			 * メイン領域にプロパティを追加します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {Index} insertIndex 挿入するインデックス
 			 */
@@ -15380,7 +15392,7 @@
 
 			/**
 			 * メイン領域内でプロパティを移動します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {Index} insertIndex 挿入するインデックス
 			 */
@@ -15399,7 +15411,7 @@
 
 			/**
 			 * メイン領域からプロパティを削除します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 */
 			removeVisibleMainProperty: function(propertyName) {
@@ -15414,7 +15426,7 @@
 
 			/**
 			 * ヘッダ領域にプロパティを追加します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {Index} insertIndex 挿入するインデックス
 			 */
@@ -15432,7 +15444,7 @@
 
 			/**
 			 * ヘッダ領域内でプロパティを移動します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {Index} insertIndex 挿入するインデックス
 			 */
@@ -15450,7 +15462,7 @@
 
 			/**
 			 * ヘッダ領域からプロパティを削除します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 */
 			removeVisibleHeaderProperty: function(propertyName) {
@@ -15465,7 +15477,7 @@
 
 			/**
 			 * 可視のプロパティを一括で変更します。
-			 * 
+			 *
 			 * @param {VisibleProperties} visibleProperties
 			 */
 			resetVisibleProperties: function(visibleProperties) {
@@ -15500,7 +15512,7 @@
 
 			/**
 			 * プロパティの最小サイズ
-			 * 
+			 *
 			 * @returns {PixelSize} 最小サイズ
 			 */
 			getPropertyMinSize: function() {
@@ -15509,7 +15521,7 @@
 
 			/**
 			 * プロパティの最大サイズ
-			 * 
+			 *
 			 * @returns {PixelSize} 最大サイズ
 			 */
 			getPropertyMaxSize: function() {
@@ -15518,7 +15530,7 @@
 
 			/**
 			 * プロパティのサイズを変更します。
-			 * 
+			 *
 			 * @param {PropertyName} propertyName プロパティ名
 			 * @param {PixelSize} size サイズ
 			 */
@@ -15541,7 +15553,7 @@
 
 			/**
 			 * 行の高さを変更するという操作が実行可能であるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} 実行可能であれば true、そうでなければ false
 			 */
 			canSetRowHeight: function() {
@@ -15550,7 +15562,7 @@
 
 			/**
 			 * 行の高さを変更する際に指定可能な最小のサイズを返します。
-			 * 
+			 *
 			 * @returns {PixelSize} 指定可能な最小のサイズ
 			 */
 			getRowHeightMin: function() {
@@ -15562,7 +15574,7 @@
 
 			/**
 			 * 行の高さを変更する際に指定可能な最大のサイズを返します。
-			 * 
+			 *
 			 * @returns {PixelSize} 指定可能な最大のサイズ
 			 */
 			getRowHeightMax: function() {
@@ -15574,7 +15586,7 @@
 
 			/**
 			 * 行の高さを変更します。
-			 * 
+			 *
 			 * @param {Index} row 行
 			 * @param {PixelSize} size サイズ
 			 */
@@ -15588,7 +15600,7 @@
 
 			/**
 			 * 列の幅を変更するという操作が実行可能であるかを返します。
-			 * 
+			 *
 			 * @returns {boolean} 実行可能であれば true、そうでなければ false
 			 */
 			canSetColumnWidth: function() {
@@ -15597,7 +15609,7 @@
 
 			/**
 			 * 列の幅を変更する際に指定可能な最小のサイズを返します。
-			 * 
+			 *
 			 * @returns {PixelSize} 指定可能な最小のサイズ
 			 */
 			getColumnWidthMin: function() {
@@ -15609,7 +15621,7 @@
 
 			/**
 			 * 列の幅を変更する際に指定可能な最大のサイズを返します。
-			 * 
+			 *
 			 * @returns {PixelSize} 指定可能な最大のサイズ
 			 */
 			getColumnWidthMax: function() {
@@ -15621,7 +15633,7 @@
 
 			/**
 			 * 列の幅を変更します。
-			 * 
+			 *
 			 * @param {Index} column
 			 * @param {PixelSize} size
 			 */
@@ -16196,35 +16208,35 @@
 
 		/**
 		 * グリッドを利用する準備ができたことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#readyGridLogic
 		 * @type {ReadyGridLogicEvent}
 		 */
 
 		/**
 		 * グリッドが変更されたことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#changeGrid
 		 * @type {ChangeGridEvent}
 		 */
 
 		/**
 		 * 検索条件の変更を開始したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#changeSearchStart
 		 * @type {ChangeSearchStartEvent}
 		 */
 
 		/**
 		 * 検索条件の変更が成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#changeSearchSuccess
 		 * @type {ChangeSearchSuccessEvent}
 		 */
 
 		/**
 		 * 検索条件の変更が失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#changeSearchError
 		 * @type {ChangeSearchErrorEvent}
 		 */
@@ -16234,28 +16246,28 @@
 		 * <p>
 		 * このイベントは検索条件の変更の成否に関わらず発生します。
 		 * </p>
-		 * 
+		 *
 		 * @event GridLogic#changeSearchComplete
 		 * @type {ChangeSearchCompleteEvent}
 		 */
 
 		/**
 		 * データのリフレッシュを開始したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#refreshSearchStart
 		 * @type {RefreshSearchStartEvent}
 		 */
 
 		/**
 		 * データのリフレッシュが成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#refreshSearchSuccess
 		 * @type {RefreshSearchSuccessEvent}
 		 */
 
 		/**
 		 * データのリフレッシュが失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#refreshSearchError
 		 * @type {RefreshSearchErrorEvent}
 		 */
@@ -16265,28 +16277,28 @@
 		 * <p>
 		 * このイベントはリフレッシュの成否に関わらず発生します。
 		 * </p>
-		 * 
+		 *
 		 * @event GridLogic#refreshSearchComplete
 		 * @type {RefreshSearchCompleteEvent}
 		 */
 
 		/**
 		 * 編集のコミットを開始したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#commitStart
 		 * @type {CommitStartEvent}
 		 */
 
 		/**
 		 * 編集のコミットが成功したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#commitSuccess
 		 * @type {CommitSuccessEvent}
 		 */
 
 		/**
 		 * 編集のコミットが失敗したことを表すイベントです。
-		 * 
+		 *
 		 * @event GridLogic#commitError
 		 * @type {CommitErrorEvent}
 		 */
@@ -16296,7 +16308,7 @@
 		 * <p>
 		 * このイベントは成否に関わらず発生します。
 		 * </p>
-		 * 
+		 *
 		 * @event GridLogic#commitComplete
 		 * @type {CommitCompleteEvent}
 		 */
@@ -16393,7 +16405,7 @@
 
 		/**
 		 * 準備できているかを返す。
-		 * 
+		 *
 		 * @returns {boolean} 準備できた状態であれば true、そうでなければ false
 		 */
 		isReady: function() {
@@ -16405,7 +16417,7 @@
 		 * <p>
 		 * データをグリッドから編集するために利用することを想定しています。
 		 * </p>
-		 * 
+		 *
 		 * @returns {DataSource} データを編集するためのオブジェクト
 		 */
 		getDataSource: function() {
@@ -16417,7 +16429,7 @@
 		 * <p>
 		 * 検索条件をグリッドから編集するために利用することを想定しています。
 		 * </p>
-		 * 
+		 *
 		 * @returns {DataSearcher} データの検索条件を変更するためのオブジェクト
 		 */
 		getDataSearcher: function() {
@@ -16435,7 +16447,7 @@
 
 		/**
 		 * 全体の行数を返します。
-		 * 
+		 *
 		 * @returns {Length} 全体の行数
 		 */
 		getTotalRows: function() {
@@ -16444,7 +16456,7 @@
 
 		/**
 		 * 全体の列数を返します。
-		 * 
+		 *
 		 * @returns {Length} 全体の列数
 		 */
 		getTotalColumns: function() {
@@ -16453,7 +16465,7 @@
 
 		/**
 		 * データ数を返します。
-		 * 
+		 *
 		 * @returns {Length} データ数
 		 */
 		getDataCount: function() {
@@ -16463,7 +16475,7 @@
 
 		/**
 		 * ヘッダ行の数を返します。
-		 * 
+		 *
 		 * @returns {Length} ヘッダ行の数
 		 */
 		getHeaderRows: function() {
@@ -16472,7 +16484,7 @@
 
 		/**
 		 * ヘッダ列の数を返します。
-		 * 
+		 *
 		 * @returns {Length} ヘッダ列の数
 		 */
 		getHeaderColumns: function() {
@@ -16481,7 +16493,7 @@
 
 		/**
 		 * 全体の高さを返します。
-		 * 
+		 *
 		 * @returns {PixelSize} 全体の高さ
 		 */
 		getTotalHeight: function() {
@@ -16490,7 +16502,7 @@
 
 		/**
 		 * 全体の幅を返します。
-		 * 
+		 *
 		 * @returns {PixelSize} 全体の幅
 		 */
 		getTotalWidth: function() {
@@ -16500,7 +16512,7 @@
 
 		/**
 		 * ヘッダ行領域の高さを返します。
-		 * 
+		 *
 		 * @returns {PixelSize} ヘッダ行領域の高さ
 		 */
 		getHeaderRowsHeight: function() {
@@ -16516,7 +16528,7 @@
 
 		/**
 		 * ヘッダ列領域の幅を返します。
-		 * 
+		 *
 		 * @returns {PixelSize} ヘッダ列領域の幅
 		 */
 		getHeaderColumnsWidth: function() {
@@ -16532,7 +16544,7 @@
 
 		/**
 		 * メイン領域をすべて表示するのに必要な高さを返します。
-		 * 
+		 *
 		 * @returns {PixelSize} メイン領域の高さ
 		 */
 		getMainHeight: function() {
@@ -16541,7 +16553,7 @@
 
 		/**
 		 * メイン領域をすべて表示するのに必要な幅を返します。
-		 * 
+		 *
 		 * @returns {PixelSize} メイン領域の幅
 		 */
 		getMainWidth: function() {
@@ -16614,7 +16626,7 @@
 
 		/**
 		 * 縦方向の前のセルのスクロール座標を返します。
-		 * 
+		 *
 		 * @param {PixelSize} displayAreaHeight
 		 * @param {ScrollPosition} verticalPox
 		 * @returns {ScrollPosition} 前のセルのスクロール座標
@@ -16625,7 +16637,7 @@
 
 		/**
 		 * 縦方向の次のセルのスクロール座標を返します。
-		 * 
+		 *
 		 * @param {PixelSize} displayAreaHeight
 		 * @param {ScrollPosition} verticalPos
 		 * @returns {ScrollPosition} 次のセルのスクロール座標
@@ -16636,7 +16648,7 @@
 
 		/**
 		 * 横方向の前のセルのスクロール座標を返します。
-		 * 
+		 *
 		 * @param {PixelSize} displayAreaWidth
 		 * @param {ScrollPosition} horizontalPos
 		 * @returns {ScrollPosition} 前のセルのスクロール座標
@@ -16648,7 +16660,7 @@
 
 		/**
 		 * 横方向の次のセルのスクロール座標を返します。
-		 * 
+		 *
 		 * @param {PixelSize} displayAreaWidth
 		 * @param {ScrollPosition} horizontalPos
 		 * @returns {ScrollPosition} 次のセルのスクロール座標
@@ -16713,7 +16725,7 @@
 
 		/**
 		 * 指定されたデータを選択します。
-		 * 
+		 *
 		 * @param {DataId} dataId 選択するデータのID
 		 */
 		selectData: function(dataId) {
@@ -16735,7 +16747,7 @@
 
 		/**
 		 * 指定されたデータの選択を解除します。
-		 * 
+		 *
 		 * @param dataId 解除するデータのID
 		 */
 		unselectData: function(dataId) {
@@ -16758,7 +16770,7 @@
 
 		/**
 		 * 指定されたデータが選択されているか返します。
-		 * 
+		 *
 		 * @param dataId 選択されているか調べるデータのID
 		 * @returns {boolean} 選択されていれば true、そうでなければ false
 		 */
@@ -17030,7 +17042,7 @@
 
 		/**
 		 * データを取得するためのリクエストを行います。
-		 * 
+		 *
 		 * @param {GridRequestParam} requestParam リクエストのパラメータ
 		 * @returns {GridRequest} リクエスト
 		 */
@@ -17043,7 +17055,7 @@
 		 * <p>
 		 * このメソッドは同期的に実行され、遅延ロードで読み込まれていないデータは isLoaded が false となりデータが null となります。
 		 * </p>
-		 * 
+		 *
 		 * @returns {Array.<DataReference>} データへの参照の配列
 		 */
 		getDataReferences: function() {
@@ -18638,7 +18650,7 @@
 
 		/**
 		 * 起動した状態であるか返します。
-		 * 
+		 *
 		 * @returns {boolean} 起動済みであれば true、そうでなければ false
 		 */
 		isActive: function() {
@@ -21705,7 +21717,7 @@
 
 	/**
 	 * Grid を描画するコントローラ
-	 * 
+	 *
 	 * @class
 	 * @name GridController
 	 */
@@ -21748,7 +21760,7 @@
 
 		/**
 		 * このコントローラを起動します。
-		 * 
+		 *
 		 * @param {DataSource} dataSource
 		 * @param {GridControllerParam} param
 		 * @returns {Promise} 起動を待つ Promise
@@ -21762,7 +21774,7 @@
 
 		/**
 		 * このコントローラの起動を待つ Promise を返します。
-		 * 
+		 *
 		 * @returns {Promise} 起動を待つ Promise
 		 */
 		getActivatePromise: function() {
@@ -21771,7 +21783,7 @@
 
 		/**
 		 * このコントローラが起動しているかを返します。
-		 * 
+		 *
 		 * @return {boolean} 起動しているか
 		 */
 		isActive: function() {
@@ -21780,7 +21792,7 @@
 
 		/**
 		 * データ数を返します。
-		 * 
+		 *
 		 * @returns {Length} データ数
 		 */
 		getDataCount: function() {
@@ -21819,7 +21831,7 @@
 
 		/**
 		 * 指定した ID のデータが選択されているかを返します。
-		 * 
+		 *
 		 * @param {DataId} dataId データの ID
 		 * @returns {boolean} 選択されていれば true、そうでなければ false
 		 */
@@ -21832,7 +21844,7 @@
 		 * <p>
 		 * このメソッドは遅延でロードする設定の場合はサポートされていません。
 		 * </p>
-		 * 
+		 *
 		 * @returns {Array.<DataId>} 選択されているすべてのデータの ID の配列
 		 * @throws 遅延でロードする設定の場合
 		 */
@@ -21842,7 +21854,7 @@
 
 		/**
 		 * 選択されているデータを {@DataSelectResult} の形で返します。
-		 * 
+		 *
 		 * @returns {DataSelectResult} データ選択の結果
 		 */
 		getDataSelectResult: function() {
@@ -21851,7 +21863,7 @@
 
 		/**
 		 * 指定されたデータを選択します。
-		 * 
+		 *
 		 * @param {DataId} dataId 選択するデータのID
 		 */
 		selectData: function(dataId) {
@@ -21874,7 +21886,7 @@
 
 		/**
 		 * 指定されたデータの選択を解除します。
-		 * 
+		 *
 		 * @param dataId 解除するデータのID
 		 */
 		unselectData: function(dataId) {
@@ -21883,7 +21895,7 @@
 
 		/**
 		 * フォーカスされているセルを返します。
-		 * 
+		 *
 		 * @returns {?CellPosition} フォーカスされたセル
 		 */
 		getFocusedCell: function() {
@@ -21892,7 +21904,7 @@
 
 		/**
 		 * 選択されているセルの範囲を返します。
-		 * 
+		 *
 		 * @returns {?CellRange} 選択された範囲
 		 */
 		getSelectedRange: function() {
@@ -21902,7 +21914,7 @@
 		// TODO: search 変更系
 		/**
 		 * 検索します。
-		 * 
+		 *
 		 * @param {Object} param
 		 * @param [filter]
 		 * @param [sort]
@@ -21942,7 +21954,7 @@
 		 * <p>
 		 * このメソッドは同期的に実行され、遅延ロードで読み込まれていないデータは isLoaded が false となりデータが null となります。
 		 * </p>
-		 * 
+		 *
 		 * @returns {Array.<DataReferences>} データへの参照の配列
 		 */
 		getDataReferences: function() {
@@ -21959,7 +21971,7 @@
 
 		/**
 		 * 参照しているデータソースを返します。
-		 * 
+		 *
 		 * @returns {DataSource} データソース
 		 */
 		getDataSource: function() {
@@ -21973,7 +21985,7 @@
 
 		/**
 		 * 現在の検索パラメータを返します。
-		 * 
+		 *
 		 * @returns {SearchParam} 現在の検索パラメータ
 		 */
 		getSearchParam: function() {
@@ -21996,7 +22008,7 @@
 
 		/**
 		 * cellClassDefinition をセットします。
-		 * 
+		 *
 		 * @param {CellClassDefinition} cellClassDefinition
 		 */
 		setCellClassDefinition: function(cellClassDefinition) {
@@ -22005,7 +22017,7 @@
 
 		/**
 		 * disableInput をセットします。
-		 * 
+		 *
 		 * @param {DisableInputPredicate} disableInput
 		 */
 		setDisableInput: function(disableInput) {

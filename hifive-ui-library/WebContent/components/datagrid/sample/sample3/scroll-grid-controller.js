@@ -171,67 +171,17 @@
 			this.setData(num);
 		},
 
-		//		/**
-		//		 * グリッドの再描画
-		//		 *
-		//		 * @memberOf datagrid.sample.scrollGridController
-		//		 * @param
-		//		 */
-		//		'#grid gridRender': function() {
-		//
-		//			// FIXME ?
-		//			//bootstrapのtableストライプ
-		//			this.$find('.grid-header-columns table').addClass('table table-striped');
-		//			this.$find('.grid-main-box table').addClass('table table-striped');
-		//
-		//			var selectedDataIds = this._gridController.getSelectedDataIdAll();
-		//			if (selectedDataIds.length > 0) {
-		//				//選択データがある場合はチェックON状態にする
-		//				//データ変更後の再描画でヘッダも再描画されチェックボックスがOFF状態に戻るため
-		//				this.$find('#selectAll')[0].checked = true;
-		//			}
-		//		},
-
-		//		/**
-		//		 * チェックボックス変更（全選択チェックボックス以外）
-		//		 *
-		//		 * @memberOf datagrid.sample.scrollGridController
-		//		 * @param context
-		//		 * @param $el
-		//		 */
-		//		'input[type="checkbox"]:not(#selectAll) change': function(context, $el) {
-		//			var isSelected = $el.prop('checked');
-		//
-		//			//チェックボックス取得
-		//			// data による取得は数値変換できる場合はしてしまうので文字列に直す
-		//			var dataId = String($el.data('bertDataId'));
-		//
-		//			if (isSelected) {
-		//				this._gridController.selectData(dataId);
-		//
-		//				//1つでも選択がある場合はヘッダチェックボックスをONにする
-		//				this.$find('#selectAll')[0].checked = true;
-		//			} else {
-		//				this._gridController.unselectData(dataId);
-		//			}
-		//
-		//			this._updateSelectDataIds();
-		//		},
-
-		//		/**
-		//		 * 全選択チェックボックスクリック
-		//		 * <p>
-		//		 *
-		//		 * @memberOf datagrid.sample.scrollGridController
-		//		 * @param context
-		//		 * @param $el
-		//		 */
-		//		'#selectAll click': function(context, $el) {
-		//			//全選択 or 全選択解除
-		//			$el[0].checked ? this._gridController.selectAllData() : this._gridController
-		//					.unselectAllData();
-		//			this._updateSelectDataIds();
-		//		},
+		/**
+		 * グリッドが描画されたら bootstrap の table-striped を追加する
+		 *
+		 * @memberOf datagrid.sample.scrollGridController
+		 * @param
+		 */
+		'#grid gridRender': function() {
+			//bootstrapのtableストライプ
+			this.$find('.gridHeaderColumnsBox table').addClass('table table-striped');
+			this.$find('.gridMainBox table').addClass('table table-striped');
+		},
 
 		/**
 		 * チェックボックスクリック
@@ -244,25 +194,19 @@
 		},
 
 		/**
-		 * 行クリック（ヘッダ行以外）
+		 * グリッドセルを mosuedown
 		 *
 		 * @memberOf datagrid.sample.scrollGridController
 		 * @param context
 		 * @param $el
 		 */
-		// FIXME アラートを閉じても範囲選択中のため使いかってが悪い
-		//		'.gridCellFrame click': function(context, $el) {
-		//			var focusedCell = this._gridController.getFocusedCell();
-		//			var row = focusedCell.row;
-		//			var column = focusedCell.column;
-		//			// row,column からセルデータを取得
-		//			var cell = this._gridController.getGridCell(row, column);
-		//			// ヘッダ行またはヘッダ列ならば何もしない
-		//			if(cell.isHeaderRow || cell.isHeaderColumn){
-		//				return;
-		//			}
-		//			alert(JSON.stringify(cell));
-		//		},
+		'.gridCellFrame mousedown': function(context, $el) {
+			// 対象のグリッドセルを取得
+			var cell = this._getGridCell($el);
+			// グリッドセルのデータを表示
+			this._showGridCell(cell);
+		},
+
 		/**
 		 * 選択社員IDリンク クリック
 		 *
@@ -295,6 +239,9 @@
 		},
 
 		setData: function(num) {
+			// TODO clear() を呼ばないと表示が更新されない
+			this._gridController.clear();
+
 			// サンプルデータ生成
 			var data = sample.createData(num);
 			// dataSource 取得
@@ -302,11 +249,29 @@
 			// dataAccessor 取得
 			var dataAccessor = dataSource.getDataAccessor();
 			// data を設定(内部で search が走る)
-			dataAccessor.setSourceData(data);
+			dataAccessor.setSourceDataSet(data);
 			// data を設定後、選択状態を全て解除する
 			this._gridController.unselectDataAll();
-			// グリッドをリフレッシュする
-			this._gridController.refresh();
+
+			// searchして描画を更新
+			// TODO refresh() では更新されない
+			this._gridController.search({});
+		},
+
+		// --- Private Method --- //
+
+		_getGridCell: function($gridCellFrame) {
+			if (!$gridCellFrame.hasClass('gridCellFrame')) {
+				return;
+			}
+			// row,column からセルデータを取得
+			var row = $gridCellFrame.data('h5DynGridRow');
+			var column = $gridCellFrame.data('h5DynGridColumn');
+			return this._gridController.getGridCell(row, column);
+		},
+
+		_showGridCell: function(cell) {
+			this.$find('.gridCellInfo').text(JSON.stringify(cell.editedData, null, '\n'));
 		}
 
 	};
