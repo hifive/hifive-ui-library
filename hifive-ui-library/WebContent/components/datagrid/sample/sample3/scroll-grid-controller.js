@@ -1,13 +1,88 @@
-/*global h5, bert*/
+/* jshint browser: true, jquery: true */
+/*global h5*/
 
-// ---- Controller ---- //
 (function($) {
+	'use strict';
+
+	var datagrid = h5.ui.components.datagrid;
+	var cellFormatter = datagrid.view.dom.cellFormatter;
+	var changeHandler = datagrid.view.dom.changeHandler;
+
+	var log = h5.log.createLogger('sample');
+
+	var initParam = {
+		searcher: {
+			type: 'all'
+		},
+
+		mapper: {
+			type: 'property',
+			param: {
+				direction: 'vertical',
+				visibleProperties: {
+					header: ['_selectCheckBox', 'id'],
+					main: ['name', 'place', 'position', 'tel', 'mail', 'note']
+				},
+				dataDirectionSize: {
+					size: 25
+				}
+			}
+		},
+
+		view: {
+			type: 'table',
+			param: {
+				cellClassDefinition: {},
+				disableInput: function() {
+					return false;
+				}
+			}
+		},
+
+		properties: {
+			_selectCheckBox: {
+				size: 25,
+				enableResize: false,
+				toValue: function(data, cell) {
+					return cell.isSelectedData;
+				},
+				formatter: cellFormatter.checkbox(true),
+				changeHandler: changeHandler.selectData()
+			},
+
+			id: {
+				size: 70,
+				sortable: true
+			},
+
+			name: {
+				size: 100,
+				sortable: true
+			},
+
+			place: {
+				size: 100
+			},
+
+			position: {
+				size: 110
+			},
+
+			tel: {
+				size: 140
+			},
+
+			mail: {
+				size: 270
+			},
+
+			note: {
+				size: 150
+			}
+		}
+	};
 
 	// --- 定数 --- //
-
-	//行番号
-	var H5GRID_ROW_ID = 'h5DynGridRowId';
-
 
 	// --- コントローラ --- //
 
@@ -28,36 +103,29 @@
 		__name: 'datagrid.sample.scrollGridController',
 
 
-//		/**
-//		 * メタ定義
-//		 *
-//		 * @memberOf datagrid.sample.scrollGridController
-//		 * @type object
-//		 */
-//		__meta: {
-//			_gridController: {
-//				rootElement: '#grid'
-//			}
-//		},
+		/**
+		 * メタ定義
+		 *
+		 * @memberOf datagrid.sample.scrollGridController
+		 * @type object
+		 */
+		__meta: {
+			_gridController: {
+				rootElement: '#grid'
+			}
+		},
 
-		// --- プロパティ --- //
-
+		// --- 子コントローラ --- //
 		/**
 		 * ScrollGridControllerライブラリ
 		 *
 		 * @memberOf datagrid.sample.scrollGridController
 		 * @type Controller
 		 */
-		_gridController: null,
+		_gridController: datagrid.GridController,
 
-		/**
-		 * サンプルデータ取得ロジック
-		 *
-		 * @memberOf datagrid.sample.scrollGridController
-		 * @type Logic
-		 */
-		_gridLogic: datagrid.sample.GridLogic,
 
+		// --- プロパティ --- //
 
 		// --- プライベートなメソッド --- //
 
@@ -68,7 +136,7 @@
 		 * @param
 		 */
 		_updateSelectDataIds: function() {
-			var selectedDataIds = this._gridController.getSelectedDataIds();
+			var selectedDataIds = this._gridController.getSelectedDataIdAll();
 			if (selectedDataIds.length < 15) {
 				this.$find('#selectedDataIds').text(selectedDataIds);
 			} else {
@@ -77,7 +145,6 @@
 		},
 
 		// --- ライフサイクル関連メソッド --- //
-
 		/**
 		 * 初期処理
 		 *
@@ -85,152 +152,94 @@
 		 * @param
 		 */
 		__ready: function() {
-			var defaultNum = this.$find('[name="num-of-record"]').val();
-			this.init(0, defaultNum);
-		},
-
-		init: function(start, end) {
-			if (this._gridController) {
-				this._gridController.dispose();
-			}
-			// 要素のリセット
-			this.$find('#grid').attr('id', 'old-grid').after('<div id="grid"></div>');
-			this.$find('#old-grid').remove();
-			this._gridController = h5.core.controller('#grid',
-					h5.ui.components.datagrid.ScrollGridController);
-			this._gridController.readyPromise.done(this.own(function() {
-				//サンプルデータ取得
-				this._gridLogic.loadData(start, end).done(this.own(function(data) {
-					//データグリッド初期化
-					this._gridController.init({
-						data: data,
-						idKey: 'id',
-						rowHeight: 25,
-						gridHeight: Math.min(651, (end - start) * 25 + 26),
-						gridWidth: 860,
-						headerColumns: 2,
-						verticalScrollStrategy: 'index',
-						columns: [{
-							propertyName: '_selectCheckBox',
-							header: '<input id="selectAll" type="checkbox">',
-							width: 40,
-							formatter: function(cellData) {
-								if (cellData.isHeaderRow) {
-									return cellData.value;
-								}
-								var dataId = cellData.dataId;
-								var checked = cellData.selected ? 'checked' : '';
-								var html = '<input type="checkbox"';
-								html += ' data-bert-data-id="' + dataId + '"';
-								html += ' ' + checked;
-								html += '>';
-								return html;
-							},
-							sortable: false,
-							markable: false
-						}, {
-							propertyName: 'id',
-							header: '社員ID',
-							width: 100,
-							sortable: true
-						}, {
-							propertyName: 'name',
-							header: '氏名',
-							width: 150,
-							sortable: true
-						}, {
-							propertyName: 'place',
-							header: '配属',
-							width: 100,
-							sortable: true
-						}, {
-							propertyName: 'position',
-							header: '部署',
-							width: 100,
-							sortable: true
-						}, {
-							propertyName: 'tel',
-							header: '電話番号',
-							width: 120,
-							sortable: true
-						}, {
-							propertyName: 'mail',
-							header: 'メールアドレス',
-							width: 260,
-							sortable: true
-						}, {
-							propertyName: 'note',
-							header: '備考',
-							width: 200
-						}]
-					});
-					this._gridController.resize();
-					this._updateSelectDataIds();
-				}));
-			}));
-
+			this.init(1000);
 		},
 
 		// --- イベントハンドラメソッド --- //
-
 		/**
-		 * グリッドの再描画
+		 * サンプルデータ件数の変更
 		 *
 		 * @memberOf datagrid.sample.scrollGridController
 		 * @param
 		 */
-		'#grid renderGrid': function() {
-
-			//bootstrapのtableストライプ
-			this.$find('.grid-header-columns table').addClass('table table-striped');
-			this.$find('.grid-main-box table').addClass('table table-striped');
-
-			var selectedDataIds = this._gridController.getSelectedDataIds();
-			if (selectedDataIds.length > 0) {
-				//選択データがある場合はチェックON状態にする
-				//データ変更後の再描画でヘッダも再描画されチェックボックスがOFF状態に戻るため
-				this.$find('#selectAll')[0].checked = true;
+		'.create-record-form submit': function(context) {
+			context.event.preventDefault();
+			var num = parseInt(this.$find('[name="num-of-record"]').val());
+			if (num !== num) {
+				return;
 			}
+			this.setData(num);
 		},
 
+		//		/**
+		//		 * グリッドの再描画
+		//		 *
+		//		 * @memberOf datagrid.sample.scrollGridController
+		//		 * @param
+		//		 */
+		//		'#grid gridRender': function() {
+		//
+		//			// FIXME ?
+		//			//bootstrapのtableストライプ
+		//			this.$find('.grid-header-columns table').addClass('table table-striped');
+		//			this.$find('.grid-main-box table').addClass('table table-striped');
+		//
+		//			var selectedDataIds = this._gridController.getSelectedDataIdAll();
+		//			if (selectedDataIds.length > 0) {
+		//				//選択データがある場合はチェックON状態にする
+		//				//データ変更後の再描画でヘッダも再描画されチェックボックスがOFF状態に戻るため
+		//				this.$find('#selectAll')[0].checked = true;
+		//			}
+		//		},
+
+		//		/**
+		//		 * チェックボックス変更（全選択チェックボックス以外）
+		//		 *
+		//		 * @memberOf datagrid.sample.scrollGridController
+		//		 * @param context
+		//		 * @param $el
+		//		 */
+		//		'input[type="checkbox"]:not(#selectAll) change': function(context, $el) {
+		//			var isSelected = $el.prop('checked');
+		//
+		//			//チェックボックス取得
+		//			// data による取得は数値変換できる場合はしてしまうので文字列に直す
+		//			var dataId = String($el.data('bertDataId'));
+		//
+		//			if (isSelected) {
+		//				this._gridController.selectData(dataId);
+		//
+		//				//1つでも選択がある場合はヘッダチェックボックスをONにする
+		//				this.$find('#selectAll')[0].checked = true;
+		//			} else {
+		//				this._gridController.unselectData(dataId);
+		//			}
+		//
+		//			this._updateSelectDataIds();
+		//		},
+
+		//		/**
+		//		 * 全選択チェックボックスクリック
+		//		 * <p>
+		//		 *
+		//		 * @memberOf datagrid.sample.scrollGridController
+		//		 * @param context
+		//		 * @param $el
+		//		 */
+		//		'#selectAll click': function(context, $el) {
+		//			//全選択 or 全選択解除
+		//			$el[0].checked ? this._gridController.selectAllData() : this._gridController
+		//					.unselectAllData();
+		//			this._updateSelectDataIds();
+		//		},
+
 		/**
-		 * チェックボックス変更（全選択チェックボックス以外）
-		 *
-		 * @memberOf datagrid.sample.scrollGridController
-		 * @param context
-		 * @param $el
-		 */
-		'input[type="checkbox"]:not(#selectAll) change': function(context, $el) {
-			var isSelected = $el.prop('checked');
-
-			//チェックボックス取得
-			// data による取得は数値変換できる場合はしてしまうので文字列に直す
-			var dataId = String($el.data('bertDataId'));
-
-			if (isSelected) {
-				this._gridController.selectData(dataId);
-
-				//1つでも選択がある場合はヘッダチェックボックスをONにする
-				this.$find('#selectAll')[0].checked = true;
-			} else {
-				this._gridController.unselectData(dataId);
-			}
-
-			this._updateSelectDataIds();
-		},
-
-		/**
-		 * 全選択チェックボックスクリック
+		 * チェックボックスクリック
 		 * <p>
 		 *
 		 * @memberOf datagrid.sample.scrollGridController
-		 * @param context
-		 * @param $el
 		 */
-		'#selectAll click': function(context, $el) {
-			//全選択 or 全選択解除
-			$el[0].checked ? this._gridController.selectAllData() : this._gridController
-					.unselectAllData();
+		'#grid gridChangeDataSelect': function() {
 			this._updateSelectDataIds();
 		},
 
@@ -241,14 +250,19 @@
 		 * @param context
 		 * @param $el
 		 */
-		'td[data-h5-dyn-grid-is-header-row="false"] click': function(context, $el) {
-			// rowId から元データの取得
-			var rowId = $el.data(H5GRID_ROW_ID);
-			var data = this._gridController.getCachedData(rowId);
-
-			alert(JSON.stringify(data));
-		},
-
+		// FIXME アラートを閉じても範囲選択中のため使いかってが悪い
+		//		'.gridCellFrame click': function(context, $el) {
+		//			var focusedCell = this._gridController.getFocusedCell();
+		//			var row = focusedCell.row;
+		//			var column = focusedCell.column;
+		//			// row,column からセルデータを取得
+		//			var cell = this._gridController.getGridCell(row, column);
+		//			// ヘッダ行またはヘッダ列ならば何もしない
+		//			if(cell.isHeaderRow || cell.isHeaderColumn){
+		//				return;
+		//			}
+		//			alert(JSON.stringify(cell));
+		//		},
 		/**
 		 * 選択社員IDリンク クリック
 		 *
@@ -258,19 +272,45 @@
 		 */
 		'#showSelectedDataIds click': function(context, $el) {
 			//選択社員IDをアラート表示
-			var selectedDataIds = this._gridController.getSelectedDataIds();
+			var selectedDataIds = this._gridController.getSelectedDataIdAll();
 			alert(selectedDataIds.length + '件選択しています\n' + selectedDataIds);
 		},
 
-		// 件数の変更
-		'.create-record-form submit': function(context) {
-			context.event.preventDefault();
-			var num = this.$find('[name="num-of-record"]').val();
-			this.init(0, num);
+		// --- Public Method --- //
+
+		init: function(num) {
+			// サンプルデータ生成
+			var dataSource = datagrid.createDataSource({
+				idProperty: 'id',
+				type: 'local',
+				param: sample.createData(num)
+			});
+
+			//データグリッド初期化
+			this._gridController.activate(dataSource, initParam);
+
+			datagrid.util.delay(1000, this.own(function() {
+				this._gridController.search({});
+			}));
+		},
+
+		setData: function(num) {
+			// サンプルデータ生成
+			var data = sample.createData(num);
+			// dataSource 取得
+			var dataSource = this._gridController.getDataSource();
+			// dataAccessor 取得
+			var dataAccessor = dataSource.getDataAccessor();
+			// data を設定(内部で search が走る)
+			dataAccessor.setSourceData(data);
+			// data を設定後、選択状態を全て解除する
+			this._gridController.unselectDataAll();
+			// グリッドをリフレッシュする
+			this._gridController.refresh();
 		}
+
 	};
 
-	// ---- Init ---- //
 	$(function() {
 		h5.core.controller('body', scrollGridController);
 	});

@@ -1,0 +1,74 @@
+/*---------- 共通 ----------*/
+body{
+	padding: 10px;
+	background-color: white;
+}
+
+.grid-content{
+	overflow-y: hidden;
+	margin: 10px;
+}
+
+.grid-init-code{
+	min-width : 910px;
+}
+
+/*---------- グリッド共通 ----------*/
+#grid {
+	height: 600px;
+	width: 800px;
+	margin: 0 auto;
+}
+
+/* FIXME ? */
+#grid .table {
+	margin-bottom: 0;
+}
+
+#grid td {
+	border: solid 1px #888;
+}
+
+#grid .gridSelectedData {
+	background-color: #1E90FF;
+	color: white;
+}
+
+/* FIXME ? */
+#grid td.grid-marked {
+	background-color: #B2E0FF;
+}
+
+#grid input[type="checkbox"] {
+	vertical-align: middle;
+}
+
+#grid .gridCell {
+	text-align: center;
+	white-space: nowrap;
+}
+
+#grid .gridHeaderRow {
+	background-color: rgb(89, 87, 87);
+	border-bottom-style: double;
+	color : whitesmoke;
+}
+
+/*---------- 氏名、電話番号、メールアドレス ----------*/
+#grid .gridMainBox [data-h5-dyn-grid-property-name="name"] .gridCell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+#grid .gridMainBox [data-h5-dyn-grid-property-name="mail"] .gridCell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+#grid .gridMainBox [data-h5-dyn-grid-property-name="tel"] .gridCell {
+	margin-left: 5px;
+	text-align: left;
+	white-space: nowrap;
+}
