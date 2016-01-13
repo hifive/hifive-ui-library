@@ -13,7 +13,7 @@
 	function dumyAjax(param) {
 
 		if (param.type === 'search') {
-			
+
 			return datagrid.util.delay(500, function() {
 				return {
 					// MEMO: 9000兆 ぐらいに JavaScript 整数値の限界値がある & その辺だと表示がずれることがある
@@ -21,7 +21,7 @@
 					fetchParam: param.param
 				};
 			});
-			
+
 		} else if (param.type === 'fetch') {
 
 			var range = param.range;
@@ -33,7 +33,7 @@
 					score: 70
 				});
 			}
-			
+
 			return datagrid.util.delay(500, function() {
 				return {
 					dataArray: dataArray
@@ -210,13 +210,13 @@
 		// --- Event Handler --- //
 
 		'.gridCellFrame mousedown': function(context, $el) {
-			var cellStr = $el.data('h5DynGridCell');
-			var cell = h5.u.obj.deserialize(cellStr);
-			log.info('click dataId={0}', cell.dataId);
+//			var cellStr = $el.data('h5DynGridCell');
+//			var cell = h5.u.obj.deserialize(cellStr);
+//			log.info('click dataId={0}', cell.dataId);
 		},
 
 		'{window} resize': function() {
-			this._gridController.resize();
+			this._gridController.refresh();
 		}
 
 	};
