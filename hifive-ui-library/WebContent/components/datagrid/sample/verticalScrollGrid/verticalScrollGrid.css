@@ -17,6 +17,7 @@ body{
 #grid {
 	height: 600px;
 	margin: 0 auto;
+	padding: 0;
 }
 
 #grid td {
@@ -68,4 +69,17 @@ body{
 	border: solid 1px;
 	overflow-x: auto;
 	white-space: pre;
+}
+
+/*---------- ソートアイコン ----------*/
+.gridSortAscIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
+}
+
+.gridSortDescIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
 }

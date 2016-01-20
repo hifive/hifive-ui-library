@@ -35,7 +35,9 @@
 				cellClassDefinition: {},
 				disableInput: function() {
 					return false;
-				}
+				},
+				sortAscIconClasses: ['glyphicon glyphicon-sort-by-alphabet'],
+				sortDescIconClasses: ['glyphicon glyphicon-sort-by-alphabet-alt']
 			}
 		},
 
@@ -90,23 +92,23 @@
 	 * スクロールグリッドコントローラ
 	 *
 	 * @class
-	 * @name scrollGridController
+	 * @name ScrollGridController
 	 */
 	var scrollGridController = {
 
 		/**
 		 * コントローラ名
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type string
 		 */
-		__name: 'datagrid.sample.scrollGridController',
+		__name: 'datagrid.sample.ScrollGridController',
 
 
 		/**
 		 * メタ定義
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type object
 		 */
 		__meta: {
@@ -119,7 +121,7 @@
 		/**
 		 * ScrollGridControllerライブラリ
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type Controller
 		 */
 		_gridController: datagrid.GridController,
@@ -131,7 +133,7 @@
 		/**
 		 * 初期処理
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
 		__ready: function() {
@@ -142,7 +144,7 @@
 		/**
 		 * サンプルデータ件数の変更
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
 		'.create-record-form submit': function(context) {
@@ -157,7 +159,7 @@
 		/**
 		 * グリッドが描画されたら bootstrap の table-striped を追加する
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
 		'#grid gridRender': function() {
@@ -170,7 +172,7 @@
 		 * チェックボックスクリック
 		 * <p>
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 */
 		'#grid gridChangeDataSelect': function() {
 			this._updateSelectDataIds();
@@ -179,7 +181,7 @@
 		/**
 		 * グリッドセルを mosuedown
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param context
 		 * @param $el
 		 */
@@ -193,7 +195,7 @@
 		/**
 		 * 選択社員IDリンク クリック
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param context
 		 * @param $el
 		 */
@@ -246,7 +248,7 @@
 		/**
 		 * 選択社員IDの表示を更新する
 		 *
-		 * @memberOf datagrid.sample.scrollGridController
+		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
 		_updateSelectDataIds: function() {

@@ -26,7 +26,7 @@ body {
 #grid {
 	margin: 0 auto;
 	width: 1000px;
-	height: 420px;
+	height: 300px;
 }
 
 #grid td {
@@ -59,8 +59,22 @@ body {
 
 /*---------- グリッドレコード情報 ----------*/
 .gridCellInfo{
-	height: 200px;
+	height: 300px;
 	border: solid 1px;
 	overflow: auto;
 	white-space: pre;
+	margin-top: 20px;
+}
+
+/*---------- ソートアイコン ----------*/
+.gridSortAscIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
+}
+
+.gridSortDescIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
 }
