@@ -410,7 +410,7 @@
 			return String(target);
 		}
 		if (_depth < 0) {
-			// toString が関数以外の値で上書きされていた場合は '#{CLASSNAME}#' を返す  
+			// toString が関数以外の値で上書きされていた場合は '#{CLASSNAME}#' を返す
 			if (!$.isFunction(target.toString)) {
 				return '#' + className(target) + '#';
 			}
@@ -11645,11 +11645,6 @@
 		};
 	});
 
-	// ---- PagingDataSearcher ---- //
-
-	// TODO: PagingDataSearcher
-
-
 	//=============================
 	// SingleDataSearcher
 	//=============================
@@ -11679,7 +11674,7 @@
 
 			this._dataSource = dataSource;
 			this._dataId = null;
-			this._listenerSet = util.creatEventListenerSet();
+			this._listenerSet = util.creatEventListenerSet(this);
 
 			this._isReady = false;
 			this._isChangingDataId = false;
@@ -11924,6 +11919,252 @@
 		};
 	});
 
+
+	// ---- PagingDataSearcher ---- //
+
+	//=============================
+	// PagingDataSearcher
+	//=============================
+
+	var PagingDataSearcher = util.defineClass(NAMESPACE + '.PagingDataSearcher', function(ctx) {
+
+		var log = ctx.log;
+
+		/**
+		 * このコンストラクタはユーザが直接呼び出すことはありません。
+		 * 
+		 * @constructor PagingDataSearcher
+		 * @class ページング機能を持った{@DataSearcher} です。
+		 * @mixes EventDispatcher
+		 * @mixes Disposable
+		 * @mixes OwnSupport
+		 * @param {DataSearcher} dataSearcher コンポジションするsearcher
+		 */
+		function PagingDataSearcher(dataSearcher, pageSize) {
+			var validator = ctx.argsValidator('constructor');
+
+			validator.arg('dataSearcher', dataSearcher, function(v) {
+				v.notNull();
+				v.instanceOf(DataSearcher);
+			});
+			validator.arg('pageSize', pageSize, function(v) {
+				v.notNull();
+				v.positiveNumber();
+			});
+
+			this._dataSearcher = dataSearcher;
+			this._pageSize = pageSize;
+			this._currentPage = 1;
+		}
+
+		// TODO: AllFetchSearcherからのコピペ。PagingDataSearcherにあわせて改変する。
+		var eventListeners = {
+
+			_dataSearcher: {
+				readySearch: 'propagate',
+				changeSearchStart: 'propagate',
+				chageSearchSuccess: 'propagate',
+				changeSearchError: 'propagate',
+				changeSearchComplete: 'propagate',
+				refreshSearchStart: 'propagate',
+				refreshSearchSuccess: 'propagate',
+				refreshSearchError: 'propagate',
+				refreshSearchComplete: 'propagate',
+
+				changeSource: function(event) {
+					var lastPage = this.totalPages();
+					if (this._currentPage > lastPage) {
+						this.movePage(lastPage);
+					}
+					this.dispatchEvent(event);
+				},
+
+				edit: 'propagate',
+				commitStart: 'propagate',
+				commitSuccess: 'propagate',
+				commitError: 'propagate',
+				commitComplete: 'propagate',
+				rollback: 'propagate'
+			}
+		};
+
+		/** @lends PagingDataSearcher# */
+		var pagingDataSearcherDefinition = {
+			// --- Metadata --- //
+
+			/**
+			 * このコメントは Eclipse のアウトライン用です。
+			 * 
+			 * @private
+			 * @memberOf _PagingDataSearcher
+			 */
+			__name: ctx.className,
+
+			// --- Implement Method --- //
+
+			getIdProperty: function() {
+				return this._dataSearcher.getIdProperty();
+			},
+
+			isReady: function() {
+				return this._dataSearcher.isReady();
+			},
+
+			isChangingSearchParam: function() {
+				return this._dataSearcher.isChangingSearchParam();
+			},
+
+			isRefreshing: function() {
+				return this._dataSearcher.isRefreshing();
+			},
+
+			getSearchParam: function() {
+				return this._dataSearcher.getSearchParam();
+			},
+
+			getFetchParam: function() {
+				return this._dataSearcher.getFetchParam();
+			},
+
+			getCount: function() {
+				if (this._currentPage === this.getTotalPages()) {
+					return this._dataSearcher.getCount() % this._pageSize;
+				} else {
+					return this._pageSize;
+				}
+			},
+
+			getReference: function(fetchRange) {
+				var validator = ctx.argsValidator('public');
+				validator.arg('fetchRange', fetchRange, type.validateFetchRange1D);
+
+				// ページ範囲から外れていたらエラー
+				var end = fetchRange.index + fetchRange.length;
+				if (end > this.getCount()) {
+					throw error.indexOutOfBounds.createError(end - 1);
+				}
+
+				fetchRange.index = this._getStartIndex() + fetchRange.index;
+				return this._dataSearcher.getReference(fetchRange);
+			},
+
+			findData: function(dataId) {
+				var ids = this.getDataIdAll();
+				if (ids.indexOf(dataId) === -1) {
+					throw new Error('ページ範囲外です');
+				}
+				return this._dataSearcher.findData(dataId);
+			},
+
+			getDataSource: function() {
+				return this._dataSearcher.getDataSource();
+			},
+
+			getDataIdAll: function() {
+				// TODO: 現在のページのみを対象に絞る
+				// getDataIdAllは順番は保証されていないのでは。
+				// コンポジション先のキャッシュされたIDにアクセス出来ない？
+				var ids = this._dataSearcher.getDataIdAll();
+				return ids.slice(this._getStartIndex(), this.getGount());
+			},
+
+			getSourceDataSet: function() {
+				return this._dataSearcher.getSourceDataSet();
+			},
+
+			initSearchParam: function(searchParam) {
+				this._dataSearcher.initSearchParam(searchParam);
+			},
+
+			changeSearchParam: function(searchParam) {
+				this._dataSearcher.changeSearchParam(searchParam);
+			},
+
+			refresh: function() {
+				this._dataSearcher.refresh();
+			},
+
+			clear: function() {
+				this._dataSearcher.clear();
+				this._currentPage = 1;
+			},
+
+			openTree: function(dataId) {
+				this._dataSearcher.openTree();
+			},
+
+			closeTree: function(dataId) {
+				this._closeTree();
+			},
+
+			// PagingDataSearcher固有のメソッド
+			getCurrentPage: function() {
+				return this._currentPage;
+			},
+
+			getTotalPages: function() {
+				var pages = Math.ceil(this._dataSearcher.getCount() / this._pageSize);
+				if (pages <= 0) {
+					return 1;
+				}
+				return pages;
+			},
+
+			movePage: function(pageNumber) {
+				var start = (pageNumber - 1) * this._pageSize;
+				var end = start + this._pageSize;
+
+				var max = this._dataSearcher.getCount();
+				end = Math.min(max, end);
+
+				if (end <= start && pageNumber !== 1) {
+					throw new Error('存在しないページです');
+				}
+
+				this._currentPage = pageNumber;
+				this.dispatchEvent({
+					type: 'changeSource'
+				});
+			},
+
+			// --- Private Property --- //
+
+			/**
+			 * @private
+			 * @type {DataSearcher}
+			 */
+			_dataSearcher: null,
+
+			/**
+			 * @private
+			 * @type {number}
+			 */
+			_pageSize: null,
+
+			/**
+			 * @private
+			 * @type {}
+			 */
+			_currentPage: null,
+
+			// --- Private Method --- //
+			_isLastPage: function() {
+				return this._currentPage == this.getTotalPages();
+			},
+
+			_getStartIndex: function() {
+				return (this._currentPage - 1) * this._pageSize;
+			}
+
+		// TODO: ページ番号を管理するためのメソッドが必要かも
+		};
+
+		return {
+			constructorFunction: PagingDataSearcher,
+			superConstructorFunction: DataSearcher,
+			definition: pagingDataSearcherDefinition
+		};
+	});
 
 	//=============================
 	// SearchConfig
@@ -17358,6 +17599,7 @@
 			var columnLength = gridRange.getColumnLength();
 
 			html += '<colgroup>';
+
 
 
 			var i, j;
