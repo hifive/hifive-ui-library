@@ -11871,14 +11871,18 @@
 			},
 
 			getCount: function() {
-				if (this._currentPage === this.getTotalPages()) {
-					return this._dataSearcher.getCount() % this._pageSize;
-				} else {
-					return this._pageSize;
+				if (this._dataSearcher.getCount() == 0) {
+					return 0;
 				}
+				var remind = this._dataSearcher.getCount() % this._pageSize;
+				if (remind > 0 && this._currentPage === this.getTotalPages()) {
+					return remind;
+				}
+				return this._pageSize;
 			},
 
 			getReference: function(fetchRange) {
+				debugger;
 				var validator = ctx.argsValidator('public');
 				validator.arg('fetchRange', fetchRange, type.validateFetchRange1D);
 
