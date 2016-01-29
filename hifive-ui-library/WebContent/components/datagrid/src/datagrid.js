@@ -11882,7 +11882,6 @@
 			},
 
 			getReference: function(fetchRange) {
-				debugger;
 				var validator = ctx.argsValidator('public');
 				validator.arg('fetchRange', fetchRange, type.validateFetchRange1D);
 
