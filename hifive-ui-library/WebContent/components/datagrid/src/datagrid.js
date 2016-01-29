@@ -11774,6 +11774,7 @@
 		 * @mixes Disposable
 		 * @mixes OwnSupport
 		 * @param {DataSearcher} dataSearcher コンポジションするsearcher
+		 * @param {Number} pageSize 1ページに表示する件数
 		 */
 		function PagingDataSearcher(dataSearcher, pageSize) {
 			var validator = ctx.argsValidator('constructor');
@@ -11790,17 +11791,25 @@
 			this._dataSearcher = dataSearcher;
 			this._pageSize = pageSize;
 			this._currentPage = 1;
+
+			this._listenerSet = util.createEventListenerSet(this);
+			this._listenerSet.registerEventListeners(eventListeners);
 		}
 
-		// TODO: AllFetchSearcherからのコピペ。PagingDataSearcherにあわせて改変する。
 		var eventListeners = {
-
 			_dataSearcher: {
 				readySearch: 'propagate',
 				changeSearchStart: 'propagate',
-				chageSearchSuccess: 'propagate',
-				changeSearchError: 'propagate',
-				changeSearchComplete: 'propagate',
+				changeSearchSuccess: function(event) {
+					this._currentPage = 1;
+					this.dispatchEvent(event);
+				},
+				changeSearchError: function(event) {
+					this.dispatchEvent(event);
+				},
+				changeSearchComplete: function(event) {
+					this.dispatchEvent(event);
+				},
 				refreshSearchStart: 'propagate',
 				refreshSearchSuccess: 'propagate',
 				refreshSearchError: 'propagate',
@@ -11896,9 +11905,6 @@
 			},
 
 			getDataIdAll: function() {
-				// TODO: 現在のページのみを対象に絞る
-				// getDataIdAllは順番は保証されていないのでは。
-				// コンポジション先のキャッシュされたIDにアクセス出来ない？
 				var ids = this._dataSearcher.getDataIdAll();
 				return ids.slice(this._getStartIndex(), this.getGount());
 			},
@@ -11945,6 +11951,19 @@
 				return pages;
 			},
 
+			getPageSize: function() {
+				return this._pageSize;
+			},
+
+			setPageSize: function(pageSize) {
+				this._pageSize = pageSize;
+
+				this._currentPage = 1;
+				this.dispatchEvent({
+					type: 'changeSource'
+				});
+			},
+
 			movePage: function(pageNumber) {
 				var start = (pageNumber - 1) * this._pageSize;
 				var end = start + this._pageSize;
@@ -11952,7 +11971,7 @@
 				var max = this._dataSearcher.getCount();
 				end = Math.min(max, end);
 
-				if (end <= start && pageNumber !== 1) {
+				if (pageNumber <= 0 || end <= start && pageNumber !== 1) {
 					throw new Error('存在しないページです');
 				}
 
@@ -11972,13 +11991,13 @@
 
 			/**
 			 * @private
-			 * @type {number}
+			 * @type {Number}
 			 */
 			_pageSize: null,
 
 			/**
 			 * @private
-			 * @type {}
+			 * @type {Number}
 			 */
 			_currentPage: null,
 
@@ -11991,7 +12010,6 @@
 				return (this._currentPage - 1) * this._pageSize;
 			}
 
-		// TODO: ページ番号を管理するためのメソッドが必要かも
 		};
 
 		return {
@@ -12043,6 +12061,7 @@
 			DataSource: DataSource,
 			AllFetchSearcher: AllFetchSearcher,
 			LazyFetchSearcher: LazyFetchSearcher,
+			PagingDataSearcher: PagingDataSearcher,
 			SingleDataSearcher: SingleDataSearcher
 		},
 
@@ -16405,6 +16424,12 @@
 				var searcherParam = param.searcher.param;
 				searcher = new datagrid.data._privateClass.LazyFetchSearcher(dataSource,
 						searcherParam);
+			}
+
+			// ページング機能付きDataSearcherでwrapする
+			if (typeof param.searcher.paging !== 'undefined' && param.searcher.paging.enable) {
+				searcher = new datagrid.data._privateClass.PagingDataSearcher(searcher,
+						param.searcher.paging.pageSize);
 			}
 
 			var mapperParam = param.mapper.param;
@@ -22004,6 +22029,13 @@
 			});
 
 			searcher.changeSearchParam(searchParam);
+		},
+
+		/**
+		 * DataSearcherを返します
+		 */
+		getDataSearcher: function() {
+			return this._gridLogic.getDataSearcher();
 		},
 
 		/**
