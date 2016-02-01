@@ -26,131 +26,227 @@
 
 		__name: 'PageController',
 
-		__meta: {
-			_gridController: {
-				rootElement: '#grid'
-			}
-		},
+		//		__meta: {
+		//			_gridController: {
+		//				rootElement: '#grid'
+		//			}
+		//		},
 
 
 		// --- Child Controller --- //
 
-		_gridController: datagrid.GridController,
+		//_gridController: datagrid.GridController,
 
 
 		// --- Life Cycle Method --- //
 
 		__ready: function() {
+			this.init();
+		},
 
-			var names = ['Taro', 'Hanako', 'Jiro'];
-			var sourceArray = [];
-
-			for (var i = 0; i < 10000; i++) {
-				sourceArray.push({
-					id: (i === 10) ? 'GG' : String(i),
-					name: randomValue(names),
-					score: random(11) * 10
-				});
+		init: function() {
+			//gridの初期化
+			if (this._gridController) {
+				this._gridController.dispose();
 			}
+			// 要素のリセット
+			this.$find('#grid').attr('id', 'old-grid').after('<div id="grid"></div>');
+			this.$find('#old-grid').remove();
+			this._gridController = h5.core.controller('#grid', datagrid.GridController);
+			this._gridController.readyPromise.done(this.own(function() {
+				var names = ['Taro', 'Hanako', 'Jiro'];
+				var sourceArray = [];
 
-			var param = {
-				searcher: {
-					type: 'all'
-				},
+				for ( var i = 0; i < 10000; i++) {
+					sourceArray.push({
+						id: (i === 10) ? 'GG' : String(i),
+						name: randomValue(names),
+						score: random(11) * 10
+					});
+				}
 
-				mapper: {
-					type: 'property',
-					param: {
-						direction: 'vertical',
-						visibleProperties: {
-							header: ['_select', 'id'],
-							main: ['name', 'score', 'hoge']
-						},
+				var param = {
+					searcher: {
+						type: 'all'
+					},
 
-						dataDirectionSize: {
-							size: 20
-						}
-					}
-				},
-
-				view: {
-					type: 'table',
-					param: {
-						cellClassDefinition: {
-							highScore: function(cell) {
-								if (cell.editedData == null || cell.editedData.score == null) {
-									return false;
-								}
-								return 80 <= cell.editedData.score;
+					mapper: {
+						type: 'property',
+						param: {
+							direction: 'vertical',
+							visibleProperties: {
+								header: ['_select', 'id'],
+								main: ['name', 'score', 'hoge', 'test1', 'test2', 'test3', 'test4',
+										'test5', 'test6', 'test7', 'test8']
 							},
 
-							editedCell: function(cell) {
-								return cell.editedValue !== cell.originalValue;
+							dataDirectionSize: {
+								size: 20
 							}
+						}
+					},
+
+					view: {
+						type: 'table',
+						param: {
+							cellClassDefinition: {
+								highScore: function(cell) {
+									if (cell.editedData == null || cell.editedData.score == null) {
+										return false;
+									}
+									return 80 <= cell.editedData.score;
+								},
+
+								editedCell: function(cell) {
+									return cell.editedValue !== cell.originalValue;
+								}
+							},
+
+							disableInput: function() {
+								return false;
+							},
+
+							sortAscIconClasses: ['aaaaaa'],
+							sortDescIconClasses: [],
+							sortClearIconClasses: [],
+							lockIconClasses: ['bbbbbb'],
+							unlockIconClasses: []
+						}
+					},
+
+					properties: {
+						_select: {
+							size: 25,
+							enableResize: false,
+							toValue: function(data, cell) {
+								return cell.isSelectedData;
+							},
+
+							formatter: cellFormatter.checkbox(true),
+							changeHandler: changeHandler.selectData()
 						},
 
-						disableInput: function() {
-							return false;
+						id: {
+							size: 50
 						},
 
-						sortAscIconClasses: ['aaaaaa'],
-						sortDescIconClasses: [],
-						sortClearIconClasses: []
+						name: {
+							formatter: cellFormatter.select(['Taro', 'Jiro', 'Hanako']),
+							changeHandler: changeHandler.edit(),
+							sortable: false,
+							filter: ['Taro', 'Jiro', 'Hanako']
+						},
+
+						score: {
+							formatter: cellFormatter.input('text'),
+							changeHandler: changeHandler.edit(parseInt),
+							sortable: true
+						},
+
+						hoge: {
+							size: 150,
+							toValue: function() {
+								return 'hoge';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test1: {
+							size: 150,
+							toValue: function() {
+								return '1';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test2: {
+							size: 150,
+							toValue: function() {
+								return '2';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test3: {
+							size: 150,
+							toValue: function() {
+								return '3';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test4: {
+							size: 150,
+							toValue: function() {
+								return '4';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test5: {
+							size: 150,
+							toValue: function() {
+								return '5';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						},
+
+						test6: {
+							size: 150,
+							toValue: function() {
+								return '6';
+							},
+
+							sortProperty: 'id'
+						},
+
+						test7: {
+							size: 150,
+							toValue: function() {
+								return '7';
+							},
+
+							sortProperty: 'id'
+						},
+
+						test8: {
+							size: 150,
+							toValue: function() {
+								return '8';
+							},
+
+							sortable: true,
+							sortProperty: 'id'
+						}
+
 					}
-				},
+				};
 
-				properties: {
-					_select: {
-						size: 25,
-						enableResize: false,
-						toValue: function(data, cell) {
-							return cell.isSelectedData;
-						},
-						
-						formatter: cellFormatter.checkbox(true),
-						changeHandler: changeHandler.selectData()
-					},
+				var dataSource = datagrid.createDataSource({
+					idProperty: 'id',
+					type: 'local',
+					param: sourceArray
+				});
 
-					id: {
-						size: 50
-					},
+				this._gridController.activate(dataSource, param);
 
-					name: {
-						formatter: cellFormatter.select(['Taro', 'Jiro', 'Hanako']),
-						changeHandler: changeHandler.edit(),
-						sortable: true,
-						filter: ['Taro', 'Jiro', 'Hanako']
-					},
-
-					score: {
-						formatter: cellFormatter.input('text'),
-						changeHandler: changeHandler.edit(parseInt),
-						sortable: true
-					},
-
-					hoge: {
-						size: 150,
-						toValue: function() {
-							return 'hoge';
-						},
-
-						sortable: true,
-						sortProperty: 'id'
-					}
-				}
-			};
-
-			var dataSource = datagrid.createDataSource({
-				idProperty: 'id',
-				type: 'local',
-				param: sourceArray
-			});
-
-			this._gridController.activate(dataSource, param);
-
-			datagrid.util.delay(1000, this.own(function() {
-				this._gridController.search({});
+				datagrid.util.delay(1000, this.own(function() {
+					this._gridController.search({});
+				}));
 			}));
+
 		},
 
 
@@ -163,7 +259,12 @@
 
 		'{window} resize': function() {
 			this._gridController.refresh();
+		},
+
+		'#btn click': function() {
+			this.init();
 		}
+
 
 	};
 
