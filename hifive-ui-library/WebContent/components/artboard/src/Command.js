@@ -23,7 +23,10 @@
 	// Body
 	//------------------------------------------------------------
 	/**
-	 * コマンド
+	 * コマンドクラス
+	 * <p>
+	 * ある処理をコマンドとして定義し、その実行と取り消しを行えるクラスです
+	 * </p>
 	 *
 	 * @name Command
 	 * @class
@@ -92,17 +95,20 @@
 
 	/**
 	 * ユーザ定義コマンド
+	 * <p>
+	 * コマンド実行処理及び、コマンド取り消し処理を任意に指定することができるコマンドクラス
+	 * </p>
 	 *
 	 * @class
 	 * @param {Object} commandData コマンドデータオブジェクト。CustomCommandクラスでは以下のようなプロパティを持つオブジェクトを指定してください。
 	 *
-	 * <pre class="sh_javascript">
+	 * <pre class="sh_javascript"><code>
 	 * {
 	 * 	execute: executeメソッドを呼んだ時に実行する関数。必須。
 	 * 	undo: undoメソッドを呼んだ時に実行する関数。必須。
-	 * 	margeCommand: 引数に渡されたCommandとマージする関数。指定しない場合はマージせずにfalseを返す。
+	 * 	margeCommand: 引数に渡されたCommandとマージする関数を指定。第1引数にCommandを受け取り、そのコマンドとマージしたコマンドを返すような関数を指定します。指定しない場合はマージせずにfalseを返す。
 	 * }
-	 * </pre>
+	 * </code></pre>
 	 *
 	 * @class
 	 * @extends Command
@@ -132,8 +138,8 @@
 	 * このクラスは抽象クラスです。以下のクラスがこのクラスを実装しています。
 	 * </p>
 	 * <ul>
-	 * <li>AppendCommand
-	 * <li>RemoveCommand
+	 * <li>{@link AppendCommand}
+	 * <li>{@link RemoveCommand}
 	 * </ul>
 	 * <p>
 	 * _execute時にイベントオブジェクトを生成して戻り値として返します。
@@ -168,7 +174,7 @@
 	});
 
 	/**
-	 * 要素の追加を行うコマンド
+	 * 図形要素の追加を行うコマンド
 	 *
 	 * @name AppendCommand
 	 * @class
@@ -218,7 +224,7 @@
 	});
 
 	/**
-	 * 要素の削除を行うコマンド
+	 * 図形要素の削除を行うコマンド
 	 *
 	 * @name RemoveCommand
 	 * @class
@@ -276,7 +282,7 @@
 	});
 
 	/**
-	 * スタイルの変更を行うコマンド
+	 * 図形のスタイルの変更を行うコマンド
 	 *
 	 * @name StyleCommand
 	 * @class
@@ -361,7 +367,7 @@
 	});
 
 	/**
-	 * 属性値の変更を行うコマンド
+	 * 図形の属性値の変更を行うコマンド
 	 *
 	 * @name AttrCommand
 	 * @class
@@ -372,7 +378,7 @@
 	 * {
 	 * 	shape: スタイルを適用するArtShape
 	 * 	attr: 適用する属性値オブジェクト(属性名をキーにして属性値を値に持つオブジェクト),
-	 * 	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれの値を持つオブジェクト)の配列
+	 * 	attrNS: 適用する名前空間付属性(ns,name,valueをキーにそれぞれ名前空間、属性名、属性値を値として持つオブジェクト)の配列
 	 * }
 	 * </code></pre>
 	 */
@@ -484,6 +490,12 @@
 
 	/**
 	 * 複数のCommandを一つのコマンドとして扱うコマンド
+	 * <p>
+	 * SequenceCommandは複数のコマンドを包括するためのコマンドです。
+	 * </p>
+	 * <p>
+	 * execute()及びundo()時に、登録されたコマンド全ての実行及び取り消しを行います。
+	 * </p>
 	 *
 	 * @name SequenceCommand
 	 * @class
@@ -526,6 +538,9 @@
 
 		/**
 		 * コマンドの追加
+		 * <p>
+		 * 一括で実行及び取り消しを行うコマンドを追加します
+		 * </p>
 		 *
 		 * @memberOf SequenceCommand
 		 * @instance
@@ -537,6 +552,9 @@
 
 		/**
 		 * 内部コマンドの取得
+		 * <p>
+		 * 一括で実行及び取り消しを行うコマンドのリスト(配列)を返します
+		 * </p>
 		 *
 		 * @memberOf SequenceCommand
 		 * @instance
@@ -549,6 +567,36 @@
 
 	/**
 	 * コマンドマネージャ
+	 * <p>
+	 * {@link Command}の管理を行うためのクラス
+	 * </p>
+	 * <p>
+	 * {@link CommandManager#append}で追加された順番でコマンドを管理し、 実行済みコマンドの取り消し、及び実行が取り消されたコマンドの実行を行うことができます。
+	 * <p>
+	 * このクラスは以下のタイミングでイベントをあげます
+	 * </p>
+	 * <table> <thead>
+	 * <tr>
+	 * <th>イベント名</th>
+	 * <th>タイミング/th> </tr>
+	 * </thead><tbody>
+	 * <tr>
+	 * <td>disableUndo</td>
+	 * <td>取り消すコマンドが無くなった時(undoが呼ばれて一番最初にappendされたコマンドを取り消した時)</td>
+	 * </tr>
+	 * <tr>
+	 * <td>enableUndo</td>
+	 * <td>取り消すコマンドができた時(redoが呼ばれて、実行済みコマンドができた時)</td>
+	 * </tr>
+	 * <tr>
+	 * <td>enableRedo</td>
+	 * <td>実行するコマンドができた時(undoが呼ばれて、実行が取り消されたコマンドができた時)</td>
+	 * </tr>
+	 * <tr>
+	 * <td>disableRedo</td>
+	 * <td>実行するコマンドが無くなった時(redoが呼ばれて、一番最後にappendされたコマンドが実行された時)</td>
+	 * </tr>
+	 * </tbody></table>
 	 *
 	 * @name CommandManager
 	 * @class
@@ -569,7 +617,7 @@
 		 *
 		 * @memberOf CommandManager
 		 * @instance
-		 * @param {Command} command
+		 * @param {Command|Command[]} command
 		 */
 		append: function(command) {
 			var history = this._history;
@@ -596,10 +644,13 @@
 
 		/**
 		 * 一つ戻す
+		 * <p>
+		 * 最後に実行したコマンドの取り消し操作を行います
+		 * </p>
 		 *
 		 * @memberOf CommandManager
 		 * @instance
-		 * @returns {Any} 実行したコマンドのundoの戻り値
+		 * @returns {Any} 取り消し操作を実行したコマンドのundo()実行時の戻り値
 		 */
 		undo: function() {
 			var history = this._history;
@@ -634,6 +685,9 @@
 
 		/**
 		 * 一つ進む
+		 * <p>
+		 * 最後に実行を取り消したコマンドの実行操作を行います
+		 * </p>
 		 *
 		 * @memberOf CommandManager
 		 * @instance
@@ -670,7 +724,7 @@
 		},
 
 		/**
-		 * 管理対象のコマンドを全て管理対象から外す
+		 * 管理対象のコマンド({@link CommandManager#append}で追加したコマンド)を全て管理対象から外します
 		 *
 		 * @memberOf CommandManager
 		 * @instance

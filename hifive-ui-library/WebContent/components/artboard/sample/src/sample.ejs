@@ -3,7 +3,8 @@
 	<div class="toolbar-operation">
 		<div class="menu-wrapper border1" data-menu-side="left"><img class="menu-button icon48" src="res/img/toolicon/up.png">
 			<ul class="menu-list display-none">
-				<li class="save">保存</li>
+				<li  class="popup-open" data-popup-name="save-popup">保存</li>
+				<li  class="popup-open" data-popup-name="size-change-popup">サイズ変更</li>
 				<li class="select-all">すべて選択</li>
 				<li class="remove-all">全て削除</li>
 				<li class="popup-open" data-popup-name="background-popup">背景の設定…</li>
@@ -44,7 +45,7 @@
 		<div class="pallete-color" style="background-color:[%= color %]"></div>
 		[% } %]
 	</div>
-	
+
 	<div class="stroke-width-slider-wrapper stroke-width">
 		<label class="slider-label"><span>線の幅</span><span class="slider-value">5</span>px</label>
 		<div class="stroke-width-slidebar"></div>
@@ -71,13 +72,13 @@
 			<input type="text" name="font-family"/>
 		</div>
 	</div>
-	
+
 	[%# テキスト入力要素 %]
 	<div class="text-input-box display-none">
 		<input type="text" name="text-input"/>
 		<div class="set-text border1">OK</div>
 	</div>
-	
+
 	[%# ポップアップ %]
 	<div class="display-none popup-contents-wrapper">
 		<div class="background-popup">
@@ -106,12 +107,16 @@
 				<label>fillMode</label>
 				<select class="background-fillmode-list">
 					<option value="none">none</option>
-					<option value="none-center">none(中央配置)</option>
 					<option value="contain">contain</option>
-					<option value="contain-center">contain(中央配置)</option>
+					<option value="containCenter">containCenter(中央配置)</option>
 					<option value="cover">cover</option>
 					<option value="stretch">stretch</option>
 				</select>
+				<p>
+					オフセット
+					<label>x<input type="text" class="num-input" name="background-offset-x" value="0"/></label>
+					<label>y<input type="text" class="num-input" name="background-offset-y" value="0"/></label> <label>
+				</p>
 			</div>
 			<div class="background-color-list-wrapper">
 				<label>背景色</label>
@@ -138,10 +143,41 @@
 			</div>
 		</div>
 		<div class="saveData-popup">
-			<p><a href="load.html" style="color:#fff" target="_blank">ロードUIサンプル</a>で使用できるデータです。</p>
+			<p><a href="viewer.html" style="color:#fff" target="_blank">ArtboardViewerサンプル</a>で使用できるデータです。</p>
 			<textarea class="saveDataText" value="" style="width:100%"></textarea>
 			<div class="popupBtn-wrapper">
 				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+			</div>
+		</div>
+		<div class="size-change-popup">
+			<p>描画領域のサイズ変更</p>
+			<label>幅<input type="text" class="num-input" name="size-change-width"/></label>
+			<label>高さ<input type="text" class="num-input" name="size-change-height"/></label>
+			<div class="popupBtn-wrapper">
+				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+				<div class="sizeChange popupCloseBtn border1 clear-both">設定</div>
+			</div>
+		</div>
+		<div class="save-popup">
+			<div class="save-size-settings">
+				<p><label><input type="checkbox" name="save-size-on" value="on"/>出力サイズ指定</label></p>
+				<label>幅<input type="text" class="num-input" name="save-width" disabled/></label>
+				<label>高さ<input type="text" class="num-input" name="save-height" disabled/></label>
+				<label><input type="checkbox" name="save-keep-aspect-ratio" value="on" checked disabled/>比率を保持</label>
+			</div>
+			[%# trim実装動作確認用。trimは一旦実装したもののAPIから一旦外している #83
+			<div class="save-trim-settings">
+				<p><label><input type="checkbox" name="save-trim-on" value="on"/>範囲指定</label></p>
+				<!-- <div class="border1 save-trim-select">ドラッグして選択</div> -->
+				<label>dx<input type="text" class="num-input" name="save-trim-dx" disabled/></label>
+				<label>dy<input type="text" class="num-input" name="save-trim-dy" disabled/></label>
+				<label>dw<input type="text" class="num-input" name="save-trim-dw" disabled/></label>
+				<label>dh<input type="text" class="num-input" name="save-trim-dh" disabled/></label>
+			</div>
+			%]
+			<div class="popupBtn-wrapper">
+				<div class="popupCloseBtn border1 clear-both">閉じる</div>
+				<div class="save popupCloseBtn border1 clear-both">保存</div>
 			</div>
 		</div>
 	</div>

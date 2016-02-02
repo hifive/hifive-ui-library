@@ -29,7 +29,7 @@
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        図形クラス(抽象クラス)
+        図形クラス(抽象クラス)<p><a href="ArtRect.html">ArtRect</a>や<a href="ArtPath.html">ArtPath</a>など、各図形クラスがこのクラスを継承しています。</p>
     </p>
     
     
@@ -84,7 +84,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 306</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 308</li></ul></dd>
 	
 	-->
 
@@ -124,14 +124,14 @@
 
                 <dl>
 <dt>
-    <h4 class="name" id="type"><span class="type-signature"></span>type<span class="type-signature"> :String</span></h4>
+    <h4 class="name" id="type"><span class="type-signature"></span>type<span class="type-signature"> :string</span></h4>
     
     
 </dt>
 <dd>
     
     <p class="description">
-        図形のタイプ
+        図形のタイプ<p>各図形クラスのタイプを表す文字列です。ArtRectなら'rect'、ArtPathなら'path'などの値を持ちます。</p><p>読み取り専用属性です。</p>
     </p>
     
     
@@ -155,7 +155,54 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 567</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 611</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="userData"><span class="type-signature"></span>userData<span class="type-signature"> :Any</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        任意のユーザデータを持たせることができるプロパティ<p>図形個別に何か値を持たせたい場合はこのプロパティに自由に値を持たせることができます。</p><p>デフォルト値はnullです</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 550</li></ul></dd>
 	
 	-->
 
@@ -186,7 +233,7 @@
     
     
     <p class="description">
-        ドラッグセッションの開始<p>図形のドラッグ操作を行うためのDragSessionオブジェクトを生成して返します。</p>
+        ドラッグセッションの開始<p>図形のドラッグ操作を行うための<a href="DragSession.html">DragSession</a>オブジェクトを生成して返します。</p>
     </p>
     
     
@@ -214,7 +261,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 390</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 416</li></ul></dd>
 	
 	-->
 
@@ -242,7 +289,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">DragSession</span> 
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
 		
 	</dd>
 </dl>
@@ -288,7 +335,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 401</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 427</li></ul></dd>
 	
 	-->
 
@@ -338,7 +385,7 @@
     
     
     <p class="description">
-        図形要素を取得
+        図形要素を取得<p>図形を表現している要素を返します。</p>
     </p>
     
     
@@ -366,7 +413,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 376</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 402</li></ul></dd>
 	
 	-->
 
@@ -383,6 +430,22 @@
     
     
     
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">DOM</span> 
+		
+	</dd>
+</dl>
+
     
     
 
@@ -430,7 +493,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -448,7 +511,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -482,7 +545,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 428</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 454</li></ul></dd>
 	
 	-->
 
@@ -501,6 +564,10 @@
     
     <h5>Returns:</h5>
     
+<div class="param-desc">
+    図形が指定された座標と重なるかどうか
+</div>
+
 
 
 
@@ -510,7 +577,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Boolean</span> 
+		<span class="param-type">boolean</span> 
 		
 	</dd>
 </dl>
@@ -556,7 +623,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 412</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 438</li></ul></dd>
 	
 	-->
 
@@ -584,7 +651,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Boolean</span> 
+		<span class="param-type">boolean</span> 
 		
 	</dd>
 </dl>
@@ -636,7 +703,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -654,7 +721,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -672,7 +739,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -690,7 +757,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -724,7 +791,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 453</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 479</li></ul></dd>
 	
 	-->
 
@@ -743,6 +810,10 @@
     
     <h5>Returns:</h5>
     
+<div class="param-desc">
+    図形が指定された矩形に含まれるかどうか
+</div>
+
 
 
 
@@ -752,7 +823,7 @@
 	</dt>
 	<dd>
 		
-		<span class="param-type">Boolean</span> 
+		<span class="param-type">boolean</span> 
 		
 	</dd>
 </dl>
@@ -804,7 +875,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -822,7 +893,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -856,7 +927,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 489</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 515</li></ul></dd>
 	
 	-->
 
@@ -920,7 +991,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -938,7 +1009,7 @@
             
             
             <td class="type">
-            Number
+            number
             </td>
             
             
@@ -972,7 +1043,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 474</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 500</li></ul></dd>
 	
 	-->
 
@@ -1002,7 +1073,7 @@
     
     
     <p class="description">
-        図形をシリアライズ可能なオブジェクトに変換します
+        図形をシリアライズ可能なオブジェクトに変換します<p>このメソッドで生成したオブジェクトは<a href="ArtShape.html#deserialize">ArtShape.deserialize</a>で元の図形クラスに復元することができます</p>
     </p>
     
     
@@ -1030,7 +1101,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 503</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 532</li></ul></dd>
 	
 	-->
 
@@ -1050,7 +1121,7 @@
     <h5>Returns:</h5>
     
 <div class="param-desc">
-    各図形についてのデータオブジェクト
+    図形情報を格納したシリアライズ可能なプレーンオブジェクト
 </div>
 
 
@@ -1080,7 +1151,7 @@
     
     
     <p class="description">
-        シリアライズされたオブジェクトからArtShapeクラス(の子クラス)を生成して返す
+        シリアライズされた図形からArtShapeクラス(の子クラス)を生成して返します<p>各図形クラスはserializeメソッドを用意しており、シリアライズ可能なオブジェクトを生成することができます。</p><p>以下は、ArtRectクラスの要素をシリアライズして復元するサンプルコードです。</p><pre class="sh_javascript"><code>// ArtRectクラスを生成var rect = new h5.ui.components.artboard.ArtShapeConstructor.ArtRect(element);// ArtRectクラスをシリアライズ(プレーンオブジェクトに変換)var obj = rect.serialize();// デシリアライズ(復元) 戻り値はArtRectクラスh5.ui.components.artboard.ArtShapeConstructor.ArtShape.deserialize(rect);</code></pre>
     </p>
     
     
@@ -1097,6 +1168,8 @@
 		
 		<th>Type</th>
 		
+		
+		<th>Argument</th>
 		
 		
 		
@@ -1118,6 +1191,10 @@
             </td>
             
             
+                <td class="attributes">
+                
+                </td>
+            
             
             
             
@@ -1132,9 +1209,13 @@
             
             
             <td class="type">
-            Logic | Any
+            Logic
             </td>
             
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
             
             
             
@@ -1166,7 +1247,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 326</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 348</li></ul></dd>
 	
 	-->
 
@@ -1185,6 +1266,10 @@
     
     <h5>Returns:</h5>
     
+<div class="param-desc">
+    復元した図形クラス(ArtShapeを継承する具象クラス)
+</div>
+
 
 
 
@@ -1220,7 +1305,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jun 05 2015 14:46:35 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 16:12:44 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 
