@@ -11909,7 +11909,7 @@
 
 			getDataIdAll: function() {
 				var ids = this._dataSearcher.getDataIdAll();
-				return ids.slice(this._getStartIndex(), this.getGount());
+				return ids.slice(this._getStartIndex(), this.getCount());
 			},
 
 			getSourceDataSet: function() {
