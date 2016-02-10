@@ -11779,7 +11779,7 @@
 
 		/**
 		 * このコンストラクタはユーザが直接呼び出すことはありません。
-		 * 
+		 *
 		 * @constructor PagingDataSearcher
 		 * @class ページング機能を持った{@DataSearcher} です。
 		 * @mixes EventDispatcher
@@ -11850,7 +11850,7 @@
 
 			/**
 			 * このコメントは Eclipse のアウトライン用です。
-			 * 
+			 *
 			 * @private
 			 * @memberOf _PagingDataSearcher
 			 */
@@ -11882,6 +11882,8 @@
 				return this._dataSearcher.getFetchParam();
 			},
 
+			// getCount()は現在のページのデータ件数を返します
+			// データ総件数を取得したい場合はgetTotalCount()を呼び出してください
 			getCount: function() {
 				if (this._dataSearcher.getCount() == 0) {
 					return 0;
@@ -11891,6 +11893,13 @@
 					return remind;
 				}
 				return this._pageSize;
+			},
+
+			getTotalCount: function() {
+				if (this._dataSearcher.getCount() == 0) {
+					return 0;
+				}
+				return this._dataSearcher.getCount();
 			},
 
 			getReference: function(fetchRange) {
@@ -11921,7 +11930,7 @@
 
 			getDataIdAll: function() {
 				var ids = this._dataSearcher.getDataIdAll();
-				return ids.slice(this._getStartIndex(), this.getGount());
+				return ids.slice(this._getStartIndex(), this.getCount());
 			},
 
 			getSourceDataSet: function() {
