@@ -74,3 +74,8 @@ body {
 	overflow-x: auto;
 	white-space: pre;
 }
+
+/*---------- ‚»‚Ì‘¼ ----------*/
+#currentPage {
+	width: 50px;
+}

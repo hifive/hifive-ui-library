@@ -157,6 +157,7 @@
 				return;
 			}
 			this._dataSearcher.setPageSize(num);
+			this._updateTotalPages();
 		},
 
 		/**
@@ -289,9 +290,7 @@
 			});
 
 			//データグリッド初期化
-			this._gridController.activate(dataSource, initParam);
-
-			datagrid.util.delay(1000, this.own(function() {
+			return this._gridController.activate(dataSource, initParam).done(this.own(function() {
 				this._gridController.search({});
 			}));
 		},
