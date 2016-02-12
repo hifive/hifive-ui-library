@@ -20498,9 +20498,9 @@
 			this._pageX = event.pageX;
 			this._pageY = event.pageY;
 
-			// gridCell または gridBorder 以外での mousedown は無視する
+			// 入力要素での mousedown は無視する
 			var $target = $(event.target);
-			if (!$target.hasClass('gridCell') && !$target.hasClass('gridBorder')) {
+			if ($target.is(':input')) {
 				return;
 			}
 
