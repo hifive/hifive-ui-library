@@ -16017,6 +16017,10 @@
 			 * @private
 			 */
 			_applyToCopyValues: function(cell) {
+				if (cell.isBlank) {
+					cell.copyValues = [''];
+					return;
+				}
 				var toCopyValues = this._propertyDefinitionSet[cell.propertyName].toCopyValues;
 				cell.copyValues = toCopyValues(cell);
 			},
@@ -22459,12 +22463,17 @@
 			}
 
 			var properties = param.properties;
-			var propertyHierarchy = util.mapObject(properties, function(definition, property) {
-				return {
-					key: property,
-					value: null
-				};
-			});
+			var propertyHierarchy;
+			if (!!param.propertyHierarchy) {
+				propertyHierarchy = param.propertyHierarchy;
+			} else {
+				propertyHierarchy = util.mapObject(properties, function(definition, property) {
+					return {
+						key: property,
+						value: null
+					};
+				});
+			}
 
 			var viewParam = param.view.param;
 			var logicParam = {
