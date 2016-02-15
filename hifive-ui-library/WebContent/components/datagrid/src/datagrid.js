@@ -18892,6 +18892,10 @@
 
 		// --- Event Handler --- //
 
+		'.gridResizeColumnMarker mousedown': function(context){
+			context.event.stopPropagation();
+		},
+
 		'.gridResizeColumnMarker h5trackstart': function(context, $el) {
 			var $root = $(this.rootElement);
 			var $cell = $el.closest('.' + CELL_FRAME_CLASS);
