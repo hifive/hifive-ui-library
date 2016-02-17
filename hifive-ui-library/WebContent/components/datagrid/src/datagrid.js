@@ -19598,217 +19598,14 @@
 			$menuList.addClass('gridSortAndFilterMenuList');
 			$menu.append($menuList);
 
-			// 昇順ソート
-			var $sortAscItem = $('<li></li>');
-			$sortAscItem.addClass(ITEM_CLASS);
-			$sortAscItem.addClass('gridSortItem');
-			$sortAscItem.addClass('gridSortAscItem');
-			$menuList.append($sortAscItem);
+			// ソートメニュー作成
+			this._makeSortMenu(ITEM_CLASS, $menuList);
 
-			var $sortAscIcon = $('<div></div>');
-			$sortAscIcon.addClass('gridSortIcon');
-			$sortAscIcon.addClass('gridSortAscIcon');
-			$sortAscItem.append($sortAscIcon);
+			// ロックメニュー作成
+			this._makeLockMenu(ITEM_CLASS, $menuList);
 
-			var $sortAscIconSpan = $('<span></span>');
-			util.forEach(this._ascIconClasses, function(iconClass) {
-				$sortAscIconSpan.addClass(iconClass);
-			});
-			$sortAscIcon.append($sortAscIconSpan);
-
-			var $sortAscText = $('<div></div>');
-			$sortAscText.addClass('gridSortText');
-			$sortAscText.addClass('gridSortAscText');
-			$sortAscText.text('Sort Ascending');
-			$sortAscItem.append($sortAscText);
-
-			// 降順ソート
-			var $sortDescItem = $('<li></li>');
-			$sortDescItem.addClass(ITEM_CLASS);
-			$sortDescItem.addClass('gridSortItem');
-			$sortDescItem.addClass('gridSortDescItem');
-			$menuList.append($sortDescItem);
-
-			var $sortDescIcon = $('<div></div>');
-			$sortDescIcon.addClass('gridSortIcon');
-			$sortDescIcon.addClass('gridSortDescIcon');
-			$sortDescItem.append($sortDescIcon);
-
-			var $sortDescIconSpan = $('<span></span>');
-			util.forEach(this._descIconClasses, function(iconClass) {
-				$sortDescIconSpan.addClass(iconClass);
-			});
-			$sortDescIcon.append($sortDescIconSpan);
-
-			var $sortDescText = $('<div></div>');
-			$sortDescText.addClass('gridSortText');
-			$sortDescText.addClass('gridSortDescText');
-			$sortDescText.text('Sort Descending');
-			$sortDescItem.append($sortDescText);
-
-			// ソートのクリア
-			var $sortClearItem = $('<li></li>');
-			$sortClearItem.addClass(ITEM_CLASS);
-			$sortClearItem.addClass('gridSortItem');
-			$sortClearItem.addClass('gridSortClearItem');
-			$menuList.append($sortClearItem);
-
-			var $sortClearIcon = $('<div></div>');
-			$sortClearIcon.addClass('gridSortIcon');
-			$sortClearIcon.addClass('gridSortClearIcon');
-			$sortClearItem.append($sortClearIcon);
-
-			var $sortClearIconSpan = $('<span></span>');
-			util.forEach(this._clearIconClasses, function(iconClass) {
-				$sortClearIconSpan.addClass(iconClass);
-			});
-			$sortClearIcon.append($sortClearIconSpan);
-
-
-			var $sortClearText = $('<div></div>');
-			$sortClearText.addClass('gridSortText');
-			$sortClearText.addClass('gridSortClearText');
-			$sortClearText.text('Clear Sort');
-			$sortClearItem.append($sortClearText);
-
-			// ソートとロックの境界線
-			var $itemBorder = $('<li></li>');
-			$itemBorder.addClass('gridSortItemBorder');
-			$menuList.append($itemBorder);
-
-			// ロック(Lock)
-			var $lockItem = $('<li></li>');
-			$lockItem.addClass(ITEM_CLASS);
-			$lockItem.addClass('gridLockItems');
-			$lockItem.addClass('gridLockItem');
-			$menuList.append($lockItem);
-
-			var $lockIcon = $('<div></div>');
-			$lockIcon.addClass('gridLockIcons');
-			$lockIcon.addClass('gridLockIcon');
-			$lockItem.append($lockIcon);
-
-			var $lockIconSpan = $('<span></span>');
-			util.forEach(this._lockClasses, function(iconClass) {
-				$lockIconSpan.addClass(iconClass);
-			});
-			$lockIcon.append($lockIconSpan);
-
-			var $lockText = $('<div></div>');
-			$lockText.addClass('gridLockTexts');
-			$lockText.addClass('gridLockText');
-			$lockText.text('Lock');
-			$lockItem.append($lockText);
-
-			// ロック解除（Unlock）
-			var $unlockItem = $('<li></li>');
-			$unlockItem.addClass(ITEM_CLASS);
-			$unlockItem.addClass('gridLockItems');
-			$unlockItem.addClass('gridUnlockItem');
-			$menuList.append($unlockItem);
-
-			var $unlockIcon = $('<div></div>');
-			$unlockIcon.addClass('gridLockIcons');
-			$unlockIcon.addClass('gridUnlockIcon');
-			$unlockItem.append($unlockIcon);
-
-			var $unlockIconSpan = $('<span></span>');
-			util.forEach(this._unlockClasses, function(iconClass) {
-				$unlockIconSpan.addClass(iconClass);
-			});
-			$unlockIcon.append($unlockIconSpan);
-
-			var $unlockText = $('<div></div>');
-			$unlockText.addClass('gridLockTexts');
-			$unlockText.addClass('gridUnlockText');
-			$unlockText.text('Unlock');
-			$unlockItem.append($unlockText);
-
-
-			// ロックとフィルタの境界線
-			var $itemBorder = $('<li></li>');
-			$itemBorder.addClass('gridLockItemBorder');
-			$menuList.append($itemBorder);
-
-			// フィルタ条件選択セレクトボックス
-			var $partialMatchTypeSelectItem = $('<li></li>');
-			$partialMatchTypeSelectItem.addClass(ITEM_CLASS);
-			$partialMatchTypeSelectItem.addClass('gridFilterItem');
-			$partialMatchTypeSelectItem.addClass('gridFilterMatchItem');
-			$partialMatchTypeSelectItem.addClass('gridPartialMatchTypeSelectItem');
-			$menuList.append($partialMatchTypeSelectItem);
-
-			var $partialMatchTypeSelect = $('<select></select>');
-			$partialMatchTypeSelect.addClass('gridPartialMatchTypeSelect');
-			$partialMatchTypeSelectItem.append($partialMatchTypeSelect);
-
-			// 条件1: テキストとして含む
-			var $includeTextOption = $('<option></option>');
-			$includeTextOption.attr('value', 'includeText');
-			$includeTextOption.text('Include');
-			$partialMatchTypeSelect.append($includeTextOption);
-
-			// 条件2: テキストとして含まない
-			var $excludeTextOption = $('<option></option>');
-			$excludeTextOption.attr('value', 'excludeText');
-			$excludeTextOption.text('Exclude');
-			$partialMatchTypeSelect.append($excludeTextOption);
-
-			// フィルタ用入力フォーム
-			var $partialMatchFilterItem = $('<li></li>');
-			$partialMatchFilterItem.addClass(ITEM_CLASS);
-			$partialMatchFilterItem.addClass('gridFilterItem');
-			$partialMatchFilterItem.addClass('gridFilterMatchItem');
-			$partialMatchFilterItem.addClass('gridPartialMatchFilterItem');
-			$menuList.append($partialMatchFilterItem);
-
-			var $partialMatchFilterInput = $('<input type="text">');
-			$partialMatchFilterInput.addClass('gridPartialMatchFilterInput');
-			$partialMatchFilterInput.attr('placeholder', 'Search');
-			$partialMatchFilterItem.append($partialMatchFilterInput);
-
-			// フィルタ要素選択
-			var $filterOptionsItem = $('<li></li>');
-			$filterOptionsItem.addClass('gridFilterItem');
-			$filterOptionsItem.addClass('gridFilterOptionsItem');
-			$menuList.append($filterOptionsItem);
-
-			var $filterOptionsList = $('<ul></ul>');
-			$filterOptionsList.addClass('gridFilterOptionsList');
-			$filterOptionsItem.append($filterOptionsList);
-
-			var $selectAllOptionItem = $('<li></li>');
-			$filterOptionsList.append($selectAllOptionItem);
-
-			// 全選択オプション
-			var $selectAllCheckBox = $('<input type="checkbox">');
-			$selectAllCheckBox.attr('id', 'gridFilterOptionCheckbox_all');
-			$selectAllCheckBox.addClass('filterOptionCheckbox');
-			$selectAllCheckBox.attr('value', h5.u.obj.serialize('(Select All)'));
-			$selectAllCheckBox.attr('checked');
-			$selectAllOptionItem.append($selectAllCheckBox);
-
-			var $selectAllLabel = $('<label></label>');
-			$selectAllLabel.attr('for', 'gridFilterOptionCheckbox_all');
-			$selectAllLabel.text('(Select All)');
-			$selectAllOptionItem.append($selectAllLabel);
-
-			// フィルタ適用ボタン、フィルタクリアボタン
-			var $filterButtonsItem = $('<li></li>');
-			$filterButtonsItem.addClass(ITEM_CLASS);
-			$filterButtonsItem.addClass('gridFilterItem');
-			$filterButtonsItem.addClass('gridFilterButtons');
-			$menuList.append($filterButtonsItem);
-
-			var $filterButton = $('<button></button>');
-			$filterButton.addClass('gridFilterButton');
-			$filterButton.text('Filter');
-			$filterButtonsItem.append($filterButton);
-
-			var $filterClearButton = $('<button></button>');
-			$filterClearButton.addClass('gridFilterClearButton');
-			$filterClearButton.text('Clear Filter');
-			$filterButtonsItem.append($filterClearButton);
+			// フィルタメニュー作成
+			this._makeFilterMenu(ITEM_CLASS, $menuList);
 		},
 
 		_showMenu: function(cell, topPosition, rightPosition) {
@@ -19857,13 +19654,12 @@
 
 			// _lockStatusに各カラムのロック状態によって、アイテムの有効、無効を決める
 			var lockStatus = false;
-			util.forEach(this._lockStatus, function(status, property) {
-				if (property === lockSetting.property) {
-					lockStatus = status;
-				}
-			});
-			$menu.find('.gridLockItem').toggleClass('disabled', lockStatus === true);
-			$menu.find('.gridUnlockItem').toggleClass('disabled', lockStatus === false);
+			if (this._lockStatus[lockSetting.property] !== undefined) {
+				lockStatus = this._lockStatus[lockSetting.property];
+			}
+
+			$menu.find('.gridLockItem').toggleClass('disabled', lockStatus == true);
+			$menu.find('.gridUnlockItem').toggleClass('disabled', lockStatus == false);
 
 			var filterType = filterSetting.type;
 
@@ -20036,6 +19832,223 @@
 					this._appendIcon($target);
 				}
 			}));
+		},
+
+		_makeSortMenu: function(itemClass, $menuList) {
+			// 昇順ソート
+			var $sortAscItem = $('<li></li>');
+			$sortAscItem.addClass(itemClass);
+			$sortAscItem.addClass('gridSortItem');
+			$sortAscItem.addClass('gridSortAscItem');
+			$menuList.append($sortAscItem);
+
+			var $sortAscIcon = $('<div></div>');
+			$sortAscIcon.addClass('gridSortIcon');
+			$sortAscIcon.addClass('gridSortAscIcon');
+			$sortAscItem.append($sortAscIcon);
+
+			var $sortAscIconSpan = $('<span></span>');
+			util.forEach(this._ascIconClasses, function(iconClass) {
+				$sortAscIconSpan.addClass(iconClass);
+			});
+			$sortAscIcon.append($sortAscIconSpan);
+
+			var $sortAscText = $('<div></div>');
+			$sortAscText.addClass('gridSortText');
+			$sortAscText.addClass('gridSortAscText');
+			$sortAscText.text('Sort Ascending');
+			$sortAscItem.append($sortAscText);
+
+			// 降順ソート
+			var $sortDescItem = $('<li></li>');
+			$sortDescItem.addClass(itemClass);
+			$sortDescItem.addClass('gridSortItem');
+			$sortDescItem.addClass('gridSortDescItem');
+			$menuList.append($sortDescItem);
+
+			var $sortDescIcon = $('<div></div>');
+			$sortDescIcon.addClass('gridSortIcon');
+			$sortDescIcon.addClass('gridSortDescIcon');
+			$sortDescItem.append($sortDescIcon);
+
+			var $sortDescIconSpan = $('<span></span>');
+			util.forEach(this._descIconClasses, function(iconClass) {
+				$sortDescIconSpan.addClass(iconClass);
+			});
+			$sortDescIcon.append($sortDescIconSpan);
+
+			var $sortDescText = $('<div></div>');
+			$sortDescText.addClass('gridSortText');
+			$sortDescText.addClass('gridSortDescText');
+			$sortDescText.text('Sort Descending');
+			$sortDescItem.append($sortDescText);
+
+			// ソートのクリア
+			var $sortClearItem = $('<li></li>');
+			$sortClearItem.addClass(itemClass);
+			$sortClearItem.addClass('gridSortItem');
+			$sortClearItem.addClass('gridSortClearItem');
+			$menuList.append($sortClearItem);
+
+			var $sortClearIcon = $('<div></div>');
+			$sortClearIcon.addClass('gridSortIcon');
+			$sortClearIcon.addClass('gridSortClearIcon');
+			$sortClearItem.append($sortClearIcon);
+
+			var $sortClearIconSpan = $('<span></span>');
+			util.forEach(this._clearIconClasses, function(iconClass) {
+				$sortClearIconSpan.addClass(iconClass);
+			});
+			$sortClearIcon.append($sortClearIconSpan);
+
+
+			var $sortClearText = $('<div></div>');
+			$sortClearText.addClass('gridSortText');
+			$sortClearText.addClass('gridSortClearText');
+			$sortClearText.text('Clear Sort');
+			$sortClearItem.append($sortClearText);
+
+			// ソートとロックの境界線
+			var $itemBorder = $('<li></li>');
+			$itemBorder.addClass('gridSortItemBorder');
+			$menuList.append($itemBorder);
+		},
+
+		_makeLockMenu: function(itemClass, $menuList) {
+			// ロック(Lock)
+			var $lockItem = $('<li></li>');
+			$lockItem.addClass(itemClass);
+			$lockItem.addClass('gridLockItems');
+			$lockItem.addClass('gridLockItem');
+			$menuList.append($lockItem);
+
+			var $lockIcon = $('<div></div>');
+			$lockIcon.addClass('gridLockIcons');
+			$lockIcon.addClass('gridLockIcon');
+			$lockItem.append($lockIcon);
+
+			var $lockIconSpan = $('<span></span>');
+			util.forEach(this._lockClasses, function(iconClass) {
+				$lockIconSpan.addClass(iconClass);
+			});
+			$lockIcon.append($lockIconSpan);
+
+			var $lockText = $('<div></div>');
+			$lockText.addClass('gridLockTexts');
+			$lockText.addClass('gridLockText');
+			$lockText.text('Lock');
+			$lockItem.append($lockText);
+
+			// ロック解除（Unlock）
+			var $unlockItem = $('<li></li>');
+			$unlockItem.addClass(itemClass);
+			$unlockItem.addClass('gridLockItems');
+			$unlockItem.addClass('gridUnlockItem');
+			$menuList.append($unlockItem);
+
+			var $unlockIcon = $('<div></div>');
+			$unlockIcon.addClass('gridLockIcons');
+			$unlockIcon.addClass('gridUnlockIcon');
+			$unlockItem.append($unlockIcon);
+
+			var $unlockIconSpan = $('<span></span>');
+			util.forEach(this._unlockClasses, function(iconClass) {
+				$unlockIconSpan.addClass(iconClass);
+			});
+			$unlockIcon.append($unlockIconSpan);
+
+			var $unlockText = $('<div></div>');
+			$unlockText.addClass('gridLockTexts');
+			$unlockText.addClass('gridUnlockText');
+			$unlockText.text('Unlock');
+			$unlockItem.append($unlockText);
+
+			// ロックとフィルタの境界線
+			var $itemBorder = $('<li></li>');
+			$itemBorder.addClass('gridLockItemBorder');
+			$menuList.append($itemBorder);
+		},
+
+		_makeFilterMenu: function(itemClass, $menuList) {
+			// フィルタ条件選択セレクトボックス
+			var $partialMatchTypeSelectItem = $('<li></li>');
+			$partialMatchTypeSelectItem.addClass(itemClass);
+			$partialMatchTypeSelectItem.addClass('gridFilterItem');
+			$partialMatchTypeSelectItem.addClass('gridFilterMatchItem');
+			$partialMatchTypeSelectItem.addClass('gridPartialMatchTypeSelectItem');
+			$menuList.append($partialMatchTypeSelectItem);
+
+			var $partialMatchTypeSelect = $('<select></select>');
+			$partialMatchTypeSelect.addClass('gridPartialMatchTypeSelect');
+			$partialMatchTypeSelectItem.append($partialMatchTypeSelect);
+
+			// 条件1: テキストとして含む
+			var $includeTextOption = $('<option></option>');
+			$includeTextOption.attr('value', 'includeText');
+			$includeTextOption.text('Include');
+			$partialMatchTypeSelect.append($includeTextOption);
+
+			// 条件2: テキストとして含まない
+			var $excludeTextOption = $('<option></option>');
+			$excludeTextOption.attr('value', 'excludeText');
+			$excludeTextOption.text('Exclude');
+			$partialMatchTypeSelect.append($excludeTextOption);
+
+			// フィルタ用入力フォーム
+			var $partialMatchFilterItem = $('<li></li>');
+			$partialMatchFilterItem.addClass(itemClass);
+			$partialMatchFilterItem.addClass('gridFilterItem');
+			$partialMatchFilterItem.addClass('gridFilterMatchItem');
+			$partialMatchFilterItem.addClass('gridPartialMatchFilterItem');
+			$menuList.append($partialMatchFilterItem);
+
+			var $partialMatchFilterInput = $('<input type="text">');
+			$partialMatchFilterInput.addClass('gridPartialMatchFilterInput');
+			$partialMatchFilterInput.attr('placeholder', 'Search');
+			$partialMatchFilterItem.append($partialMatchFilterInput);
+
+			// フィルタ要素選択
+			var $filterOptionsItem = $('<li></li>');
+			$filterOptionsItem.addClass('gridFilterItem');
+			$filterOptionsItem.addClass('gridFilterOptionsItem');
+			$menuList.append($filterOptionsItem);
+
+			var $filterOptionsList = $('<ul></ul>');
+			$filterOptionsList.addClass('gridFilterOptionsList');
+			$filterOptionsItem.append($filterOptionsList);
+
+			var $selectAllOptionItem = $('<li></li>');
+			$filterOptionsList.append($selectAllOptionItem);
+
+			// 全選択オプション
+			var $selectAllCheckBox = $('<input type="checkbox">');
+			$selectAllCheckBox.attr('id', 'gridFilterOptionCheckbox_all');
+			$selectAllCheckBox.addClass('filterOptionCheckbox');
+			$selectAllCheckBox.attr('value', h5.u.obj.serialize('(Select All)'));
+			$selectAllCheckBox.attr('checked');
+			$selectAllOptionItem.append($selectAllCheckBox);
+
+			var $selectAllLabel = $('<label></label>');
+			$selectAllLabel.attr('for', 'gridFilterOptionCheckbox_all');
+			$selectAllLabel.text('(Select All)');
+			$selectAllOptionItem.append($selectAllLabel);
+
+			// フィルタ適用ボタン、フィルタクリアボタン
+			var $filterButtonsItem = $('<li></li>');
+			$filterButtonsItem.addClass(itemClass);
+			$filterButtonsItem.addClass('gridFilterItem');
+			$filterButtonsItem.addClass('gridFilterButtons');
+			$menuList.append($filterButtonsItem);
+
+			var $filterButton = $('<button></button>');
+			$filterButton.addClass('gridFilterButton');
+			$filterButton.text('Filter');
+			$filterButtonsItem.append($filterButton);
+
+			var $filterClearButton = $('<button></button>');
+			$filterClearButton.addClass('gridFilterClearButton');
+			$filterClearButton.text('Clear Filter');
+			$filterButtonsItem.append($filterClearButton);
 		},
 
 	};
@@ -20948,22 +20961,22 @@
 			var evArg = context.evArg;
 
 			// 列をLock、Unlockクリックした場合
-			if (typeof (evArg.to) === "undefined") {
+			if (evArg.to === undefined) {
 				// Unlockの場合
 				if (evArg.from < headerColumns.length) {
 					var from = evArg.from;
 					var to = headerColumns.length - 1;
 					var fromColumn = headerColumns.splice(from, 1)[0];
 					mainColumns.splice(0, 0, fromColumn);
-					// Lockの場合
 				} else {
+					// Lockの場合
 					var from = evArg.from - headerColumns.length;
 					var to = headerColumns.length;
 					var fromColumn = mainColumns.splice(from, 1)[0];
 					headerColumns.splice(to, 0, fromColumn);
 				}
-				// カラムをドラッグ、ドロップをした場合
 			} else {
+				// カラムをドラッグ、ドロップをした場合
 				var from = evArg.from - headerColumns.length;
 				var to = evArg.to - headerColumns.length;
 				var fromColumn = mainColumns.splice(from, 1)[0];
@@ -20991,6 +21004,8 @@
 		_formatterSet: null,
 
 		_sortSet: null,
+
+		_lockSet: null,
 
 		_filterSet: null,
 
@@ -21696,7 +21711,7 @@
 				};
 			});
 
-			// マイン部カラムのenableをtrueに設定する
+			// メイン部カラムのenableをtrueに設定する
 			util.forEach(mainColumns, function(mainColumn) {
 				result[mainColumn] = {
 					enable: true,
@@ -21771,6 +21786,7 @@
 				defaultFormatter: this._param.defaultFormatter,
 				formatterSet: this._formatterSet,
 				sortSet: this._sortSet,
+				lockSet: this._lockSet,
 				filterSet: this._filterSet,
 				cellClassDefinition: this._param.cellClassDefinition,
 				disableInput: this._param.disableInput,
