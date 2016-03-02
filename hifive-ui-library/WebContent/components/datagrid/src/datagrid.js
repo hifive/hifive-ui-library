@@ -19658,8 +19658,8 @@
 				lockStatus = this._lockStatus[lockSetting.property];
 			}
 
-			$menu.find('.gridLockItem').toggleClass('disabled', lockStatus == true);
-			$menu.find('.gridUnlockItem').toggleClass('disabled', lockStatus == false);
+			$menu.find('.gridLockItem').toggleClass('disabled', lockStatus);
+			$menu.find('.gridUnlockItem').toggleClass('disabled', !lockStatus);
 
 			var filterType = filterSetting.type;
 
