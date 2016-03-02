@@ -40,10 +40,18 @@ h1 {
 	box-sizing: border-box;
 }
 
+input[type="text"].num-input {
+	width: 4em;
+	margin: 0 1em;
+}
+
 /** カンバスの設定 **/
 .artboard {
-	border: 1px solid #ccc;
 	box-sizing: border-box;
+}
+
+.artboard .h5-artboard-canvas-wrapper {
+	border: 1px solid #ccc;
 }
 
 .artboard .mode-text-input {

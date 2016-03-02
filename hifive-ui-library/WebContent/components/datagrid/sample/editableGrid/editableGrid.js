@@ -10,40 +10,13 @@
 
 	var log = h5.log.createLogger('sample');
 
-	function dumyAjax(param) {
+	function random(n) {
+		return Math.floor(Math.random() * n);
+	}
 
-		if (param.type === 'search') {
-
-			return datagrid.util.delay(500, function() {
-				return {
-					// MEMO: 9000兆 ぐらいに JavaScript 整数値の限界値がある & その辺だと表示がずれることがある
-					fetchLimit: 10000000000000,
-					fetchParam: param.param
-				};
-			});
-
-		} else if (param.type === 'fetch') {
-
-			var range = param.range;
-			var dataArray = [];
-			for (var i = 0, len = range.length; i < len; i++) {
-				dataArray.push({
-					id: String(i + range.index),
-					name: 'Taro',
-					score: 70
-				});
-			}
-
-			return datagrid.util.delay(500, function() {
-				return {
-					dataArray: dataArray
-				};
-			});
-
-		} else if (param.type === 'commit') {
-			log.info(param.edit);
-			return datagrid.util.delay(500, $.noop);
-		}
+	function randomValue(array) {
+		var i = random(array.length);
+		return array[i];
 	}
 
 
@@ -69,12 +42,20 @@
 
 		__ready: function() {
 
+			var names = ['Taro', 'Hanako', 'Jiro'];
+			var sourceArray = [];
+
+			for (var i = 0; i < 10000; i++) {
+				sourceArray.push({
+					id: (i === 10) ? 'GG' : String(i),
+					name: randomValue(names),
+					score: random(11) * 10
+				});
+			}
+
 			var param = {
 				searcher: {
-					type: 'lazy',
-					param: {
-						fetchUnit: 100
-					}
+					type: 'all'
 				},
 
 				mapper: {
@@ -87,7 +68,7 @@
 						},
 
 						dataDirectionSize: {
-							size: 25
+							size: 20
 						}
 					}
 				},
@@ -110,7 +91,11 @@
 
 						disableInput: function() {
 							return false;
-						}
+						},
+
+						sortAscIconClasses: ['aaaaaa'],
+						sortDescIconClasses: [],
+						sortClearIconClasses: []
 					}
 				},
 
@@ -121,19 +106,20 @@
 						toValue: function(data, cell) {
 							return cell.isSelectedData;
 						},
-
+						
 						formatter: cellFormatter.checkbox(true),
 						changeHandler: changeHandler.selectData()
 					},
 
 					id: {
-						size: 150
+						size: 50
 					},
 
 					name: {
 						formatter: cellFormatter.select(['Taro', 'Jiro', 'Hanako']),
 						changeHandler: changeHandler.edit(),
-						sortable: true
+						sortable: true,
+						filter: ['Taro', 'Jiro', 'Hanako']
 					},
 
 					score: {
@@ -156,49 +142,10 @@
 
 			var dataSource = datagrid.createDataSource({
 				idProperty: 'id',
-				type: 'ajax',
-				param: {
-					ajax: dumyAjax,
-					search: {
-						request: function(param) {
-							return {
-								type: 'search',
-								param: param
-							};
-						},
-						response: function(result) {
-							return result;
-						}
-					},
-					fetch: {
-						request: function(param, range) {
-							return {
-								type: 'fetch',
-								param: param,
-								range: range
-							};
-						},
-						response: function(result) {
-							return result;
-						}
-					},
-					find: {
-						request: $.noop,
-						response: $.noop
-					},
-					commit: {
-						request: function(edit) {
-							return {
-								type: 'commit',
-								edit: edit.getReplacedDataSet()
-							};
-						},
-						response: $.noop
-					}
-				}
+				type: 'local',
+				param: sourceArray
 			});
 
-			window.dataSource = dataSource;
 			this._gridController.activate(dataSource, param);
 
 			datagrid.util.delay(1000, this.own(function() {
@@ -210,9 +157,8 @@
 		// --- Event Handler --- //
 
 		'.gridCellFrame mousedown': function(context, $el) {
-//			var cellStr = $el.data('h5DynGridCell');
-//			var cell = h5.u.obj.deserialize(cellStr);
-//			log.info('click dataId={0}', cell.dataId);
+			var row = $el.data('h5DynGridRow');
+			log.info('click row={0}', row);
 		},
 
 		'{window} resize': function() {

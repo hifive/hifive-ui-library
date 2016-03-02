@@ -130,8 +130,9 @@
 	/**
 	 * 図形インスタンスのtypeを書き込み不可/列挙不可で設定(コンストラクタで設定)
 	 *
+	 * @private
 	 * @param {ArtShape} instance 図形インスタンス
-	 * @param {String} type 図形のタイプ
+	 * @param {string} type 図形のタイプ
 	 */
 	function setShapeInstanceType(instance, type) {
 		Object.defineProperty(instance, 'type', {
@@ -176,11 +177,12 @@
 	/**
 	 * DragSession
 	 * <p>
-	 * 図形のドラッグ操作を行うためのクラスです。
+	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。
 	 * </p>
 	 *
 	 * @class
-	 * @param {ArtShape} shape
+	 * @name DragSession
+	 * @param {ArtShape} shape ドラッグ操作対象の図形
 	 */
 	function DragSession(shape) {
 		// 1つのShapeについて1つのDragSessionしか同時に実行できない
@@ -195,7 +197,7 @@
 		 * @memberOf DragSession
 		 * @instance
 		 * @name shape
-		 * @type Shape
+		 * @type ArtShape
 		 */
 		this.shape = shape;
 
@@ -227,8 +229,8 @@
 		 *
 		 * @memberOf DragSession
 		 * @instance
-		 * @param {Integer} x
-		 * @param {Integer} y
+		 * @param {number} x
+		 * @param {number} y
 		 */
 		move: function(x, y) {
 			if (this._disable) {
@@ -288,8 +290,8 @@
 		 * @memberOf DragSession
 		 * @private
 		 * @instance
-		 * @param {Integer} x
-		 * @param {Integer} y
+		 * @param {number} x
+		 * @param {number} y
 		 */
 		_translate: function(x, y) {
 			if (this._disable) {
@@ -305,6 +307,9 @@
 	//----------------------------
 	/**
 	 * 図形クラス(抽象クラス)
+	 * <p>
+	 * {@link ArtRect}や{@link ArtPath}など、各図形クラスがこのクラスを継承しています。
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtShape
@@ -314,14 +319,31 @@
 	// 抽象クラスのため何もしない
 	}
 	/**
-	 * シリアライズされたオブジェクトからArtShapeクラス(の子クラス)を生成して返す
+	 * シリアライズされた図形からArtShapeクラス(の子クラス)を生成して返します
+	 * <p>
+	 * 各図形クラスはserializeメソッドを用意しており、シリアライズ可能なオブジェクトを生成することができます。
+	 * </p>
+	 * <p>
+	 * 以下は、ArtRectクラスの要素をシリアライズして復元するサンプルコードです。
+	 * </p>
+	 *
+	 * <pre class="sh_javascript"><code>
+	 * // ArtRectクラスを生成
+	 * var rect = new h5.ui.components.artboard.ArtShapeConstructor.ArtRect(element);
+	 *
+	 * // ArtRectクラスをシリアライズ(プレーンオブジェクトに変換)
+	 * var obj = rect.serialize();
+	 *
+	 * // デシリアライズ(復元) 戻り値はArtRectクラス
+	 * h5.ui.components.artboard.ArtShapeConstructor.ArtShape.deserialize(rect);
+	 * </code></pre>
 	 *
 	 * @memberOf ArtShape
 	 * @static
 	 * @function
 	 * @param {Object} shapeData あるArtShapeについてのセーブデータ。{@link DrawingSaveData#saveData}.shapes配列の要素がshapeDataに該当します。
-	 * @param {Logic|Any} commandManagerWrapper コマンド生成時にappendCommandを行うロジックやクラス
-	 * @returns {ArtShape}
+	 * @param {Logic} [commandManagerWrapper] コマンド生成時にappendCommandを行うロジックやクラス
+	 * @returns {ArtShape} 復元した図形クラス(ArtShapeを継承する具象クラス)
 	 */
 	ArtShape.deserialize = function(shapeData, commandManagerWrapper) {
 		var type = shapeData.type;
@@ -369,9 +391,13 @@
 
 		/**
 		 * 図形要素を取得
+		 * <p>
+		 * 図形を表現している要素を返します。
+		 * </p>
 		 *
 		 * @memberOf ArtShape
 		 * @instance
+		 * @returns {DOM}
 		 */
 		getElement: function() {
 			return this._element;
@@ -407,7 +433,7 @@
 		 *
 		 * @memberOf ArtShape
 		 * @instance
-		 * @returns {Boolean}
+		 * @returns {boolean}
 		 */
 		isAlone: function() {
 			return !this._element.parentNode;
@@ -421,9 +447,9 @@
 		 *
 		 * @memberOf ArtShape
 		 * @instance
-		 * @param {Number} x x座標位置
-		 * @param {Number} y y座標位置
-		 * @returns {Boolean}
+		 * @param {number} x x座標位置
+		 * @param {number} y y座標位置
+		 * @returns {boolean} 図形が指定された座標と重なるかどうか
 		 */
 		hitTest: function(x, y) {
 			if (this.isAlone()) {
@@ -444,11 +470,11 @@
 		 *
 		 * @memberOf ArtShape
 		 * @instance
-		 * @param {Number} x 矩形の左上のx座標位置
-		 * @param {Number} y 矩形の左上のy座標位置
-		 * @param {Number} w 矩形の幅
-		 * @param {Number} h 矩形の高さ
-		 * @returns {Boolean}
+		 * @param {number} x 矩形の左上のx座標位置
+		 * @param {number} y 矩形の左上のy座標位置
+		 * @param {number} w 矩形の幅
+		 * @param {number} h 矩形の高さ
+		 * @returns {boolean} 図形が指定された矩形に含まれるかどうか
 		 */
 		isInRect: function(x, y, w, h) {
 			if (this.isAlone()) {
@@ -467,8 +493,8 @@
 		 * @memberOf ArtShape
 		 * @instance
 		 * @function
-		 * @param {Number} x x座標位置
-		 * @param {Number} y y座標位置
+		 * @param {number} x x座標位置
+		 * @param {number} y y座標位置
 		 * @interface
 		 */
 		moveTo: function() {
@@ -482,8 +508,8 @@
 		 * @memberOf ArtShape
 		 * @instance
 		 * @function
-		 * @param {Number} x x座標位置
-		 * @param {Number} y y座標位置
+		 * @param {number} x x座標位置
+		 * @param {number} y y座標位置
 		 * @interface
 		 */
 		moveBy: function() {
@@ -493,17 +519,35 @@
 
 		/**
 		 * 図形をシリアライズ可能なオブジェクトに変換します
+		 * <p>
+		 * このメソッドで生成したオブジェクトは{@link ArtShape.deserialize}で元の図形クラスに復元することができます
+		 * </p>
 		 *
 		 * @memberOf ArtShape
 		 * @instance
 		 * @function
 		 * @interface
-		 * @returns {Object} 各図形についてのデータオブジェクト
+		 * @returns {Object} 図形情報を格納したシリアライズ可能なプレーンオブジェクト
 		 */
 		serialize: function() {
 			// 子クラスでの実装が必須
 			throw new Error('serializeを使用する場合、子クラスでの実装が必須です');
 		},
+
+		/**
+		 * 任意のユーザデータを持たせることができるプロパティ
+		 * <p>
+		 * 図形個別に何か値を持たせたい場合はこのプロパティに自由に値を持たせることができます。
+		 * </p>
+		 * <p>
+		 * デフォルト値はnullです
+		 * </p>
+		 *
+		 * @memberOf ArtShape
+		 * @instance
+		 * @type {Any}
+		 */
+		userData: null,
 
 		/**
 		 * エレメントのスタイルをコマンドを作って設定
@@ -566,11 +610,17 @@
 	// JSDocのみ。定義は各インスタンスのdefinePropertyで行っています
 	/**
 	 * 図形のタイプ
+	 * <p>
+	 * 各図形クラスのタイプを表す文字列です。ArtRectなら'rect'、ArtPathなら'path'などの値を持ちます。
+	 * </p>
+	 * <p>
+	 * 読み取り専用属性です。
+	 * </p>
 	 *
 	 * @memberOf ArtShape
 	 * @instance
 	 * @name type
-	 * @type {String}
+	 * @type {string}
 	 */
 	});
 
@@ -611,7 +661,7 @@
 			 * @name strokeColor
 			 * @memberOf ArtStrokeShape
 			 * @instance
-			 * @type {String}
+			 * @type {string}
 			 */
 			strokeColor: {
 				configurable: false,
@@ -636,7 +686,7 @@
 			 * @name strokeOpacity
 			 * @memberOf ArtStrokeShape
 			 * @instance
-			 * @type {Number}
+			 * @type {number}
 			 */
 			strokeOpacity: {
 				configurable: false,
@@ -704,7 +754,7 @@
 		 */
 		var props = {
 			/**
-			 * 塗りつぶしの色
+			 * 図形の塗りつぶしの色
 			 * <p>
 			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます。
 			 * </p>
@@ -715,7 +765,7 @@
 			 * @name fillColor
 			 * @memberOf ArtFillShape
 			 * @instance
-			 * @type {String}
+			 * @type {string}
 			 */
 			fillColor: {
 				configurable: false,
@@ -731,7 +781,7 @@
 				}
 			},
 			/**
-			 * 塗りつぶしの透明度(0～1)
+			 * 図形の塗りつぶしの透明度(0～1)
 			 * <p>
 			 * このプロパティにはsetterが設定されており、値を変更すると図形に反映されます
 			 * </p>
@@ -739,7 +789,7 @@
 			 * @name fillOpacity
 			 * @memberOf ArtFillShape
 			 * @instance
-			 * @type {Number}
+			 * @type {number}
 			 */
 			fillOpacity: {
 				configurable: false,
@@ -794,7 +844,7 @@
 			 * @name textColor
 			 * @memberOf ArtTextShape
 			 * @instance
-			 * @type {String}
+			 * @type {string}
 			 */
 			textColor: {
 				configurable: false,
@@ -822,7 +872,7 @@
 			 * @name textOpacity
 			 * @memberOf ArtTextShape
 			 * @instance
-			 * @type {Number}
+			 * @type {number}
 			 */
 			textOpacity: {
 				configurable: false,
@@ -844,13 +894,16 @@
 			/**
 			 * テキストの文字列
 			 * <p>
+			 * 図形が表示する文字列を設定します。
+			 * </p>
+			 * <p>
 			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
 			 * </p>
 			 *
 			 * @name textContent
 			 * @memberOf ArtTextShape
 			 * @instance
-			 * @type {String}
+			 * @type {string}
 			 */
 			textContent: {
 				configurable: false,
@@ -871,13 +924,16 @@
 			/**
 			 * フォントファミリー
 			 * <p>
+			 * 図形が表示する文字のフォントを設定します。
+			 * </p>
+			 * <p>
 			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
 			 * </p>
 			 *
 			 * @name fontFamily
 			 * @memberOf ArtTextShape
 			 * @instance
-			 * @type {String}
+			 * @type {string}
 			 */
 			fontFamily: {
 				configurable: false,
@@ -899,13 +955,16 @@
 			/**
 			 * フォントサイズ
 			 * <p>
+			 * 図形が表示する文字のフォントサイズを設定します。
+			 * </p>
+			 * <p>
 			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
 			 * </p>
 			 *
 			 * @name fontSize
 			 * @memberOf ArtTextShape
 			 * @instance
-			 * @type {Number}
+			 * @type {number}
 			 */
 			fontSize: {
 				configurable: false,
@@ -926,6 +985,9 @@
 
 			/**
 			 * フォントススタイル
+			 * <p>
+			 * 図形が表示する文字についてのスタイルオブジェクトで、 'text-decoration', 'font-weight', 'font-style'をプロパティに持ちます。
+			 * </p>
 			 * <p>
 			 * このプロパティはsetterが設定されており、値を変更すると図形に反映されます
 			 * </p>
@@ -979,6 +1041,9 @@
 
 	/**
 	 * パスクラス
+	 * <p>
+	 * 線(path)を表現する図形クラス
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtPath
@@ -995,13 +1060,7 @@
 	ArtPath.prototype = Object.create(ArtShape.prototype);
 	ArtPath.constructor = ArtPath;
 	$.extend(mixinArtStrokeShape(ArtPath.prototype), {
-		/**
-		 * {@link ArtShape.moveTo}の実装
-		 *
-		 * @memberOf ArtPath
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveTo: function(position) {
 			var element = this.getElement();
 			var d = element.getAttribute('d');
@@ -1027,13 +1086,7 @@
 			return command;
 		},
 
-		/**
-		 * {@link ArtShape.moveBy}の実装
-		 *
-		 * @memberOf ArtPath
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var d = element.getAttribute('d');
@@ -1050,14 +1103,7 @@
 			}
 		},
 
-		/**
-		 * シリアライズ可能なオブジェクトを生成
-		 *
-		 * @memberOf ArtPath
-		 * @instance
-		 * @override
-		 * @returns {Object}
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1074,7 +1120,7 @@
 		},
 
 		/**
-		 * パスのd属性の先頭座標(Mで始まる座標指定)を取得する正規表現
+		 * path要素のd属性の先頭座標(Mで始まる座標指定)を取得する正規表現
 		 *
 		 * @memberOf ArtPath
 		 * @private
@@ -1085,6 +1131,9 @@
 
 	/**
 	 * 矩形(rect)クラス
+	 * <p>
+	 * 矩形を表す図形クラス
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtRect
@@ -1102,13 +1151,7 @@
 	ArtRect.prototype = Object.create(ArtShape.prototype);
 	ArtRect.constructor = ArtRect;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtRect.prototype)), {
-		/**
-		 * {@link ArtShape.moveTo}の実装
-		 *
-		 * @memberOf ArtRect
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1122,13 +1165,7 @@
 			return command;
 		},
 
-		/**
-		 * {@link ArtShape.moveBy}の実装
-		 *
-		 * @memberOf ArtRect
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1139,13 +1176,7 @@
 			});
 		},
 
-		/**
-		 * シリアライズ可能なオブジェクトを生成
-		 *
-		 * @memberOf ArtRect
-		 * @instance
-		 * @returns {Object}
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1167,6 +1198,9 @@
 
 	/**
 	 * 楕円(ellipse)クラス
+	 * <p>
+	 * 楕円を表現する図形クラス
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtEllipse
@@ -1184,13 +1218,7 @@
 	ArtEllipse.prototype = Object.create(ArtShape.prototype);
 	ArtEllipse.constructor = ArtEllipse;
 	$.extend(mixinArtFillShape(mixinArtStrokeShape(ArtEllipse.prototype)), {
-		/**
-		 * {@link ArtShape.moveTo}の実装
-		 *
-		 * @memberOf ArtEllipse
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1207,13 +1235,7 @@
 			return command;
 		},
 
-		/**
-		 * {@link ArtShape.moveBy}の実装
-		 *
-		 * @memberOf ArtEllipse
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var cx = parseInt(element.getAttribute('cx')) + position.x;
@@ -1224,13 +1246,7 @@
 			});
 		},
 
-		/**
-		 * シリアライズ可能なオブジェクトを生成
-		 *
-		 * @memberOf ArtEllipse
-		 * @instance
-		 * @returns {Object}
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1252,6 +1268,9 @@
 
 	/**
 	 * 画像(image)クラス
+	 * <p>
+	 * 任意の画像を表現する図形クラス
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtImage
@@ -1267,13 +1286,7 @@
 	ArtImage.prototype = Object.create(ArtShape.prototype);
 	ArtImage.constructor = ArtImage;
 	$.extend(ArtImage.prototype, {
-		/**
-		 * {@link ArtShape.moveTo}の実装
-		 *
-		 * @memberOf ArtImage
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1290,13 +1303,7 @@
 			return command;
 		},
 
-		/**
-		 * {@link ArtShape.moveBy}の実装
-		 *
-		 * @memberOf ArtImage
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1307,13 +1314,7 @@
 			});
 		},
 
-		/**
-		 * シリアライズ可能なオブジェクトを生成
-		 *
-		 * @memberOf ArtImage
-		 * @instance
-		 * @returns {Object}
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1342,6 +1343,9 @@
 
 	/**
 	 * テキスト(text)クラス
+	 * <p>
+	 * 文字列を表現する図形クラス
+	 * </p>
 	 *
 	 * @class
 	 * @name ArtText
@@ -1363,13 +1367,7 @@
 	ArtText.prototype = Object.create(ArtShape.prototype);
 	ArtText.constructor = ArtText;
 	$.extend(mixinArtTextShape(ArtText.prototype), {
-		/**
-		 * {@link ArtShape.moveTo}の実装
-		 *
-		 * @memberOf ArtText
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveTo: function(position) {
 			var command = new AttrCommand({
 				shape: this,
@@ -1386,13 +1384,7 @@
 			return command;
 		},
 
-		/**
-		 * {@link ArtShape.moveBy}の実装
-		 *
-		 * @memberOf ArtText
-		 * @instance
-		 * @override
-		 */
+		/* override */
 		moveBy: function(position) {
 			var element = this.getElement();
 			var x = parseInt(element.getAttribute('x')) + position.x;
@@ -1403,13 +1395,7 @@
 			});
 		},
 
-		/**
-		 * シリアライズ可能なオブジェクトを生成
-		 *
-		 * @memberOf ArtText
-		 * @instance
-		 * @returns {Object}
-		 */
+		/* override */
 		serialize: function() {
 			var element = this.getElement();
 			var styleDeclaration = getStyleDeclaration(element);
@@ -1435,12 +1421,15 @@
 
 		/**
 		 * テキストを設定
+		 * <p>
+		 * 表示する文字列を設定します
+		 * </p>
 		 *
 		 * @memberOf ArtText
 		 * @private
 		 * @instance
-		 * @param {String} val
-		 * @param {String} prop テキストの設定を行うShapeが持つプロパティの名前
+		 * @param {string} val
+		 * @param {string} prop テキストの設定を行うShapeが持つプロパティの名前
 		 */
 		_setTextContent: function(val, prop) {
 			var shape = this;

@@ -14,10 +14,10 @@
  * limitations under the License.
  *
  * hifive
- *   version 1.2.0
- *   gitCommitId : 07e269546ea24ade0249619fc5ac11bd5c33a1dc
- *   build at 2015/05/14 16:27:52.578 (+0900)
- *   (util,async,resource,controller,dataModel,modelWithBinding,view,ui,api.geo,api.sqldb,api.storage,scene)
+ *   version Nightly_2015-06-12_13-35-04-211
+ *   gitCommitId : ed64d650c3771d580b8c26368c0fb96a25dab9f2
+ *   build at 2015/06/12 13:35:05.679 (+0900)
+ *   (scopedglobals,util,async,resource,controller,dataModel,view,modelWithBinding,ui,api.geo,api.sqldb,api.storage,scene)
  */
 (function($){
 
@@ -31,7 +31,7 @@
 
 	//h5存在チェック
 	if (window.h5) {
-		if (window.h5.env && (window.h5.env.version === '1.2.0')) {
+		if (window.h5.env && (window.h5.env.version === 'Nightly_2015-06-12_13-35-04-211')) {
 			// 既にロード済みのhifiveと同じバージョンをロードしようとした場合は何もしない
 			return;
 		}
@@ -55,7 +55,7 @@
 	};
 
 	h5.env = {
-		version: '1.2.0'
+		version: 'Nightly_2015-06-12_13-35-04-211'
 	};
 
 	// =========================================================================
@@ -6091,6 +6091,11 @@ var h5internal = {
 		return false;
 	})();
 
+	/**
+	 * コントローラ化時に呼ばれるフック関数の配列
+	 */
+	var controllerInstantiationHooks = [];
+
 	// =============================
 	// Functions
 	// =============================
@@ -6171,6 +6176,25 @@ var h5internal = {
 	 */
 	function validateControllerDef(isRoot, targetElement, controllerDefObj, param, controllerName) {
 		// コントローラ定義オブジェクトに、コントローラが追加するプロパティと重複するプロパティがあるかどうかチェック
+		if (!controllerPropertyMap) {
+			// 重複チェックが初めて呼ばれた時にコントローラプロパティマップを生成してチェックで使用する
+			controllerPropertyMap = {};
+			var tempInstance = new Controller(null, 'a');
+			for ( var p in tempInstance) {
+				if (tempInstance.hasOwnProperty(p) && p !== '__name' && p !== '__templates'
+						&& p !== '__meta') {
+					controllerPropertyMap[p] = 1;
+				}
+			}
+			tempInstance = null;
+			var proto = Controller.prototype;
+			for ( var p in proto) {
+				if (proto.hasOwnProperty(p)) {
+					controllerPropertyMap[p] = null;
+				}
+			}
+			proto = null;
+		}
 		for ( var prop in controllerDefObj) {
 			if (prop in controllerPropertyMap) {
 				// コントローラが追加するプロパティと同じプロパティ名のものがあればエラー
@@ -7968,13 +7992,18 @@ var h5internal = {
 		}
 
 		// asyncにfalseが指定されていない場合は必ず非同期になるようにする
-		setTimeout(function() {
-			// この時点でcontrollerがルートコントローラでなくなっている(__constructでmanageChildされた)場合は何もしない
-			if (isUnbinding(controller) || !controller.__controllerContext.isRoot) {
-				return;
-			}
-			executeLifecycleEventChain(controller, '__init');
-		}, 0);
+		setTimeout(
+				function() {
+					// この時点でcontrollerがルートコントローラでなくなっている(__construct時などバインド後すぐにmanageChildされた)場合がある
+					// その場合はmanageChild()した側のルートコントローラのライフサイクルが完全に終わっている(===readyDfd削除まで終わっている)場合、
+					// 自分でtriggerInitする必要がある
+					// ルートのライフサイクルがまだ終わっていない場合は、親がライフサイクルを実行してくれるのでmanageChildされた側はtriggerInitしない
+					if (isUnbinding(controller)
+							|| (!controller.__controllerContext.isRoot && controller.rootController.readyDfd)) {
+						return;
+					}
+					executeLifecycleEventChain(controller, '__init');
+				}, 0);
 	}
 
 	/**
@@ -9391,6 +9420,10 @@ var h5internal = {
 	 * @param {Boolean} isRoot ルートコントローラかどうか
 	 */
 	function Controller(rootElement, controllerName, controllerDef, param, isRoot) {
+		// フック関数を実行
+		for (var i = 0, l = controllerInstantiationHooks.length; i < l; i++) {
+			controllerInstantiationHooks[i](this);
+		}
 		return controllerFactory(this, rootElement, controllerName, controllerDef, param, isRoot);
 	}
 	$
@@ -10119,25 +10152,7 @@ var h5internal = {
 	});
 
 	// プロパティ重複チェック用のコントローラプロパティマップを作成
-	var controllerPropertyMap = (function() {
-		var ret = {};
-		var tempInstance = new Controller(null, 'a');
-		for ( var p in tempInstance) {
-			if (tempInstance.hasOwnProperty(p) && p !== '__name' && p !== '__templates'
-					&& p !== '__meta') {
-				ret[p] = 1;
-			}
-		}
-		tempInstance = null;
-		var proto = Controller.prototype;
-		for ( var p in proto) {
-			if (proto.hasOwnProperty(p)) {
-				ret[p] = null;
-			}
-		}
-		proto = null;
-		return ret;
-	})();
+	var controllerPropertyMap = null;
 
 	/**
 	 * コントローラのファクトリ
@@ -10593,6 +10608,20 @@ var h5internal = {
 		return rootLogic;
 	}
 
+	/**
+	 * コントローラ化時にコントローラに対して追加処理を行うフック関数を登録する関数
+	 * <p>
+	 * ここで登録したフック関数はコントローラインスタンス生成時(__construct呼び出し前)に呼ばれます
+	 * </p>
+	 *
+	 * @memberOf h5internal.core
+	 * @private
+	 * @param {Function} func フック関数。第1引数にコントローラインスタンスが渡される
+	 */
+	function addControllerInstantiationHook(func) {
+		controllerInstantiationHooks.push(func);
+	}
+
 	// =============================
 	// Expose internally
 	// =============================
@@ -10600,7 +10629,8 @@ var h5internal = {
 	// fwOptを引数に取る、コントローラ化を行うメソッドを、h5internal.core.controllerInternalとして内部用に登録
 	h5internal.core.controllerInternal = createAndBindController;
 
-	h5internal.core.controllerConstructor = Controller;
+	// コントローラ化時にフック関数を登録する関数
+	h5internal.core.addControllerInstantiationHook = addControllerInstantiationHook;
 
 	h5internal.core.isDisposing = isDisposing;
 
@@ -15421,6 +15451,679 @@ var h5internal = {
 		SEQ_INT: SEQ_INT
 	});
 })();
+/* ------ h5.core.view ------ */
+(function() {
+	// =========================================================================
+	//
+	// Constants
+	//
+	// =========================================================================
+
+	// =============================
+	// Production
+	// =============================
+
+	/**
+	 * EJSにスクリプトレットの区切りとして認識させる文字
+	 */
+	var DELIMITER = '[';
+
+	// エラーコード
+	/**
+	 * コンパイルしようとしたテンプレートが文字列でない
+	 */
+	var ERR_CODE_TEMPLATE_COMPILE_NOT_STRING = 7000;
+
+	/**
+	 * テンプレートIDが不正である時に発生するエラー
+	 */
+	var ERR_CODE_TEMPLATE_INVALID_ID = 7002;
+
+	/**
+	 * load()呼び出し時に引数にファイル名またはファイル名の配列が渡されなかった時に発生するエラー
+	 */
+	var ERR_CODE_INVALID_FILE_PATH = 7004;
+
+	/**
+	 * 登録されていないテンプレートIDを指定したときに発生するエラー
+	 */
+	var ERR_CODE_TEMPLATE_ID_UNAVAILABLE = 7005;
+
+	/**
+	 * テンプレートに渡すパラメータに必要なプロパティが設定されていない時に発生するエラー
+	 */
+	var ERR_CODE_TEMPLATE_PROPATY_UNDEFINED = 7006;
+
+	/**
+	 * bindに指定されたターゲットが不正(非DOM要素またはセレクタで指定された要素が存在しない)な場合に発生するエラー
+	 */
+	var ERR_CODE_BIND_INVALID_TARGET = 7007;
+
+	/**
+	 * bindに指定したtargetが表すDOM要素が複数あるならエラー
+	 */
+	var ERR_CODE_TOO_MANY_TARGETS = 7008;
+
+	/**
+	 * bindに指定したcontextがオブジェクトでない
+	 */
+	var ERR_CODE_BIND_CONTEXT_INVALID = 7009;
+
+	/**
+	 * テンプレートのコンパイルエラー
+	 */
+	var ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR = 7010;
+
+	// =============================
+	// Development Only
+	// =============================
+
+	var fwLogger = h5.log.createLogger('h5.core.view');
+
+	/* del begin */
+	var FW_LOG_TEMPLATE_NOT_REGISTERED = '指定されたIDのテンプレートは登録されていません。"{0}"';
+	var FW_LOG_TEMPLATE_OVERWRITE = 'テンプレートID:{0} は上書きされました。';
+
+	/**
+	 * 各エラーコードに対応するメッセージ
+	 */
+	var errMsgMap = {};
+	errMsgMap[ERR_CODE_TEMPLATE_COMPILE_NOT_STRING] = 'テンプレートのコンパイルでエラーが発生しました。テンプレートには文字列を指定してください。';
+	// ERR_CODE_INVALID_IDのエラーのメッセージはh5.resで登録済みなのでここで再度登録はしない
+	// (ejsファイル解析時のid不正と、get()の引数のid不正が同じエラーであるため、res,viewで両方使用している)
+	//	errMsgMap[ERR_CODE_TEMPLATE_INVALID_ID] = 'テンプレートIDが指定されていません。空や空白でない文字列で指定してください。';
+	errMsgMap[ERR_CODE_INVALID_FILE_PATH] = 'テンプレートファイルの指定が不正です。空や空白でない文字列、または文字列の配列で指定してください。';
+	errMsgMap[ERR_CODE_TEMPLATE_ID_UNAVAILABLE] = 'テンプレートID:{0} テンプレートがありません。';
+	errMsgMap[ERR_CODE_TEMPLATE_PROPATY_UNDEFINED] = '{0} テンプレートにパラメータが設定されていません。';
+	errMsgMap[ERR_CODE_BIND_INVALID_TARGET] = 'bindの引数に指定されたターゲットが存在しないかまたは不正です。';
+	errMsgMap[ERR_CODE_TOO_MANY_TARGETS] = 'bindの引数に指定されたバインド先の要素が2つ以上存在します。バインド対象は1つのみにしてください。';
+	errMsgMap[ERR_CODE_BIND_CONTEXT_INVALID] = 'bindの引数に指定されたルートコンテキストが不正です。オブジェクト、データアイテム、またはObservableItemを指定してください。';
+	errMsgMap[ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR] = 'テンプレートのコンパイルでエラーが発生しました。構文エラー：{0} {1}';
+
+	// メッセージの登録
+	addFwErrorCodeMap(errMsgMap);
+	/* del end */
+
+	// =========================================================================
+	//
+	// Cache
+	//
+	// =========================================================================
+	var getDeferred = h5.async.deferred;
+
+	// =========================================================================
+	//
+	// Privates
+	//
+	// =========================================================================
+
+	// =============================
+	// Variables
+	// =============================
+
+	/**
+	 * EJSテンプレート内で使用可能なヘルパー関数を格納するオブジェクト
+	 */
+	var helperExtras = {
+
+		/**
+		 * HTML文字列をエスケープします。
+		 *
+		 * @param {String} str エスケープ対象文字列
+		 * @returns {String} エスケープされた文字列
+		 */
+		escapeHtml: function(str) {
+			return h5.u.str.escapeHtml(str);
+		}
+	};
+
+	// =============================
+	// Functions
+	// =============================
+
+	/**
+	 * jQueryオブジェクトか判定し、jQueryオブジェクトならそのまま、そうでないならjQueryオブジェクトに変換して返します。
+	 *
+	 * @function
+	 * @param {Object} obj DOM要素
+	 * @returns {Object} jQueryObject
+	 */
+	function getJQueryObj(obj) {
+		return h5.u.obj.isJQueryObject(obj) ? obj : $(obj);
+	}
+
+	/**
+	 * ViewTemplateクラス
+	 */
+	function ViewTemplate() {
+		this._templateMap = {};
+	}
+	$.extend(ViewTemplate.prototype, {
+		/**
+		 * 受け取ったviewにこのインスタンスが持つテンプレートを登録する
+		 */
+		applyToView: function(view) {
+			var templateMap = this._templateMap;
+			for ( var p in templateMap) {
+				view.register(p, templateMap[p]);
+			}
+		},
+		/**
+		 * テンプレートマップに登録
+		 */
+		register: function(id, templateString) {
+			this._templateMap[id] = templateString;
+		},
+		/**
+		 * 別のviewTempalteとマージする
+		 */
+		marge: function(viewTemplate) {
+			$.extend(this._templateMap, viewTemplate._templateMap);
+		},
+		/**
+		 * エレメントからテンプレートマップに登録
+		 *
+		 * @param {DOM|jQuery} $templateElements テンプレートが記述されている要素(<script type="text/ejs">...</script>)
+		 */
+		registByElement: function compileTemplatesByElements($templateElements) {
+			$templateElements = $($templateElements);
+			if ($templateElements.length === 0) {
+				return;
+			}
+			var that = this;
+			$templateElements.each(function() {
+				var templateId = $.trim(this.id);
+				var templateString = $.trim(this.innerHTML);
+
+				// 空文字または空白ならエラー
+				if (!templateId) {
+					// load()で更にdetail対してエラー情報を追加するため、ここで空のdetailオブジェクトを生成する
+					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID, null, {});
+				}
+				that.register(templateId, templateString);
+			});
+		}
+
+	});
+	// =========================================================================
+	//
+	// Body
+	//
+	// =========================================================================
+
+	/**
+	 * テンプレートを扱うクラス
+	 * <p>
+	 * <a href="h5.core.view.html">h5.core.view</a>がこのクラスを実装しています。また、<a
+	 * href="h5.core.view.html#createView">h5.core.view.createView()</a>でこのクラスのインスタンスを生成できます。
+	 * </p>
+	 * <p>
+	 * また、コントローラは内部にController.viewインスタンスを持ち、コントローラ内であればthis.viewで参照することができます。
+	 * </p>
+	 * <p>
+	 * コントローラの持つViewについての詳細は、<a href="Controller.view.html">Controller.view</a>を参照してください。
+	 * </p>
+	 *
+	 * @class
+	 * @name View
+	 */
+	function View() {
+		/**
+		 * キャッシュしたテンプレートを保持するオブジェクト
+		 *
+		 * @private
+		 * @name __cachedTemplates
+		 * @memberOf View
+		 */
+		this.__cachedTemplates = {};
+	}
+
+	$.extend(View.prototype, {
+		/**
+		 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。<br>
+		 * このメソッドでは、通信エラー発生時に自動リトライは行いません（ver.1.1.4現在。将来この動作は変更される可能性があります）。
+		 *
+		 * @memberOf View
+		 * @name load
+		 * @function
+		 * @param {String|Array[String]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
+		 * @returns {Promise} promiseオブジェクト
+		 */
+		load: function(resourcePaths) {
+			var dfd = getDeferred();
+			var paths = null;
+
+			// resourcePathsが文字列か配列でなかったらエラーを投げます。
+			switch ($.type(resourcePaths)) {
+			case 'string':
+				if (!$.trim(resourcePaths)) {
+					throwFwError(ERR_CODE_INVALID_FILE_PATH);
+				}
+				paths = [resourcePaths];
+				break;
+			case 'array':
+				paths = resourcePaths;
+				if (paths.length === 0) {
+					throwFwError(ERR_CODE_INVALID_FILE_PATH);
+				}
+				for (var i = 0, len = paths.length; i < len; i++) {
+					if (!isString(paths[i])) {
+						throwFwError(ERR_CODE_INVALID_FILE_PATH);
+					} else if (!$.trim(paths[i])) {
+						throwFwError(ERR_CODE_INVALID_FILE_PATH);
+					}
+				}
+				break;
+			default:
+				throwFwError(ERR_CODE_INVALID_FILE_PATH);
+			}
+
+			var promises = [];
+			for (var i = 0, l = paths.length; i < l; i++) {
+				promises.push(h5.res.get(paths[i]));
+			}
+			var view = this;
+			waitForPromises(promises, function(resources) {
+				// viewにテンプレートを登録
+				resources = isArray(resources) ? resources : [resources];
+				// 先に全てのテンプレートが登録できるかどうかをチェック
+				// チェックしながら登録するテンプレートを列挙する
+				var validTemplates = [];
+				var invalidTemplate;
+				for (var i = 0, l = resources.length; i < l; i++) {
+					var templates = resources[i].templates;
+					for (var j = 0, len = templates.length; j < len; j++) {
+						if (!view.isValid(templates[j].content)) {
+							invalidTemplate = templates[j];
+							break;
+						}
+						validTemplates.push(templates[j]);
+					}
+					if (invalidTemplate) {
+						break;
+					}
+				}
+				if (invalidTemplate) {
+					try {
+						// invalidなテンプレートがあったらエラーオブジェクトを取得してreject
+						view.register(invalidTemplate.id, invalidTemplate.content);
+					} catch (e) {
+						// 登録でエラーが発生したらrejectする
+						// detailにエラーが発生した時のリソースのurlとpathを追加する
+						e.detail.url = resources[i].url;
+						e.detail.path = resources[i].path;
+						return dfd.reject(e);
+					}
+				}
+
+				// 全てvalidならすべてのテンプレートを登録
+				for (var i = 0, l = validTemplates.length; i < l; i++) {
+					view.register(validTemplates[i].id, validTemplates[i].content);
+				}
+				// TODO doneハンドラに渡す引数を作成
+				dfd.resolve();
+			}, function(e) {
+				fwLogger.error(e.message);
+				dfd.reject(e);
+			});
+			return dfd.promise();
+		},
+
+		/**
+		 * Viewインスタンスに登録されている、利用可能なテンプレートのIDの配列を返します。
+		 *
+		 * @memberOf View
+		 * @name getAvailableTemplates
+		 * @function
+		 * @returns {Array[String]} テンプレートIDの配列
+		 */
+		getAvailableTemplates: function() {
+			var ids = [];
+			for ( var id in this.__cachedTemplates) {
+				ids.push(id);
+			}
+			return ids;
+		},
+		/**
+		 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
+		 * <p>
+		 * 指定されたIDのテンプレートがすでに存在する場合は上書きします。 templateStringが不正な場合はエラーを投げます。
+		 * </p>
+		 *
+		 * @memberOf View
+		 * @name register
+		 * @function
+		 * @param {String} templateId テンプレートID
+		 * @param {String} templateString テンプレート文字列
+		 */
+		register: function(templateId, templateString) {
+			if ($.type(templateString) !== 'string') {
+				throwFwError(ERR_CODE_TEMPLATE_COMPILE_NOT_STRING, null, {
+					id: templateId
+				});
+			} else if (!isString(templateId) || !$.trim(templateId)) {
+				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID, []);
+			}
+			/* del begin */
+			if (this.__cachedTemplates[templateId]) {
+				fwLogger.info(FW_LOG_TEMPLATE_OVERWRITE, templateId);
+			}
+			/* del end */
+			try {
+				var compiledTemplate = new EJS.Compiler(templateString, DELIMITER);
+				compiledTemplate.compile();
+				this.__cachedTemplates[templateId] = compiledTemplate.process;
+			} catch (e) {
+				var lineNo = e.lineNumber;
+				var msg = lineNo ? ' line:' + lineNo : '';
+				throwFwError(ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR, [msg, e.message], {
+					id: templateId
+				});
+			}
+		},
+
+		/**
+		 * テンプレート文字列が、コンパイルできるかどうかを返します。
+		 *
+		 * @memberOf View
+		 * @name isValid
+		 * @function
+		 * @returns {Boolean} 第一引数に渡されたテンプレート文字列がコンパイル可能かどうか。
+		 */
+		isValid: function(templateString) {
+			try {
+				var compiledTemplate = new EJS.Compiler(templateString, DELIMITER);
+				compiledTemplate.compile();
+				return true;
+			} catch (e) {
+				return false;
+			}
+		},
+
+		/**
+		 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
+		 * <p>
+		 * 取得するテンプレート内に置換要素([%= %])が存在する場合、パラメータを全て指定してください。
+		 * </p>
+		 * <p>
+		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げます。
+		 * </p>
+		 * <p> ※ ただし、コントローラが持つviewインスタンスから呼ばれた場合、templateIdが利用可能でない場合は再帰的に親コントローラをたどり、
+		 * 親コントローラが持つViewインスタンスで利用可能かどうか確認します。 利用可能であれば、そのインスタンスのview.get()を実行します。
+		 * </p>
+		 * <p>
+		 * 一番上の親のViewインスタンスまで辿ってもtemplateId利用可能でなければ場合はh5.core.view.get()を実行します。
+		 * h5.core.viewでtemplateIdが利用可能でなければエラーを投げます。
+		 * </p>
+		 * <p>
+		 * <a href="#update">update()</a>, <a href="#append">append()</a>, <a
+		 * href="#prepend">prepend()</a>についても同様です。
+		 * </p>
+		 *
+		 * @memberOf View
+		 * @name get
+		 * @function
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
+		 * @returns {String} テンプレート文字列
+		 */
+		get: function(templateId, param) {
+			var cache = this.__cachedTemplates;
+
+			if (!isString(templateId) || !$.trim(templateId)) {
+				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
+			}
+
+			var template = cache[templateId];
+
+			if (!template) {
+				throwFwError(ERR_CODE_TEMPLATE_ID_UNAVAILABLE, templateId);
+			}
+
+			var p = (param) ? $.extend(true, {}, param) : {};
+			var helper = p.hasOwnProperty('_h') ? new EJS.Helpers(p) : new EJS.Helpers(p, {
+				_h: helperExtras
+			});
+			var ret = null;
+
+			try {
+				ret = template.call(p, p, helper);
+			} catch (e) {
+				throwFwError(ERR_CODE_TEMPLATE_PROPATY_UNDEFINED, e.toString(), e);
+			}
+
+			return ret;
+		},
+
+		/**
+		 * 要素を指定されたIDのテンプレートで書き換えます。
+		 * <p>
+		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
+		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
+		 * </p>
+		 *
+		 * @memberOf View
+		 * @name update
+		 * @function
+		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 */
+		update: function(element, templateId, param) {
+			return getJQueryObj(element).html(this.get(templateId, param));
+		},
+
+		/**
+		 * 要素の末尾に指定されたIDのテンプレートを挿入します。
+		 * <p>
+		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
+		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
+		 * </p>
+		 *
+		 * @memberOf View
+		 * @name append
+		 * @function
+		 * @param {Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 */
+		append: function(element, templateId, param) {
+			return getJQueryObj(element).append(this.get(templateId, param));
+		},
+
+		/**
+		 * 要素の先頭に指定されたIDのテンプレートを挿入します。
+		 * <p>
+		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
+		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
+		 * </p>
+		 *
+		 * @memberOf View
+		 * @name prepend
+		 * @function
+		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
+		 * @param {String} templateId テンプレートID
+		 * @param {Object} [param] パラメータ
+		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
+		 */
+		prepend: function(element, templateId, param) {
+			return getJQueryObj(element).prepend(this.get(templateId, param));
+		},
+
+		/**
+		 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
+		 *
+		 * @memberOf View
+		 * @name isAvailable
+		 * @function
+		 * @param {String} templateId テンプレートID
+		 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
+		 */
+		isAvailable: function(templateId) {
+			return !!this.__cachedTemplates[templateId];
+		},
+
+		/**
+		 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
+		 *
+		 * @memberOf View
+		 * @name clear
+		 * @param {String|String[]} templateIds テンプレートID
+		 * @function
+		 */
+		clear: function(templateIds) {
+			if (typeof templateIds === TYPE_OF_UNDEFINED) {
+				this.__cachedTemplates = {};
+				return;
+			}
+
+			var templateIdsArray = null;
+			switch ($.type(templateIds)) {
+			case 'string':
+				templateIdsArray = [templateIds];
+				break;
+			case 'array':
+				if (!templateIds.length) {
+					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
+				}
+				templateIdsArray = templateIds;
+				break;
+			default:
+				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
+			}
+
+			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
+				var id = templateIdsArray[i];
+				if (!isString(id) || !$.trim(id)) {
+					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
+				}
+				/* del begin */
+				if (!this.__cachedTemplates[id]) {
+					fwLogger.warn(FW_LOG_TEMPLATE_NOT_REGISTERED, id);
+				}
+				/* del end */
+			}
+
+			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
+				delete this.__cachedTemplates[templateIdsArray[i]];
+			}
+		},
+
+		/**
+		 * データバインドを開始します。
+		 * <p>
+		 * 注意:<br>
+		 * このメソッドではバインド対象にコメントビューを指定できません。<br>
+		 * コメントビューを使用したデータバインドは、コントローラが持つViewインスタンス(<a href="Controller.html#view">Controller.view</a>)から実行して下さい。
+		 *
+		 * @since 1.1.0
+		 * @param {String|Element|Element[]|jQuery} element コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素,
+		 *            DOM要素の配列, jQueryオブジェクト)。 DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
+		 * @param {Object} context データコンテキストオブジェクト
+		 * @memberOf View
+		 * @name bind
+		 * @function
+		 * @returns {Binding}
+		 */
+		bind: function(element, context) {
+			var targetNodes = null;
+
+			if (element == null) {
+				throwFwError(ERR_CODE_BIND_INVALID_TARGET);
+			}
+
+			// targetのチェック
+			if (isArray(element)) {
+				//配列はDOMノードの配列であることを仮定
+				targetNodes = element;
+			} else {
+				//targetがDOM、セレクタ文字列の場合をまとめて扱う
+				//インラインテンプレートが指定された場合はコントローラ側のview.bindが予めノード化しているので
+				//ここに到達した時にはノードになっている
+				var $element = $(element);
+
+				if ($element.length === 0) {
+					// 要素がない、もしくは見つからない場合はエラー
+					throwFwError(ERR_CODE_BIND_INVALID_TARGET);
+				}
+
+				//bind()はルートノードが複数であることをサポートするので、lengthは1には限定しない
+				//ただし、これはappend, prepend等の動作を考慮したものである。
+				//つまり、全ての要素は同じノードを親として持っていることを前提としている。
+				//厳密にはチェックすべきだが、実際に問題になることはほとんどないだろうと考え行っていない。
+				targetNodes = $element.toArray();
+			}
+
+			// contextのチェック
+			if (context == null || typeof context !== 'object' || isArray(context)
+					|| h5.core.data.isObservableArray(context)) {
+				throwFwError(ERR_CODE_BIND_CONTEXT_INVALID);
+			}
+
+			return h5internal.view.createBinding(targetNodes, context);
+		}
+	});
+
+	var view = new View();
+
+	/**
+	 * <a href="./View.html">View</a>クラスのインスタンスを生成します。
+	 * <p>
+	 * この関数はh5.core.viewに公開されたViewインスタンスのみが持ちます。この関数で作られたViewインスタンスはcreateView()を持ちません。
+	 * </p>
+	 *
+	 * @name createView
+	 * @memberOf h5.core.view
+	 * @function
+	 */
+	view.createView = function() {
+		return new View();
+	};
+
+	/**
+	 * HTMLに記述されたテンプレートを読み込む
+	 * <p>
+	 * HTMLにあるテンプレートが構文エラーの場合は、例外をそのままスローする。
+	 */
+	$(function() {
+		$('script[type="text/ejs"]').each(function() {
+			var templateId = $.trim(this.id);
+			var templateText = $.trim(this.innerHTML);
+
+			if (templateText.length === 0 || !templateId) {
+				return;
+			}
+
+			var compiledTemplate = new EJS.Compiler(templateText, DELIMITER);
+			compiledTemplate.compile();
+			view.__cachedTemplates[templateId] = compiledTemplate.process;
+		});
+	});
+
+	// =============================
+	// Expose to window
+	// =============================
+
+	/**
+	 * <p>
+	 * グローバルに公開されているViewクラスのインスタンスです。
+	 * </p>
+	 * <p>
+	 * h5.core.viewは、<a href="View.html">View</a>クラスであり、<a href="View.html">View</a>クラスのメソッドを持ちます。<br>
+	 * ただし、h5.core.viewはViewクラスを生成するためのcreateViewメソッドを持ち、生成されたViewクラスはcreateViewメソッドを持ちません。
+	 * </p>
+	 *
+	 * @name view
+	 * @memberOf h5.core
+	 * @see View
+	 * @namespace
+	 */
+	h5.u.obj.expose('h5.core', {
+		view: view
+	});
+})();
 /* h5.core.view_binding */
 (function() {
 	// =========================================================================
@@ -16887,679 +17590,6 @@ var h5internal = {
 		createBinding: createBinding
 	};
 
-})();
-/* ------ h5.core.view ------ */
-(function() {
-	// =========================================================================
-	//
-	// Constants
-	//
-	// =========================================================================
-
-	// =============================
-	// Production
-	// =============================
-
-	/**
-	 * EJSにスクリプトレットの区切りとして認識させる文字
-	 */
-	var DELIMITER = '[';
-
-	// エラーコード
-	/**
-	 * コンパイルしようとしたテンプレートが文字列でない
-	 */
-	var ERR_CODE_TEMPLATE_COMPILE_NOT_STRING = 7000;
-
-	/**
-	 * テンプレートIDが不正である時に発生するエラー
-	 */
-	var ERR_CODE_TEMPLATE_INVALID_ID = 7002;
-
-	/**
-	 * load()呼び出し時に引数にファイル名またはファイル名の配列が渡されなかった時に発生するエラー
-	 */
-	var ERR_CODE_INVALID_FILE_PATH = 7004;
-
-	/**
-	 * 登録されていないテンプレートIDを指定したときに発生するエラー
-	 */
-	var ERR_CODE_TEMPLATE_ID_UNAVAILABLE = 7005;
-
-	/**
-	 * テンプレートに渡すパラメータに必要なプロパティが設定されていない時に発生するエラー
-	 */
-	var ERR_CODE_TEMPLATE_PROPATY_UNDEFINED = 7006;
-
-	/**
-	 * bindに指定されたターゲットが不正(非DOM要素またはセレクタで指定された要素が存在しない)な場合に発生するエラー
-	 */
-	var ERR_CODE_BIND_INVALID_TARGET = 7007;
-
-	/**
-	 * bindに指定したtargetが表すDOM要素が複数あるならエラー
-	 */
-	var ERR_CODE_TOO_MANY_TARGETS = 7008;
-
-	/**
-	 * bindに指定したcontextがオブジェクトでない
-	 */
-	var ERR_CODE_BIND_CONTEXT_INVALID = 7009;
-
-	/**
-	 * テンプレートのコンパイルエラー
-	 */
-	var ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR = 7010;
-
-	// =============================
-	// Development Only
-	// =============================
-
-	var fwLogger = h5.log.createLogger('h5.core.view');
-
-	/* del begin */
-	var FW_LOG_TEMPLATE_NOT_REGISTERED = '指定されたIDのテンプレートは登録されていません。"{0}"';
-	var FW_LOG_TEMPLATE_OVERWRITE = 'テンプレートID:{0} は上書きされました。';
-
-	/**
-	 * 各エラーコードに対応するメッセージ
-	 */
-	var errMsgMap = {};
-	errMsgMap[ERR_CODE_TEMPLATE_COMPILE_NOT_STRING] = 'テンプレートのコンパイルでエラーが発生しました。テンプレートには文字列を指定してください。';
-	// ERR_CODE_INVALID_IDのエラーのメッセージはh5.resで登録済みなのでここで再度登録はしない
-	// (ejsファイル解析時のid不正と、get()の引数のid不正が同じエラーであるため、res,viewで両方使用している)
-	//	errMsgMap[ERR_CODE_TEMPLATE_INVALID_ID] = 'テンプレートIDが指定されていません。空や空白でない文字列で指定してください。';
-	errMsgMap[ERR_CODE_INVALID_FILE_PATH] = 'テンプレートファイルの指定が不正です。空や空白でない文字列、または文字列の配列で指定してください。';
-	errMsgMap[ERR_CODE_TEMPLATE_ID_UNAVAILABLE] = 'テンプレートID:{0} テンプレートがありません。';
-	errMsgMap[ERR_CODE_TEMPLATE_PROPATY_UNDEFINED] = '{0} テンプレートにパラメータが設定されていません。';
-	errMsgMap[ERR_CODE_BIND_INVALID_TARGET] = 'bindの引数に指定されたターゲットが存在しないかまたは不正です。';
-	errMsgMap[ERR_CODE_TOO_MANY_TARGETS] = 'bindの引数に指定されたバインド先の要素が2つ以上存在します。バインド対象は1つのみにしてください。';
-	errMsgMap[ERR_CODE_BIND_CONTEXT_INVALID] = 'bindの引数に指定されたルートコンテキストが不正です。オブジェクト、データアイテム、またはObservableItemを指定してください。';
-	errMsgMap[ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR] = 'テンプレートのコンパイルでエラーが発生しました。構文エラー：{0} {1}';
-
-	// メッセージの登録
-	addFwErrorCodeMap(errMsgMap);
-	/* del end */
-
-	// =========================================================================
-	//
-	// Cache
-	//
-	// =========================================================================
-	var getDeferred = h5.async.deferred;
-
-	// =========================================================================
-	//
-	// Privates
-	//
-	// =========================================================================
-
-	// =============================
-	// Variables
-	// =============================
-
-	/**
-	 * EJSテンプレート内で使用可能なヘルパー関数を格納するオブジェクト
-	 */
-	var helperExtras = {
-
-		/**
-		 * HTML文字列をエスケープします。
-		 *
-		 * @param {String} str エスケープ対象文字列
-		 * @returns {String} エスケープされた文字列
-		 */
-		escapeHtml: function(str) {
-			return h5.u.str.escapeHtml(str);
-		}
-	};
-
-	// =============================
-	// Functions
-	// =============================
-
-	/**
-	 * jQueryオブジェクトか判定し、jQueryオブジェクトならそのまま、そうでないならjQueryオブジェクトに変換して返します。
-	 *
-	 * @function
-	 * @param {Object} obj DOM要素
-	 * @returns {Object} jQueryObject
-	 */
-	function getJQueryObj(obj) {
-		return h5.u.obj.isJQueryObject(obj) ? obj : $(obj);
-	}
-
-	/**
-	 * ViewTemplateクラス
-	 */
-	function ViewTemplate() {
-		this._templateMap = {};
-	}
-	$.extend(ViewTemplate.prototype, {
-		/**
-		 * 受け取ったviewにこのインスタンスが持つテンプレートを登録する
-		 */
-		applyToView: function(view) {
-			var templateMap = this._templateMap;
-			for ( var p in templateMap) {
-				view.register(p, templateMap[p]);
-			}
-		},
-		/**
-		 * テンプレートマップに登録
-		 */
-		register: function(id, templateString) {
-			this._templateMap[id] = templateString;
-		},
-		/**
-		 * 別のviewTempalteとマージする
-		 */
-		marge: function(viewTemplate) {
-			$.extend(this._templateMap, viewTemplate._templateMap);
-		},
-		/**
-		 * エレメントからテンプレートマップに登録
-		 *
-		 * @param {DOM|jQuery} $templateElements テンプレートが記述されている要素(<script type="text/ejs">...</script>)
-		 */
-		registByElement: function compileTemplatesByElements($templateElements) {
-			$templateElements = $($templateElements);
-			if ($templateElements.length === 0) {
-				return;
-			}
-			var that = this;
-			$templateElements.each(function() {
-				var templateId = $.trim(this.id);
-				var templateString = $.trim(this.innerHTML);
-
-				// 空文字または空白ならエラー
-				if (!templateId) {
-					// load()で更にdetail対してエラー情報を追加するため、ここで空のdetailオブジェクトを生成する
-					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID, null, {});
-				}
-				that.register(templateId, templateString);
-			});
-		}
-
-	});
-	// =========================================================================
-	//
-	// Body
-	//
-	// =========================================================================
-
-	/**
-	 * テンプレートを扱うクラス
-	 * <p>
-	 * <a href="h5.core.view.html">h5.core.view</a>がこのクラスを実装しています。また、<a
-	 * href="h5.core.view.html#createView">h5.core.view.createView()</a>でこのクラスのインスタンスを生成できます。
-	 * </p>
-	 * <p>
-	 * また、コントローラは内部にController.viewインスタンスを持ち、コントローラ内であればthis.viewで参照することができます。
-	 * </p>
-	 * <p>
-	 * コントローラの持つViewについての詳細は、<a href="Controller.view.html">Controller.view</a>を参照してください。
-	 * </p>
-	 *
-	 * @class
-	 * @name View
-	 */
-	function View() {
-		/**
-		 * キャッシュしたテンプレートを保持するオブジェクト
-		 *
-		 * @private
-		 * @name __cachedTemplates
-		 * @memberOf View
-		 */
-		this.__cachedTemplates = {};
-	}
-
-	$.extend(View.prototype, {
-		/**
-		 * 指定されたパスのテンプレートファイルを非同期で読み込みキャッシュします。<br>
-		 * このメソッドでは、通信エラー発生時に自動リトライは行いません（ver.1.1.4現在。将来この動作は変更される可能性があります）。
-		 *
-		 * @memberOf View
-		 * @name load
-		 * @function
-		 * @param {String|Array[String]} resourcePaths テンプレートファイル(.ejs)のパス (配列で複数指定可能)
-		 * @returns {Promise} promiseオブジェクト
-		 */
-		load: function(resourcePaths) {
-			var dfd = getDeferred();
-			var paths = null;
-
-			// resourcePathsが文字列か配列でなかったらエラーを投げます。
-			switch ($.type(resourcePaths)) {
-			case 'string':
-				if (!$.trim(resourcePaths)) {
-					throwFwError(ERR_CODE_INVALID_FILE_PATH);
-				}
-				paths = [resourcePaths];
-				break;
-			case 'array':
-				paths = resourcePaths;
-				if (paths.length === 0) {
-					throwFwError(ERR_CODE_INVALID_FILE_PATH);
-				}
-				for (var i = 0, len = paths.length; i < len; i++) {
-					if (!isString(paths[i])) {
-						throwFwError(ERR_CODE_INVALID_FILE_PATH);
-					} else if (!$.trim(paths[i])) {
-						throwFwError(ERR_CODE_INVALID_FILE_PATH);
-					}
-				}
-				break;
-			default:
-				throwFwError(ERR_CODE_INVALID_FILE_PATH);
-			}
-
-			var promises = [];
-			for (var i = 0, l = paths.length; i < l; i++) {
-				promises.push(h5.res.get(paths[i]));
-			}
-			var view = this;
-			waitForPromises(promises, function(resources) {
-				// viewにテンプレートを登録
-				resources = isArray(resources) ? resources : [resources];
-				// 先に全てのテンプレートが登録できるかどうかをチェック
-				// チェックしながら登録するテンプレートを列挙する
-				var validTemplates = [];
-				var invalidTemplate;
-				for (var i = 0, l = resources.length; i < l; i++) {
-					var templates = resources[i].templates;
-					for (var j = 0, len = templates.length; j < len; j++) {
-						if (!view.isValid(templates[j].content)) {
-							invalidTemplate = templates[j];
-							break;
-						}
-						validTemplates.push(templates[j]);
-					}
-					if (invalidTemplate) {
-						break;
-					}
-				}
-				if (invalidTemplate) {
-					try {
-						// invalidなテンプレートがあったらエラーオブジェクトを取得してreject
-						view.register(invalidTemplate.id, invalidTemplate.content);
-					} catch (e) {
-						// 登録でエラーが発生したらrejectする
-						// detailにエラーが発生した時のリソースのurlとpathを追加する
-						e.detail.url = resources[i].url;
-						e.detail.path = resources[i].path;
-						return dfd.reject(e);
-					}
-				}
-
-				// 全てvalidならすべてのテンプレートを登録
-				for (var i = 0, l = validTemplates.length; i < l; i++) {
-					view.register(validTemplates[i].id, validTemplates[i].content);
-				}
-				// TODO doneハンドラに渡す引数を作成
-				dfd.resolve();
-			}, function(e) {
-				fwLogger.error(e.message);
-				dfd.reject(e);
-			});
-			return dfd.promise();
-		},
-
-		/**
-		 * Viewインスタンスに登録されている、利用可能なテンプレートのIDの配列を返します。
-		 *
-		 * @memberOf View
-		 * @name getAvailableTemplates
-		 * @function
-		 * @returns {Array[String]} テンプレートIDの配列
-		 */
-		getAvailableTemplates: function() {
-			var ids = [];
-			for ( var id in this.__cachedTemplates) {
-				ids.push(id);
-			}
-			return ids;
-		},
-		/**
-		 * Viewインスタンスに、指定されたIDとテンプレート文字列からテンプレートを1件登録します。
-		 * <p>
-		 * 指定されたIDのテンプレートがすでに存在する場合は上書きします。 templateStringが不正な場合はエラーを投げます。
-		 * </p>
-		 *
-		 * @memberOf View
-		 * @name register
-		 * @function
-		 * @param {String} templateId テンプレートID
-		 * @param {String} templateString テンプレート文字列
-		 */
-		register: function(templateId, templateString) {
-			if ($.type(templateString) !== 'string') {
-				throwFwError(ERR_CODE_TEMPLATE_COMPILE_NOT_STRING, null, {
-					id: templateId
-				});
-			} else if (!isString(templateId) || !$.trim(templateId)) {
-				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID, []);
-			}
-			/* del begin */
-			if (this.__cachedTemplates[templateId]) {
-				fwLogger.info(FW_LOG_TEMPLATE_OVERWRITE, templateId);
-			}
-			/* del end */
-			try {
-				var compiledTemplate = new EJS.Compiler(templateString, DELIMITER);
-				compiledTemplate.compile();
-				this.__cachedTemplates[templateId] = compiledTemplate.process;
-			} catch (e) {
-				var lineNo = e.lineNumber;
-				var msg = lineNo ? ' line:' + lineNo : '';
-				throwFwError(ERR_CODE_TEMPLATE_COMPILE_SYNTAX_ERR, [msg, e.message], {
-					id: templateId
-				});
-			}
-		},
-
-		/**
-		 * テンプレート文字列が、コンパイルできるかどうかを返します。
-		 *
-		 * @memberOf View
-		 * @name isValid
-		 * @function
-		 * @returns {Boolean} 第一引数に渡されたテンプレート文字列がコンパイル可能かどうか。
-		 */
-		isValid: function(templateString) {
-			try {
-				var compiledTemplate = new EJS.Compiler(templateString, DELIMITER);
-				compiledTemplate.compile();
-				return true;
-			} catch (e) {
-				return false;
-			}
-		},
-
-		/**
-		 * パラメータで置換された、指定されたテンプレートIDのテンプレートを取得します。
-		 * <p>
-		 * 取得するテンプレート内に置換要素([%= %])が存在する場合、パラメータを全て指定してください。
-		 * </p>
-		 * <p>
-		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げます。
-		 * </p>
-		 * <p> ※ ただし、コントローラが持つviewインスタンスから呼ばれた場合、templateIdが利用可能でない場合は再帰的に親コントローラをたどり、
-		 * 親コントローラが持つViewインスタンスで利用可能かどうか確認します。 利用可能であれば、そのインスタンスのview.get()を実行します。
-		 * </p>
-		 * <p>
-		 * 一番上の親のViewインスタンスまで辿ってもtemplateId利用可能でなければ場合はh5.core.view.get()を実行します。
-		 * h5.core.viewでtemplateIdが利用可能でなければエラーを投げます。
-		 * </p>
-		 * <p>
-		 * <a href="#update">update()</a>, <a href="#append">append()</a>, <a
-		 * href="#prepend">prepend()</a>についても同様です。
-		 * </p>
-		 *
-		 * @memberOf View
-		 * @name get
-		 * @function
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ(オブジェクトリテラルで指定)
-		 * @returns {String} テンプレート文字列
-		 */
-		get: function(templateId, param) {
-			var cache = this.__cachedTemplates;
-
-			if (!isString(templateId) || !$.trim(templateId)) {
-				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
-			}
-
-			var template = cache[templateId];
-
-			if (!template) {
-				throwFwError(ERR_CODE_TEMPLATE_ID_UNAVAILABLE, templateId);
-			}
-
-			var p = (param) ? $.extend(true, {}, param) : {};
-			var helper = p.hasOwnProperty('_h') ? new EJS.Helpers(p) : new EJS.Helpers(p, {
-				_h: helperExtras
-			});
-			var ret = null;
-
-			try {
-				ret = template.call(p, p, helper);
-			} catch (e) {
-				throwFwError(ERR_CODE_TEMPLATE_PROPATY_UNDEFINED, e.toString(), e);
-			}
-
-			return ret;
-		},
-
-		/**
-		 * 要素を指定されたIDのテンプレートで書き換えます。
-		 * <p>
-		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
-		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
-		 * </p>
-		 *
-		 * @memberOf View
-		 * @name update
-		 * @function
-		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 */
-		update: function(element, templateId, param) {
-			return getJQueryObj(element).html(this.get(templateId, param));
-		},
-
-		/**
-		 * 要素の末尾に指定されたIDのテンプレートを挿入します。
-		 * <p>
-		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
-		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
-		 * </p>
-		 *
-		 * @memberOf View
-		 * @name append
-		 * @function
-		 * @param {Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 */
-		append: function(element, templateId, param) {
-			return getJQueryObj(element).append(this.get(templateId, param));
-		},
-
-		/**
-		 * 要素の先頭に指定されたIDのテンプレートを挿入します。
-		 * <p>
-		 * templateIdがこのViewインスタンスで利用可能でなければエラーを投げますが、
-		 * コントローラが持つviewインスタンスから呼ばれた場合は親コントローラのviewを再帰的にたどります。詳細は<a href="#get">get()</a>をご覧ください。
-		 * </p>
-		 *
-		 * @memberOf View
-		 * @name prepend
-		 * @function
-		 * @param {String|Element|jQuery} element DOM要素(セレクタ文字列, DOM要素, jQueryオブジェクト)
-		 * @param {String} templateId テンプレートID
-		 * @param {Object} [param] パラメータ
-		 * @returns {jQuery} テンプレートが適用されたDOM要素(jQueryオブジェクト)
-		 */
-		prepend: function(element, templateId, param) {
-			return getJQueryObj(element).prepend(this.get(templateId, param));
-		},
-
-		/**
-		 * 指定されたテンプレートIDのテンプレートが存在するか判定します。
-		 *
-		 * @memberOf View
-		 * @name isAvailable
-		 * @function
-		 * @param {String} templateId テンプレートID
-		 * @returns {Boolean} 判定結果(存在する: true / 存在しない: false)
-		 */
-		isAvailable: function(templateId) {
-			return !!this.__cachedTemplates[templateId];
-		},
-
-		/**
-		 * 引数に指定されたテンプレートIDをもつテンプレートをキャッシュから削除します。 引数を指定しない場合はキャッシュされている全てのテンプレートを削除します。
-		 *
-		 * @memberOf View
-		 * @name clear
-		 * @param {String|String[]} templateIds テンプレートID
-		 * @function
-		 */
-		clear: function(templateIds) {
-			if (typeof templateIds === TYPE_OF_UNDEFINED) {
-				this.__cachedTemplates = {};
-				return;
-			}
-
-			var templateIdsArray = null;
-			switch ($.type(templateIds)) {
-			case 'string':
-				templateIdsArray = [templateIds];
-				break;
-			case 'array':
-				if (!templateIds.length) {
-					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
-				}
-				templateIdsArray = templateIds;
-				break;
-			default:
-				throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
-			}
-
-			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
-				var id = templateIdsArray[i];
-				if (!isString(id) || !$.trim(id)) {
-					throwFwError(ERR_CODE_TEMPLATE_INVALID_ID);
-				}
-				/* del begin */
-				if (!this.__cachedTemplates[id]) {
-					fwLogger.warn(FW_LOG_TEMPLATE_NOT_REGISTERED, id);
-				}
-				/* del end */
-			}
-
-			for (var i = 0, len = templateIdsArray.length; i < len; i++) {
-				delete this.__cachedTemplates[templateIdsArray[i]];
-			}
-		},
-
-		/**
-		 * データバインドを開始します。
-		 * <p>
-		 * 注意:<br>
-		 * このメソッドではバインド対象にコメントビューを指定できません。<br>
-		 * コメントビューを使用したデータバインドは、コントローラが持つViewインスタンス(<a href="Controller.html#view">Controller.view</a>)から実行して下さい。
-		 *
-		 * @since 1.1.0
-		 * @param {String|Element|Element[]|jQuery} element コメントビュー疑似セレクタ、またはDOM要素(セレクタ文字列, DOM要素,
-		 *            DOM要素の配列, jQueryオブジェクト)。 DOM要素の配列を指定する場合、全ての要素ノードの親ノードが同じでなければいけません。
-		 * @param {Object} context データコンテキストオブジェクト
-		 * @memberOf View
-		 * @name bind
-		 * @function
-		 * @returns {Binding}
-		 */
-		bind: function(element, context) {
-			var targetNodes = null;
-
-			if (element == null) {
-				throwFwError(ERR_CODE_BIND_INVALID_TARGET);
-			}
-
-			// targetのチェック
-			if (isArray(element)) {
-				//配列はDOMノードの配列であることを仮定
-				targetNodes = element;
-			} else {
-				//targetがDOM、セレクタ文字列の場合をまとめて扱う
-				//インラインテンプレートが指定された場合はコントローラ側のview.bindが予めノード化しているので
-				//ここに到達した時にはノードになっている
-				var $element = $(element);
-
-				if ($element.length === 0) {
-					// 要素がない、もしくは見つからない場合はエラー
-					throwFwError(ERR_CODE_BIND_INVALID_TARGET);
-				}
-
-				//bind()はルートノードが複数であることをサポートするので、lengthは1には限定しない
-				//ただし、これはappend, prepend等の動作を考慮したものである。
-				//つまり、全ての要素は同じノードを親として持っていることを前提としている。
-				//厳密にはチェックすべきだが、実際に問題になることはほとんどないだろうと考え行っていない。
-				targetNodes = $element.toArray();
-			}
-
-			// contextのチェック
-			if (context == null || typeof context !== 'object' || isArray(context)
-					|| h5.core.data.isObservableArray(context)) {
-				throwFwError(ERR_CODE_BIND_CONTEXT_INVALID);
-			}
-
-			return h5internal.view.createBinding(targetNodes, context);
-		}
-	});
-
-	var view = new View();
-
-	/**
-	 * <a href="./View.html">View</a>クラスのインスタンスを生成します。
-	 * <p>
-	 * この関数はh5.core.viewに公開されたViewインスタンスのみが持ちます。この関数で作られたViewインスタンスはcreateView()を持ちません。
-	 * </p>
-	 *
-	 * @name createView
-	 * @memberOf h5.core.view
-	 * @function
-	 */
-	view.createView = function() {
-		return new View();
-	};
-
-	/**
-	 * HTMLに記述されたテンプレートを読み込む
-	 * <p>
-	 * HTMLにあるテンプレートが構文エラーの場合は、例外をそのままスローする。
-	 */
-	$(function() {
-		$('script[type="text/ejs"]').each(function() {
-			var templateId = $.trim(this.id);
-			var templateText = $.trim(this.innerHTML);
-
-			if (templateText.length === 0 || !templateId) {
-				return;
-			}
-
-			var compiledTemplate = new EJS.Compiler(templateText, DELIMITER);
-			compiledTemplate.compile();
-			view.__cachedTemplates[templateId] = compiledTemplate.process;
-		});
-	});
-
-	// =============================
-	// Expose to window
-	// =============================
-
-	/**
-	 * <p>
-	 * グローバルに公開されているViewクラスのインスタンスです。
-	 * </p>
-	 * <p>
-	 * h5.core.viewは、<a href="View.html">View</a>クラスであり、<a href="View.html">View</a>クラスのメソッドを持ちます。<br>
-	 * ただし、h5.core.viewはViewクラスを生成するためのcreateViewメソッドを持ち、生成されたViewクラスはcreateViewメソッドを持ちません。
-	 * </p>
-	 *
-	 * @name view
-	 * @memberOf h5.core
-	 * @see View
-	 * @namespace
-	 */
-	h5.u.obj.expose('h5.core', {
-		view: view
-	});
 })();
 /* ------ h5.ui ------ */
 (function() {
@@ -22195,6 +22225,8 @@ var h5internal = {
 	// Cache
 	//
 	// =========================================================================
+	var isDisposing = h5internal.core.isDisposing;
+
 	// =========================================================================
 	//
 	// Privates
@@ -22234,7 +22266,7 @@ var h5internal = {
 			deep: true
 		});
 		for (var i = 0, len = controllers.length; i < len; i++) {
-			if(!h5internal.core.isDisposing(controllers[i])) {
+			if (!isDisposing(controllers[i])) {
 				controllers[i].dispose();
 			}
 		}
@@ -22948,8 +22980,60 @@ var h5internal = {
 		new RMIReceiver();
 	}
 
-	function InvocationProxy() {
+	/**
+	 * シーンクラス
+	 * <p>
+	 * コントローラ化の際に、コントローラに"scene"プロパティが追加され、コントローラごとに生成されるこのクラスのインスタンスが格納されます
+	 * </p>
+	 *
+	 * @class
+	 */
+	/**
+	 * @private
+	 * @param {Controller} controller
+	 */
+	function Scene(controller) {
+		this.__controller = controller;
+	}
 
+	$.extend(Scene.prototype, {
+		/**
+		 * シーン遷移イベントを発行します。
+		 *
+		 * @param {String|Object} data
+		 * @memberOf ControllerScene
+		 */
+		navigate: function(data) {
+			if (isDisposing(this.__controller)) {
+				// TODO エラー
+				return;
+			}
+			this.__controller.trigger(EVENT_SCENE_CHANGE_REQUEST, data);
+		},
+
+		/**
+		 * このコントローラを直接包含しているシーンコンテナを取得します。
+		 * <p>
+		 * シーンコンテナ要素が存在しない、またはシーンコンテナ未生成の場合はnullを返却します。
+		 * </p>
+		 *
+		 * @returns {SceneContainerController} シーンコンテナ
+		 * @memberOf ControllerScene
+		 */
+		getParentSceneContainer: function() {
+			if (isDisposing(this.__controller)) {
+				return null;
+			}
+			var element = getParentContainer(this.__controller.rootElement);
+			if (!element) {
+				return null;
+			}
+			return getSceneContainer(element);
+		}
+	});
+
+	function InvocationProxy() {
+	// 空コンストラクタ
 	}
 
 	function RemoteWindow(url, windowName, features, isModal) {
@@ -23134,67 +23218,65 @@ var h5internal = {
 		// TODO htmlだとスクリプトが実行されてしまうのでフルHTMLが返されるとよくない
 		// 部分HTML取得の場合のことを考慮。
 		var xhr = h5.ajax({
-			url : source,
-			dataType : 'html'
+			url: source,
+			dataType: 'html'
 		});
 
-		xhr.done(
-				function(data) {
+		xhr
+				.done(
+						function(data) {
 
-					// TODO(鈴木) ここでdataからbody部分のみ抜く。
-					data = extractBody(data);
+							// TODO(鈴木) ここでdataからbody部分のみ抜く。
+							data = extractBody(data);
 
-					// 先頭が表示文字列テキストノードの場合はコンテナ要素で囲む
-					if (startByTextRegexp.test(data)) {
-						data = '<div ' + DATA_H5_CONTAINER + '>' + data
-								+ '</div>';
-					}
+							// 先頭が表示文字列テキストノードの場合はコンテナ要素で囲む
+							if (startByTextRegexp.test(data)) {
+								data = '<div ' + DATA_H5_CONTAINER + '>' + data + '</div>';
+							}
 
-					var $dom = $(data);
+							var $dom = $(data);
 
-					if (container) {
-						var $container = findWithSelf($dom, '['
-								+ DATA_H5_CONTAINER + '="' + container + '"]');
-						if ($container.length === 0) {
-							// ロードしたHTML内に指定のコンテナが存在しない場合はエラー
-							throwFwError(ERR_CODE_TARGET_CONTAINER_NOT_FOUND, [
-									source, container ]);
-						}
-						$dom = $container.eq(0);
-					} else {
-						// TODO(鈴木)
-						// mainタグかdata-main-container属性要素があればその内容を対象とする。
-						// 通常のシーンコンテナ内にmainとdata-main-containerはない前提。
-						var main = findWithSelf($dom, '['
-								+ DATA_H5_MAIN_CONTAINER + ']');
-						// TODO(鈴木)
-						// 現状のフラグに基づいて遷移先のHTMLからメインシーンコンテナに該当する部分を抽出。
-						// さすがに遷移先HTMLでのフラグ状態までは見られない。。
-						if (h5.settings.scene.autoCreateMainContainer) {
-							if (main.length === 0)
-								main = findWithSelf($dom, 'main');
-						}
-						if (main.length > 0) {
-							$dom = main.eq(0);
-							$dom.attr(DATA_H5_MAIN_CONTAINER,
-									DATA_H5_MAIN_CONTAINER);
-						}
-					}
+							if (container) {
+								var $container = findWithSelf($dom, '[' + DATA_H5_CONTAINER + '="'
+										+ container + '"]');
+								if ($container.length === 0) {
+									// ロードしたHTML内に指定のコンテナが存在しない場合はエラー
+									throwFwError(ERR_CODE_TARGET_CONTAINER_NOT_FOUND, [source,
+											container]);
+								}
+								$dom = $container.eq(0);
+							} else {
+								// TODO(鈴木)
+								// mainタグかdata-main-container属性要素があればその内容を対象とする。
+								// 通常のシーンコンテナ内にmainとdata-main-containerはない前提。
+								var main = findWithSelf($dom, '[' + DATA_H5_MAIN_CONTAINER + ']');
+								// TODO(鈴木)
+								// 現状のフラグに基づいて遷移先のHTMLからメインシーンコンテナに該当する部分を抽出。
+								// さすがに遷移先HTMLでのフラグ状態までは見られない。。
+								if (h5.settings.scene.autoCreateMainContainer) {
+									if (main.length === 0)
+										main = findWithSelf($dom, 'main');
+								}
+								if (main.length > 0) {
+									$dom = main.eq(0);
+									$dom.attr(DATA_H5_MAIN_CONTAINER, DATA_H5_MAIN_CONTAINER);
+								}
+							}
 
-					// ルート要素が複数か、単一でもコンテナ要素、またはBODYのダミーでなければコンテナ要素で囲む
-					if ($dom.length > 1
-							|| (!isContainer($dom) && !$dom.is('['
-									+ DATA_H5_DYN_DUMMY_BODY + ']'))) {
-						$dom = $('<div ' + DATA_H5_CONTAINER + '></div>').append($dom);
-					}
+							// ルート要素が複数か、単一でもコンテナ要素、またはBODYのダミーでなければコンテナ要素で囲む
+							if ($dom.length > 1
+									|| (!isContainer($dom) && !$dom.is('[' + DATA_H5_DYN_DUMMY_BODY
+											+ ']'))) {
+								$dom = $('<div ' + DATA_H5_CONTAINER + '></div>').append($dom);
+							}
 
-					wrapScene($dom);
+							wrapScene($dom);
 
-					dfd.resolve($dom.children());
+							dfd.resolve($dom.children());
 
-				}).fail(function(error) {
-			dfd.reject(error);
-		});
+						}).fail(function(error) {
+					dfd.reject(error);
+				});
 
 		return dfd;
 	}
@@ -23311,8 +23393,7 @@ var h5internal = {
 	/**
 	 * シーンコンテナクラス
 	 * <p>
-	 * 実体はコントローラーです。
-	 * シーンコンテナを生成する場合はh5.scene.createSceneContainer()を使用してください。
+	 * 実体はコントローラーです。 シーンコンテナを生成する場合はh5.scene.createSceneContainer()を使用してください。
 	 * </p>
 	 *
 	 * @class
@@ -23320,7 +23401,7 @@ var h5internal = {
 	 */
 	var SceneContainerController = {
 
-		__name : 'h5.scene.SceneContainerController',
+		__name: 'h5.scene.SceneContainerController',
 
 		/**
 		 * メインシーンコンテナであるか否か
@@ -23329,7 +23410,7 @@ var h5internal = {
 		 * @type Boolean
 		 * @memberOf SceneContainerController
 		 */
-		isMain : false,
+		isMain: false,
 
 		/**
 		 * 画面遷移効果
@@ -23337,7 +23418,7 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_transition : null,
+		_transition: null,
 
 		/**
 		 * 現在表示しているシーンのコントローラー
@@ -23345,7 +23426,7 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_currentController : null,
+		_currentController: null,
 
 		/**
 		 * リンククリックジャックによるシーン遷移の可否
@@ -23353,7 +23434,7 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_isClickjackEnabled : false,
+		_isClickjackEnabled: false,
 
 		/**
 		 * シーン遷移時に使用するDeferredオブジェクト
@@ -23361,7 +23442,7 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_dfd : null,
+		_dfd: null,
 
 		/**
 		 * changeScene経由で_changeSceneを実行したか否か
@@ -23369,11 +23450,10 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_isNavigated : false,
+		_isNavigated: false,
 
 		/**
 		 * メインシーンコンテナでURLを連動せずにシーンを遷移する場合を識別するためのフラグ
-		 *
 		 * <p>
 		 * 初期はtrueで連動せず。初期処理完了後にfalseにする。
 		 * </p>
@@ -23381,7 +23461,7 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		_notPushState : true,
+		_notPushState: true,
 
 		/**
 		 * __init
@@ -23389,11 +23469,11 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		__init : function(context) {
+		__init: function(context) {
 
 			var args = context.args || {};
 
-			var element  = this.rootElement;
+			var element = this.rootElement;
 			var isMain = args.isMain;
 			/*var initialSceneInfo = args.initialSceneInfo;*/
 
@@ -23412,7 +23492,8 @@ var h5internal = {
 			this._transition = this._createTransition();
 			this._transition.onChangeStart(element);
 
-			this._containerName = $(element).attr(DATA_H5_MAIN_CONTAINER) || $(element).attr(DATA_H5_CONTAINER);
+			this._containerName = $(element).attr(DATA_H5_MAIN_CONTAINER)
+					|| $(element).attr(DATA_H5_CONTAINER);
 
 			// TODO(鈴木) シーンコンテナ下はコントローラーを管理
 			this._currentController = null;
@@ -23420,7 +23501,8 @@ var h5internal = {
 			// TODO(鈴木) コンテナ内にシーン要素がなければ追加する
 			wrapScene(element);
 
-			this.on('{rootElement}', EVENT_SCENE_CHANGE_REQUEST, this.own(this._onSceneChangeRequest));
+			this.on('{rootElement}', EVENT_SCENE_CHANGE_REQUEST, this
+					.own(this._onSceneChangeRequest));
 
 
 			var param = {};
@@ -23433,7 +23515,7 @@ var h5internal = {
 
 				//_isClickjackEnabledがtrueの場合のみ有効。
 				//TODO:フラグのセット方法
-				if(this._isClickjackEnabled){
+				if (this._isClickjackEnabled) {
 					this.on('{a}', 'click', this.own(this._onAClick));
 				}
 
@@ -23451,14 +23533,12 @@ var h5internal = {
 				// TODO(鈴木)  _currentControllerへの登録等は内部で行われるので後続処理は不要
 			}else{
 			*/
-				// TODO(鈴木) カレントとなるシーンを探索してscan
-				scanForContainer(element, null, param.args).done(
-						function(controller) {
-							that._currentController = controller;
-							that._transition.onChangeEnd(that.rootElement,
-									null, element);
-							that._transition = null;
-						});
+			// TODO(鈴木) カレントとなるシーンを探索してscan
+			scanForContainer(element, null, param.args).done(function(controller) {
+				that._currentController = controller;
+				that._transition.onChangeEnd(that.rootElement, null, element);
+				that._transition = null;
+			});
 			/*}*/
 
 		},
@@ -23469,9 +23549,9 @@ var h5internal = {
 		 * @private
 		 * @memberOf SceneContainerController
 		 */
-		__dispose : function(){
+		__dispose: function() {
 
-			if(!h5internal.core.isDisposing(this._currentController)) {
+			if (!isDisposing(this._currentController)) {
 				this._currentController.dispose();
 			}
 
@@ -23486,7 +23566,7 @@ var h5internal = {
 		 * @memberOf SceneContainerController
 		 * @param context
 		 */
-		_onAClick : function(context) {
+		_onAClick: function(context) {
 			context.event.preventDefault();
 			var href = context.event.originalEvent.target.href;
 			this.changeScene(href);
@@ -23494,7 +23574,6 @@ var h5internal = {
 
 		/**
 		 * 画面遷移時のpopState時のコールバック
-		 *
 		 * <p>
 		 * メインシーンコンテナの場合のみ有効。
 		 * </p>
@@ -23503,7 +23582,7 @@ var h5internal = {
 		 * @memberOf SceneContainerController
 		 * @param context
 		 */
-		_onWindowPopstate : function(context) {
+		_onWindowPopstate: function(context) {
 			// TODO(鈴木) 現状はURLでパラメーター渡しはしない
 			// var param = toQueryParams((location.search || '').substring(1));
 			// this._changeScene(location.href, param);
@@ -23518,7 +23597,7 @@ var h5internal = {
 		 * @memberOf SceneContainerController
 		 * @param context
 		 */
-		_onSceneChangeRequest : function(context) {
+		_onSceneChangeRequest: function(context) {
 			context.event.stopPropagation();
 			setTimeout(this.own(function() {
 				this.changeScene(context.evArg);
@@ -23542,29 +23621,25 @@ var h5internal = {
 		 * </li>
 		 * </ul>
 		 *
-		 * @param {String|Object} param
-		 *            遷移先文字列、または遷移用オプション。
+		 * @param {String|Object} param 遷移先文字列、または遷移用オプション。
 		 *            <p>
 		 *            遷移先文字列の場合は、HTMLを返却するURLか、コントローラーの__name属性を指定します。<br>
 		 *            遷移用オプションの場合は、以下のプロパティを持ちます。
 		 *            </p>
-		 * @param {String} param.to
-		 *            遷移先指定。HTMLを返却するURLか、コントローラーの__name属性を指定します。指定必須です。
+		 * @param {String} param.to 遷移先指定。HTMLを返却するURLか、コントローラーの__name属性を指定します。指定必須です。
 		 * @param {String}[param.transition='default']
 		 *            遷移効果指定。指定しない場合は'default'が使用されます。(現在、'default'以外は指定できません)
-		 * @param {String}[param.container]
-		 *            toで指定される要素内の部分を表示する場合、その要素のdata-h5-container属性の値を指定します。
-		 * @param {Any}[param.args]
-		 *            デフォルトシーンに対応するコントローラー生成時に渡されるパラメータを指定します。
+		 * @param {String}[param.container] toで指定される要素内の部分を表示する場合、その要素のdata-h5-container属性の値を指定します。
+		 * @param {Any}[param.args] デフォルトシーンに対応するコントローラー生成時に渡されるパラメータを指定します。
 		 * @returns {Promise} Promiseオブジェクト。遷移完了時にresolveを実行します。
 		 * @memberOf SceneContainerController
 		 */
-		changeScene : function(param) {
+		changeScene: function(param) {
 
 			// TODO(鈴木) paramが文字列の場合は遷移先と見なして再帰呼び出しする
 			if (isString(param)) {
 				return this.changeScene({
-					to : param
+					to: param
 				});
 			}
 
@@ -23596,35 +23671,32 @@ var h5internal = {
 
 				if (!isString(to)) {
 					// シーン遷移先に文字列以外を指定されたらエラー
-					throwFwError(ERR_CODE_CHANGE_SCENE_TO_IS_NOT_STRING, [ to ]);
+					throwFwError(ERR_CODE_CHANGE_SCENE_TO_IS_NOT_STRING, [to]);
 				}
 				if (to.indexOf('#') !== -1) {
 					// シーン遷移先にハッシュを指定されたらエラー
-					throwFwError(ERR_CODE_CHANGE_SCENE_HASH_IN_TO, [ to ]);
+					throwFwError(ERR_CODE_CHANGE_SCENE_HASH_IN_TO, [to]);
 				}
 				if (controllerRegexp.test(to)) {
 					// メインシーンコンテナで遷移先にコントローラーを指定されたらエラー(暫定)
-					throwFwError(ERR_CODE_MAIN_CHANGE_SCENE_TO_IS_CONTROLLER,
-							[ to ]);
+					throwFwError(ERR_CODE_MAIN_CHANGE_SCENE_TO_IS_CONTROLLER, [to]);
 				}
 
 				/*if(this.isInit){ // TODO(鈴木) 初期表示シーンの場合はURL連動しない。*/
-					// TODO(鈴木) パラメータをエンコードしてURLに付加
-					// ※現在シリアライズ方式検討中のため、パラメータの付加はしない
-					// to += ((to.indexOf('?') === -1) ? '?' : '&') +
-					// $.param(param);
-					pushState(null, null, toAbsoluteUrl(to));
+				// TODO(鈴木) パラメータをエンコードしてURLに付加
+				// ※現在シリアライズ方式検討中のため、パラメータの付加はしない
+				// to += ((to.indexOf('?') === -1) ? '?' : '&') +
+				// $.param(param);
+				pushState(null, null, toAbsoluteUrl(to));
 				/*}*/
 
 				// TODO(鈴木) URLから遷移したいが、↑のためパラメータが付加されていないので、
 				// 直接_changeSceneを呼ぶ。
 				// onPopState();
-				this._changeScene(to, h5.u.obj.deserialize(h5.u.obj
-						.serialize(param)));
+				this._changeScene(to, h5.u.obj.deserialize(h5.u.obj.serialize(param)));
 
 			} else {
-				this._changeScene(to, h5.u.obj.deserialize(h5.u.obj
-						.serialize(param)));
+				this._changeScene(to, h5.u.obj.deserialize(h5.u.obj.serialize(param)));
 			}
 
 			return dfd.promise();
@@ -23638,7 +23710,7 @@ var h5internal = {
 		 * @param to
 		 * @param param
 		 */
-		_changeScene : function(to, param) {
+		_changeScene: function(to, param) {
 
 			param = param || {};
 
@@ -23675,33 +23747,28 @@ var h5internal = {
 				if (controllerRegexp.test(to)) {
 
 					// TODO(鈴木)
-					loadController(to, $('<div></div>'), param.args).done(
-							function(toController) {
-								that._onLoadController(toController, fromElm);
-							});
+					loadController(to, $('<div></div>'), param.args).done(function(toController) {
+						that._onLoadController(toController, fromElm);
+					});
 
 				} else {
 					// TODO(鈴木) HTMLの対象部分抽出はloadContentsFromUrlに実装。
 					// 1.2.0では、URLにパラメーターを保存しないため、メインシーンコンテナの場合はcontainer指定は無効とする
-					var loadPromise = loadContents(to,
-							(!this.isMain) ? param.container : null);
+					var loadPromise = loadContents(to, (!this.isMain) ? param.container : null);
 
 					loadPromise.done(
 							function(toElm) {
 								// TODO(鈴木) DATA属性に基づいてコントローラーバインド・コンテナ生成
 								// TODO(鈴木) scan用にダミーのDIVにappend
-								scanForContainer(
-										$('<div></div>').append(toElm), null,
-										param.args).done(
-										function(toController) {
-											that._onLoadController(
-													toController, fromElm);
+								scanForContainer($('<div></div>').append(toElm), null, param.args)
+										.done(function(toController) {
+											that._onLoadController(toController, fromElm);
 										});
 
 							}).fail(function(xhr) {
 
 						// シーン遷移先HTMLのロードに失敗
-						throwFwError(ERR_CODE_HTML_LOAD_FAILED, [ to ], xhr);
+						throwFwError(ERR_CODE_HTML_LOAD_FAILED, [to], xhr);
 
 					});
 				}
@@ -23716,13 +23783,12 @@ var h5internal = {
 		 * @memberOf SceneContainerController
 		 * @param type
 		 */
-		_createTransition : function(type) {
-			var Transition = transitionTypeMap[type != null ? type
-					: DEFAULT_SCENE_TRANSITION_TYPE];
+		_createTransition: function(type) {
+			var Transition = transitionTypeMap[type != null ? type : DEFAULT_SCENE_TRANSITION_TYPE];
 
 			if (!Transition) {
 				// 指定された遷移効果が存在しない場合はエラー
-				throwFwError(ERR_CODE_TRANSITION_NOT_FOUND, [ type ]);
+				throwFwError(ERR_CODE_TRANSITION_NOT_FOUND, [type]);
 			}
 
 			return new Transition();
@@ -23736,7 +23802,7 @@ var h5internal = {
 		 * @param toController
 		 * @param fromElm
 		 */
-		_onLoadController : function(toController, fromElm) {
+		_onLoadController: function(toController, fromElm) {
 
 			var that = this;
 
@@ -23748,8 +23814,8 @@ var h5internal = {
 
 				if (this._dfd) {
 					this._dfd.resolve({
-						from : fromElm,
-						to : toElm
+						from: fromElm,
+						to: toElm
 					});
 				}
 
@@ -23776,11 +23842,13 @@ var h5internal = {
 	 *
 	 * @memberOf h5.scene
 	 * @param {Element} element シーンコンテナ生成対象要素。
-	 * @param {Boolean} [isMain=false]
-	 *            メインシーンコンテナとするか否か。
+	 * @param {Boolean} [isMain=false] メインシーンコンテナとするか否か。
 	 *            <dl>
-	 *            <dt>メインシーンコンテナとする<dt><dd>true</dd>
-	 *            <dt>メインシーンコンテナとしない</dt><dd>false(デフォルト)</dd>
+	 *            <dt>メインシーンコンテナとする
+	 *            <dt>
+	 *            <dd>true</dd>
+	 *            <dt>メインシーンコンテナとしない</dt>
+	 *            <dd>false(デフォルト)</dd>
 	 *            </dl>
 	 * @returns {SceneContainerController} 生成したシーンコンテナのインスタンス。
 	 */
@@ -23808,13 +23876,12 @@ var h5internal = {
 			}
 		}
 
-		var container = h5internal.core.controllerInternal(element,
-				SceneContainerController, {
-					isMain : isMain
-					/*initialSceneInfo : param*/
-				}, {
-					async : false
-				});
+		var container = h5internal.core.controllerInternal(element, SceneContainerController, {
+			isMain: isMain
+		/*initialSceneInfo : param*/
+		}, {
+			async: false
+		});
 
 		$(element).attr(DATA_H5_DYN_CONTAINER_BOUND, DATA_H5_DYN_CONTAINER_BOUND);
 
@@ -23850,9 +23917,7 @@ var h5internal = {
 	 * 指定要素およびその配下のシーンコンテナを取得します
 	 *
 	 * @memberOf h5.scene
-	 * @param {Element}
-	 *            [rootElement=document.body]
-	 *            走査先頭要素。指定しない場合はドキュメント全体を対象とします。
+	 * @param {Element} [rootElement=document.body] 走査先頭要素。指定しない場合はドキュメント全体を対象とします。
 	 * @returns {SceneContainerController[]} シーンコンテナの配列。
 	 */
 	function getAllSceneContainers(rootElement) {
@@ -23870,15 +23935,16 @@ var h5internal = {
 	 * シーンコンテナを取得します。
 	 *
 	 * @memberOf h5.scene
-	 * @param {String|Element}
-	 *            nameOrElement 文字列、要素が指定できます。
+	 * @param {String|Element} nameOrElement 文字列、要素が指定できます。
 	 *            <dl>
 	 *            <dt>文字列の場合</dt>
 	 *            <dd>取得対象とする要素のdata-h5-container属性まはたdata-h5-main-container属性の値とみなし、その要素に対応するシーンコンテナを返却します。</dd>
 	 *            <dt>要素の場合</dt>
 	 *            <dd>その要素に対応するシーンコンテをを返却します。</dd>
 	 *            </dl>
-	 *            <p>いずれの場合も、該当がない場合はnullを返却します。</p>
+	 *            <p>
+	 *            いずれの場合も、該当がない場合はnullを返却します。
+	 *            </p>
 	 * @returns {SceneContainerController} シーンコンテナ
 	 */
 	function getSceneContainer(nameOrElement) {
@@ -23891,19 +23957,19 @@ var h5internal = {
 
 		if (isString(nameOrElement)) {
 			name = nameOrElement;
-		}else{
+		} else {
 			element = nameOrElement;
 		}
 
 		var containers = getAllSceneContainers(element);
 
-		if(containers.length === 0){
+		if (containers.length === 0) {
 			return null;
 		}
 
-		if(name){
-			for(var i = 0; i < containers.length; i++){
-				if(containers[i]._containerName === name){
+		if (name) {
+			for (var i = 0; i < containers.length; i++) {
+				if (containers[i]._containerName === name) {
 					return containers[i];
 				}
 			}
@@ -23914,44 +23980,15 @@ var h5internal = {
 
 	}
 
-	/**
-	 * シーン遷移イベントを発行します。
-	 *
-	 * @param {String|Object}
-	 *            data
-	 * @memberOf Controller
-	 */
-	function triggerSceneChange(data) {
-		this.trigger(EVENT_SCENE_CHANGE_REQUEST, data);
-	}
-
-	/**
-	 * このコントローラを直接包含しているシーンコンテナを取得します。
-	 *
-	 * <p>
-	 * シーンコンテナ要素が存在しない、またはシーンコンテナ未生成の場合はnullを返却します。
-	 * </p>
-	 *
-	 * @returns {SceneContainerController} シーンコンテナ
-	 * @memberOf Controller
-	 */
-	function getParentSceneContainer() {
-		var element = getParentContainer(this.rootElement);
-		if (!element) {
-			return null;
-		}
-		return getSceneContainer(element);
-	}
-
 	// =============================
 	// Code on boot
 	// =============================
 
-	if (h5internal.core.controllerConstructor) {
-		// Controllerのコンストラクタがあれば、sceneモジュール用の関数を追加
-		h5internal.core.controllerConstructor.prototype.triggerSceneChange = triggerSceneChange;
-		h5internal.core.controllerConstructor.prototype.getParentSceneContainer = getParentSceneContainer;
-	}
+	// フック
+	h5internal.core.addControllerInstantiationHook(function(c) {
+		// TODO controllerがすでにsceneプロパティを持っていたらエラーでよいか
+		c.scene = new Scene(c);
+	});
 
 	// TODO autoInitがtrueの場合のみinit
 	// TODO(鈴木) 暫定。とりあえず設定を有効化しました
@@ -23972,466 +24009,16 @@ var h5internal = {
 	 * @memberOf h5
 	 */
 	h5.u.obj.expose('h5.scene', {
-		openWindow : openWindow,
-		createSceneContainer : createSceneContainer,
-		init : init,
-		getMainContainer : getMainContainer,
-		scan : scan,
-		getAllSceneContainers : getAllSceneContainers,
-		getSceneContainer : getSceneContainer
+		openWindow: openWindow,
+		createSceneContainer: createSceneContainer,
+		init: init,
+		getMainContainer: getMainContainer,
+		scan: scan,
+		getAllSceneContainers: getAllSceneContainers,
+		getSceneContainer: getSceneContainer
 	});
 
 })();
-/* del begin */
-/* ------ h5.dev.api.geo ------ */
-(function() {
-	// =========================================================================
-	//
-	// Constants
-	//
-	// =========================================================================
-
-	// =============================
-	// Production
-	// =============================
-
-	// =============================
-	// Development Only
-	// =============================
-
-
-	// =========================================================================
-	//
-	// Cache
-	//
-	// =========================================================================
-	// =========================================================================
-	//
-	// Privates
-	//
-	// =========================================================================
-
-	// =============================
-	// Variables
-	// =============================
-
-	/**
-	 * 元のh5.api.geo
-	 *
-	 * @private
-	 */
-	var originalAPI = {};
-
-	/**
-	 * _watchPositionで作られたdeferredオブジェクトの配列
-	 *
-	 * @private
-	 * @type deferred[]
-	 */
-	var _dfds = [];
-	/**
-	 * _watchPositionで作られたdeferredオブジェクトに割り当てるID
-	 *
-	 * @private
-	 * @type Number
-	 */
-	var _dfdID = 0;
-	/**
-	 * _watchPositionで使用するsetInterval()のタイマーID
-	 *
-	 * @private
-	 * @type Number
-	 */
-	var _timerID = null;
-	/**
-	 * _watchPositionがデバッグ用位置情報の何番目を見ているかを設定します。
-	 *
-	 * @private
-	 * @type Number
-	 */
-	var _watchPointer = 0;
-
-	// =============================
-	// Functions
-	// =============================
-	/**
-	 * 以下の構造の位置情報オブジェクトを生成します<br>
-	 * <p>
-	 * <table border="1">
-	 * <tr>
-	 * <td>プロパティ名</td>
-	 * <td>説明</td>
-	 * </tr>
-	 * <tr>
-	 * <td>latitude</td>
-	 * <td>緯度</td>
-	 * </tr>
-	 * <tr>
-	 * <td>longitude</td>
-	 * <td>経度</td>
-	 * </tr>
-	 * <tr>
-	 * <td>accuracy</td>
-	 * <td>位置の誤差(m)</td>
-	 * </tr>
-	 * <tr>
-	 * <td>altitude</td>
-	 * <td>高度(m)</td>
-	 * </tr>
-	 * <tr>
-	 * <td>altitudeAccuracy</td>
-	 * <td>高度の誤差(m)</td>
-	 * </tr>
-	 * <tr>
-	 * <td>heading</td>
-	 * <td>方角(0～360)(度)</td>
-	 * </tr>
-	 * <tr>
-	 * <td>speed</td>
-	 * <td>速度 (m/s)</td>
-	 * </tr>
-	 * <tr>
-	 * <td>timestamp</td>
-	 * <td>時刻</td>
-	 * </tr>
-	 * </table>
-	 *
-	 * @memberOf h5.dev.api.geo
-	 * @private
-	 * @params {Object} dummyPosition dummyPositionsに格納されたオブジェクト
-	 * @returns {Object} 位置情報オブジェクト
-	 * @type Object[]
-	 */
-	function createPosition(params) {
-		var param = params || {};
-		param.timestamp = param.timestamp || new Date().getTime();
-		var coords = param.coords ? param.coords : param;
-		param.coords = {
-			latitude: coords.latitude || 0,
-			longitude: coords.longitude || 0,
-			accuracy: coords.accuracy || 0,
-			altitude: coords.altitude || null,
-			altitudeAccuracy: coords.altitudeAccuracy || null,
-			heading: coords.heading || null,
-			speed: coords.speed || null
-		};
-		return param;
-	}
-
-	// =========================================================================
-	//
-	// Body
-	//
-	// =========================================================================
-
-	// originalAPI に 元のgetCurrentPositionとwatchPositionをとっておく
-	originalAPI.getCurrentPosition = h5.api.geo.getCurrentPosition;
-	originalAPI.watchPosition = h5.api.geo.watchPosition;
-
-	/**
-	 * ※この関数はh5.dev.jsを読み込んだ場合のみ利用可能です。開発支援用機能のため、最終リリース物にh5.dev.jsやデバッグコードが混入しないよう十分ご注意ください。<br>
-	 * dummyPosiitonsへ位置情報オブジェクトを格納して使用してください。位置情報はcreatePosition()で作成することができます。
-	 *
-	 * @memberOf h5.dev.api
-	 * @name geo
-	 * @namespace
-	 */
-	var h5GeolocationSupport = {
-		/**
-		 * 強制的にロケーションの取得に失敗させるかどうか
-		 *
-		 * @memberOf h5.dev.api.geo
-		 * @type Boolean
-		 */
-		forceError: false,
-		/**
-		 * _watchPositionの座標の送信間隔(ms)
-		 *
-		 * @memberOf h5.dev.api.geo
-		 * @type Number
-		 */
-		watchIntervalTime: 1000,
-		/**
-		 * デバッグ用位置情報
-		 * <p>
-		 * 位置情報オブジェクトを格納する配列です。 以下のようなオブジェクトを格納してください。
-		 * </p>
-		 * <table class="params" style=""><thead>
-		 * <tr>
-		 * <th>Name</th>
-		 * <th>Type</th>
-		 * <th>Argument</th>
-		 * <th class="last">Description</th>
-		 * </tr>
-		 * </thead><tbody>
-		 * <tr>
-		 * <td class="name"><code>coords</code></td>
-		 * <td class="type"> Object </td>
-		 * <td class="attributes"></td>
-		 * <td class="description last">
-		 * <h6>Properties</h6>
-		 * <table class="params"><thead>
-		 * <tr>
-		 * <th>Name</th>
-		 * <th>Type</th>
-		 * <th>Argument</th>
-		 * <th>Default</th>
-		 * <th class="last">Description</th>
-		 * </tr>
-		 * </thead><tbody>
-		 * <tr>
-		 * <td class="name"><code>latitude</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> 0 </td>
-		 * <td class="description last">緯度</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>longitude</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> 0 </td>
-		 * <td class="description last">経度</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>accuracy</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> 50 </td>
-		 * <td class="description last">位置の誤差(m)</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>altitude</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> null </td>
-		 * <td class="description last">高度(m)</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>altitudeAccuracy</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> null </td>
-		 * <td class="description last">高度の誤差(m)</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>heading</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> null </td>
-		 * <td class="description last">方角(0～360)(度)</td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>speed</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="default"> null </td>
-		 * <td class="description last">速度 (m/s)</td>
-		 * </tr>
-		 * </tbody></table></td>
-		 * </tr>
-		 * <tr>
-		 * <td class="name"><code>timestamp</code></td>
-		 * <td class="type"> Number </td>
-		 * <td class="attributes"> &lt;optional&gt;<br>
-		 * </td>
-		 * <td class="description last">タイムスタンプ。省略時は取得時のタイムスタンプが自動で格納されます。</td>
-		 * </tr>
-		 * </tbody></table> <br>
-		 * <br>
-		 *
-		 * <pre>
-		 * 	例１．
-		 * 	h5.api.geo.dummyPositions.push({
-		 * 		coords:{
-		 * 			latitude: 35.45019435393257,
-		 * 			longitude: 139.6305128879394,
-		 * 			accuracy: 50,
-		 * 			altitude: 100,
-		 * 			altitudeAccuracy: 100,
-		 * 			heading: 90,
-		 * 			speed: 9
-		 * 		}
-		 * 	timestamp: 1331106454545
-		 * 	})
-		 * </pre>
-		 *
-		 * <p>
-		 * 省略したプロパティにはdefault値が入ります。timestampを省略すると、取得時に値が格納されます。
-		 * </p>
-		 *
-		 * <pre>
-		 * 	例２．
-		 * 	h5.api.geo.dummyPositions.push({
-		 * 		coords: {
-		 * 			latitude: 35.45019435393257,
-		 * 			longitude: 139.6305128879394,
-		 * 		}
-		 * 	})
-		 * </pre>
-		 *
-		 * <p>
-		 * coordsの中身だけを記述して格納することもできます。getPositionや_watchPositionでの取得時にcoordsプロパティに格納して返します。省略したプロパティにはdefault値が入ります。
-		 * timestampには取得時に値が格納されます。
-		 * </p>
-		 *
-		 * <pre>
-		 * 	例３．
-		 * 	h5.api.geo.dummyPositions.push(
-		 * 		latitude: 35.45019435393257,
-		 * 		longitude: 139.6305128879394
-		 * 	})
-		 * </pre>
-		 *
-		 * <p>
-		 * <a href="http://www.htmlhifive.com/ja/recipe/geolocation/index.html">座標データ生成ツール</a>を使うと地図から緯度と経度を求められます。
-		 * </p>
-		 *
-		 * @memberOf h5.dev.api.geo
-		 * @type Object[]
-		 */
-		dummyPositions: []
-	};
-
-	/**
-	 * dummyPositionsの先頭の位置情報を返します。dummyPositionsがオブジェクトの場合はdummyPositionsを返します。
-	 * <p>
-	 * このメソッドはh5.api.geo.getCurrentPosition()で呼びます。※ h5.dev.api.geo.getCurrentPosition()ではありません。
-	 * </p>
-	 * <p>
-	 * dummyPositionsに値が設定されていない場合は元のh5.api.geoのメソッドを実行します。
-	 * </p>
-	 *
-	 * @memberOf h5.dev.api.geo
-	 * @function
-	 * @param {Object} [option] 設定情報
-	 * @param {Boolean} [option.enableHighAccuracy] 正確な位置を取得するか (ただし消費電力の増加や応答が遅延する)
-	 * @param {Number} [option.timeout] 位置情報を取得するまで待機する時間 (ミリ秒)
-	 * @param {Number} [option.maximumAge] キャッシュされた位置情報の有効期間を指定する (ミリ秒)
-	 * @returns {Promise} Promiseオブジェクト
-	 */
-	function getCurrentPosition(option) {
-		var dfd = h5.async.deferred();
-		if (h5.dev.api.geo.forceError) {
-			setTimeout(function() {
-				dfd.reject({
-					code: 'forceError'
-				});
-			}, 0);
-			return dfd.promise();
-		}
-
-		var positions = h5.dev.api.geo.dummyPositions;
-		if (!positions || positions.length === 0) {
-			return originalAPI.getCurrentPosition(option);
-		}
-		// dummyPositionsが配列でない場合も対応する
-		var positionsAry = wrapInArray(positions);
-
-		setTimeout(function() {
-			dfd.resolve(createPosition(positionsAry[0]));
-		}, 0);
-		return dfd.promise();
-	}
-
-	/**
-	 * dummyPositionsの緯度・緯度を順番に返します。 dummyPositionsの末尾まで到達すると、末尾の要素を返し続けます。
-	 * <p>
-	 * このメソッドはh5.api.geo.watchPosition()で呼びます。※ h5.dev.api.geo.watchtPosition()ではありません。
-	 * </p>
-	 * <p>
-	 * dummyPositionsに値が設定されていない場合は元のh5.api.geoのメソッドを実行します。
-	 * </p>
-	 *
-	 * @memberOf h5.dev.api.geo
-	 * @function
-	 * @name watchPosition
-	 * @param {Object} [option] 設定情報
-	 * @param {Boolean} [option.enableHighAccuracy] 正確な位置を取得するか (ただし消費電力の増加や応答が遅延する)
-	 * @param {Number} [option.timeout] 位置情報を取得するまで待機する時間 (ミリ秒)
-	 * @param {Number} [option.maximumAge] キャッシュされた位置情報の有効期間を指定する (ミリ秒)
-	 * @returns {WatchPositionPromise} WatchPositionPromiseオブジェクト
-	 */
-	function watchPosition(option) {
-		var dfd = h5.async.deferred();
-		if (h5.dev.api.geo.forceError) {
-			setTimeout(function() {
-				dfd.reject({
-					code: 'forceError'
-				});
-			}, 0);
-			return dfd.promise();
-		}
-		// dummyPositionsが配列でない場合も対応する
-		var dummyPos = wrapInArray(h5.dev.api.geo.dummyPositions);
-		if (dummyPos.length === 0) {
-			return originalAPI.watchPosition(option);
-		}
-
-		var watchID = _dfdID++;
-		// WatchPositionPromiseクラス
-		// _watchPositionはこのクラスをプロミス化して返す。
-		var WatchPositionPromise = function() {
-		// コンストラクタ
-		};
-		// promiseオブジェクトにunwatchメソッドを付加
-		WatchPositionPromise.prototype = {
-			// unwatchを呼び出したdeferredを_dfds[]から削除
-			unwatch: function() {
-				_dfds[watchID] && _dfds[watchID].resolve();
-				delete _dfds[watchID];
-				setTimeout(function() {
-					// deferredオブジェクトがすべてなくなったらタイマーの停止
-					// dummyPositionsの見ている位置を0に戻す。
-					if ($.isEmptyObject(_dfds)) {
-						clearInterval(_timerID);
-						_timerID = null;
-						_watchPointer = 0;
-					}
-				}, 0);
-			}
-		};
-
-		setTimeout(function() {
-			_dfds[watchID] = dfd;
-			if (_timerID === null) {
-				var intervalFunc = function() {
-					var pos;
-					if (_watchPointer >= dummyPos.length) {
-						pos = dummyPos[dummyPos.length - 1];
-					} else {
-						pos = dummyPos[_watchPointer++];
-					}
-					for ( var id in _dfds) {
-						_dfds[id].notify(createPosition(pos));
-					}
-				};
-				intervalFunc();
-				_timerID = setInterval(intervalFunc, h5.dev.api.geo.watchIntervalTime);
-			}
-		}, 0);
-		return dfd.promise(new WatchPositionPromise(watchID));
-	}
-
-	// =============================
-	// Expose to window
-	// =============================
-
-	// getCurrentPosition と watchPosition を上書きする。
-	$.extend(h5.api.geo, {
-		getCurrentPosition: getCurrentPosition,
-		watchPosition: watchPosition
-	});
-	h5.u.obj.expose('h5.dev.api.geo', h5GeolocationSupport);
-})();
-/* del end */
 
 	/* del begin */
 	var fwLogger = h5.log.createLogger('h5');

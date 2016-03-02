@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スクロールグリッド</title>
+
+<!-- CSS ---------->
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+<link href="../../src/datagrid.css" rel="stylesheet">
+<link href="verticalScrollGrid.css" rel="stylesheet">
+
+<!-- JS ---------->
+<!--[if lt IE 9]>
+<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<script src="/hifive-res/ext/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<!-- grid必要ライブラリ -->
+<script src="../../src/datagrid.js"></script>
+
+<script src="data.js"></script>
+<script src="verticalScrollGrid.js"></script>
+</head>
+
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col">
+				<form class="create-record-form" role="form">
+					<div class="control-group">
+						<label class="control-label" for="inputEmail">表示件数 <input type="text" name="num-of-record" value="1000"
+							placeholder="">
+						</label> <input type="submit" class="btn btn-default apply-num-of-record" value="データ生成"></input>
+					</div>
+				</form>
+				<p>
+					<a href="#" id="showSelectedDataIds">選択社員ID</a>:&nbsp;<span id="selectedDataIds"></span>
+				</p>
+
+				<div class="row">
+					<div id="grid" class="col-md-9"></div>
+					グリッドレコード情報
+					<div class="col-md-3 gridCellInfo"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

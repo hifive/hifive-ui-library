@@ -105,9 +105,6 @@
 			this.view.append('.artboard', 'h5-artboard-canvas-wrapper', size);
 			this._$canvasWrapper = this.$find('.h5-artboard-canvas-wrapper');
 
-			// ラッパーのサイズ指定
-			this._$canvasWrapper.css(size);
-
 			// Toolbarの配置
 			this.view.append(this.rootElement, 'toolbar', {
 				colors: ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#00FFFF',
@@ -365,6 +362,16 @@
 		},
 
 		/**
+		 * カンバスサイズ変更
+		 *
+		 * @memberOf sample.PageController
+		 */
+		'{this._$toolbar} setSize': function(ctx) {
+			var size = ctx.evArg;
+			this._artboardController.setSize(size.width, size.height);
+		},
+
+		/**
 		 * 保存
 		 * <p>
 		 * 作業内容を保存してかつimgとして出力も行う
@@ -372,7 +379,8 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} save': function() {
+		'{this._$toolbar} save': function(ctx) {
+			var option = ctx.evArg;
 			// 保存
 			this._artboardController.unselectAll();
 			var artboardSaveData = this._artboardController.save(true);
@@ -381,15 +389,14 @@
 
 			// imgとしてエクスポート
 			var label = sample.util.dateFormat(new Date());
-			this._artboardController.getImage('imgage/png', {
-				simulateItalic: true
-			}).done(this.own(function(dataUrl) {
-				this.view.prepend(this._$savedImgWrapper, 'saved-img', {
-					dateStr: label,
-					dataUrl: dataUrl,
-					saveNo: saveNo
-				});
-			}));
+			this._artboardController.getImage('imgage/png', option).done(
+					this.own(function(dataUrl) {
+						this.view.prepend(this._$savedImgWrapper, 'saved-img', {
+							dateStr: label,
+							dataUrl: dataUrl,
+							saveNo: saveNo
+						});
+					}));
 		},
 
 		/**

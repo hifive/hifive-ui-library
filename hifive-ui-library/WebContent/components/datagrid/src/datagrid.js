@@ -6487,7 +6487,7 @@
 			v.property('sortAscIconClasses', function(v) {
 				v.notNull();
 				v.array();
-				v.values(function() {
+				v.values(function(v) {
 					v.notNull();
 					v.type('string');
 				});
@@ -6495,7 +6495,7 @@
 			v.property('sortDescIconClasses', function(v) {
 				v.notNull();
 				v.array();
-				v.values(function() {
+				v.values(function(v) {
 					v.notNull();
 					v.type('string');
 				});
@@ -6503,7 +6503,7 @@
 			v.property('sortClearIconClasses', function(v) {
 				v.notNull();
 				v.array();
-				v.values(function() {
+				v.values(function(v) {
 					v.notNull();
 					v.type('string');
 				});
@@ -6858,51 +6858,52 @@
 
 	/**
 	 * @private
-	 * @param {DataSet} dataSet
+	 * @param {Array.<Data>} dataArray
+	 * @param {PropertyName} idProperty
 	 * @param {LocalSearchParam} searchParam
-	 * @returns {Array.<LocalSearchedData>}
+	 * @returns {Array.<Data>}
 	 */
-	function searchData(dataSet, searchParam) {
+	function searchDataArray(dataArray, idProperty, searchParam) {
 		var validator = createArgsValidator(NAMESPACE + ':private');
 
-		validator.arg('dataSet', dataSet, type.validateDataSet);
+		validator.arg('dataArray', dataArray, function(v) {
+			v.notNull();
+			v.array();
+			v.values(type.validateData);
+		});
+		validator.arg('idProperty', idProperty, type.validatePropertyName);
 		validator.arg('searchParam', searchParam, type.validateLocalSearchParam);
+
 
 		var filterFunctions = util.map(searchParam.filter, function(filter) {
 			if ($.isFunction(filter)) {
-				return function(wrapData) {
-					return filter(wrapData.data);
+				return function(data) {
+					return filter(data);
 				};
 			}
 
 			var propertyName = filter.property;
 			if (filter.predicate != null) {
-				return function(wrapData) {
-					return filter.predicate(wrapData.data[propertyName]);
+				return function(data) {
+					return filter.predicate(data[propertyName]);
 				};
 			}
 
 			if (filter.regexp != null) {
-				return function(wrapData) {
-					return filter.regexp.test(wrapData.data[propertyName]);
+				return function(data) {
+					return filter.regexp.test(data[propertyName]);
 				};
 			}
 
-			return function(wrapData) {
-				return filter.value === wrapData.data[propertyName];
+			return function(data) {
+				return filter.value === data[propertyName];
 			};
 		});
 
-		var sortParams = searchParam.sort;
-		if (sortParams == null) {
-			sortParams = [];
-		}
-
-
-		function filter(wrapData) {
+		function filter(data) {
 			for (var i = 0, len = filterFunctions.length; i < len; i++) {
 				var filterFunction = filterFunctions[i];
-				if (!filterFunction(wrapData)) {
+				if (!filterFunction(data)) {
 					return false;
 				}
 			}
@@ -6910,14 +6911,19 @@
 			return true;
 		}
 
-		function compareWithoutTree(a, b) {
+		var sortParams = searchParam.sort;
+
+		function compare(a, b) {
+			var aData = a.data;
+			var bData = b.data;
+
 			for (var i = 0, len = sortParams.length; i < len; i++) {
 				var sortParam = sortParams[i];
 				var propertyName = sortParam.property;
 				var isDesc = sortParam.order === 'desc';
 
-				var aValue = a[propertyName];
-				var bValue = b[propertyName];
+				var aValue = aData[propertyName];
+				var bValue = bData[propertyName];
 
 				// MEMO: 文字列と null を比較するとおかしくなるので特別扱いする
 				if (aValue == null && bValue != null) {
@@ -6937,133 +6943,33 @@
 					return isDesc ? -1 : 1;
 				}
 			}
-			return 0;
-		}
 
-		function compare(a, b) {
-
-			// tree がないとき
-			if (searchParam.tree == null) {
-				return compareWithoutTree(a.data, b.data);
-			}
-
-			// tree があるとき
-			var aPath = a.tree.path;
-			var bPath = b.tree.path;
-			var aLen = aPath.length;
-			var bLen = bPath.length;
-
-			// ルートから比較していく
-			for (var i = 1; i <= aLen && i <= bLen; i++) {
-				var aId = aPath[aLen - i];
-				var aData = dataSet[aId];
-
-				var bId = bPath[bLen - i];
-				var bData = dataSet[bId];
-
-				var compared = compareWithoutTree(aData, bData);
-				if (compared !== 0) {
-					return compared;
-				}
-			}
-
-			var aPathStr = aPath.join('/');
-			var bPathStr = bPath.join('/');
-
-			if (aPathStr < bPathStr) {
+			// MEMO: 最後は index で並べる
+			if (a.index < b.index) {
 				return -1;
-			}
-			if (aPathStr === bPathStr) {
-				return 0;
 			}
 			return 1;
 		}
 
-		var array = util.map(dataSet, function(data, dataId) {
+		var filtered = util.map($.grep(dataArray, filter), function(data) {
+			return data;
+		});
+
+		if (sortParams == null) {
+			return filtered;
+		}
+
+		var wraped = util.map(filtered, function(data, index) {
 			return {
-				dataId: dataId,
+				index: index,
 				data: data
 			};
 		});
 
-		var filtered = $.grep(array, filter);
-
-		// ツリーの場合は子が表示されるのであれば親もする
-		if (searchParam.tree != null) {
-
-			var treeParam = searchParam.tree;
-			var parentProperty = treeParam.parentProperty;
-			var treePathSet = calcTreePath(dataSet, parentProperty);
-
-			var filteredMap = util.mapObject(filtered, function(wrapData) {
-				wrapData.tree = {
-					path: treePathSet[wrapData.dataId],
-					hasChild: false,
-					isOpen: false
-				};
-
-				return {
-					key: wrapData.dataId,
-					value: wrapData
-				};
-			});
-
-			// 親でないものは強制的に追加
-			util.forEach(filtered, function(wrapData) {
-				var path = wrapData.tree.path;
-
-				for (var i = 1, len = path.length; i < len; i++) {
-					var parentId = path[i];
-					if (util.hasProperty(filteredMap, parentId)) {
-						break;
-					}
-
-					var parentData = dataSet[parentId];
-					filteredMap[parentId] = {
-						dataId: parentId,
-						tree: {
-							path: treePathSet[parentId],
-							hasChild: true,
-							isOpen: false
-						},
-						data: parentData
-					};
-				}
-			});
-
-			// hasChild と isOpen を設定
-			util.forEach(filteredMap, function(wrapData) {
-				wrapData.tree.isOpen = util.some(treeParam.openParents, function(parent) {
-					return wrapData.dataId === parent;
-				});
-				var parentId = wrapData.data[parentProperty];
-				if (util.hasProperty(filteredMap, parentId)) {
-					filteredMap[parentId].tree.hasChild = true;
-				}
-			});
-
-
-			filtered = util.map(filteredMap, function(wrapData) {
-				return wrapData;
-			});
-
-			// ツリーの開閉を適用
-			var treeFilterFunction = function(wrapData) {
-				if (wrapData.tree == null || wrapData.tree.path.length === 1) {
-					return true;
-				}
-				var parentId = wrapData.tree.path[1];
-				return filteredMap[parentId].tree.isOpen;
-			};
-
-			filtered = $.grep(filtered, treeFilterFunction);
-		}
-
-		if (searchParam.tree == null && sortParams.length === 0) {
-			return filtered;
-		}
-
-		return filtered.sort(compare);
+		var sorted = wraped.sort(compare);
+		return util.map(sorted, function(wrap) {
+			return wrap.data;
+		});
 	}
 
 
@@ -8507,12 +8413,7 @@
 			});
 
 			this._idProperty = idProperty;
-			this._sourceDataSet = util.mapObject(sourceDataArray, function(data) {
-				return {
-					key: data[idProperty],
-					value: data
-				};
-			});
+			this._sourceDataArray = sourceDataArray;
 		}
 
 		/** @lends LocalDataAccessor# */
@@ -8536,22 +8437,20 @@
 
 				validator.arg('searchParam', searchParam, type.validateLocalSearchParam);
 
-				var searched = searchData(this._sourceDataSet, searchParam);
-				var dataArray = util.map(searched, function(searchedData) {
-					return searchedData.data;
-				});
+				var dataArray = this._sourceDataArray;
+				var searched = searchDataArray(dataArray, this._idProperty, searchParam);
 
 				var result = {
 					searchParam: searchParam,
 					fetchParam: searchParam,
-					fetchLimit: dataArray.length,
+					fetchLimit: searched.length,
 					initialData: {
 						fetchRange: {
 							index: 0,
-							length: dataArray.length
+							length: searched.length
 						},
 						isAllData: true,
-						dataArray: dataArray
+						dataArray: searched
 					}
 				};
 
@@ -8567,15 +8466,13 @@
 				var start = fetchRange.index;
 				var end = start + fetchRange.length;
 
-				var searched = searchData(this._sourceDataSet, fetchParam);
-				var dataArray = util.map(searched, function(searchedData) {
-					return searchedData.data;
-				});
+				var dataArray = this._sourceDataArray;
+				var searched = searchDataArray(dataArray, this._idProperty, fetchParam);
 
 				var result = {
 					fetchParam: fetchParam,
 					fetchRange: fetchRange,
-					dataArray: dataArray.slice(start, end)
+					dataArray: searched.slice(start, end)
 				};
 
 				return resolve(result);
@@ -8586,8 +8483,16 @@
 
 				validator.arg('dataId', dataId, type.validateDataId);
 
-				var data = this._sourceDataSet[dataId];
-				return resolve(data);
+				var result = null;
+
+				util.forEach(this._sourceDataArray, this.own(function(data) {
+					if (dataId === data[this._idProperty]) {
+						result = data;
+						return false;
+					}
+				}));
+
+				return resolve(result);
 			},
 
 			commit: function(edit) {
@@ -8601,22 +8506,26 @@
 				var addedSet = edit.getAddedDataSet();
 				var removedSet = edit.getRemovedDataSet();
 
-				// remove
-				$.each(removedSet, this.own(function(dataId) {
-					delete this._sourceDataSet[dataId];
+				var newArray = [];
+
+				util.forEach(this._sourceDataArray, this.own(function(data) {
+					var dataId = data[this._idProperty];
+
+					// remove
+					if (util.hasProperty(removedSet, dataId)) {
+						return;
+					}
+
+					// update
+					newArray.push(edit.applyData(data).edited);
 				}));
 
-				// update
-				this._sourceDataSet = util.mapObject(this._sourceDataSet, function(data, dataId) {
-					var edited = edit.applyData(data).edited;
-					return {
-						key: dataId,
-						value: edited
-					};
+				util.forEach(addedSet, function(data) {
+					// add
+					newArray.push(data);
 				});
 
-				// add
-				$.extend(this._sourceDataSet, addedSet);
+				this._sourceDataArray = newArray;
 
 				return resolve().promise();
 			},
@@ -8625,9 +8534,27 @@
 			// --- Public Method --- //
 
 			getSourceDataSet: function() {
-				return $.extend(true, {}, this._sourceDataSet);
+				return util.mapObject(this._sourceDataArray, function(data) {
+					var dataId = data[this._idProperty];
+					return {
+						key: dataId,
+						value: data
+					};
+				});
 			},
 
+			getSourceDataArray: function() {
+				return $.extend(true, [], this._sourceDataArray);
+			},
+
+			setSourceDataSet: function(sourceDataArray) {
+				this._sourceDataSet = util.mapObject(sourceDataArray, this.own(function(data) {
+					return {
+						key: data[this._idProperty],
+						value: data
+					};
+				}));
+			},
 
 			// --- Private Property --- //
 
@@ -8641,7 +8568,7 @@
 			 * @private
 			 * @type {Array.<Data>}
 			 */
-			_sourceDataSet: null
+			_sourceDataArray: null
 		};
 
 		return {
@@ -9033,6 +8960,10 @@
 			 */
 			getIdProperty: function() {
 				return this._edit.getIdProperty();
+			},
+
+			getDataAccessor: function() {
+				return this._dataAccessor;
 			},
 
 			// -- データを参照するメソッド -- //
@@ -10413,107 +10344,12 @@
 				});
 			},
 
-			openTree: function(dataId) {
-				this._requireReady();
-
-				var validator = ctx.argsValidator('public');
-				validator.arg('dataId', dataId, type.validateDataId);
-
-				if (this._searchParam.tree == null) {
-					throw error.NotSupported.createError('Tree');
-				}
-				if (!util.hasProperty(this._idToIndex, dataId)) {
-					throw error.NotFoundData.createError(dataId);
-				}
-
-				var beforeArray = searchData(this._dataSet, this._searchParam);
-
-				var openParam = $.extend(true, {}, this._searchParam);
-				openParam.tree.openParents.push(dataId);
-
-				var afterArray = searchData(this._dataSet, openParam);
-
-				var openedDataArray = this._diffDataArray(beforeArray, afterArray);
-				if (openedDataArray.length === 0) {
-					return;
-				}
-
-				var insertIndex = this._idToIndex[dataId] + 1;
-				this._cache[insertIndex - 1].tree.isOpen = true;
-
-				this.dispatchEvent({
-					type: 'openTree',
-					parentId: dataId,
-					insertIndex: insertIndex,
-					dataArray: openedDataArray
-				});
-
-				this._searchParam = openParam;
-				var newDataArray = util.map(this._cache, function(edited) {
-					return {
-						dataId: edited.dataId,
-						data: edited.edited,
-						tree: edited.tree
-					};
-				});
-
-				var spliceArgs = [insertIndex, 0].concat(openedDataArray);
-				newDataArray.splice.apply(newDataArray, spliceArgs);
-
-				this._updateCache(newDataArray);
+			openTree: function() {
+				throw error.NotSupported.createError('Tree');
 			},
 
-			closeTree: function(dataId) {
-				this._requireReady();
-
-				var validator = ctx.argsValidator('public');
-				validator.arg('dataId', dataId, type.validateDataId);
-
-				if (this._searchParam.tree == null) {
-					throw error.NotSupported.createError('Tree');
-				}
-				if (!util.hasProperty(this._idToIndex, dataId)) {
-					throw error.NotFoundData.createError(dataId);
-				}
-
-				var beforeArray = searchData(this._dataSet, this._searchParam);
-
-				var closeParam = $.extend(true, {}, this._searchParam);
-				var tree = closeParam.tree;
-				tree.openParents = $.grep(tree.openParents, function(parentId) {
-					return parentId !== dataId;
-				});
-
-				var afterArray = searchData(this._dataSet, closeParam);
-
-				var removedDataArray = this._diffDataArray(afterArray, beforeArray);
-				if (removedDataArray.length === 0) {
-					return;
-				}
-
-				var removeIndex = this._idToIndex[dataId] + 1;
-				var removeLength = removedDataArray.length;
-
-				this._cache[removeIndex - 1].tree.isOpen = false;
-
-				this.dispatchEvent({
-					type: 'closeTree',
-					parentId: dataId,
-					removeIndex: removeIndex,
-					removeLength: removedDataArray.length
-				});
-
-				this._searchParam = closeParam;
-				var newDataArray = util.map(this._cache, function(edited) {
-					return {
-						dataId: edited.dataId,
-						data: edited.edited,
-						tree: edited.tree
-					};
-				});
-				newDataArray.splice(removeIndex, removeLength);
-
-				this._updateCache(newDataArray);
+			closeTree: function() {
+				throw error.NotSupported.createError('Tree');
 			},
 
 
@@ -10738,10 +10574,21 @@
 					};
 				});
 
-				var searchedArray = searchData(dataSet, searchParam);
+				var sourceArray = util.map(dataArray, function(data) {
+					return data.edited;
+				});
+
+				var idProperty = this._dataSource.getIdProperty();
+				var searchedArray = searchDataArray(sourceArray, idProperty, searchParam);
+				var wrapedArray = util.map(searchedArray, function(data) {
+					return {
+						dataId: data[idProperty],
+						data: data
+					};
+				});
 
 				this._dataSet = dataSet;
-				this._updateCache(searchedArray);
+				this._updateCache(wrapedArray);
 			},
 
 			/**
@@ -11645,11 +11492,6 @@
 		};
 	});
 
-	// ---- PagingDataSearcher ---- //
-
-	// TODO: PagingDataSearcher
-
-
 	//=============================
 	// SingleDataSearcher
 	//=============================
@@ -11679,7 +11521,7 @@
 
 			this._dataSource = dataSource;
 			this._dataId = null;
-			this._listenerSet = util.creatEventListenerSet();
+			this._listenerSet = util.creatEventListenerSet(this);
 
 			this._isReady = false;
 			this._isChangingDataId = false;
@@ -11925,6 +11767,282 @@
 	});
 
 
+	// ---- PagingDataSearcher ---- //
+
+	//=============================
+	// PagingDataSearcher
+	//=============================
+
+	var PagingDataSearcher = util.defineClass(NAMESPACE + '.PagingDataSearcher', function(ctx) {
+
+		var log = ctx.log;
+
+		/**
+		 * このコンストラクタはユーザが直接呼び出すことはありません。
+		 * 
+		 * @constructor PagingDataSearcher
+		 * @class ページング機能を持った{@DataSearcher} です。
+		 * @mixes EventDispatcher
+		 * @mixes Disposable
+		 * @mixes OwnSupport
+		 * @param {DataSearcher} dataSearcher コンポジションするsearcher
+		 * @param {Number} pageSize 1ページに表示する件数
+		 */
+		function PagingDataSearcher(dataSearcher, pageSize) {
+			var validator = ctx.argsValidator('constructor');
+
+			validator.arg('dataSearcher', dataSearcher, function(v) {
+				v.notNull();
+				v.instanceOf(DataSearcher);
+			});
+			validator.arg('pageSize', pageSize, function(v) {
+				v.notNull();
+				v.positiveNumber();
+			});
+
+			this._dataSearcher = dataSearcher;
+			this._pageSize = pageSize;
+			this._currentPage = 1;
+
+			this._listenerSet = util.createEventListenerSet(this);
+			this._listenerSet.registerEventListeners(eventListeners);
+		}
+
+		var eventListeners = {
+			_dataSearcher: {
+				readySearch: 'propagate',
+				changeSearchStart: 'propagate',
+				changeSearchSuccess: function(event) {
+					this._currentPage = 1;
+					this.dispatchEvent(event);
+				},
+				changeSearchError: function(event) {
+					this.dispatchEvent(event);
+				},
+				changeSearchComplete: function(event) {
+					this.dispatchEvent(event);
+				},
+				refreshSearchStart: 'propagate',
+				refreshSearchSuccess: 'propagate',
+				refreshSearchError: 'propagate',
+				refreshSearchComplete: 'propagate',
+
+				changeSource: function(event) {
+					var lastPage = this.totalPages();
+					if (this._currentPage > lastPage) {
+						this.movePage(lastPage);
+					}
+					this.dispatchEvent(event);
+				},
+
+				edit: 'propagate',
+				commitStart: 'propagate',
+				commitSuccess: 'propagate',
+				commitError: 'propagate',
+				commitComplete: 'propagate',
+				rollback: 'propagate'
+			}
+		};
+
+		/** @lends PagingDataSearcher# */
+		var pagingDataSearcherDefinition = {
+			// --- Metadata --- //
+
+			/**
+			 * このコメントは Eclipse のアウトライン用です。
+			 * 
+			 * @private
+			 * @memberOf _PagingDataSearcher
+			 */
+			__name: ctx.className,
+
+			// --- Implement Method --- //
+
+			getIdProperty: function() {
+				return this._dataSearcher.getIdProperty();
+			},
+
+			isReady: function() {
+				return this._dataSearcher.isReady();
+			},
+
+			isChangingSearchParam: function() {
+				return this._dataSearcher.isChangingSearchParam();
+			},
+
+			isRefreshing: function() {
+				return this._dataSearcher.isRefreshing();
+			},
+
+			getSearchParam: function() {
+				return this._dataSearcher.getSearchParam();
+			},
+
+			getFetchParam: function() {
+				return this._dataSearcher.getFetchParam();
+			},
+
+			// getCount()は現在のページのデータ件数を返します
+			// データ総件数を取得したい場合はgetTotalCount()を呼び出してください
+			getCount: function() {
+				if (this._dataSearcher.getCount() == 0) {
+					return 0;
+				}
+				var remind = this._dataSearcher.getCount() % this._pageSize;
+				if (remind > 0 && this._currentPage === this.getTotalPages()) {
+					return remind;
+				}
+				return this._pageSize;
+			},
+
+			getTotalCount: function() {
+				if (this._dataSearcher.getCount() == 0) {
+					return 0;
+				}
+				return this._dataSearcher.getCount();
+			},
+
+			getReference: function(fetchRange) {
+				var validator = ctx.argsValidator('public');
+				validator.arg('fetchRange', fetchRange, type.validateFetchRange1D);
+
+				// ページ範囲から外れていたらエラー
+				var end = fetchRange.index + fetchRange.length;
+				if (end > this.getCount()) {
+					throw error.indexOutOfBounds.createError(end - 1);
+				}
+
+				fetchRange.index = this._getStartIndex() + fetchRange.index;
+				return this._dataSearcher.getReference(fetchRange);
+			},
+
+			findData: function(dataId) {
+				var ids = this.getDataIdAll();
+				if (ids.indexOf(dataId) === -1) {
+					throw new Error('ページ範囲外です');
+				}
+				return this._dataSearcher.findData(dataId);
+			},
+
+			getDataSource: function() {
+				return this._dataSearcher.getDataSource();
+			},
+
+			getDataIdAll: function() {
+				var ids = this._dataSearcher.getDataIdAll();
+				return ids.slice(this._getStartIndex(), this.getCount());
+			},
+
+			getSourceDataSet: function() {
+				return this._dataSearcher.getSourceDataSet();
+			},
+
+			initSearchParam: function(searchParam) {
+				this._dataSearcher.initSearchParam(searchParam);
+			},
+
+			changeSearchParam: function(searchParam) {
+				this._dataSearcher.changeSearchParam(searchParam);
+			},
+
+			refresh: function() {
+				this._dataSearcher.refresh();
+			},
+
+			clear: function() {
+				this._dataSearcher.clear();
+				this._currentPage = 1;
+			},
+
+			openTree: function(dataId) {
+				this._dataSearcher.openTree();
+			},
+
+			closeTree: function(dataId) {
+				this._closeTree();
+			},
+
+			// PagingDataSearcher固有のメソッド
+			getCurrentPage: function() {
+				return this._currentPage;
+			},
+
+			getTotalPages: function() {
+				var pages = Math.ceil(this._dataSearcher.getCount() / this._pageSize);
+				if (pages <= 0) {
+					return 1;
+				}
+				return pages;
+			},
+
+			getPageSize: function() {
+				return this._pageSize;
+			},
+
+			setPageSize: function(pageSize) {
+				this._pageSize = pageSize;
+
+				this._currentPage = 1;
+				this.dispatchEvent({
+					type: 'changeSource'
+				});
+			},
+
+			movePage: function(pageNumber) {
+				var start = (pageNumber - 1) * this._pageSize;
+				var end = start + this._pageSize;
+
+				var max = this._dataSearcher.getCount();
+				end = Math.min(max, end);
+
+				if (pageNumber <= 0 || end <= start && pageNumber !== 1) {
+					throw new Error('存在しないページです');
+				}
+
+				this._currentPage = pageNumber;
+				this.dispatchEvent({
+					type: 'changeSource'
+				});
+			},
+
+			// --- Private Property --- //
+
+			/**
+			 * @private
+			 * @type {DataSearcher}
+			 */
+			_dataSearcher: null,
+
+			/**
+			 * @private
+			 * @type {Number}
+			 */
+			_pageSize: null,
+
+			/**
+			 * @private
+			 * @type {Number}
+			 */
+			_currentPage: null,
+
+			// --- Private Method --- //
+			_isLastPage: function() {
+				return this._currentPage == this.getTotalPages();
+			},
+
+			_getStartIndex: function() {
+				return (this._currentPage - 1) * this._pageSize;
+			}
+
+		};
+
+		return {
+			constructorFunction: PagingDataSearcher,
+			superConstructorFunction: DataSearcher,
+			definition: pagingDataSearcherDefinition
+		};
+	});
+
 	//=============================
 	// SearchConfig
 	//=============================
@@ -11967,6 +12085,7 @@
 			DataSource: DataSource,
 			AllFetchSearcher: AllFetchSearcher,
 			LazyFetchSearcher: LazyFetchSearcher,
+			PagingDataSearcher: PagingDataSearcher,
 			SingleDataSearcher: SingleDataSearcher
 		},
 
@@ -15898,6 +16017,10 @@
 			 * @private
 			 */
 			_applyToCopyValues: function(cell) {
+				if (cell.isBlank) {
+					cell.copyValues = [''];
+					return;
+				}
 				var toCopyValues = this._propertyDefinitionSet[cell.propertyName].toCopyValues;
 				cell.copyValues = toCopyValues(cell);
 			},
@@ -16329,6 +16452,12 @@
 				var searcherParam = param.searcher.param;
 				searcher = new datagrid.data._privateClass.LazyFetchSearcher(dataSource,
 						searcherParam);
+			}
+
+			// ページング機能付きDataSearcherでwrapする
+			if (typeof param.searcher.paging !== 'undefined' && param.searcher.paging.enable) {
+				searcher = new datagrid.data._privateClass.PagingDataSearcher(searcher,
+						param.searcher.paging.pageSize);
 			}
 
 			var mapperParam = param.mapper.param;
@@ -17370,6 +17499,7 @@
 			var columnLength = gridRange.getColumnLength();
 
 			html += '<colgroup>';
+
 
 
 			var i, j;
@@ -18776,6 +18906,10 @@
 
 		// --- Event Handler --- //
 
+		'.gridResizeColumnMarker mousedown': function(context) {
+			context.event.stopPropagation();
+		},
+
 		'.gridResizeColumnMarker h5trackstart': function(context, $el) {
 			var $root = $(this.rootElement);
 			var $cell = $el.closest('.' + CELL_FRAME_CLASS);
@@ -19696,6 +19830,7 @@
 
 			// 条件にあわせてメニューの表示を切り替える
 			$menu.find('.gridSortItem').toggle(sortSetting.enable);
+			$menu.find('.gridLockItems').toggle(lockSetting.enable);
 			$menu.find('.gridFilterItem').toggle(filterSetting.enable);
 			if (sortSetting.enable && lockSetting.enable || sortSetting.enable
 					&& filterSetting.enable) {
@@ -20783,9 +20918,9 @@
 			this._pageX = event.pageX;
 			this._pageY = event.pageY;
 
-			// gridCell または gridBorder 以外での mousedown は無視する
+			// 入力要素での mousedown は無視する
 			var $target = $(event.target);
-			if (!$target.hasClass('gridCell') && !$target.hasClass('gridBorder')) {
+			if ($target.is(':input')) {
 				return;
 			}
 
@@ -22426,6 +22561,13 @@
 		},
 
 		/**
+		 * DataSearcherを返します
+		 */
+		getDataSearcher: function() {
+			return this._gridLogic.getDataSearcher();
+		},
+
+		/**
 		 * グリッド上のデータをクリアします。
 		 */
 		clear: function() {
@@ -22822,12 +22964,17 @@
 			}
 
 			var properties = param.properties;
-			var propertyHierarchy = util.mapObject(properties, function(definition, property) {
-				return {
-					key: property,
-					value: null
-				};
-			});
+			var propertyHierarchy;
+			if (!!param.propertyHierarchy) {
+				propertyHierarchy = param.propertyHierarchy;
+			} else {
+				propertyHierarchy = util.mapObject(properties, function(definition, property) {
+					return {
+						key: property,
+						value: null
+					};
+				});
+			}
 
 			var viewParam = param.view.param;
 			var logicParam = {
