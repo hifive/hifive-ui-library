@@ -19310,7 +19310,8 @@
 			var frameOffset = $frame.offset();
 			var topPosition = frameOffset.top + $frame.outerHeight();
 			var rightPosition = frameOffset.left + $frame.outerWidth(); // 右端が左から何px目か
-
+			// 最後のUnlockカラムかどうか判断する
+			this._checkIsLastUnlockItem(cell);
 			this._showMenu(cell, topPosition, rightPosition);
 		},
 
@@ -19680,6 +19681,9 @@
 		// デフォルトFIX列の数（visibleProperties：headerの初期設定のカラム数）
 		_defaultLeftColumns: null,
 
+		// 最後のUnlockカラム判断用
+		_lastUnlockItem: null,
+
 
 		// --- Private Method --- //
 
@@ -19786,15 +19790,20 @@
 			// sort がひとつでもあれば clear を無効にする
 			$menu.find('.gridSortClearItem').toggleClass('disabled', $.isEmptyObject(sortParam));
 
-			// _lockStatusに各カラムのロック状態によって、アイテムの有効、無効を決める
-			var lockStatus = false;
-			if (this._lockStatus[lockSetting.property] !== undefined) {
-				lockStatus = this._lockStatus[lockSetting.property];
+			// 最後のUnlockカラムの場合、lock、unlockメニューを無効にする
+			if (this._lastUnlockItem) {
+				$menu.find('.gridLockItem').addClass('disabled');
+				$menu.find('.gridUnlockItem').addClass('disabled');
+			} else {
+				// _lockStatusに各カラムのロック状態によって、アイテムの有効、無効を決める
+				var lockStatus = false;
+				if (this._lockStatus[lockSetting.property] !== undefined) {
+					lockStatus = this._lockStatus[lockSetting.property];
+				}
+
+				$menu.find('.gridLockItem').toggleClass('disabled', lockStatus);
+				$menu.find('.gridUnlockItem').toggleClass('disabled', !lockStatus);
 			}
-
-			$menu.find('.gridLockItem').toggleClass('disabled', lockStatus);
-			$menu.find('.gridUnlockItem').toggleClass('disabled', !lockStatus);
-
 			var filterType = filterSetting.type;
 
 			if (filterType === 'distinctValues') {
@@ -20185,6 +20194,21 @@
 			$filterClearButton.text('Clear Filter');
 			$filterButtonsItem.append($filterClearButton);
 		},
+
+		// visiblePropertiesのmainが空になるを防ぐために、最後のUnlockカラムかどうか判断する
+		_checkIsLastUnlockItem: function(cell) {
+			this._lastUnlockItem = false;
+			var column = cell.column;
+
+			var visibleProperties = this._gridLogic.getVisibleProperties();
+			var headerColumns = visibleProperties.header;
+			var mainColumns = visibleProperties.main;
+			var endPosition = headerColumns.length + mainColumns.length - 1;
+
+			if (mainColumns.length == 1 && column == endPosition) {
+				this._lastUnlockItem = true;
+			}
+		}
 
 	};
 
