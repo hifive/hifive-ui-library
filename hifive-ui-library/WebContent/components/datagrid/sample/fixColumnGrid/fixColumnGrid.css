@@ -1,0 +1,62 @@
+@charset "UTF-8";
+
+html, body {
+	padding: 10px;
+	height: 95%;
+	width: 95%;
+}
+
+#grid {
+	height: 100%;
+	width: 100%;
+	background-color: #F8F8F8;
+}
+
+#grid:focus {
+	outline: solid 1px #F80;
+}
+
+.highScore {
+	background-color: #FDD;
+}
+
+.editedCell {
+	background-color: #FFA;
+}
+
+.gridCell input[type="checkbox"] {
+	margin-top: 5px;
+	margin-left: 4px;
+}
+
+.gridSelectedData {
+	background-color: #CCF;
+}
+
+.gridFocusedCell {
+	background-color: #FF8;
+}
+
+.gridSortAscIcon>span {
+	position: absolute;
+	top: 3px;
+	left: 13px;
+}
+
+.gridSortDescIcon>span {
+	position: absolute;
+	top: 3px;
+	left: 13px;
+}
+
+.gridLockIcon>span {
+	position: absolute;
+	top: 3px;
+	left: 13px;
+}
+
+.gridUnlockIcon>span {
+	position: absolute;
+	top: 3px;
+	left: 13px;
+}

@@ -6383,6 +6383,11 @@
 				v.nullable();
 				validateFilterUIParam(v);
 			});
+			
+			v.property('lockable', function(v) {
+				v.nullable();
+				v.type('boolean');
+			});
 		});
 	}
 
@@ -6501,6 +6506,22 @@
 				});
 			});
 			v.property('sortClearIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function(v) {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('lockIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function(v) {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('unlockIconClasses', function(v) {
 				v.notNull();
 				v.array();
 				v.values(function(v) {
@@ -19797,8 +19818,8 @@
 			} else {
 				// _lockStatusに各カラムのロック状態によって、アイテムの有効、無効を決める
 				var lockStatus = false;
-				if (this._lockStatus[lockSetting.property] !== undefined) {
-					lockStatus = this._lockStatus[lockSetting.property];
+				if (this._lockStatus[propertyName] !== undefined) {
+					lockStatus = this._lockStatus[propertyName];
 				}
 
 				$menu.find('.gridLockItem').toggleClass('disabled', lockStatus);
@@ -20582,7 +20603,7 @@
 
 			this._formatterSet = this._makeFormatterSet(param);
 			this._sortSet = this._makeSortSet(param);
-			this._lockSet = this._makeLockSet();
+			this._lockSet = this._makeLockSet(param);
 			this._filterSet = this._makeFilterSet(param);
 
 
@@ -21853,33 +21874,23 @@
 				};
 			});
 		},
+		
+		_makeLockSet: function(param) {
+			var propertySet = param.propertyUI;
 
-		// visiblePropertiesの設定によって、カラムにLockアイコンを付けることを決める
-		_makeLockSet: function() {
-			var result = {};
-			// visiblePropertiesの設定を取得
-			var visibleProperties = this._gridLogic.getVisibleProperties();
-			var headerColumns = visibleProperties.header;
-			var mainColumns = visibleProperties.main;
+			return util.mapObject(propertySet, function(propertyParam, property) {
+				var lockable = false;
+				if (propertyParam.lockable != null) {
+					lockable = propertyParam.lockable;
+				}
 
-			// ヘッダー部のカラムのenableをfalseに設定する
-			util.forEach(headerColumns, function(headerColumn) {
-				result[headerColumn] = {
-					enable: false,
-					property: headerColumn
+				return {
+					key: property,
+					value: {
+						enable: lockable
+					}
 				};
 			});
-
-			// メイン部カラムのenableをtrueに設定する
-			util.forEach(mainColumns, function(mainColumn) {
-				result[mainColumn] = {
-					enable: true,
-					property: mainColumn
-				};
-			});
-
-			return result;
-
 		},
 
 		_makeFilterSet: function(param) {
