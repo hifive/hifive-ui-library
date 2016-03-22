@@ -19,19 +19,19 @@
 	var sampleController = {
 		__name: 'sample.sampleController',
 
-		verticalDBController: h5.ui.container.DividedBox,
-		horizontalDBController: h5.ui.container.DividedBox,
-		yellowSBController: h5.ui.container.StateBox,
-		greenSBController: h5.ui.container.StateBox,
-		purpleSBController: h5.ui.container.StateBox,
-		blueSBController: h5.ui.container.StateBox,
-		orangeSBController: h5.ui.container.StateBox,
+		verticalDBController: h5.ui.components.DividedBox.DividedBox,
+		horizontalDBController: h5.ui.components.DividedBox.DividedBox,
+		yellowSBController: h5.ui.components.DividedBox.StateBox,
+		greenSBController: h5.ui.components.DividedBox.StateBox,
+		purpleSBController: h5.ui.components.DividedBox.StateBox,
+		blueSBController: h5.ui.components.DividedBox.StateBox,
+		orangeSBController: h5.ui.components.DividedBox.StateBox,
 		__meta: {
 			verticalDBController: {
-				rootElement: '._dividedBox.horizontal'
+				rootElement: '.dividedBox.horizontal'
 			},
 			horizontalDBController: {
-				rootElement: '._dividedBox.vertical'
+				rootElement: '.dividedBox.vertical'
 			},
 			yellowSBController: {
 				rootElement: '.state-container.yellow'
@@ -51,7 +51,7 @@
 		},
 
 		__init: function() {
-			var methods = ['fitToContents', 'minimize', 'maximize', 'hide'];
+			var methods = ['fitToContents', 'minimize', 'maximize', 'hide', 'fixSize'];
 			this.$find('.box').each(
 					function() {
 						var $this = $(this);
@@ -65,7 +65,7 @@
 		},
 
 		_getTargetDvidedBoxCtrlAndIndexByBox: function($box) {
-			var $element = $box.parent('._dividedBox');
+			var $element = $box.parent('.dividedBox');
 			var index = $element.find('>.dividedbox-managed:not(.divider)').index($box);
 			var targetDbCtrl;
 			if ($element[0] === this.verticalDBController.rootElement) {
@@ -114,6 +114,20 @@
 			target.targetDbCtrl.hide(target.index, opt);
 		},
 
+		'.fixSize click': function(context, $el) {
+			var $box = $el.parent('.box');
+			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
+			target.targetDbCtrl.fixSize(target.index);
+			$el.removeClass('fixSize').addClass('unfixSize').text('unfixSize');
+		},
+
+		'.unfixSize click': function(context, $el) {
+			var $box = $el.parent('.box');
+			var target = this._getTargetDvidedBoxCtrlAndIndexByBox($box);
+			target.targetDbCtrl.unfixSize(target.index);
+			$el.removeClass('unfixSize').addClass('fixSize').text('fixSize');
+		},
+
 		'.set-state click': function(context, $el) {
 			var $ctrlGroup = $el.parents('.control-group');
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'SBController'];
@@ -129,18 +143,20 @@
 			target.targetDbCtrl.show(target.index, opt);
 		},
 
-		'.hide-divider click': function(context, $el){
+		'.hide-divider click': function(context, $el) {
 			var $ctrlGroup = $el.parents('.control-group');
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
 			var index = $ctrlGroup.find('[name="index"]').val();
-			targetController.hideDivider(parseInt(index));
+			var fixPrev = $el.data('fix-prev');
+			targetController.hideDivider(parseInt(index), fixPrev);
 		},
 
-		'.show-divider click': function(context, $el){
+		'.show-divider click': function(context, $el) {
 			var $ctrlGroup = $el.parents('.control-group');
 			var targetController = this[$ctrlGroup.find('[name="target"]').val() + 'DBController'];
 			var index = $ctrlGroup.find('[name="index"]').val();
-			targetController.showDivider(parseInt(index));
+			var fixPrev = $el.data('fix-prev');
+			targetController.showDivider(parseInt(index), fixPrev);
 		}
 	};
 	h5.core.expose(sampleController);

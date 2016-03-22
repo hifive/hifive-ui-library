@@ -19,6 +19,7 @@
 /*jshint browser: true, jquery: true */
 /*global h5 */
 
+
 // ---- ScrollBar ---- //
 (function($) {
 	'use strict';
@@ -61,7 +62,11 @@
 		$outer.remove();
 	});
 
-
+	/**
+	 * 縦のスクロールバーを描画するコントローラ
+	 * 
+	 * @class h5.ui.components.virtualScroll.VerticalScrollBarController
+	 */
 	var verticalScrollBarController = {
 
 		// --- Setting --- //
@@ -74,18 +79,24 @@
 
 		// --- Property --- //
 
+		/** スクロール領域全体のサイズ */
 		_scrollSize: 0,
 
-		_ignoreScrollEvent: false,
+		/** 無視するスクロールポジションのリスト */
+		_ignoreScrollList: null,
 
-
+		/** setTimeout() の返り値であるタイマーID */
 		_timer: null,
 
+		/** 現在のスクロールポジション */
 		_pos: 0,
 
 
 		// --- Private Method --- //
 
+		/**
+		 * rootElement のサイズを取り直してバーを描画するか再計算する
+		 */
 		_resizeScrollSize: function() {
 
 			var $innerDiv = this.$find('.vertical' + INNER_DIV_CLASS_SUFFIX);
@@ -94,7 +105,7 @@
 				height: this._scrollSize
 			});
 
-			var $root = $(this.rootElement);
+			var $root = $(this.barRootElement);
 			var barSize = $root.height();
 			var visibility = (this._scrollSize <= barSize) ? 'hidden' : 'visible';
 
@@ -106,9 +117,16 @@
 
 		// --- Life Cycle Method --- //
 
-		__init: function() {
+		__construct: function() {
+			this._ignoreScrollList = [];
+		},
 
-			var $root = $(this.rootElement);
+		__init: function() {
+			if (!this.barRootElement) {
+				this.barRootElement = this.rootElement;
+			}
+
+			var $root = $(this.barRootElement);
 
 			var rootPosition = $root.css('position');
 
@@ -148,9 +166,18 @@
 			this._resizeScrollSize();
 		},
 
+		__unbind: function() {
+			clearTimeout(this._timer);
+			$(this.barRootElement).empty();
+			this.barRootElement = null;
+		},
+
 
 		// --- Event Handler --- //
 
+		/**
+		 * ブラウザのスクロールイベントが発生したら h5scroll イベントを発生させる。
+		 */
 		'.vertical-scroll-bar-outer [scroll]': function(context, $el) {
 			if (this._timer) {
 				clearTimeout(this._timer);
@@ -160,23 +187,18 @@
 			var pos = $el.scrollTop();
 
 
+
 			if (40 < Math.abs(pos - prevPos)) {
-
-				var ignore = this._ignoreScrollEvent;
-
-				if (ignore) {
-					this._ignoreScrollEvent = false;
-				}
-
-				if (!ignore || pos !== prevPos) {
-					setTimeout(this.own(function() {
-						this.trigger(SCROLL_EVENT_NAME, {
-							verticalScroll: {
-								type: 'pixel',
-								diff: pos - prevPos
-							}
-						});
-					}, 0));
+				var ignoreIndex = $.inArray(pos, this._ignoreScrollList);
+				if (ignoreIndex === -1) {
+					this.trigger(SCROLL_EVENT_NAME, {
+						verticalScroll: {
+							type: 'pixel',
+							diff: pos - prevPos
+						}
+					});
+				} else {
+					this._ignoreScrollList.splice(ignoreIndex, 1);
 				}
 
 				this._pos = pos;
@@ -189,24 +211,30 @@
 				var prevPos = this._pos;
 				var pos = $el.scrollTop();
 
-				if (!this._ignoreScrollEvent || pos !== prevPos) {
+				var ignoreIndex = $.inArray(pos, this._ignoreScrollList);
+				if (ignoreIndex === -1) {
 					this.trigger(SCROLL_EVENT_NAME, {
 						verticalScroll: {
 							type: 'pixel',
-							diff: pos - this._pos
+							diff: pos - prevPos
 						}
 					});
-				}
-
-				if (this._ignoreScrollEvent) {
-					this._ignoreScrollEvent = false;
+				} else {
+					this._ignoreScrollList.splice(ignoreIndex, 1);
 				}
 
 				this._pos = pos;
 			}), 50);
 		},
 
+		/**
+		 * キーが押下されたときのデフォルトの挙動をキャンセルする。
+		 */
 		'{rootElement} keydown': function(context) {
+			if (context.event.target !== this.barRootElement) {
+				return;
+			}
+
 			var event = context.event;
 			var keycode = event.which;
 
@@ -222,6 +250,11 @@
 
 		// --- Public Method --- //
 
+		/**
+		 * スクロール領域全体のサイズをセットする。
+		 * 
+		 * @param {number} size スクロール領域全体のサイズ
+		 */
 		setScrollSize: function(size) {
 
 			this._scrollSize = size;
@@ -231,9 +264,14 @@
 			}
 		},
 
+		/**
+		 * 実際のスクロールバーのサイズをセットする。
+		 * 
+		 * @param {number} size スクロールバー自体のサイズ
+		 */
 		setBarSize: function(size) {
 
-			$(this.rootElement).css({
+			$(this.barRootElement).css({
 				height: size
 			});
 
@@ -242,10 +280,20 @@
 			}
 		},
 
+		/**
+		 * スクロール領域全体のサイズを返す。
+		 * 
+		 * @returns {number} スクロール領域全体のサイズ
+		 */
 		getScrollSize: function() {
 			return this._scrollSize;
 		},
 
+		/**
+		 * スクロールのポジションをセットする。
+		 * 
+		 * @param position スクロールポジション
+		 */
 		setScrollPosition: function(position) {
 			this._pos = position;
 
@@ -255,12 +303,17 @@
 				return;
 			}
 
-			this._ignoreScrollEvent = true;
+			this._ignoreScrollList.push(position);
 			$outer.scrollTop(position);
 		}
 	};
 
 
+	/**
+	 * 横のスクロールバーを描画するコントローラ
+	 * 
+	 * @class h5.ui.components.virtualScroll.HorizontalScrollBarController
+	 */
 	var horizontalScrollBarController = {
 
 		// --- Setting --- //
@@ -273,17 +326,23 @@
 
 		// --- Property --- //
 
+		/** スクロール領域全体のサイズ */
 		_scrollSize: 0,
 
-		_ignoreScrollEvent: false,
+		/** 無視するスクロールポジションのリスト */
+		_ignoreScrollList: null,
 
-
+		/** setTimeout() の返り値であるタイマーID */
 		_timer: null,
 
+		/** 現在のスクロールポジション */
 		_pos: 0,
 
 		// --- Private Method --- //
 
+		/**
+		 * rootElement のサイズを取り直してバーを描画するか再計算する
+		 */
 		_resizeScrollSize: function() {
 
 			var $innerDiv = this.$find('.horizontal' + INNER_DIV_CLASS_SUFFIX);
@@ -292,7 +351,7 @@
 				width: this._scrollSize
 			});
 
-			var $root = $(this.rootElement);
+			var $root = $(this.barRootElement);
 			var barSize = $root.width();
 			var visibility = (this._scrollSize <= barSize) ? 'hidden' : 'visible';
 
@@ -304,9 +363,16 @@
 
 		// --- Life Cycle Method --- //
 
-		__init: function() {
+		__construct: function() {
+			this._ignoreScrollList = [];
+		},
 
-			var $root = $(this.rootElement);
+		__init: function() {
+			if (!this.barRootElement) {
+				this.barRootElement = this.rootElement;
+			}
+
+			var $root = $(this.barRootElement);
 
 			var rootPosition = $root.css('position');
 
@@ -345,9 +411,18 @@
 			this._resizeScrollSize();
 		},
 
+		__unbind: function() {
+			clearTimeout(this._timer);
+			$(this.barRootElement).empty();
+			this.barRootElement = null;
+		},
+
 
 		// --- Event Handler --- //
 
+		/**
+		 * ブラウザのスクロールイベントが発生したら h5scroll イベントを発生させる。
+		 */
 		'.horizontal-scroll-bar-outer [scroll]': function(context, $el) {
 			if (this._timer) {
 				clearTimeout(this._timer);
@@ -357,14 +432,19 @@
 			var pos = $el.scrollLeft();
 
 			if (40 < Math.abs(pos - prevPos)) {
-				if (!this._ignoreScrollEvent || pos !== prevPos) {
+				var ignoreIndex = $.inArray(pos, this._ignoreScrollList);
+				if (ignoreIndex === -1) {
 					this.trigger(SCROLL_EVENT_NAME, {
 						horizontalScroll: {
 							type: 'pixel',
-							diff: pos - this._pos
+							diff: pos - prevPos
 						}
 					});
+				} else {
+					this._ignoreScrollList.splice(ignoreIndex, 1);
 				}
+
+
 				this._pos = pos;
 				return;
 			}
@@ -378,19 +458,30 @@
 				var prevPos = this._pos;
 				var pos = $el.scrollLeft();
 
-				if (!this._ignoreScrollEvent || pos !== prevPos) {
+				var ignoreIndex = $.inArray(pos, this._ignoreScrollList);
+				if (ignoreIndex === -1) {
 					this.trigger(SCROLL_EVENT_NAME, {
 						horizontalScroll: {
 							type: 'pixel',
-							diff: pos - this._pos
+							diff: pos - prevPos
 						}
 					});
+				} else {
+					this._ignoreScrollList.splice(ignoreIndex, 1);
 				}
+
 				this._pos = pos;
 			}), 50);
 		},
 
+		/**
+		 * キーが押下されたときのデフォルトの挙動をキャンセルする。
+		 */
 		'{rootElement} keydown': function(context) {
+			if (context.event.target !== this.barRootElement) {
+				return;
+			}
+
 			var event = context.event;
 			var keycode = event.which;
 
@@ -406,6 +497,11 @@
 
 		// --- Public Method --- //
 
+		/**
+		 * スクロール領域全体のサイズをセットする。
+		 * 
+		 * @param {number} size スクロール領域全体のサイズ
+		 */
 		setScrollSize: function(size) {
 
 			this._scrollSize = size;
@@ -415,10 +511,20 @@
 			}
 		},
 
+		/**
+		 * スクロール領域全体のサイズを返す。
+		 * 
+		 * @returns {number} スクロール領域全体のサイズ
+		 */
 		getScrollSize: function() {
 			return this._scrollSize;
 		},
 
+		/**
+		 * 実際のスクロールバーのサイズをセットする。
+		 * 
+		 * @param {number} size スクロールバー自体のサイズ
+		 */
 		setBarSize: function(size) {
 
 			$(this.rootElement).css({
@@ -430,6 +536,11 @@
 			}
 		},
 
+		/**
+		 * スクロールのポジションをセットする。
+		 * 
+		 * @param position スクロールポジション
+		 */
 		setScrollPosition: function(position) {
 			this._pos = position;
 
@@ -438,7 +549,7 @@
 				return;
 			}
 
-			this._ignoreScrollEvent = true;
+			this._ignoreScrollList.push(position);
 			$outer.scrollLeft(position);
 		}
 
@@ -449,6 +560,12 @@
 
 
 	h5.u.obj.expose('h5.ui.components.virtualScroll', {
+
+		/**
+		 * ブラウザごとに異なるスクロールバーの幅を計算して返す。
+		 * 
+		 * @returns {number} スクロールバーの幅
+		 */
 		getScrollBarWidth: function() {
 			return scrollBarWidth;
 		},
@@ -472,10 +589,16 @@
 	var DEFAULT_LOADING_TEXT = 'Loading...';
 
 
-	var getComputedSize = function(element, styleName) {
+	/**
+	 * スタイルシート適用後のエレメントの高さを取得する。 ブラウザによって取得方法が異なるため関数として切り出している。
+	 * 
+	 * @param {Element} element 高さを取得したいエレメント
+	 * @returns {number} スタイルシート適用後のエレメントの高さ
+	 */
+	var getComputedSize = function(element) {
 		var sizeStyle;
 		if (document.defaultView != null) {
-			sizeStyle = document.defaultView.getComputedStyle(element, '')[styleName];
+			sizeStyle = document.defaultView.getComputedStyle(element, '')['height'];
 		} else {
 			sizeStyle = element.currentStyle.height;
 		}
@@ -486,6 +609,11 @@
 		return parseInt(sizeStyle.replace(/px$/i, ''), 10);
 	};
 
+	/**
+	 * 仮想スクロールを行うスクロール領域のコントローラ。
+	 * 
+	 * @class h5.ui.components.virtualScroll.VirtualScrollBoxController
+	 */
 	var virtualScrollBoxController = {
 
 		// --- Setting --- //
@@ -498,31 +626,45 @@
 
 		// --- Property --- //
 
+		/** 描画を行う関数 */
 		_renderer: null,
 
-
+		/** 描画範囲の開始行 */
 		_rowStart: 0,
 
+		/** 描画範囲の終了行 */
 		_rowEnd: 0,
 
+		/** 描画範囲の開始列 */
 		_columnStart: 0,
 
+		/** 描画範囲の終了列 */
 		_columnEnd: 0,
 
+		/** 初期化を待機する Deferred */
 		_initializeDeferred: null,
 
 
 		// --- Private Method --- //
 
+		/**
+		 * 描画を行う対象の jQuery オブジェクトを取得する
+		 * 
+		 * @returns 描画対象の jQuery オブジェクト
+		 */
 		_getRenderTarget: function() {
 			// 入れ子になる可能性もあるので children で取得する
-			return $(this.rootElement).children('.virtual' + RENDER_TARGET_CLASS);
+			return $(this.boxRootElement).children('.virtual' + RENDER_TARGET_CLASS);
 		},
 
+		/**
+		 * ローディング表示を行う jQuery オブジェクトを取得する
+		 * 
+		 * @returns ローディング表示を行う jQuery オブジェクト
+		 */
 		_getLoading: function() {
-			return $(this.rootElement).children('.virtual' + LOADING_CLASS);
+			return $(this.boxRootElement).children('.virtual' + LOADING_CLASS);
 		},
-
 
 		// --- Life Cycle Method --- //
 
@@ -531,7 +673,11 @@
 		},
 
 		__init: function() {
-			var $root = $(this.rootElement);
+			if (!this.boxRootElement) {
+				this.boxRootElement = this.rootElement;
+			}
+
+			var $root = $(this.boxRootElement);
 
 			var rootPosition = $root.css('position');
 
@@ -560,14 +706,22 @@
 			}).text(DEFAULT_LOADING_TEXT).appendTo($root);
 		},
 
+		__unbind: function() {
+			$(this.boxRootElement).empty();
+			this.boxRootElement = null;
+		},
+
 
 		// --- Event Handler --- //
-
-		// TODO: scroll イベントハンドラ
 
 
 		// --- Public Method --- //
 
+		/**
+		 * 初期化する。
+		 * 
+		 * @param {Function} renderer 描画対象の jQuery オブジェクトと描画するデータを渡されて、実際に描画する関数
+		 */
 		init: function(renderer) {
 			this._renderer = renderer;
 
@@ -578,13 +732,24 @@
 			});
 		},
 
+		/**
+		 * 描画する。
+		 * 
+		 * @param renderData 描画データ
+		 * @returns {Promise} 描画が完了するまで待機する Promise
+		 */
 		render: function(renderData) {
 			var that = this;
-			this._initializeDeferred.then(function() {
+			return this._initializeDeferred.then(function() {
 				that._renderer(that._getRenderTarget(), renderData);
 			});
 		},
 
+		/**
+		 * 縦の描画位置を指定する。 指定した分のピクセルだけ上にずれる。
+		 * 
+		 * @param {number} position 縦の描画位置
+		 */
 		setVerticalPosition: function(position) {
 			this._getRenderTarget().css({
 				top: -position,
@@ -592,6 +757,9 @@
 			});
 		},
 
+		/**
+		 * 縦の描画位置を底に合わせる。
+		 */
 		setVerticalPositionBottom: function() {
 			this._getRenderTarget().css({
 				top: '',
@@ -599,6 +767,11 @@
 			});
 		},
 
+		/**
+		 * 横の描画位置を指定する。 指定した分のピクセルだけ左にずれる。
+		 * 
+		 * @param {number} position 横の描画位置
+		 */
 		setHorizontalPosition: function(position) {
 			this._getRenderTarget().css({
 				left: -position,
@@ -606,6 +779,9 @@
 			});
 		},
 
+		/**
+		 * 横の描画位置を右端に合わせる。
+		 */
 		setHorizontalPositionRight: function() {
 			this._getRenderTarget().css({
 				left: '',
@@ -613,22 +789,36 @@
 			});
 		},
 
-
+		/**
+		 * ローディング表示をする DIV のエレメントを取得する。
+		 * 
+		 * @returns {Element} ローディング表示をする DIV のエレメント
+		 */
 		getLoadingDiv: function() {
 			return this._getLoading()[0];
 		},
 
+		/**
+		 * 描画領域を隠してローディング表示を描画する。
+		 */
 		beginLoad: function() {
 			this._getRenderTarget().hide();
 			this._getLoading().show();
 		},
 
+		/**
+		 * ローディング表示をやめて描画領域を表示する。
+		 */
 		endLoad: function() {
 			this._getLoading().hide();
 			this._getRenderTarget().show();
 		},
 
-
+		/**
+		 * 初期化を待機する Promise を返す。
+		 * 
+		 * @returns {Promise} 初期化を待機する Promise
+		 */
 		getInitializePromise: function() {
 			return this._initializeDeferred.promise();
 		}
@@ -636,6 +826,9 @@
 	};
 
 
+	/**
+	 * HTMLで記述された要素に対してスクロールを行うスクロール領域のコントローラ。
+	 */
 	var htmlScrollBoxController = {
 
 		// --- Setting --- //
@@ -648,32 +841,47 @@
 
 		// --- Property --- //
 
+		/** 行要素を選択する jQuery セレクタ */
 		_rowSelector: null,
 
+		/** 列要素を選択する jQuery セレクタ */
 		_columnSelector: null,
 
 
+		/** 各行の高さ */
 		_rowsHeight: null,
 
+		/** 各列の幅 */
 		_columnsWidth: null,
 
+		/** 各行のポジション */
 		_rowsTop: null,
 
+		/** 各列のポジション */
 		_columnsLeft: null,
 
-
+		/** 縦の描画ポジション */
 		_verticalPosition: null,
 
+		/** 横の描画ポジション */
 		_horizontalPosition: null,
 
 
 		// --- Private Method --- //
 
+		/**
+		 * 描画を行う対象の jQuery オブジェクトを取得する。
+		 * 
+		 * @returns 描画対象の jQuery オブジェクト
+		 */
 		_getRenderTarget: function() {
 			// 入れ子になる可能性もあるので children で取得する
-			return $(this.rootElement).children('.html' + RENDER_TARGET_CLASS);
+			return $(this.boxRootElement).children('.html' + RENDER_TARGET_CLASS);
 		},
 
+		/**
+		 * 描画している HTML から各行の高さを再取得して記憶する。
+		 */
 		_updateRowsHeight: function() {
 			var $renderTarget = this._getRenderTarget();
 
@@ -685,7 +893,7 @@
 			$renderTarget.find(this._rowSelector).each(function(index, el) {
 
 				// IE では height をそのままとると結合分も加えられてしまうのでそれを避けている
-				var height = getComputedSize(el, 'height');
+				var height = getComputedSize(el);
 				rowsHeight.push(height);
 
 				rowsTop.push(currentTop);
@@ -693,6 +901,9 @@
 			});
 		},
 
+		/**
+		 * 描画している HTML から各列の幅を再取得して記憶する。
+		 */
 		_updateColumnsWidth: function() {
 			var $renderTarget = this._getRenderTarget();
 
@@ -711,6 +922,9 @@
 			});
 		},
 
+		/**
+		 * 描画している HTML から各行の高さと各列の幅を再取得して記憶する。
+		 */
 		_updateCellsSize: function() {
 			this._updateRowsHeight();
 			this._updateColumnsWidth();
@@ -731,7 +945,11 @@
 		},
 
 		__init: function() {
-			var $root = $(this.rootElement);
+			if (!this.boxRootElement) {
+				this.boxRootElement = this.rootElement;
+			}
+
+			var $root = $(this.boxRootElement);
 
 			var rootPosition = $root.css('position');
 
@@ -755,9 +973,20 @@
 			this._updateCellsSize();
 		},
 
+		__unbind: function() {
+			$(this.boxRootElement).empty();
+			this.boxRootElement = null;
+		},
+
 
 		// --- Public Method --- //
 
+		/**
+		 * 初期化する。
+		 * 
+		 * @param {string} 各行のエレメントを取得する jQuery セレクタ文字列
+		 * @param {string} 各列のエレメントを取得する jQuery セレクタ文字列
+		 */
 		init: function(rowSelector, columnSelector) {
 			this._rowSelector = rowSelector;
 			this._columnSelector = columnSelector;
@@ -765,6 +994,12 @@
 			return this.readyPromise;
 		},
 
+		/**
+		 * 描画する。
+		 * 
+		 * @param data 描画データ（APIを揃えるためにあるだけで、実際には利用されない）
+		 * @param range 描画する範囲
+		 */
 		render: function(data, range) {
 			if (this._rowsTop == null) {
 				return;
@@ -791,49 +1026,88 @@
 			this._getRenderTarget().css(css);
 		},
 
-		setVerticalPosition: function(renderTop) {
+		/**
+		 * 縦の描画位置を指定する。 指定した分のピクセルだけ上にずれる。
+		 * 
+		 * @param {number} position 縦の描画位置
+		 */
+		setVerticalPosition: function(position) {
 			this._verticalPosition = {
 				isEnd: false,
-				position: -renderTop
+				position: -position
 			};
 		},
 
+		/**
+		 * 縦の描画位置を底に合わせる。
+		 */
 		setVerticalPositionBottom: function() {
 			this._verticalPosition = {
 				isEnd: true
 			};
 		},
 
-		setHorizontalPosition: function(renderLeft) {
+		/**
+		 * 横の描画位置を指定する。 指定した分のピクセルだけ左にずれる。
+		 * 
+		 * @param {number} position 横の描画位置
+		 */
+		setHorizontalPosition: function(position) {
 			this._horizontalPosition = {
 				isEnd: false,
-				position: -renderLeft
+				position: -position
 			};
 		},
 
+		/**
+		 * 横の描画位置を右端に合わせる。
+		 */
 		setHorizontalPositionRight: function() {
 			this._horizontalPosition = {
 				isEnd: true
 			};
 		},
 
+		/**
+		 * 各行の高さを取得する。
+		 * 
+		 * @returns 各行の高さ
+		 */
 		getRowsHeight: function() {
 			return $.extend([], this._rowsHeight);
 		},
 
+		/**
+		 * 各列の幅を取得する。
+		 * 
+		 * @returns 各列の幅
+		 */
 		getColumnsWidth: function() {
 			return $.extend([], this._columnsWidth);
 		},
 
-
+		/**
+		 * 初期化を待機する Promise を返す。
+		 * 
+		 * @returns {Promise} 初期化を待機する Promise
+		 */
 		getInitializePromise: function() {
 			return this.readyPromise;
 		},
 
+		/**
+		 * 描画領域を隠してローディング表示を描画する。 このコントローラの実装ではなにもしない。
+		 */
 		beginLoad: $.noop,
 
+		/**
+		 * ローディング表示をやめて描画領域を表示する。 このコントローラの実装ではなにもしない。
+		 */
 		endLoad: $.noop,
 
+		/**
+		 * ローディング表示をする DIV のエレメントを取得する。 このコントローラの実装では null を返す。
+		 */
 		getLoadingDiv: $.noop
 
 	};
@@ -852,6 +1126,11 @@
 	var SCROLL_SIZE_LIMIT = 500000;
 	var BLOCK_SIZE = 10000;
 
+	/**
+	 * インデックスによるスクロール戦略。
+	 * 
+	 * @class h5.ui.components.virtualScroll.IndexBaseScrollStrategy
+	 */
 	var IndexBaseScrollStrategy = function() {
 	// コンストラクタ
 	};
@@ -860,24 +1139,38 @@
 
 		// --- Property --- //
 
+		/**
+		 * 現在のスクロール位置
+		 * 
+		 * @memberOf h5.ui.components.virtualScroll.IndexBaseScrollStrategy
+		 */
 		_pos: 0,
 
+		/** 最大のインデックス */
 		_maxIndex: null,
 
+		/** 1ブロックのセル数 */
 		_blockCells: null,
 
+		/** ブロック数 */
 		_blocks: null,
 
+		/** 次のブロックと重なるセル数 */
 		_blockOverlapCells: null,
 
+		/** 現在表示しているブロック */
 		_blockIndex: null,
 
+		/** スクロール領域のサイズ */
 		_scrollSize: null,
 
 
 
 		// --- Private Method --- //
 
+		/**
+		 * ブロックを初期化する。
+		 */
 		_setupBlock: function(dataInfo) {
 			var indexes = this._maxIndex + 1;
 			var scrollIndexLimit = Math.floor(SCROLL_SIZE_LIMIT / this._scrollCellSize);
@@ -900,6 +1193,12 @@
 			this._scrollSize = scrollIndexes * this._scrollCellSize + 1;
 		},
 
+		/**
+		 * 近い位置へのスクロールをする。 差分によってスクロールする。
+		 * 
+		 * @param {number} scrollIndex スクロール先のインデックス
+		 * @returns {number} 計算した結果のインデックス
+		 */
 		_scrollNear: function(scrollIndex) {
 			var blockHeadCells = this._blockCells - this._blockOverlapCells;
 			var indexInBlock = scrollIndex - (this._blockIndex * blockHeadCells);
@@ -920,6 +1219,13 @@
 			return index;
 		},
 
+		/**
+		 * 遠い位置へのスクロールをする。 絶対値によるスクロールをしたあと _scrollNear() を実行している。
+		 * 
+		 * @param {number} scrollIndex スクロール先のインデックス
+		 * @param {object} dataInfo スクロールに関わる情報
+		 * @returns 計算した結果のインデックス
+		 */
 		_jumpBlock: function(scrollIndex, dataInfo) {
 			var blockHeadCells = this._blockCells - this._blockOverlapCells;
 			this._blockIndex = Math.floor(scrollIndex / blockHeadCells);
@@ -934,10 +1240,20 @@
 
 		// --- Public Method --- //
 
+		/**
+		 * スクロールを行い、スクロール後の位置情報を返す。
+		 * 
+		 * @param {number} scrollDiff スクロールの差分
+		 * @param {number} windowSize スクロール領域の窓幅
+		 * @param {object} dataInfo スクロールに関する情報
+		 */
 		scroll: function(scrollDiff, windowSize, dataInfo) {
 			var windowCells = Math.ceil(windowSize / dataInfo.defaultCellSize);
 			if (this._maxIndex === null) {
-				this._maxIndex = dataInfo.totalCells - windowCells - 1;
+				this._maxIndex = dataInfo.totalCells - windowCells + 1;
+				if (this._maxIndex < 0) {
+					this._maxIndex = 0;
+				}
 
 				// IE8 用の計算
 				this._scrollCellSize = Math.floor(windowSize / 8);
@@ -973,7 +1289,7 @@
 				scrollSize: this._scrollSize + windowSize
 			};
 
-			if (this._pos === this._scrollSize && windowCells < dataInfo.totalCells) {
+			if (this._maxIndex <= index && windowCells <= dataInfo.totalCells) {
 				result.isEnd = true;
 				result.index = dataInfo.totalCells;
 			}
@@ -985,10 +1301,20 @@
 			return result;
 		},
 
+		/**
+		 * インデックスの差分をスクロールピクセルの差分に変換する。
+		 * 
+		 * @param {number} indexDiff インデックスの差分
+		 * @param {number} windowSize スクロール領域の窓幅
+		 * @returns {number} スクロールピクセルの差分
+		 */
 		indexDiffToScrollDiff: function(indexDiff, windowSize) {
 			return indexDiff * Math.floor(windowSize / 8);
 		},
 
+		/**
+		 * スクロール位置以外の記憶した情報をリセットする。
+		 */
 		resetPageInfo: function() {
 			this._maxIndex = null;
 			this._blockCells = null;
@@ -1013,6 +1339,11 @@
 
 (function($) {
 
+	/**
+	 * ピクセルによるスクロール戦略
+	 * 
+	 * @class h5.ui.components.virtualScroll.PixelBaseScrollStrategy
+	 */
 	var PixelBaseScrollStrategy = function() {
 	// コンストラクタ
 	};
@@ -1021,17 +1352,30 @@
 
 		// --- Property --- //
 
+		/**
+		 * 現在のスクロール位置
+		 * 
+		 * @memberOf h5.ui.components.virtualScroll.PixelBaseScrollStrategy
+		 */
 		_pos: 0,
 
+		/** 各セルのサイズを持った配列 */
 		_cellSizeArray: null,
 
+		/** 全体のサイズ */
 		_totalSize: null,
 
+		/** インデックスごとのポジションを記録する配列 */
 		_indexToPosArray: null,
 
 
 		// --- Private Method --- //
 
+		/**
+		 * ポジションから index に変換する。
+		 * 
+		 * @param {number} pos ポジション
+		 */
 		_posToIndex: function(pos) {
 
 			var minIndex = 0;
@@ -1062,6 +1406,13 @@
 
 		// --- Public Method --- //
 
+		/**
+		 * スクロールを行い、スクロール後の位置情報を返す。
+		 * 
+		 * @param {number} scrollDiff スクロールの差分
+		 * @param {number} windowSize スクロール領域の窓幅
+		 * @param {object} dataInfo スクロールに関する情報
+		 */
 		scroll: function(scrollDiff, windowSize, dataInfo) {
 			var i;
 			var len;
@@ -1126,6 +1477,10 @@
 			if (this._pos === scrollSize && windowSize < this._totalSize) {
 				result.isEnd = true;
 				result.index = dataInfo.totalCells;
+				result.offset = 0;
+				if (result.length <= 0) {
+					result.length = 1;
+				}
 			}
 			if (this._totalSize < windowSize) {
 				result.isEnd = false;
@@ -1135,6 +1490,13 @@
 			return result;
 		},
 
+		/**
+		 * インデックスの差分をスクロールピクセルの差分に変換する。
+		 * 
+		 * @param {number} indexDiff インデックスの差分
+		 * @param {number} windowSize スクロール領域の窓幅
+		 * @returns {number} スクロールピクセルの差分
+		 */
 		indexDiffToScrollDiff: function(indexDiff, windowSize) {
 			var index = this._posToIndex(this._pos);
 
@@ -1162,6 +1524,9 @@
 			return nextPosition - this._pos;
 		},
 
+		/**
+		 * スクロール位置以外の記憶した情報をリセットする。
+		 */
 		resetPageInfo: function() {
 			this._cellSizeArray = null;
 			this._totalSize = null;
