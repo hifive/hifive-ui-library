@@ -3,7 +3,7 @@
 	/**
 	 * トークン更新の有無を指定するリクエストヘッダーのキー
 	 */
-	var KEY_UPDATE_TOKEN = 'X-BERT-UPDATE-TOKEN';
+	var KEY_UPDATE_TOKEN = 'X-UPDATE-TOKEN';
 	h5.u.obj.expose('datagrid.sample', {
 		/**
 		 * リクエストヘッダにトークンを更新しないフラグをセットして通信を行う
@@ -11,7 +11,7 @@
 		 * @param {String} url URL
 		 * @param {Object} option jQuery.ajaxに渡すオプションオブジェクト
 		 * @returs {JqXHRWrapper} jqXHRWrapperオブジェクト
-		 * @memberOf bert.fw
+		 * @memberOf datagrid.sample
 		 */
 		ajax: function(url, option) {
 			var opt = option || {};
