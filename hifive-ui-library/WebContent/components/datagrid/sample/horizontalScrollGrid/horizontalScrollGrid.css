@@ -18,32 +18,63 @@
  * hifive
  */
 
+body {
+	padding-top: 25px;
+	background-color: white;
+}
+
 #grid {
 	margin: 0 auto;
 	width: 1000px;
-	height: 600px;
+	height: 300px;
 }
 
 #grid td {
 	border: solid 1px #888;
 }
 
-#grid td.grid-selected {
+#grid .gridSelectedCell {
 	background-color: #1E90FF;
 	color: white;
 }
 
-#grid td input[type="checkbox"] {
-	vertical-align: middle;
-}
-
-#grid div.grid-cell {
+#grid .gridCell {
 	text-align: center;
 	white-space: nowrap;
 }
 
-#grid .grid-main-box td[data-h5-dyn-grid-property-name="col6"] div.grid-cell {
-	text-align: right;
-	padding-right: 5px;
+#grid .gridHeaderColumn {
+	background-color: rgb(89, 87, 87);
+	border-bottom-style: double;
+	color : whitesmoke;
 }
 
+#grid .gridMainBox td:nth-of-type(odd) {
+	background-color: #f9f9f9;
+}
+
+#grid .gridHeaderRowsBox td:nth-of-type(odd) {
+	background-color: #f9f9f9;
+}
+
+/*---------- グリッドレコード情報 ----------*/
+.gridCellInfo{
+	height: 300px;
+	border: solid 1px;
+	overflow: auto;
+	white-space: pre;
+	margin-top: 20px;
+}
+
+/*---------- ソートアイコン ----------*/
+.gridSortAscIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
+}
+
+.gridSortDescIcon > span {
+	position: absolute;
+    top: 3px;
+    left: 13px;
+}

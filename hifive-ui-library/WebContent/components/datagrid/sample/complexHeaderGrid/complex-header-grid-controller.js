@@ -3,15 +3,15 @@
 	/**
 	 * トークン更新の有無を指定するリクエストヘッダーのキー
 	 */
-	var KEY_UPDATE_TOKEN = 'X-BERT-UPDATE-TOKEN';
-	h5.u.obj.expose('bert.fw', {
+	var KEY_UPDATE_TOKEN = 'X-UPDATE-TOKEN';
+	h5.u.obj.expose('datagrid.sample', {
 		/**
 		 * リクエストヘッダにトークンを更新しないフラグをセットして通信を行う
 		 *
 		 * @param {String} url URL
 		 * @param {Object} option jQuery.ajaxに渡すオプションオブジェクト
 		 * @returs {JqXHRWrapper} jqXHRWrapperオブジェクト
-		 * @memberOf bert.fw
+		 * @memberOf datagrid.sample
 		 */
 		ajax: function(url, option) {
 			var opt = option || {};
@@ -35,12 +35,12 @@
 	var DATA_URL = './complex-header-grid.json';
 
 	var gridSample1Logic = {
-		__name: 'bert.fw.grid.sample1.GridSample1Logic',
+		__name: 'datagrid.sample.grid.sample1.GridSample1Logic',
 
 		// chromeではlocalファイルの読み込みに制限があるためコメントアウト
 		// サーバへホストして動作確認する場合は、コメントを解除してデータはjsonファイルから読み込むようにしてください
 //		loadData: function() {
-//			return bert.fw.ajax(DATA_URL, {
+//			return datagrid.sample.ajax(DATA_URL, {
 //				dataType: 'json'
 //			});
 //		}
@@ -115,7 +115,7 @@
 
 		// --- プロパティ --- //
 
-		_gridSample1Logic: bert.fw.grid.sample1.GridSample1Logic,
+		_gridSample1Logic: datagrid.sample.grid.sample1.GridSample1Logic,
 
 		_gridController: h5.ui.components.datagrid.ComplexHeaderGridController,
 
