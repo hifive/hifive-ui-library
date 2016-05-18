@@ -1112,10 +1112,6 @@
 			var unfixedSizeBoxesTotalSize = 0;
 			$unfixedSizeBoxes.each(function() {
 				var $box = $(this);
-				var preSize = $box.data('pre-size');
-				if (preSize != null) {
-					$box[w_h](preSize);
-				}
 				unfixedSizeBoxesTotalSize += $box[w_h]();
 			});
 			// ボックスのサイズ計算がmin-sizeやmax-sizeの制限を破った場合、
@@ -1131,8 +1127,7 @@
 				}
 				// 固定ボックス以外のボックスのサイズの比率で拡縮した時の位置にdividerを動かす
 				// 固定ボックス以外のボックスのサイズが全て0ならそれらのサイズは等分する
-				var boxSize = $box.data('pre-size') || $box[w_h]();
-				$box.data('pre-size', boxSize);
+				var boxSize = $box[w_h]();
 				var boxMove = unfixedSizeBoxesTotalSize ? divSize
 						* (boxSize / unfixedSizeBoxesTotalSize) : divSize
 						/ $unfixedSizeBoxes.length;
