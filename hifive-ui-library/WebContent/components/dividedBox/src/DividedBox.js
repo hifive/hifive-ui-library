@@ -1082,7 +1082,13 @@
 				}
 				// 計算したサイズを設定
 				this._setOuterSize($box, outerSize);
+
+				// ボックスの位置をチェックし、正しい位置に調整
+				this._adjustBoxPosition($box, $prev);
 			}));
+
+			// keepSizeクラスを外す
+			$boxes.removeClass(CLASS_KEEP_SIZE);
 		},
 
 		/**
@@ -1164,6 +1170,31 @@
 				// min-size,max-sizeでサイズ変更に制限があるボックスがあった場合、
 				// それらを固定した状態で再計算
 				this._adjustUnfixedBoxSize(remainSize);
+			}
+		},
+
+		/**
+		 * 直前のdividerとボックスの位置をチェックし、ボックスを正しい位置に移動する
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 * @param {jQuery} $box
+		 * @param {jQuery} $prevDivider
+		 */
+		_adjustBoxPosition: function($box, $prevDivider) {
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+
+			var boxL_T = $box.position()[l_t];
+			var dividerL_T = 0;
+
+			if ($prevDivider.length) {
+				var pos = $prevDivider.position();
+				dividerL_T = pos[l_t] + pos[w_h];
+			}
+
+			if (boxL_T !== dividerL_T) {
+				$box.css(l_t, dividerL_T);
 			}
 		},
 
