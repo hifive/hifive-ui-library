@@ -1122,6 +1122,18 @@
 			// サイズ変更しないボックス(fixedSize)以外のないボックスを拡大・縮小する
 			var $boxes = this._getBoxes();
 
+			// minおよびfixのboxで全体の大きさを超えた場合をチェックする
+			var $fixedBoxes = $boxes.filter('[data-' + DATA_MIN_BOX_SIZE + '], .'
+					+ CLASS_FIXED_SIZE);
+			var fixedBoxesSize = 0;
+			$fixedBoxes.each(this.own(function(index, el) {
+				fixedBoxesSize += this._getFixedBoxSize($(el), w_h);
+			}));
+			if (fixedBoxesSize > adjustAreaWH) {
+				this._adjustFixedBoxSize();
+				return;
+			}
+
 			var $unfixedSizeBoxes = $boxes.not('.' + CLASS_FIXED_SIZE + ',.' + CLASS_KEEP_SIZE);
 
 			var move = 0;
@@ -1182,6 +1194,115 @@
 				// min-size,max-sizeでサイズ変更に制限があるボックスがあった場合、
 				// それらを固定した状態で再計算
 				this._adjustUnfixedBoxSize(remainSize, this.own(this._getDividerGroup));
+			}
+		},
+
+		/**
+		 * Fixedまたは最小値の指定があるボックスの固定値または最小値を返す。
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 * @param {jQuery} $box
+		 * @param {string} w_h
+		 * @return {number}
+		 */
+		_getFixedBoxSize: function($box, w_h) {
+			return $box.hasClass(CLASS_FIXED_SIZE) ? $box[w_h]() : $box.data(DATA_MIN_BOX_SIZE);
+		},
+
+		/**
+		 * Fixedまたは最小値の指定があるボックスの最小幅が親要素の幅を超えている場合のDivider再配置を行う。
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 */
+		_adjustFixedBoxSize: function() {
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+			var $root = this._$root;
+			var adjustAreaWH = $root[w_h]();
+
+			var expectedParts = this._getBoxes().get().concat(this._getDividers().get());
+			var $parts = $root.children().filter(expectedParts);
+			var domProps = $parts.map(function(index, el) {
+				var $el = $(el);
+				var props = {};
+				props.index = index;
+				props.box = $el.hasClass('box');
+				props.w_h = props.box ? 0 : $el[w_h]();
+				props.l_t = 0;
+				props.fixed = $el.hasClass(CLASS_FIXED_SIZE);
+				props.min = $el.attr('data-' + DATA_MIN_BOX_SIZE) !== undefined;
+				if (props.fixed) {
+					props.requiredSize = $el[w_h]();
+				} else if (props.min) {
+					props.requiredSize = $el.data(DATA_MIN_BOX_SIZE);
+				} else {
+					props.requiredSize = 0;
+				}
+
+				return props;
+			}).get();
+
+			// 先頭から順にfixまたはminとdividerの大きさを加算する
+			var totalSize = 0;
+			for (var i = 0; i < domProps.length; i++) {
+				var props = domProps[i];
+
+				// Divider
+				if (!props.box) {
+					totalSize += props.w_h;
+					continue;
+				}
+
+				// Unfixed box
+				if (!props.fixed && !props.min) {
+					continue;
+				}
+
+				props.w_h = props.requiredSize;
+				totalSize += props.w_h;
+			}
+
+			// 後方から順に、rootの大きさに合うまで大きさを無くす
+			for (i = domProps.length - 1; 0 <= i; i--) {
+				if (totalSize <= adjustAreaWH) {
+					break;
+				}
+
+				props = domProps[i];
+
+				// Divider
+				if (!props.box) {
+					totalSize -= props.w_h;
+					adjustAreaWH -= props.w_h;
+					continue;
+				}
+
+				// Unfixed box
+				if (!props.fixed && !props.min) {
+					continue;
+				}
+
+				// boxが大きさを保てない場合
+				if (totalSize - adjustAreaWH > props.requiredSize) {
+					props.w_h = 0;
+					totalSize -= props.requiredSize;
+					continue;
+				}
+
+				props.w_h -= totalSize - adjustAreaWH;
+				totalSize = adjustAreaWH;
+			}
+
+			// DOMに値を設定する
+			totalSize = 0;
+			for (i = 0; i < domProps.length; i++) {
+				props = domProps[i];
+				var $el = $($parts[i]);
+
+				$el.css(l_t, totalSize);
+				totalSize += props.w_h;
 			}
 		},
 
