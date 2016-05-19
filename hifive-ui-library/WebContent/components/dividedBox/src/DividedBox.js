@@ -176,6 +176,9 @@
 	/** クラス名: dividedBoxのルートに追加するクラス名 */
 	var CLASS_ROOT = 'dividedBox';
 
+	/** クラス名: 位置調整が必要なDividerに追加するクラス名 */
+	var CLASS_NEED_ADJUST = 'needAdjust';
+
 	/** イベント名：ボックスのサイズが変更されたときに上げるイベント */
 	var EVENT_BOX_SIZE_CHANGE = 'boxSizeChange';
 
@@ -386,6 +389,10 @@
 
 			// dividerとボックスの配置
 			var $dividers = this._getDividers();
+
+			// Divider初期配置を行っていないフラグ
+			$dividers.addClass(CLASS_NEED_ADJUST);
+
 			var lastIndex = $dividers.length - 1;
 			var appearedUnfix = false;
 			$dividers.each(this.ownWithOrg(function(divider, index) {
@@ -456,6 +463,9 @@
 
 			// 以上の配置を元にルート要素サイズに合わせて再配置
 			this._adjust();
+
+			// Divider初期配置を行っていないフラグが残っていた場合削除
+			$dividers.removeClass(CLASS_NEED_ADJUST);
 		},
 
 		/**
@@ -1042,7 +1052,7 @@
 			var $boxes = this._getBoxes();
 
 			// サイズ変更可能なボックスについてのサイズ調整
-			this._adjustUnfixedBoxSize(divSize);
+			this._adjustUnfixedBoxSize(divSize, this.own(this._getDividerGroupForAdjust));
 			this._lastAdjustAreaWH = adjustAreaWH;
 
 			// 各ボックスの位置とサイズをdividerに合わせて変更
@@ -1082,7 +1092,13 @@
 				}
 				// 計算したサイズを設定
 				this._setOuterSize($box, outerSize);
+
+				// ボックスの位置をチェックし、正しい位置に調整
+				this._adjustBoxPosition($box, $prev);
 			}));
+
+			// keepSizeクラスを外す
+			$boxes.removeClass(CLASS_KEEP_SIZE);
 		},
 
 		/**
@@ -1091,8 +1107,9 @@
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {number} divSize 実際のルートサイズと、現在のボックス配置で使用されたルートサイズの差分
+		 * @param {Function} getDividerGroup DividerGroupをｊQueryオブジェクトとして取得する関数
 		 */
-		_adjustUnfixedBoxSize: function(divSize) {
+		_adjustUnfixedBoxSize: function(divSize, getDividerGroup) {
 			if (!divSize) {
 				return;
 			}
@@ -1105,6 +1122,18 @@
 			// サイズ変更しないボックス(fixedSize)以外のないボックスを拡大・縮小する
 			var $boxes = this._getBoxes();
 
+			// minおよびfixのboxで全体の大きさを超えた場合をチェックする
+			var $fixedBoxes = $boxes.filter('[data-' + DATA_MIN_BOX_SIZE + '], .'
+					+ CLASS_FIXED_SIZE);
+			var fixedBoxesSize = 0;
+			$fixedBoxes.each(this.own(function(index, el) {
+				fixedBoxesSize += this._getFixedBoxSize($(el), w_h);
+			}));
+			if (fixedBoxesSize > adjustAreaWH) {
+				this._adjustFixedBoxSize();
+				return;
+			}
+
 			var $unfixedSizeBoxes = $boxes.not('.' + CLASS_FIXED_SIZE + ',.' + CLASS_KEEP_SIZE);
 
 			var move = 0;
@@ -1112,10 +1141,6 @@
 			var unfixedSizeBoxesTotalSize = 0;
 			$unfixedSizeBoxes.each(function() {
 				var $box = $(this);
-				var preSize = $box.data('pre-size');
-				if (preSize != null) {
-					$box[w_h](preSize);
-				}
 				unfixedSizeBoxesTotalSize += $box[w_h]();
 			});
 			// ボックスのサイズ計算がmin-sizeやmax-sizeの制限を破った場合、
@@ -1131,8 +1156,7 @@
 				}
 				// 固定ボックス以外のボックスのサイズの比率で拡縮した時の位置にdividerを動かす
 				// 固定ボックス以外のボックスのサイズが全て0ならそれらのサイズは等分する
-				var boxSize = $box.data('pre-size') || $box[w_h]();
-				$box.data('pre-size', boxSize);
+				var boxSize = $box[w_h]();
 				var boxMove = unfixedSizeBoxesTotalSize ? divSize
 						* (boxSize / unfixedSizeBoxesTotalSize) : divSize
 						/ $unfixedSizeBoxes.length;
@@ -1159,16 +1183,151 @@
 				move += boxMove;
 
 				// グループ化されている(連動して動く)divider全て動かす
-				var $group = this._getDividerGroup($divider);
+				var $group = getDividerGroup($divider);
 				if (move) {
 					$group.css(l_t, '+=' + move);
 				}
+				$group.removeClass(CLASS_NEED_ADJUST);
 			}));
 
 			if (shouldRecalcUnfixedBoxSize) {
 				// min-size,max-sizeでサイズ変更に制限があるボックスがあった場合、
 				// それらを固定した状態で再計算
-				this._adjustUnfixedBoxSize(remainSize);
+				this._adjustUnfixedBoxSize(remainSize, this.own(this._getDividerGroup));
+			}
+		},
+
+		/**
+		 * Fixedまたは最小値の指定があるボックスの固定値または最小値を返す。
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 * @param {jQuery} $box
+		 * @param {string} w_h
+		 * @return {number}
+		 */
+		_getFixedBoxSize: function($box, w_h) {
+			return $box.hasClass(CLASS_FIXED_SIZE) ? $box[w_h]() : $box.data(DATA_MIN_BOX_SIZE);
+		},
+
+		/**
+		 * Fixedまたは最小値の指定があるボックスの最小幅が親要素の幅を超えている場合のDivider再配置を行う。
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 */
+		_adjustFixedBoxSize: function() {
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+			var $root = this._$root;
+			var adjustAreaWH = $root[w_h]();
+
+			var expectedParts = this._getBoxes().get().concat(this._getDividers().get());
+			var $parts = $root.children().filter(expectedParts);
+			var domProps = $parts.map(function(index, el) {
+				var $el = $(el);
+				var props = {};
+				props.index = index;
+				props.box = $el.hasClass('box');
+				props.w_h = props.box ? 0 : $el[w_h]();
+				props.l_t = 0;
+				props.fixed = $el.hasClass(CLASS_FIXED_SIZE);
+				props.min = $el.attr('data-' + DATA_MIN_BOX_SIZE) !== undefined;
+				if (props.fixed) {
+					props.requiredSize = $el[w_h]();
+				} else if (props.min) {
+					props.requiredSize = $el.data(DATA_MIN_BOX_SIZE);
+				} else {
+					props.requiredSize = 0;
+				}
+
+				return props;
+			}).get();
+
+			// 先頭から順にfixまたはminとdividerの大きさを加算する
+			var totalSize = 0;
+			for (var i = 0; i < domProps.length; i++) {
+				var props = domProps[i];
+
+				// Divider
+				if (!props.box) {
+					totalSize += props.w_h;
+					continue;
+				}
+
+				// Unfixed box
+				if (!props.fixed && !props.min) {
+					continue;
+				}
+
+				props.w_h = props.requiredSize;
+				totalSize += props.w_h;
+			}
+
+			// 後方から順に、rootの大きさに合うまで大きさを無くす
+			for (i = domProps.length - 1; 0 <= i; i--) {
+				if (totalSize <= adjustAreaWH) {
+					break;
+				}
+
+				props = domProps[i];
+
+				// Divider
+				if (!props.box) {
+					totalSize -= props.w_h;
+					adjustAreaWH -= props.w_h;
+					continue;
+				}
+
+				// Unfixed box
+				if (!props.fixed && !props.min) {
+					continue;
+				}
+
+				// boxが大きさを保てない場合
+				if (totalSize - adjustAreaWH > props.requiredSize) {
+					props.w_h = 0;
+					totalSize -= props.requiredSize;
+					continue;
+				}
+
+				props.w_h -= totalSize - adjustAreaWH;
+				totalSize = adjustAreaWH;
+			}
+
+			// DOMに値を設定する
+			totalSize = 0;
+			for (i = 0; i < domProps.length; i++) {
+				props = domProps[i];
+				var $el = $($parts[i]);
+
+				$el.css(l_t, totalSize);
+				totalSize += props.w_h;
+			}
+		},
+
+		/**
+		 * 直前のdividerとボックスの位置をチェックし、ボックスを正しい位置に移動する
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 * @param {jQuery} $box
+		 * @param {jQuery} $prevDivider
+		 */
+		_adjustBoxPosition: function($box, $prevDivider) {
+			var l_t = this._l_t;
+			var w_h = this._w_h;
+
+			var boxL_T = $box.position()[l_t];
+			var dividerL_T = 0;
+
+			if ($prevDivider.length) {
+				var pos = $prevDivider.position();
+				dividerL_T = pos[l_t] + pos[w_h];
+			}
+
+			if (boxL_T !== dividerL_T) {
+				$box.css(l_t, dividerL_T);
 			}
 		},
 
@@ -1425,6 +1584,39 @@
 				$b = this._getPrevBoxByDivider($d);
 			}
 			return $result;
+		},
+
+		/**
+		 * dividerを動かす時にそのdividerと連動して動く要素(divider,box)をjQueryオブジェクトで返す（初回専用）
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 */
+		_getDividerGroupForAdjust: function($divider) {
+			var $result = $divider;
+			var $d = $divider;
+			var $b = this._getNextBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+					break;
+				}
+				$result = $result.add($b);
+				$d = this._getNextDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getNextBoxByDivider($d);
+			}
+			$d = $divider;
+			$b = this._getPrevBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+					break;
+				}
+				$result = $result.add($b);
+				$d = this._getPrevDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getPrevBoxByDivider($d);
+			}
+			return $result.filter('.needAdjust');
 		},
 
 		/**
