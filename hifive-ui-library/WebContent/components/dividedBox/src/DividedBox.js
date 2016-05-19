@@ -176,6 +176,9 @@
 	/** クラス名: dividedBoxのルートに追加するクラス名 */
 	var CLASS_ROOT = 'dividedBox';
 
+	/** クラス名: 位置調整が必要なDividerに追加するクラス名 */
+	var CLASS_NEED_ADJUST = 'needAdjust';
+
 	/** イベント名：ボックスのサイズが変更されたときに上げるイベント */
 	var EVENT_BOX_SIZE_CHANGE = 'boxSizeChange';
 
@@ -386,6 +389,10 @@
 
 			// dividerとボックスの配置
 			var $dividers = this._getDividers();
+
+			// Divider初期配置を行っていないフラグ
+			$dividers.addClass(CLASS_NEED_ADJUST);
+
 			var lastIndex = $dividers.length - 1;
 			var appearedUnfix = false;
 			$dividers.each(this.ownWithOrg(function(divider, index) {
@@ -456,6 +463,9 @@
 
 			// 以上の配置を元にルート要素サイズに合わせて再配置
 			this._adjust();
+
+			// Divider初期配置を行っていないフラグが残っていた場合削除
+			$dividers.removeClass(CLASS_NEED_ADJUST);
 		},
 
 		/**
@@ -1042,7 +1052,7 @@
 			var $boxes = this._getBoxes();
 
 			// サイズ変更可能なボックスについてのサイズ調整
-			this._adjustUnfixedBoxSize(divSize);
+			this._adjustUnfixedBoxSize(divSize, this.own(this._getDividerGroupForAdjust));
 			this._lastAdjustAreaWH = adjustAreaWH;
 
 			// 各ボックスの位置とサイズをdividerに合わせて変更
@@ -1097,8 +1107,9 @@
 		 * @private
 		 * @memberOf h5.ui.components.DividedBox.DividedBox
 		 * @param {number} divSize 実際のルートサイズと、現在のボックス配置で使用されたルートサイズの差分
+		 * @param {Function} getDividerGroup DividerGroupをｊQueryオブジェクトとして取得する関数
 		 */
-		_adjustUnfixedBoxSize: function(divSize) {
+		_adjustUnfixedBoxSize: function(divSize, getDividerGroup) {
 			if (!divSize) {
 				return;
 			}
@@ -1160,16 +1171,17 @@
 				move += boxMove;
 
 				// グループ化されている(連動して動く)divider全て動かす
-				var $group = this._getDividerGroup($divider);
+				var $group = getDividerGroup($divider);
 				if (move) {
 					$group.css(l_t, '+=' + move);
 				}
+				$group.removeClass(CLASS_NEED_ADJUST);
 			}));
 
 			if (shouldRecalcUnfixedBoxSize) {
 				// min-size,max-sizeでサイズ変更に制限があるボックスがあった場合、
 				// それらを固定した状態で再計算
-				this._adjustUnfixedBoxSize(remainSize);
+				this._adjustUnfixedBoxSize(remainSize, this.own(this._getDividerGroup));
 			}
 		},
 
@@ -1451,6 +1463,39 @@
 				$b = this._getPrevBoxByDivider($d);
 			}
 			return $result;
+		},
+
+		/**
+		 * dividerを動かす時にそのdividerと連動して動く要素(divider,box)をjQueryオブジェクトで返す（初回専用）
+		 *
+		 * @private
+		 * @memberOf h5.ui.components.DividedBox.DividedBox
+		 */
+		_getDividerGroupForAdjust: function($divider) {
+			var $result = $divider;
+			var $d = $divider;
+			var $b = this._getNextBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+					break;
+				}
+				$result = $result.add($b);
+				$d = this._getNextDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getNextBoxByDivider($d);
+			}
+			$d = $divider;
+			$b = this._getPrevBoxByDivider($d);
+			while (true) {
+				if (!$b.hasClass(CLASS_FIXED_SIZE) && !$b.hasClass(CLASS_KEEP_SIZE)) {
+					break;
+				}
+				$result = $result.add($b);
+				$d = this._getPrevDividerByBox($b);
+				$result = $result.add($d);
+				$b = this._getPrevBoxByDivider($d);
+			}
+			return $result.filter('.needAdjust');
 		},
 
 		/**
