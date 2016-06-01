@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<!--
+ Copyright (C) 2016 NS Solutions Corporation
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+  -->
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<meta name="viewport" content="width=device-width">
+<title>ハイパフォーマンス描画</title>
+
+<link rel="stylesheet" href="/hifive-res/fw/1.2.2/h5.css">
+<!-- <link rel="stylesheet" href="index.css"> -->
+
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<script src="/hifive-res/fw/1.2.2/h5.dev.js"></script>
+<script src="/hifive-res/fw/1.2.2/ejs-h5mod.js"></script>
+
+<!-- クラスモジュール -->
+<script src="/hifive/src/h5.cls.js"></script>
+
+<script src="../src/stage.js"></script>
+
+<script src="init.js"></script>
+
+<style>
+
+#appRoot {
+	width: 800px;
+	height: 800px;
+	border: 1px solid black;
+}
+
+rect, circle {
+	fill: #000;
+	stroke-width: 2px;
+}
+
+text {
+	color: black;
+	fill: black;
+	stroke-width: 2px;
+}
+
+</style>
+
+</head>
+<body>
+	<h1>ハイパフォーマンス描画</h1>
+
+	<div id="appRoot">
+
+	</div>
+
+
+
+
+</body>
+</html>
