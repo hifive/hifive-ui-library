@@ -19,8 +19,6 @@
 
 	var RootClass = h5.cls.RootClass;
 
-	var id = 0;
-
 	var Rect = RootClass.extend({
 		name: 'h5.ui.components.stage.Rect',
 		property: {
@@ -43,10 +41,10 @@
 			 */
 			constructor: function Rect(x, y, width, height) {
 				Rect._super.call(this);
-				this._p_x = x;
-				this._p_y = y;
-				this._p_width = width;
-				this._p_height = height;
+				this._p_x = x !== undefined ? x : 0;
+				this._p_y = y !== undefined ? y : 0;
+				this._p_width = width !== undefined ? width : 0;
+				this._p_height = height !== undefined ? height : 0;
 			}
 		}
 	});
@@ -65,7 +63,7 @@
 		}
 	}
 
-	var svgDrawElementDesc = {
+	var SVGDrawElement = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGDrawElement',
 		property: {
 			_element: null
@@ -88,8 +86,7 @@
 				setSvgAttributes(this._element, param);
 			}
 		},
-	};
-	var SVGDrawElement = RootClass.extend(svgDrawElementDesc);
+	});
 
 	var SVGLine = SVGDrawElement.extend({
 		name: 'h5.ui.components.stage.SVGLine',
@@ -117,7 +114,7 @@
 	});
 
 
-	var graphicsDesc = {
+	var SVGGraphics = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGGraphics',
 		property: {
 			_rootSvg: null
@@ -157,72 +154,124 @@
 				return de;
 			}
 		}
-	};
+	});
 
-	var SVGGraphics = RootClass.extend(graphicsDesc);
+	//TODO layouter(仮)を差し込めるようにし、
+	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
+	//layouterがフックして強制ブロック・別の値をセット等できるようにする
+	var DisplayUnit = h5.cls.RootClass.extend(function() {
+		var duIdSequence = 0;
 
-	var displayUnitClassDesc = {
-		name: 'h5.ui.components.stage.DisplayUnit',
-		property: {
-			/**
-			 * @memberOf h5.ui.components.stage.DisplayUnit
-			 */
-			id: null,
+		var classDesc = {
+			name: 'h5.ui.components.stage.DisplayUnit',
+			property: {
+				id: null,
 
-			_parentDU: null,
+				//TODO privateなプロパティへの対応
+				_parentDU: null,
 
-			x: {
-				isAccessor: true
-			},
-			y: {
-				isAccessor: true
-			},
-			width: {
-				isAccessor: true
-			},
-			height: {
-				isAccessor: true
-			},
-			domRoot: {
-				isAccessor: true
-			},
-			extraData: {
-				isAccessor: true
-			}
-		//TODO privateにする
-		},
-		method: {
-			constructor: function DisplayUnit() {
-				DisplayUnit._super.call(this);
-			},
-			setRect: function(rect) {
-				this.x = rect.x;
-				this.y = rect.y;
-				this.width = rect.width;
-				this.height = rect.height;
-
-				setSvgAttributes(this.domRoot, {
-					x: rect.x,
-					y: rect.y,
-					width: rect.width,
-					height: rect.height
-				});
-			},
-			getRect: function() {
-				var rect = Rect.create(this.x, this.y, this.width, this.height);
-				return rect;
-			},
-			remove: function() {
-				if (this._parentDU) {
-					this._parentDU.removeDisplayUnit(this);
+				x: {
+					isAccessor: true
+				},
+				y: {
+					isAccessor: true
+				},
+				width: {
+					isAccessor: true
+				},
+				height: {
+					isAccessor: true
+				},
+				domRoot: {
+					isAccessor: true
+				},
+				extraData: {
+					isAccessor: true
 				}
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayUnit
+				 */
+				constructor: function DisplayUnit(id) {
+					DisplayUnit._super.call(this);
+					//TODO 引数のIDは必須にする？？
+					if (id == null) {
+						//TODO ただの連番でなくGUID等にする
+						this.id = 'duid_' + duIdSequence;
+					} else {
+						//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
+						this.id = id;
+					}
+				},
+
+				setRect: function(rect) {
+					this.x = rect.x;
+					this.y = rect.y;
+					this.width = rect.width;
+					this.height = rect.height;
+
+					//TODO 仮実装
+					setSvgAttributes(this.domRoot, {
+						x: rect.x,
+						y: rect.y,
+						width: rect.width,
+						height: rect.height
+					});
+				},
+
+				getRect: function() {
+					var rect = Rect.create(this.x, this.y, this.width, this.height);
+					return rect;
+				},
+
+				remove: function() {
+					if (this._parentDU) {
+						this._parentDU.removeDisplayUnit(this);
+					}
+				},
+
+				moveTo: function(x, y) {
+					this.x = x;
+					this.y = y;
+
+					//TODO 仮実装
+					setSvgAttributes(this.domRoot, {
+						x: x,
+						y: y
+					});
+				},
+
+				moveBy: function(x, y) {
+					this.x += x;
+					this.y += y;
+
+					//TODO 仮実装
+					setSvgAttributes(this.domRoot, {
+						x: this.x,
+						y: this.y
+					});
+				},
+
+				scrollIntoView: function() {
+				//TODO
+				},
+
+			//				scrollIntoView: {
+			//					func: function () {
+			//
+			//					},
+			//					type: ['int', 'int']
+			//				}
 			}
-		}
-	};
+		};
 
-	var DisplayUnit = h5.cls.RootClass.extend(displayUnitClassDesc);
+		return classDesc;
+	});
 
-	var basicDisplayUnitDesc = {
+
+
+	var BasicDisplayUnit = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.BasicDisplayUnit',
 		property: {
 			_graphics: null,
@@ -239,6 +288,7 @@
 				this._graphics = SVGGraphics.create();
 				this._graphics._rootSvg = createSvgElement('svg');
 				this.domRoot = this._graphics._rootSvg;
+				this.domRoot.setAttribute('data-stage-role', 'basicDU'); //TODO for debugging
 			},
 			/**
 			 * @memberOf h5.ui.components.stage.BasicDisplayUnit
@@ -247,11 +297,10 @@
 				this._renderer = renderer;
 			}
 		}
-	};
+	});
 
-	var BasicDisplayUnit = DisplayUnit.extend(basicDisplayUnitDesc);
 
-	var displayUnitContainerDesc = {
+	var DisplayUnitContainer = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.DisplayUnitContainer',
 		property: {
 			_children: null
@@ -273,6 +322,7 @@
 
 				//TODO ここではsvgは作らない。
 				this.domRoot = createSvgElement('svg');
+				this.domRoot.setAttribute('data-stage-role', 'container');
 			},
 
 			addDisplayUnit: function(du) {
@@ -301,11 +351,10 @@
 				return this._children;
 			}
 		}
-	};
+	});
 
-	var DisplayUnitContainer = DisplayUnit.extend(displayUnitContainerDesc);
 
-	//LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
+	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
 	var Layer = DisplayUnitContainer.extend({
 		name: 'h5.ui.components.stage.Layer',
 		property: {
@@ -314,7 +363,8 @@
 		},
 		method: {
 			/**
-			 * @name h5.ui.components.stage.Layer
+			 * @constructor
+			 * @memberOf h5.ui.components.stage.Layer
 			 */
 			constructor: function Layer(id) {
 				Layer._super.call(this);
@@ -327,6 +377,11 @@
 
 				//TODO ここではsvgは作らない。
 				this.domRoot = createSvgElement('svg');
+				this.domRoot.setAttribute('data-stage-role', 'layer');
+				//				this.domRoot.setAttribute('x', 0);
+				//				this.domRoot.setAttribute('y', 0);
+				//				this.domRoot.setAttribute('width', 1000);
+				//				this.domRoot.setAttribute('height', 1000);
 
 				this.id = id;
 				this._canScrollX = true;
@@ -336,7 +391,6 @@
 	});
 
 	h5.u.obj.expose('h5.ui.components.stage', {
-		//		Operation: Operation,
 		BasicDisplayUnit: BasicDisplayUnit,
 		Layer: Layer,
 		DisplayUnitContainer: DisplayUnitContainer,
@@ -367,6 +421,7 @@
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
+			this._rect = stageModule.Rect.create(0, 0, 0, 0);
 		},
 
 		__ready: function() {
@@ -376,16 +431,32 @@
 			}
 			//$(this._root).css('position', 'relative');
 
-			var w = $(this.rootElement).width();
-			var h = $(this.rootElement).height();
+
+			this.rootElement.appendChild(this._duRoot);
+
+			this.refresh();
+		},
+
+		_initData: null,
+
+		_updateRootSize: function(width, height) {
+			var w = width !== undefined ? width : $(this.rootElement).width();
+			var h = height !== undefined ? height : $(this.rootElement).height();
 
 			this._duRoot.setAttributeNS(null, 'width', w);
 			this._duRoot.setAttributeNS(null, 'height', h);
 
-			this.rootElement.appendChild(this._duRoot);
+			this._rect.width = w;
+			this._rect.height = h;
+			this._updateViewBox();
 		},
 
-		_initData: null,
+		_updateViewBox: function() {
+			//TODO ViewBoxで全体のスクロールやスケールを実現するかどうかは
+			//パフォーマンス等の観点を考えて検討
+			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', this._rect.x,
+					this._rect.y, this._rect.width, this._rect.height));
+		},
 
 		setup: function(initData) {
 			this._initData = initData;
@@ -444,7 +515,31 @@
 			return null;
 		},
 
-		refresh: function() {}
+		_rect: null,
+
+		scrollTo: function(lx, ly) {
+			this._rect.x = lx;
+			this._rect.y = ly;
+			this._updateViewBox();
+		},
+
+		scrollBy: function(lx, ly) {
+			this._rect.x += lx;
+			this._rect.y += ly;
+			this._updateViewBox();
+		},
+
+		scrollWorldTo: function(wx, wy) {
+
+		},
+
+		scrollWorldBy: function(wx, wy) {
+
+		},
+
+		refresh: function(immediate) {
+			this._updateRootSize();
+		}
 	};
 
 	h5.core.expose(stageController);

@@ -38,7 +38,31 @@
 		 */
 		__name: 'h5.ui.components.stage.SampleAppController',
 
+		__meta: {
+			_stageController: {
+				rootElement: '#stageRoot'
+			}
+		},
+
 		_stageController: h5.ui.components.stage.StageController,
+
+		'[name="moveTo"] click': function(context, $el) {
+			this._units[2].moveTo(100, 100);
+		},
+
+		'[name="moveBy"] click': function(context, $el) {
+			this._units[1].moveBy(50, 50);
+		},
+
+		'[name="stageScrollTo"] click': function(context) {
+			this._stageController.scrollTo(100, 50);
+		},
+
+		'[name="stageScrollBy"] click': function(context) {
+			//y軸は下向きが正なので、-10すると見た目的には
+			//オブジェクトは下に動いたように見える
+			this._stageController.scrollBy(-10, -10);
+		},
 
 		_createDU: function(rect) {
 			var unit = BasicDisplayUnit.create();
@@ -57,6 +81,8 @@
 					height: 20
 				});
 
+				//				var vLayout = VerticalLayout.create();
+				//				vLyaout.add(rect1, rect2, rect3).align();
 
 				var rect2 = graphics.drawRect();
 				rect2.setAttributes({
@@ -78,6 +104,8 @@
 			return unit;
 		},
 
+		_units: [],
+
 		__ready: function() {
 			this._stageController.setup(stageInitParam);
 
@@ -88,7 +116,9 @@
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._createDU(rect);
 				container.addDisplayUnit(unit);
+				this._units.push(unit);
 			}
+
 
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(container);
 		}
@@ -98,22 +128,22 @@
 	$(function() {
 		h5.core.controller('#appRoot', controller);
 
-		var obj = {
-			_rp: 10
-		};
-		Object.defineProperty(obj, "rp", {
-			configurable: false,
-			enumerable: true,
-			get: function() {
-				return this._rp;
-			}
-//			set: function(value) {
-//				this[PROPERTY_BACKING_STORE_PREFIX + p] = value;
-//			}
-		});
+		//		var obj = {
+		//			_rp: 10
+		//		};
+		//		Object.defineProperty(obj, "rp", {
+		//			configurable: false,
+		//			enumerable: true,
+		//			get: function() {
+		//				return this._rp;
+		//			}
+		//			set: function(value) {
+		//				this[PROPERTY_BACKING_STORE_PREFIX + p] = value;
+		//			}
+		//		});
 
-//		var a = obj.rp;
-//		obj.rp = 30;
+		//		var a = obj.rp;
+		//		obj.rp = 30;
 
 	});
 
