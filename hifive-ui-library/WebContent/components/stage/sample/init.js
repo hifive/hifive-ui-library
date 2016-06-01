@@ -24,8 +24,6 @@
 	var Layer = h5.ui.components.stage.Layer;
 	var Rect = h5.ui.components.stage.Rect;
 
-	//var inst = Operation.create();
-
 	var stageInitParam = {
 		layers: [{
 			id: LAYER_ID_MAIN
@@ -62,6 +60,16 @@
 			//y軸は下向きが正なので、-10すると見た目的には
 			//オブジェクトは下に動いたように見える
 			this._stageController.scrollBy(-10, -10);
+		},
+
+		'[name="scaleX"] change': function(context, $el) {
+			var val = $el.val() / 100;
+			this._stageController.setScale(val, val);
+		},
+
+		'[name="scaleY"] change': function(context, $el) {
+			var val = $el.val();
+			this._stageController.setScaleY(val / 100);
 		},
 
 		_createDU: function(rect) {
@@ -127,24 +135,6 @@
 
 	$(function() {
 		h5.core.controller('#appRoot', controller);
-
-		//		var obj = {
-		//			_rp: 10
-		//		};
-		//		Object.defineProperty(obj, "rp", {
-		//			configurable: false,
-		//			enumerable: true,
-		//			get: function() {
-		//				return this._rp;
-		//			}
-		//			set: function(value) {
-		//				this[PROPERTY_BACKING_STORE_PREFIX + p] = value;
-		//			}
-		//		});
-
-		//		var a = obj.rp;
-		//		obj.rp = 30;
-
 	});
 
 })(jQuery);

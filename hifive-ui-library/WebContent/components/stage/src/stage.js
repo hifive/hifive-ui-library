@@ -164,6 +164,7 @@
 
 		var classDesc = {
 			name: 'h5.ui.components.stage.DisplayUnit',
+			isAbstract: true,
 			property: {
 				id: null,
 
@@ -418,6 +419,14 @@
 
 		_units: null,
 
+		_rect: null,
+
+		_scaleX: 1,
+
+		_scaleY: 1,
+
+		_initData: null,
+
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
@@ -437,8 +446,6 @@
 			this.refresh();
 		},
 
-		_initData: null,
-
 		_updateRootSize: function(width, height) {
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
@@ -454,8 +461,13 @@
 		_updateViewBox: function() {
 			//TODO ViewBoxで全体のスクロールやスケールを実現するかどうかは
 			//パフォーマンス等の観点を考えて検討
-			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', this._rect.x,
-					this._rect.y, this._rect.width, this._rect.height));
+
+			var x = this._rect.x;
+			var y = this._rect.y;
+			var w = this._rect.width / this._scaleX;
+			var h = this._rect.height / this._scaleY;
+
+			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
 		},
 
 		setup: function(initData) {
@@ -515,8 +527,6 @@
 			return null;
 		},
 
-		_rect: null,
-
 		scrollTo: function(lx, ly) {
 			this._rect.x = lx;
 			this._rect.y = ly;
@@ -535,6 +545,22 @@
 
 		scrollWorldBy: function(wx, wy) {
 
+		},
+
+		setScale: function(scaleX, scaleY) {
+			this._scaleX = scaleX;
+			this._scaleY = scaleY;
+			this._updateViewBox();
+		},
+
+		setScaleX: function(scaleX) {
+			this._scaleX = scaleX;
+			this._updateViewBox();
+		},
+
+		setScaleY: function(scaleY) {
+			this._scaleY = scaleY;
+			this._updateViewBox();
 		},
 
 		refresh: function(immediate) {
