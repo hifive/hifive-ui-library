@@ -69,6 +69,9 @@
 			_element: null
 		},
 		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGDrawElement
+			 */
 			constructor: function SVGDrawElement() {
 				SVGDrawElement._super.call(this);
 			},
@@ -103,12 +106,16 @@
 		property: null,
 
 		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGText
+			 */
 			constructor: function SVGText() {
 				SVGText._super.call(this);
 			},
 			setText: function(text) {
-				var str = document.createTextNode(text);
-				this._element.appendChild(str);
+				this._element.textContent = text;
+				//				var str = document.createTextNode(text);
+				//				this._element.appendChild(str);
 			}
 		}
 	});
@@ -120,6 +127,9 @@
 			_rootSvg: null
 		},
 		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGGraphics
+			 */
 			constructor: function SVGGraphics() {
 				SVGGraphics._super.call(this);
 			},
@@ -145,12 +155,16 @@
 				de.setElement(circle);
 				return de;
 			},
-			drawText: function() {
+			drawText: function(str) {
 				var text = createSvgElement('text');
 				this._rootSvg.appendChild(text);
 				var de = SVGText.create();
 				de.setElement(text);
-				de.setText(text);
+
+				if (str != null) {
+					de.setText(str);
+				}
+
 				return de;
 			}
 		}
