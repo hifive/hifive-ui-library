@@ -49,6 +49,37 @@
 		}
 	});
 
+	var Point = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.Point',
+			property: {
+				x: null,
+				y: null
+			},
+			method: {
+				constructor: function Point(x, y) {
+					Point._super.call(this);
+					this.x = x;
+					this.y = y;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var WorldPoint = Point.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.WorldPoint',
+			method: {
+				constructor: function WorldPoint(x, y) {
+					WorldPoint._super.call(this, x, y);
+				}
+			}
+		};
+		return desc;
+	});
+
+
 	function createSvgElement(name) {
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
 	}
@@ -409,7 +440,9 @@
 		BasicDisplayUnit: BasicDisplayUnit,
 		Layer: Layer,
 		DisplayUnitContainer: DisplayUnitContainer,
-		Rect: Rect
+		Rect: Rect,
+		Point: Point,
+		WorldPoint: WorldPoint
 	});
 
 	var stageLogic = {
@@ -579,6 +612,11 @@
 
 		refresh: function(immediate) {
 			this._updateRootSize();
+		},
+
+		getScrollPosition: function() {
+			var pos = stageModule.WorldPoint.create(this._rect.x, this._rect.y);
+			return pos;
 		}
 	};
 

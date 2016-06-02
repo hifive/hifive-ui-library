@@ -72,6 +72,12 @@
 			this._stageController.setScaleY(val / 100);
 		},
 
+		'[name="getScrollPosition"] click': function() {
+			var pos = this._stageController.getScrollPosition();
+			var str = pos.x + ', ' + pos.y;
+			this.$find('#scrollPos').text(str);
+		},
+
 		_createDU: function(rect) {
 			var unit = BasicDisplayUnit.create();
 			unit.setRect(rect);
@@ -126,7 +132,6 @@
 				container.addDisplayUnit(unit);
 				this._units.push(unit);
 			}
-
 
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(container);
 		}
