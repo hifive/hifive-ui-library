@@ -443,7 +443,10 @@
 	var DisplayUnitContainer = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.DisplayUnitContainer',
 		property: {
-			_children: null
+			_rootG: null,
+			_children: null,
+			_scaleX: null,
+			_scaleY: null
 		},
 		method: {
 			/**
@@ -458,20 +461,28 @@
 				this.width = 0;
 				this.height = 0;
 
+				this._scaleX = 1;
+				this._scaelY = 1;
+
 				this._children = [];
 
 				//TODO ここではsvgは作らない。
 				this.domRoot = createSvgElement('svg');
-				this.domRoot.setAttribute('data-stage-role', 'container');
+				this.domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
 
 				//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
 				//width, heightの指定との整合性について検討
 				this.domRoot.setAttribute('overflow', 'visible');
+
+				//rootGは<g>要素。transformを一括してかけるため、
+				//子要素は全てこの<g>の下に追加する。
+				this._rootG = createSvgElement('g');
+				this.domRoot.appendChild(this._rootG);
 			},
 
 			addDisplayUnit: function(du) {
 				this._children.push(du);
-				this.domRoot.appendChild(du.domRoot);
+				this._rootG.appendChild(du.domRoot);
 				if (typeof du._renderer === 'function') {
 					du._renderer(du._graphics, du);
 				}
@@ -482,7 +493,7 @@
 				var idx = this._children.indexOf(du);
 				if (idx !== -1) {
 					this._children.splice(idx, 1);
-					this.domRoot.removeChild(du.domRoot);
+					this._rootG.removeChild(du.domRoot);
 					du._parentDU = null;
 				}
 			},
@@ -498,6 +509,21 @@
 			_onAddedToRoot: function(rootStage) {
 			//TODO ここでは定義しない方がよい？
 			//AbstractMethodにする？(できるようにする？)
+			},
+
+			setScale: function(scaleX, scaleY) {
+				if (scaleX != null) {
+					this._scaleX = scaleX;
+				}
+				if (scaleY != null) {
+					this._scaleY = scaleY;
+				}
+				this._updateTransform();
+			},
+
+			_updateTransform: function() {
+				var transform = h5.u.str.format('scale({0},{1})', this._scaleX, this._scaleY);
+				this._rootG.setAttribute('transform', transform);
 			}
 		}
 	});
@@ -526,7 +552,7 @@
 				this._children = [];
 
 				//TODO ここではsvgは作らない。
-				this.domRoot = createSvgElement('svg');
+				//this.domRoot = createSvgElement('svg');
 				this.domRoot.setAttribute('data-stage-role', 'layer');
 				//				this.domRoot.setAttribute('x', 0);
 				//				this.domRoot.setAttribute('y', 0);
@@ -633,8 +659,8 @@
 
 			var x = this._rect.x;
 			var y = this._rect.y;
-			var w = this._rect.width / this._scaleX;
-			var h = this._rect.height / this._scaleY;
+			var w = this._rect.width; // / this._scaleX;
+			var h = this._rect.height; // / this._scaleY;
 
 			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
 		},
@@ -746,19 +772,25 @@
 		},
 
 		setScale: function(scaleX, scaleY) {
-			this._scaleX = scaleX;
-			this._scaleY = scaleY;
-			this._updateViewBox();
+			if (scaleX != null) {
+				this._scaleX = scaleX;
+			}
+			if (scaleY != null) {
+				this._scaleY = scaleY;
+			}
+
+			for (var i = 0, len = this._layers.length; i < len; i++) {
+				var layer = this._layers[i];
+				layer.setScale(this._scaleX, this._scaleY);
+			}
 		},
 
 		setScaleX: function(scaleX) {
-			this._scaleX = scaleX;
-			this._updateViewBox();
+			this.setScale(scaleX, null);
 		},
 
 		setScaleY: function(scaleY) {
-			this._scaleY = scaleY;
-			this._updateViewBox();
+			this.setScale(null, scaleY);
 		},
 
 		refresh: function(immediate) {
