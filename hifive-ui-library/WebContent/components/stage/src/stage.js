@@ -496,7 +496,8 @@
 			},
 
 			_onAddedToRoot: function(rootStage) {
-
+			//TODO ここでは定義しない方がよい？
+			//AbstractMethodにする？(できるようにする？)
 			}
 		}
 	});
@@ -570,7 +571,11 @@
 
 (function($) {
 
+	var EVENT_SIGHT_CHANGE = 'stageSightChange';
+
 	var stageModule = h5.ui.components.stage;
+
+	var DisplayPoint = stageModule.DisplayPoint;
 
 	var stageController = {
 		/**
@@ -600,6 +605,7 @@
 			if (!this._duRoot) {
 				var rootSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 				this._duRoot = rootSvg;
+				//rootSvg.setAttribute('overflow', 'visible');
 			}
 			//$(this._root).css('position', 'relative');
 
@@ -634,6 +640,8 @@
 		},
 
 		setup: function(initData) {
+			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
+
 			this._initData = initData;
 
 			if (initData.layers) {
@@ -691,15 +699,42 @@
 		},
 
 		scrollTo: function(dispX, dispY) {
+			var oldPos = DisplayPoint.create(this._rect.x, this._rect.y);
+
 			this._rect.x = dispX;
 			this._rect.y = dispY;
 			this._updateViewBox();
+
+			var newPos = DisplayPoint.create(dispX, dispY);
+
+			//TODO 現在はこの場所でイベントを出しているが、
+			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
+			//描画更新後にイベントをあげるようにする
+			var evArg = {
+				scrollPosition: {
+					oldValue: oldPos,
+					newValue: newPos,
+					isChanged: true
+				},
+				scale: {
+					oldValue: {
+						x: this._scaleX,
+						y: this._scaleY
+					},
+					newValue: {
+						x: this._scaleX,
+						y: this._scaleY
+					},
+					isChanged: false
+				}
+			};
+			this.trigger(EVENT_SIGHT_CHANGE, evArg);
 		},
 
 		scrollBy: function(dispX, dispY) {
-			this._rect.x += dispX;
-			this._rect.y += dispY;
-			this._updateViewBox();
+			var x = this._rect.x + dispX;
+			var y = this._rect.y + dispY;
+			this.scrollTo(x, y);
 		},
 
 		scrollWorldTo: function(wx, wy) {
