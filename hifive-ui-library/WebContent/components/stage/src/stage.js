@@ -446,7 +446,9 @@
 			_rootG: null,
 			_children: null,
 			_scaleX: null,
-			_scaleY: null
+			_scaleY: null,
+			_scrollX: null,
+			_scrollY: null
 		},
 		method: {
 			/**
@@ -462,7 +464,10 @@
 				this.height = 0;
 
 				this._scaleX = 1;
-				this._scaelY = 1;
+				this._scaleY = 1;
+
+				this._scrollX = 0;
+				this._scrollY = 0;
 
 				this._children = [];
 
@@ -498,9 +503,10 @@
 				}
 			},
 
-			getDisplayUnitById: function(id) {
-				return null; //TODO
-			},
+			//TODO これはStageに用意すればよいだろう
+			//			getDisplayUnitById: function(id) {
+			//				return null; //TODO
+			//			},
 
 			getDisplayUnitAll: function() {
 				return this._children;
@@ -521,8 +527,45 @@
 				this._updateTransform();
 			},
 
+			scrollTo: function(worldX, worldY) {
+				//				var oldPos = DisplayPoint.create(this._scrollX, this._scrollY);
+
+				this._scrollX = worldX;
+				this._scrollY = worldY;
+				this._updateTransform();
+
+				//				var newPos = WorldPoint.create(worldX, worldY);
+
+				//				var evArg = {
+				//					scrollPosition: {
+				//						oldValue: oldPos,
+				//						newValue: newPos,
+				//						isChanged: true
+				//					},
+				//					scale: {
+				//						oldValue: {
+				//							x: this._scaleX,
+				//							y: this._scaleY
+				//						},
+				//						newValue: {
+				//							x: this._scaleX,
+				//							y: this._scaleY
+				//						},
+				//						isChanged: false
+				//					}
+				//				};
+				//				this.trigger(EVENT_SIGHT_CHANGE, evArg);
+			},
+
+			scrollBy: function(worldX, worldY) {
+				var x = this._scrollX + worldX;
+				var y = this._scrollY + worldY;
+				this.scrollTo(x, y);
+			},
+
 			_updateTransform: function() {
-				var transform = h5.u.str.format('scale({0},{1})', this._scaleX, this._scaleY);
+				var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})', this._scrollX,
+						this._scrollY, this._scaleX, this._scaleY);
 				this._rootG.setAttribute('transform', transform);
 			}
 		}
@@ -613,7 +656,7 @@
 
 		_units: null,
 
-		_rect: null,
+		_displayRect: null,
 
 		_scaleX: 1,
 
@@ -624,7 +667,7 @@
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
-			this._rect = stageModule.Rect.create(0, 0, 0, 0);
+			this._displayRect = stageModule.Rect.create(0, 0, 0, 0);
 		},
 
 		__ready: function() {
@@ -648,8 +691,8 @@
 			this._duRoot.setAttributeNS(null, 'width', w);
 			this._duRoot.setAttributeNS(null, 'height', h);
 
-			this._rect.width = w;
-			this._rect.height = h;
+			this._displayRect.width = w;
+			this._displayRect.height = h;
 			this._updateViewBox();
 		},
 
@@ -657,10 +700,10 @@
 			//TODO ViewBoxで全体のスクロールやスケールを実現するかどうかは
 			//パフォーマンス等の観点を考えて検討
 
-			var x = this._rect.x;
-			var y = this._rect.y;
-			var w = this._rect.width; // / this._scaleX;
-			var h = this._rect.height; // / this._scaleY;
+			var x = this._displayRect.x;
+			var y = this._displayRect.y;
+			var w = this._displayRect.width; // / this._scaleX;
+			var h = this._displayRect.height; // / this._scaleY;
 
 			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
 		},
@@ -725,11 +768,16 @@
 		},
 
 		scrollTo: function(dispX, dispY) {
-			var oldPos = DisplayPoint.create(this._rect.x, this._rect.y);
+			var oldPos = DisplayPoint.create(this._displayRect.x, this._displayRect.y);
 
-			this._rect.x = dispX;
-			this._rect.y = dispY;
-			this._updateViewBox();
+			for (var i = 0, len = this._layers.length; i < len; i++) {
+				var layer = this._layers[i];
+				layer.scrollTo(dispX, dispY); //TODO scaleを考慮したスクロール量にする
+			}
+
+			this._displayRect.x = dispX;
+			this._displayRect.y = dispY;
+			//			this._updateViewBox();
 
 			var newPos = DisplayPoint.create(dispX, dispY);
 
@@ -758,8 +806,8 @@
 		},
 
 		scrollBy: function(dispX, dispY) {
-			var x = this._rect.x + dispX;
-			var y = this._rect.y + dispY;
+			var x = this._displayRect.x + dispX;
+			var y = this._displayRect.y + dispY;
 			this.scrollTo(x, y);
 		},
 
@@ -783,6 +831,32 @@
 				var layer = this._layers[i];
 				layer.setScale(this._scaleX, this._scaleY);
 			}
+
+			var oldPos = DisplayPoint.create(this._displayRect.x, this._displayRect.y);
+			var newPos = oldPos;
+
+			//TODO 現在はこの場所でイベントを出しているが、
+			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
+			//描画更新後にイベントをあげるようにする
+			var evArg = {
+				scrollPosition: {
+					oldValue: oldPos,
+					newValue: newPos,
+					isChanged: true
+				},
+				scale: {
+					oldValue: {
+						x: this._scaleX,
+						y: this._scaleY
+					},
+					newValue: {
+						x: this._scaleX,
+						y: this._scaleY
+					},
+					isChanged: false
+				}
+			};
+			this.trigger(EVENT_SIGHT_CHANGE, evArg);
 		},
 
 		setScaleX: function(scaleX) {
@@ -798,7 +872,7 @@
 		},
 
 		getScrollPosition: function() {
-			var pos = stageModule.DisplayPoint.create(this._rect.x, this._rect.y);
+			var pos = stageModule.DisplayPoint.create(this._displayRect.x, this._displayRect.y);
 			return pos;
 		}
 	};
