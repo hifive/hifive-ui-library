@@ -214,7 +214,8 @@
 			this._stageController.setup(stageInitParam);
 
 			var container = DisplayUnitContainer.create();
-			container.setRect(Rect.create(0, 100, 1000, 200));
+			//TODO コンテナのwidth, heightに関わらず、無限に出る
+			container.setRect(Rect.create(0, 100, 100, 100));
 
 			for (var i = 0, len = 5; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);

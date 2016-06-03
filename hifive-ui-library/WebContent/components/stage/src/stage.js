@@ -407,6 +407,7 @@
 					this._to = duTo;
 
 					this.domRoot = createSvgElement('svg');
+					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
 					//this._render();
 				},
 				setRect: function() {
@@ -462,6 +463,10 @@
 				//TODO ここではsvgは作らない。
 				this.domRoot = createSvgElement('svg');
 				this.domRoot.setAttribute('data-stage-role', 'container');
+
+				//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
+				//width, heightの指定との整合性について検討
+				this.domRoot.setAttribute('overflow', 'visible');
 			},
 
 			addDisplayUnit: function(du) {
@@ -501,7 +506,7 @@
 	var Layer = DisplayUnitContainer.extend({
 		name: 'h5.ui.components.stage.Layer',
 		property: {
-			_rootStage: null,
+			//_rootStage: null,
 			_canScrollX: true,
 			_canScrollY: true
 		},
