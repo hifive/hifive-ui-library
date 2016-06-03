@@ -18,17 +18,86 @@
 	'use strict';
 
 	var LAYER_ID_MAIN = 'main';
+	var LAYER_ID_EDGE = 'edge';
 
 	var BasicDisplayUnit = h5.ui.components.stage.BasicDisplayUnit;
 	var DisplayUnitContainer = h5.ui.components.stage.DisplayUnitContainer;
 	var Layer = h5.ui.components.stage.Layer;
 	var Rect = h5.ui.components.stage.Rect;
+	var Edge = h5.ui.components.stage.Edge;
 
 	var stageInitParam = {
 		layers: [{
 			id: LAYER_ID_MAIN
-		}]
+		},
+		{
+			id: LAYER_ID_EDGE
+		}
+		]
 	};
+
+	function keyGen() {
+		var key = 'abfajafja-' + new Date().getTime() + '-' + parseInt(Math.random() * 100000);
+		return key;
+	}
+
+	var MAX_ITER = 500000;
+
+	function byMap(map) {
+		var removeKeys = [];
+
+		for(var i = 0 ; i < MAX_ITER ; i++) {
+			var key = keyGen();
+			var rect = Rect.create();
+			map.set(key, rect);
+
+			if(Math.random() < 0.3) {
+				removeKeys.push(key);
+			}
+		}
+
+		var array = [];
+
+		map.forEach(function(value, key, thisMap) {
+			array.push(value);
+		});
+
+		for(var i = 0, len = removeKeys.length ; i < len ; i++) {
+			var rk = removeKeys[i];
+			map.delete(rk);
+		}
+
+		return array;
+	}
+
+	function byObj(obj) {
+		var removeKeys = [];
+
+		for(var i = 0 ; i < MAX_ITER ; i++) {
+			var key = keyGen();
+			var rect = Rect.create();
+			obj[key] = rect;
+
+			if(Math.random() < 0.3) {
+				removeKeys.push(key);
+			}
+		}
+
+		var array = [];
+
+		for(var key in obj) {
+			var value = obj[key];
+			array.push(value);
+		}
+
+		for(var i = 0, len = removeKeys.length ; i < len ; i++) {
+			var rk = removeKeys[i];
+			delete obj[rk];
+		}
+
+		return array;
+	}
+
 
 	var controller = {
 		/**
@@ -73,9 +142,23 @@
 		},
 
 		'[name="getScrollPosition"] click': function() {
-			var pos = this._stageController.getScrollPosition();
-			var str = pos.x + ', ' + pos.y;
-			this.$find('#scrollPos').text(str);
+//			var pos = this._stageController.getScrollPosition();
+//			var str = pos.x + ', ' + pos.y;
+//			this.$find('#scrollPos').text(str);
+
+
+			var map = new Map();
+			var obj = Object.create(null);
+
+			var beginTime = new Date().getTime();
+
+			//byMap(map);  //IE11 1600後半
+			byObj(obj);  //IE11 1600前半？
+
+			var endTime = new Date().getTime();
+
+			var str = 'time=' + (endTime - beginTime);
+			this.$find('#scrollPos').text('map: ' + str);
 		},
 
 		_createDU: function(rect) {
@@ -118,6 +201,13 @@
 			return unit;
 		},
 
+		_createEdge: function(duFrom, duTo) {
+			var edge = Edge.create(duFrom, duTo);
+			return edge;
+		},
+
+		_edges: [],
+
 		_units: [],
 
 		__ready: function() {
@@ -134,6 +224,11 @@
 			}
 
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(container);
+
+			var edge = this._createEdge(this._units[1], this._units[3]);
+			this._edges.push(edge);
+
+			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
 		}
 	};
 

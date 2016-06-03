@@ -79,6 +79,17 @@
 		return desc;
 	});
 
+	var DisplayPoint = Point.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayPoint',
+			method: {
+				constructor: function DisplayPoint(x, y) {
+					DisplayPoint._super.call(this, x, y);
+				}
+			}
+		};
+		return desc;
+	});
 
 	function createSvgElement(name) {
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
@@ -216,6 +227,8 @@
 				//TODO privateなプロパティへの対応
 				_parentDU: null,
 
+				_rootStage: null,
+
 				x: {
 					isAccessor: true
 				},
@@ -249,6 +262,12 @@
 						//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 						this.id = id;
 					}
+
+					//TODO prop.defaultValueで
+					this.x = 0;
+					this.y = 0;
+					this.width = 0;
+					this.height = 0;
 				},
 
 				setRect: function(rect) {
@@ -303,6 +322,30 @@
 				//TODO
 				},
 
+				getWorldGlobalPosition: function() {
+					if (!this._parentDU) {
+						return null;
+					}
+
+					var wgx = this.x;
+					var wgy = this.y;
+
+					var parentDU = this._parentDU;
+					while (!Layer.isClassOf(parentDU)) {
+						var parentPos = parentDU.getWorldGlobalPosition();
+						wgx += parentPos.x;
+						wgy += parentPos.y;
+						parentDU = this._parentDU._parentDU;
+					}
+
+					var wpos = WorldPoint.create(wgx, wgy);
+					return wpos;
+				},
+
+				_onAddedToRoot: function(stage) {
+				//do nothing
+				}
+
 			//				scrollIntoView: {
 			//					func: function () {
 			//
@@ -345,6 +388,56 @@
 		}
 	});
 
+	//TODO Path <- Edge などとする
+	//TODO DUからrect系をはずすか
+	var Edge = DisplayUnit.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.Edge',
+			property: {
+				_from: null,
+				_to: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.Edge
+				 */
+				constructor: function Edge(duFrom, duTo) {
+					Edge._super.call(this);
+					this._from = duFrom;
+					this._to = duTo;
+
+					this.domRoot = createSvgElement('svg');
+					//this._render();
+				},
+				setRect: function() {
+					throw new Error('EdgeではsetRectは使えません');
+				},
+				_render: function() {
+					//TODO 仮実装
+					//バインドされているDUの位置が変わったら再描画が必要
+					var fr = this._from.getRect();
+					//var tr = this._to.getRect();
+
+					var fwPos = this._from.getWorldGlobalPosition();
+					var twPos = this._to.getWorldGlobalPosition();
+
+					var line = createSvgElement('line');
+					setSvgAttributes(line, {
+						x1: fwPos.x + fr.width,
+						y1: fwPos.y + fr.height,
+						x2: twPos.x,
+						y2: twPos.y
+					});
+
+					this.domRoot.appendChild(line);
+				},
+				_onAddedToRoot: function(stage) {
+					this._render();
+				}
+			}
+		};
+		return desc;
+	});
 
 	var DisplayUnitContainer = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.DisplayUnitContainer',
@@ -395,6 +488,10 @@
 
 			getDisplayUnitAll: function() {
 				return this._children;
+			},
+
+			_onAddedToRoot: function(rootStage) {
+
 			}
 		}
 	});
@@ -404,6 +501,7 @@
 	var Layer = DisplayUnitContainer.extend({
 		name: 'h5.ui.components.stage.Layer',
 		property: {
+			_rootStage: null,
 			_canScrollX: true,
 			_canScrollY: true
 		},
@@ -432,6 +530,17 @@
 				this.id = id;
 				this._canScrollX = true;
 				this._canScrollY = true;
+			},
+
+			addDisplayUnit: function(du) {
+				Layer._super.prototype.addDisplayUnit.call(this, du);
+
+				du._onAddedToRoot(this._rootStage);
+			},
+
+			getWorldGlobalPosition: function() {
+				var p = WorldPoint.create(this.x, this.y);
+				return p;
 			}
 		}
 	});
@@ -442,7 +551,9 @@
 		DisplayUnitContainer: DisplayUnitContainer,
 		Rect: Rect,
 		Point: Point,
-		WorldPoint: WorldPoint
+		WorldPoint: WorldPoint,
+		DisplayPoint: DisplayPoint,
+		Edge: Edge
 	});
 
 	var stageLogic = {
@@ -574,15 +685,15 @@
 			return null;
 		},
 
-		scrollTo: function(lx, ly) {
-			this._rect.x = lx;
-			this._rect.y = ly;
+		scrollTo: function(dispX, dispY) {
+			this._rect.x = dispX;
+			this._rect.y = dispY;
 			this._updateViewBox();
 		},
 
-		scrollBy: function(lx, ly) {
-			this._rect.x += lx;
-			this._rect.y += ly;
+		scrollBy: function(dispX, dispY) {
+			this._rect.x += dispX;
+			this._rect.y += dispY;
 			this._updateViewBox();
 		},
 
@@ -615,7 +726,7 @@
 		},
 
 		getScrollPosition: function() {
-			var pos = stageModule.WorldPoint.create(this._rect.x, this._rect.y);
+			var pos = stageModule.DisplayPoint.create(this._rect.x, this._rect.y);
 			return pos;
 		}
 	};
