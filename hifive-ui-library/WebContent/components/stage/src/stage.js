@@ -564,8 +564,8 @@
 			},
 
 			_updateTransform: function() {
-				var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})', this._scrollX,
-						this._scrollY, this._scaleX, this._scaleY);
+				var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})',
+						-this._scrollX, -this._scrollY, this._scaleX, this._scaleY);
 				this._rootG.setAttribute('transform', transform);
 			}
 		}
@@ -811,11 +811,11 @@
 			this.scrollTo(x, y);
 		},
 
-		scrollWorldTo: function(wx, wy) {
+		scrollWorldTo: function(worldX, worldY) {
 
 		},
 
-		scrollWorldBy: function(wx, wy) {
+		scrollWorldBy: function(worldX, worldY) {
 
 		},
 
