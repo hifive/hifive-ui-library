@@ -30,16 +30,16 @@
 				get: function() {
 					return this._x;
 				},
-				set: function() {
-					return this._x;
+				set: function(value) {
+					this._x = value;
 				}
 			},
 			y: {
 				get: function() {
 					return this._y;
 				},
-				set: function() {
-					return this._y;
+				set: function(value) {
+					this._y = value;
 				}
 			},
 			width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
