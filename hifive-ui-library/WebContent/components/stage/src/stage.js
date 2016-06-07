@@ -21,19 +21,29 @@
 
 	var Rect = RootClass.extend({
 		name: 'h5.ui.components.stage.Rect',
-		property: {
+		field: {
+			_x: null,
+			_y: null
+		},
+		accessor: {
 			x: {
-				isAccessor: true
+				get: function() {
+					return this._x;
+				},
+				set: function() {
+					return this._x;
+				}
 			},
 			y: {
-				isAccessor: true
+				get: function() {
+					return this._y;
+				},
+				set: function() {
+					return this._y;
+				}
 			},
-			width: {
-				isAccessor: true
-			},
-			height: {
-				isAccessor: true
-			}
+			width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
+			height: null
 		},
 		method: {
 			/**
@@ -41,18 +51,17 @@
 			 */
 			constructor: function Rect(x, y, width, height) {
 				Rect._super.call(this);
-				this._p_x = x !== undefined ? x : 0;
-				this._p_y = y !== undefined ? y : 0;
+				this._x = x !== undefined ? x : 0;
+				this._y = y !== undefined ? y : 0;
 				this._p_width = width !== undefined ? width : 0;
 				this._p_height = height !== undefined ? height : 0;
 			}
 		}
 	});
-
 	var Point = RootClass.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.Point',
-			property: {
+			field: {
 				x: null,
 				y: null
 			},
@@ -107,7 +116,7 @@
 
 	var SVGDrawElement = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGDrawElement',
-		property: {
+		field: {
 			_element: null
 		},
 		method: {
@@ -144,9 +153,6 @@
 
 	var SVGText = SVGDrawElement.extend({
 		name: 'h5.ui.components.stage.SVGText',
-
-		property: null,
-
 		method: {
 			/**
 			 * @memberOf h5.ui.components.stage.SVGText
@@ -165,7 +171,7 @@
 
 	var SVGGraphics = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGGraphics',
-		property: {
+		field: {
 			_rootSvg: null
 		},
 		method: {
@@ -221,32 +227,21 @@
 		var classDesc = {
 			name: 'h5.ui.components.stage.DisplayUnit',
 			isAbstract: true,
-			property: {
+			field: {
 				id: null,
 
 				//TODO privateなプロパティへの対応
 				_parentDU: null,
 
 				_rootStage: null,
-
-				x: {
-					isAccessor: true
-				},
-				y: {
-					isAccessor: true
-				},
-				width: {
-					isAccessor: true
-				},
-				height: {
-					isAccessor: true
-				},
-				domRoot: {
-					isAccessor: true
-				},
-				extraData: {
-					isAccessor: true
-				}
+			},
+			accessor: {
+				x: null,
+				y: null,
+				width: null,
+				height: null,
+				domRoot: null,
+				extraData: null
 			},
 			method: {
 				/**
@@ -362,12 +357,12 @@
 
 	var BasicDisplayUnit = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.BasicDisplayUnit',
-		property: {
+		field: {
 			_graphics: null,
-			_renderer: null,
-			isSelected: {
-				isAccessor: true
-			}
+			_renderer: null
+		},
+		accessor: {
+			isSelected: null
 		},
 		method: {
 			constructor: function BasicDisplayUnit() {
@@ -393,7 +388,7 @@
 	var Edge = DisplayUnit.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.Edge',
-			property: {
+			field: {
 				_from: null,
 				_to: null
 			},
@@ -442,7 +437,7 @@
 
 	var DisplayUnitContainer = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.DisplayUnitContainer',
-		property: {
+		field: {
 			_rootG: null,
 			_children: null,
 			_scaleX: null,
@@ -575,7 +570,7 @@
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
 	var Layer = DisplayUnitContainer.extend({
 		name: 'h5.ui.components.stage.Layer',
-		property: {
+		field: {
 			//_rootStage: null,
 			_canScrollX: true,
 			_canScrollY: true
@@ -819,7 +814,13 @@
 
 		},
 
-		setScale: function(scaleX, scaleY) {
+		/**
+		 * @param scaleX
+		 * @param scaleY
+		 * @param centerPercentX 拡縮時の中心点のx（左上を原点とし、表示サイズの端を100%としたときの割合をパーセントで与える。デフォルトでは50%）
+		 * @param centerPercentY 拡縮時の中心点のy（仕様はxと同じ）
+		 */
+		setScale: function(scaleX, scaleY, centerPercentX, centerPercentY) {
 			if (scaleX != null) {
 				this._scaleX = scaleX;
 			}
@@ -859,11 +860,11 @@
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
 		},
 
-		setScaleX: function(scaleX) {
+		setScaleX: function(scaleX, centerPercentX) {
 			this.setScale(scaleX, null);
 		},
 
-		setScaleY: function(scaleY) {
+		setScaleY: function(scaleY, centerPercentY) {
 			this.setScale(null, scaleY);
 		},
 
