@@ -114,10 +114,16 @@
 		}
 	}
 
+	function removeSvgAttribute(element, key) {
+		element.removeAttributeNS(null, key);
+	}
+
 	var SVGDrawElement = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGDrawElement',
 		field: {
-			_element: null
+			_element: null,
+			_classes: null,
+			_attributes: null
 		},
 		method: {
 			/**
@@ -126,30 +132,123 @@
 			constructor: function SVGDrawElement(element) {
 				SVGDrawElement._super.call(this);
 				this._element = element;
+				this._classes = [];
+				this._attributes = new Map();
 			},
 			setAttribute: function(key, value) {
+				this._setAttribute(key, value);
 				setSvgAttribute(this._element, key, value);
 			},
 			setAttributes: function(param) {
-				setSvgAttributes(this._element, param);
+				for ( var key in param) {
+					if (param.hasOwnProperty(key)) {
+						this.setAttribute(key, param[key]);
+					}
+				}
 			},
 			removeAttribute: function(key) {
-			//TODO 戻り値はvoid
+				this._removeAttribute(key);
+				removeSvgAttribute(this._element, key);
 			},
 			removeAttributes: function(keys) {
-			//TODO keysは配列, 戻り値はvoid
+				for (var i = 0; i < keys.length; i++) {
+					this.removeAttribute(keys[i]);
+				}
 			},
 			addClass: function(className) {
-			//TODO CSSクラスを追加(二重に追加しないよう注意), 戻り値はvoid
+				// FIXME IE cannot use SVGElement#classList
+				for (var i = 0; i < this._classes.length; i++) {
+					if (this._classes[i] === className) {
+						return;
+					}
+				}
+				this._classes.push(className);
+				this.setAttribute('class', this._classes.join(' '));
 			},
 			removeClass: function(className) {
-			//TODO 戻り値はvoid
+				// FIXME IE cannot use SVGElement#classList
+				for (var i = 0; i < this._classes.length; i++) {
+					if (this._classes[i] === className) {
+						this._classes.splice(i, 1);
+						this.setAttribute('class', this._classes.join(' '));
+						break;
+					}
+				}
+			},
+			_getAttribute: function(key) {
+				return this._attributes.has(key) ? this._attributes.get(key) : null;
+			},
+			_setAttribute: function(key, value) {
+				this._attributes.set(key, value);
+			},
+			_removeAttribute: function(key) {
+				// FIXME deleteがエラーとして表示される
+				this._attributes['delete'](key);
 			}
-		},
+		}
 	});
 
 	var SVGLine = SVGDrawElement.extend({
 		name: 'h5.ui.components.stage.SVGLine',
+		field: {},
+		accessor: {
+			x1: {
+				get: function() {
+					return this._getAttribute('x1');
+				},
+				set: function(value) {
+					this.setAttribute('x1', value);
+				}
+			},
+			x2: {
+				get: function() {
+					return this._getAttribute('x2');
+				},
+				set: function(value) {
+					this.setAttribute('x2', value);
+				}
+			},
+			y1: {
+				get: function() {
+					return this._getAttribute('y1');
+				},
+				set: function(value) {
+					this.setAttribute('y1', value);
+				}
+			},
+			y2: {
+				get: function() {
+					return this._getAttribute('y2');
+				},
+				set: function(value) {
+					this.setAttribute('y2', value);
+				}
+			},
+			stroke: {
+				get: function() {
+					return this._getAttribute('stroke');
+				},
+				set: function(value) {
+					this.setAttribute('stroke', value);
+				}
+			},
+			strokeWidth: {
+				get: function() {
+					return this._getAttribute('stroke-width');
+				},
+				set: function(value) {
+					this.setAttribute('stroke-width', value);
+				}
+			},
+			fill: {
+				get: function() {
+					return this._getAttribute('fill');
+				},
+				set: function(value) {
+					this.setAttribute('fill', value);
+				}
+			}
+		},
 		method: {
 			constructor: function SVGLine(element) {
 				SVGLine._super.call(this, element);
@@ -159,17 +258,268 @@
 
 	var SVGText = SVGDrawElement.extend({
 		name: 'h5.ui.components.stage.SVGText',
+		field: {},
+		accessor: {
+			x: {
+				get: function() {
+					return this._getAttribute('x');
+				},
+				set: function(value) {
+					this.setAttribute('x', value);
+				}
+			},
+			y: {
+				get: function() {
+					return this._getAttribute('y');
+				},
+				set: function(value) {
+					this.setAttribute('y', value);
+				}
+			},
+			dx: {
+				get: function() {
+					return this._getAttribute('dx');
+				},
+				set: function(value) {
+					var val = value;
+					if (Array.isArray(value)) {
+						val = value.join(',');
+					}
+					this.setAttribute('dx', val);
+					this._setAttribute('dx', val);
+				}
+			},
+			dy: {
+				get: function() {
+					return this._getAttribute('dy');
+				},
+				set: function(value) {
+					var val = value;
+					if (Array.isArray(value)) {
+						val = value.join(',');
+					}
+					this.setAttribute('dx', val);
+					this._setAttribute('dx', val);
+				}
+			},
+			textAnchor: {
+				get: function() {
+					return this._getAttribute('text-anchor');
+				},
+				set: function(value) {
+					this.setAttribute('text-anchor', value);
+				}
+			},
+			dominantBaseline: {
+				get: function() {
+					return this._getAttribute('dominant-baseline');
+				},
+				set: function(value) {
+					this.setAttribute('dominant-baseline', value);
+				}
+			},
+			fontFamily: {
+				get: function() {
+					return this._getAttribute('font-family');
+				},
+				set: function(value) {
+					this.setAttribute('font-family', value);
+				}
+			},
+			fontSize: {
+				get: function() {
+					return this._getAttribute('font-size');
+				},
+				set: function(value) {
+					this.setAttribute('font-size', value);
+				}
+			},
+			fontWeight: {
+				get: function() {
+					return this._getAttribute('font-weight');
+				},
+				set: function(value) {
+					this.setAttribute('font-weight', value);
+				}
+			},
+			fill: {
+				get: function() {
+					return this._getAttribute('fill');
+				},
+				set: function(value) {
+					this.setAttribute('fill', value);
+				}
+			},
+			rotate: {
+				get: function() {
+					return this._getAttribute('rotate');
+				},
+				set: function(value) {
+					this.setAttribute('rotate', value);
+				}
+			}
+		},
 		method: {
 			/**
 			 * @memberOf h5.ui.components.stage.SVGText
 			 */
-			constructor: function SVGText() {
+			constructor: function SVGText(element) {
 				SVGText._super.call(this, element);
 			},
 			setText: function(text) {
 				this._element.textContent = text;
 				//				var str = document.createTextNode(text);
 				//				this._element.appendChild(str);
+			}
+		}
+	});
+
+	var SVGRect = SVGDrawElement.extend({
+		name: 'h5.ui.components.stage.SVGRect',
+		field: {},
+		accessor: {
+			x: {
+				get: function() {
+					return this._getAttribute('x');
+				},
+				set: function(value) {
+					this.setAttribute('x', value);
+				}
+			},
+			y: {
+				get: function() {
+					return this._getAttribute('y');
+				},
+				set: function(value) {
+					this.setAttribute('y', value);
+				}
+			},
+			width: {
+				get: function() {
+					return this._getAttribute('width');
+				},
+				set: function(value) {
+					this.setAttribute('width', value);
+				}
+			},
+			height: {
+				get: function() {
+					return this._getAttribute('height');
+				},
+				set: function(value) {
+					this.setAttribute('height', value);
+				}
+			},
+			stroke: {
+				get: function() {
+					return this._getAttribute('stroke');
+				},
+				set: function(value) {
+					this.setAttribute('stroke', value);
+				}
+			},
+			strokeWidth: {
+				get: function() {
+					return this._getAttribute('stroke-width');
+				},
+				set: function(value) {
+					this.setAttribute('stroke-width', value);
+				}
+			},
+			rx: {
+				get: function() {
+					return this._getAttribute('rx');
+				},
+				set: function(value) {
+					this.setAttribute('rx', value);
+				}
+			},
+			ry: {
+				get: function() {
+					return this._getAttribute('ry');
+				},
+				set: function(value) {
+					this.setAttribute('ry', value);
+				}
+			},
+			fill: {
+				get: function() {
+					return this._getAttribute('fill');
+				},
+				set: function(value) {
+					this.setAttribute('fill', value);
+				}
+			}
+		},
+		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGRect
+			 */
+			constructor: function SVGRect(element) {
+				SVGRect._super.call(this, element);
+			}
+		}
+	});
+
+	var SVGCircle = SVGDrawElement.extend({
+		name: 'h5.ui.components.stage.SVGCircle',
+		field: {},
+		accessor: {
+			cx: {
+				get: function() {
+					return this._getAttribute('cx');
+				},
+				set: function(value) {
+					this.setAttribute('cx', value);
+				}
+			},
+			cy: {
+				get: function() {
+					return this._getAttribute('cy');
+				},
+				set: function(value) {
+					this.setAttribute('cy', value);
+				}
+			},
+			r: {
+				get: function() {
+					return this._getAttribute('r');
+				},
+				set: function(value) {
+					this.setAttribute('r', value);
+				}
+			},
+			stroke: {
+				get: function() {
+					return this._getAttribute('stroke');
+				},
+				set: function(value) {
+					this.setAttribute('stroke', value);
+				}
+			},
+			strokeWidth: {
+				get: function() {
+					return this._getAttribute('stroke-width');
+				},
+				set: function(value) {
+					this.setAttribute('stroke-width', value);
+				}
+			},
+			fill: {
+				get: function() {
+					return this._getAttribute('fill');
+				},
+				set: function(value) {
+					this.setAttribute('fill', value);
+				}
+			}
+		},
+		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGCircle
+			 */
+			constructor: function SVGCircle(element) {
+				SVGCircle._super.call(this, element);
 			}
 		}
 	});
@@ -197,13 +547,13 @@
 			drawRect: function() {
 				var rect = createSvgElement('rect');
 				this._rootSvg.appendChild(rect);
-				var de = SVGDrawElement.create(rect);
+				var de = SVGRect.create(rect);
 				return de;
 			},
 			drawCircle: function() {
 				var circle = createSvgElement('circle');
 				this._rootSvg.appendChild(circle);
-				var de = SVGDrawElement.create(circle);
+				var de = SVGCircle.create(circle);
 				return de;
 			},
 			drawText: function(str) {
