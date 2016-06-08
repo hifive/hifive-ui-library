@@ -163,7 +163,7 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGText
 			 */
-			constructor: function SVGText() {
+			constructor: function SVGText(element) {
 				SVGText._super.call(this, element);
 			},
 			setText: function(text) {
@@ -216,6 +216,321 @@
 				}
 
 				return de;
+			}
+		}
+	});
+
+
+	var SVGHelper = h5.cls.RootClass.extend({
+		name: 'h5.ui.components.stage.SVGHelper',
+		field: {
+			_element: null,
+			_classes: null
+		},
+		isAbstract: true,
+		method: {
+			/**
+			 * @param {SVGDrawElement} element
+			 * @param {Object<String, *>} [values]
+			 * @memberOf h5.ui.components.stage.SVGHelper
+			 */
+			constructor: function SVGHelper(element, values) {
+				SVGHelper._super.call(this);
+				this._element = element._element;
+				this._classes = [];
+
+				if (values) {
+					this.attributes(values);
+				}
+			},
+			/**
+			 * @param {String} key
+			 * @param {String} value
+			 * @return {SVGHelper}
+			 */
+			attribute: function(key, value) {
+				if (value === undefined || value === null) {
+					this.removeAttribute(key);
+				} else {
+					this._element.setAttributeNS(null, key, value);
+				}
+				return this;
+			},
+			/**
+			 * @param {Object<String, *>} values
+			 * @return {SVGHelper}
+			 */
+			attributes: function(values) {
+				var _self = this;
+				$.each(values, function(key, value) {
+					_self.attribute(key, value);
+				});
+				return this;
+			},
+			/**
+			 * @param {String} key
+			 * @return {SVGHelper}
+			 */
+			removeAttribute: function(key) {
+				this._element.removeAttributeNS(null, key);
+				return this;
+			},
+			/**
+			 * @param {String[]} keys
+			 * @return {SVGHelper}
+			 */
+			removeAttributes: function(keys) {
+				var _self = this;
+				$.each(key, function(index, value) {
+					_self.removeAttribute(value);
+				});
+				return this;
+			},
+			addClass: function(className) {
+				// FIXME IE cannot use SVGElement#classList
+				for (var i = 0; i < this._classes.length; i++) {
+					if (this._classes[i] === className) {
+						return;
+					}
+				}
+				this._classes.push(className);
+				this.attribute('class', this._classes.join(' '));
+				return this;
+			},
+			removeClass: function(className) {
+				// FIXME IE cannot use SVGElement#classList
+				for (var i = 0; i < this._classes.length; i++) {
+					if (this._classes[i] === className) {
+						this._classes.slice(i, 1);
+						this.attribute('class', this._classes.join(' '));
+						break;
+					}
+				}
+				return this;
+			}
+		}
+	});
+
+	var SVGTextHelper = SVGHelper.extend({
+		name: 'h5.ui.components.stage.SVGTextHelper',
+		method: {
+			/**
+			 * @param {SVGDrawElement} element
+			 * @param {Object<String, *>} [values]
+			 * @memberOf h5.ui.components.stage.SVGTextHelper
+			 */
+			constructor: function SVGTextHelper(element, values) {
+				SVGTextHelper._super.call(this, element, values);
+			},
+			/**
+			 * @param {Number} x
+			 * @param {Number} y
+			 * @return {SVGTextHelper}
+			 */
+			offset: function(x, y) {
+				return this.attribute('x', x).attribute('y', y);
+			},
+			/**
+			 * @param {Array|String|Number} dx
+			 * @param {Array|String|Number} dy
+			 * @return {SVGTextHelper}
+			 */
+			delta: function(dx, dy) {
+				if (Array.isArray(dx)) {
+					dx = dx.join(',');
+				}
+				if (Array.isArray(dy)) {
+					dy = dy.join(',');
+				}
+				return this.attribute('dx', dx).attribute('dy', dy);
+			},
+			/**
+			 * @param {String} text
+			 * @return {SVGTextHelper}
+			 */
+			text: function(text) {
+				this._element.textContent = text;
+				return this;
+			},
+			/**
+			 * @param {String} anchor
+			 * @return {SVGTextHelper}
+			 */
+			textAnchor: function(anchor) {
+				return this.attribute('text-anchor', anchor);
+			},
+			dominantBaseline: function(baseLine) {
+				// FIXME IE does not support dominant-baseline
+				return this.attribute('dominant-baseline', baseLine);
+			},
+			/**
+			 * @param {String} family
+			 * @return {SVGTextHelper}
+			 */
+			fontFamily: function(family) {
+				return this.attribute('font-family', family);
+			},
+			/**
+			 * @param {String|Number} size
+			 * @return {SVGTextHelper}
+			 */
+			fontSize: function(size) {
+				return this.attribute('font-size', size);
+			},
+			/**
+			 * @param {String|Number} weight
+			 * @return {SVGTextHelper}
+			 */
+			fontWeight: function(weight) {
+				return this.attribute('font-weight', weight);
+			},
+			/**
+			 * @param {String} color
+			 * @return {SVGTextHelper}
+			 */
+			fill: function(color) {
+				return this.attribute('fill', color);
+			},
+			/**
+			 * @param {Number} rotate
+			 * @return {SVGTextHelper}
+			 */
+			rotate: function(rotate) {
+				return this.attribute('rotate', rotate);
+			}
+		}
+	});
+
+	var SVGRectHelper = SVGHelper.extend({
+		name: 'h5.ui.components.stage.SVGRectHelper',
+		method: {
+			/**
+			 * @param {SVGDrawElement} element
+			 * @param {Object<String, *>} [values]
+			 * @memberOf h5.ui.components.stage.SVGRectHelper
+			 */
+			constructor: function SVGRectHelper(element, values) {
+				SVGRectHelper._super.call(this, element, values);
+			},
+			/**
+			 * @param {Number|{x: Number, y: Number, width: Number, height: Number}} x
+			 * @param {Number} y
+			 * @param {Number} width
+			 * @param {Number} height
+			 * @return {SVGRectHelper}
+			 */
+			rect: function(x, y, width, height) {
+				if (x !== null && typeof x !== 'number' && typeof x !== 'string') {
+					y = x.y;
+					width = x.width;
+					height = x.height;
+					x = x.x;
+				}
+
+				return this.attribute('x', x).attribute('y', y).attribute('width', width)
+						.attribute('height', height);
+			},
+			/**
+			 * @param {Number} x
+			 * @param {Number} y
+			 * @return {SVGRectHelper}
+			 */
+			offset: function(x, y) {
+				return this.attribute('x', x).attribute('y', y);
+			},
+			/**
+			 * @param {Number} width
+			 * @return {SVGRectHelper}
+			 */
+			width: function(width) {
+				return this.attribute('width', width);
+			},
+			/**
+			 * @param {Number} height
+			 * @return {SVGRectHelper}
+			 */
+			height: function(height) {
+				return this.attribute('height', height);
+			},
+			/**
+			 * @param {String} stroke
+			 * @param {String|Number} [width]
+			 * @return {SVGRectHelper}
+			 */
+			stroke: function(stroke, width) {
+				this.attribute('stroke', stroke);
+				if (width !== undefined) {
+					this.strokeWidth(width);
+				}
+				return this;
+			},
+			/**
+			 * @param {String|Number} strokeWidth
+			 * @return {SVGRectHelper}
+			 */
+			strokeWidth: function(strokeWidth) {
+				return this.attribute('stroke-width', strokeWidth);
+			},
+			/**
+			 * @param {Number} rx
+			 * @param {Number} ry
+			 * @return {SVGRectHelper}
+			 */
+			round: function(rx, ry) {
+				return this.attribute('rx', rx).attribute('ry', ry);
+			},
+			/**
+			 * @param {String} color
+			 * @return {SVGRectHelper}
+			 */
+			fill: function(color) {
+				return this.attribute('fill', color);
+			}
+		}
+	});
+
+	var SVGLineHelper = SVGHelper.extend({
+		name: 'h5.ui.components.stage.SVGLineHelper',
+		method: {
+			/**
+			 * @param {SVGDrawElement} element
+			 * @param {Object<String, *>} [values]
+			 * @memberOf h5.ui.components.stage.SVGLineHelper
+			 */
+			constructor: function SVGLineHelper(element, values) {
+				SVGRectHelper._super.call(this, element, values);
+			},
+			from: function(x, y) {
+				return this.attribute('x1', x).attribute('y1', y);
+			},
+			to: function(x, y) {
+				return this.attribute('x2', x).attribute('y2', y);
+			},
+			/**
+			 * @param {String} stroke
+			 * @param {String|Number} [width]
+			 * @return {SVGRectHelper}
+			 */
+			stroke: function(stroke, width) {
+				this.attribute('stroke', stroke);
+				if (width !== undefined) {
+					this.strokeWidth(width);
+				}
+				return this;
+			},
+			/**
+			 * @param {String|Number} strokeWidth
+			 * @return {SVGRectHelper}
+			 */
+			strokeWidth: function(strokeWidth) {
+				return this.attribute('stroke-width', strokeWidth);
+			},
+			/**
+			 * @param {String} color
+			 * @return {SVGRectHelper}
+			 */
+			fill: function(color) {
+				return this.attribute('fill', color);
 			}
 		}
 	});
@@ -625,7 +940,10 @@
 		Point: Point,
 		WorldPoint: WorldPoint,
 		DisplayPoint: DisplayPoint,
-		Edge: Edge
+		Edge: Edge,
+		SVGTextHelper: SVGTextHelper,
+		SVGRectHelper: SVGRectHelper,
+		SVGLineHelper: SVGLineHelper
 	});
 
 	var stageLogic = {
