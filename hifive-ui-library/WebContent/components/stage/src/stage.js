@@ -456,7 +456,7 @@
 			 * @memberOf h5.ui.components.stage.SVGRect
 			 */
 			constructor: function SVGRect(element) {
-				SVGText._super.call(this, element);
+				SVGRect._super.call(this, element);
 			}
 		}
 	});
@@ -519,7 +519,7 @@
 			 * @memberOf h5.ui.components.stage.SVGCircle
 			 */
 			constructor: function SVGCircle(element) {
-				SVGText._super.call(this, element);
+				SVGCircle._super.call(this, element);
 			}
 		}
 	});
