@@ -123,21 +123,27 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGDrawElement
 			 */
-			constructor: function SVGDrawElement() {
+			constructor: function SVGDrawElement(element) {
 				SVGDrawElement._super.call(this);
-			},
-			setElement: function(element) {
-				//TODO こんすとらくた渡しにする
 				this._element = element;
-			},
-			getElement: function() {
-				return this._element;
 			},
 			setAttribute: function(key, value) {
 				setSvgAttribute(this._element, key, value);
 			},
 			setAttributes: function(param) {
 				setSvgAttributes(this._element, param);
+			},
+			removeAttribute: function(key) {
+			//TODO 戻り値はvoid
+			},
+			removeAttributes: function(keys) {
+			//TODO keysは配列, 戻り値はvoid
+			},
+			addClass: function(className) {
+			//TODO CSSクラスを追加(二重に追加しないよう注意), 戻り値はvoid
+			},
+			removeClass: function(className) {
+			//TODO 戻り値はvoid
 			}
 		},
 	});
@@ -145,8 +151,8 @@
 	var SVGLine = SVGDrawElement.extend({
 		name: 'h5.ui.components.stage.SVGLine',
 		method: {
-			constructor: function SVGLine() {
-				SVGLine._super.call(this);
+			constructor: function SVGLine(element) {
+				SVGLine._super.call(this, element);
 			}
 		}
 	});
@@ -158,7 +164,7 @@
 			 * @memberOf h5.ui.components.stage.SVGText
 			 */
 			constructor: function SVGText() {
-				SVGText._super.call(this);
+				SVGText._super.call(this, element);
 			},
 			setText: function(text) {
 				this._element.textContent = text;
@@ -185,29 +191,25 @@
 			drawLine: function() {
 				var line = createSvgElement('line');
 				this._rootSvg.appendChild(line);
-				var sl = SVGLine.create();
-				sl.setElement(line);
+				var sl = SVGLine.create(line);
 				return sl;
 			},
 			drawRect: function() {
 				var rect = createSvgElement('rect');
 				this._rootSvg.appendChild(rect);
-				var de = SVGDrawElement.create();
-				de.setElement(rect);
+				var de = SVGDrawElement.create(rect);
 				return de;
 			},
 			drawCircle: function() {
 				var circle = createSvgElement('circle');
 				this._rootSvg.appendChild(circle);
-				var de = SVGDrawElement.create();
-				de.setElement(circle);
+				var de = SVGDrawElement.create(circle);
 				return de;
 			},
 			drawText: function(str) {
 				var text = createSvgElement('text');
 				this._rootSvg.appendChild(text);
-				var de = SVGText.create();
-				de.setElement(text);
+				var de = SVGText.create(text);
 
 				if (str != null) {
 					de.setText(str);
