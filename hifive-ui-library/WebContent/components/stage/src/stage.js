@@ -156,7 +156,6 @@
 				}
 			},
 			addClass: function(className) {
-				// FIXME IE cannot use SVGElement#classList
 				for (var i = 0; i < this._classes.length; i++) {
 					if (this._classes[i] === className) {
 						return;
@@ -166,7 +165,6 @@
 				this.setAttribute('class', this._classes.join(' '));
 			},
 			removeClass: function(className) {
-				// FIXME IE cannot use SVGElement#classList
 				for (var i = 0; i < this._classes.length; i++) {
 					if (this._classes[i] === className) {
 						this._classes.splice(i, 1);
