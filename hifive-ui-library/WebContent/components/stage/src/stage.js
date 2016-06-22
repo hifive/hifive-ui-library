@@ -814,65 +814,93 @@
 		return desc;
 	});
 
-	var SVGGraphics = RootClass.extend({
-		name: 'h5.ui.components.stage.SVGGraphics',
-		field: {
-			_rootSvg: null,
-			_defs: null
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGGraphics
-			 */
-			constructor: function SVGGraphics(rootSvg, rootDefs) {
-				SVGGraphics._super.call(this);
-				this._defs = rootDefs;
-			},
+	var SVGGraphics = RootClass.extend(function() {
+		//TODO 仮実装
+		var idSequence = 0;
 
-			_addDefinition: function(svgElementWrapper) {
-				//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
-				//wrapperインスタンスを持てるようにする
-				this._defs.appendChild(svgElementWrapper._element);
-			},
+		var ID_SEQ_PREFIX = 'def_';
 
-			_removeDefinition: function(svgElementWrapper) {
-				this._defs.removeChild(svgElementWrapper._element);
-			},
-
-			drawImage: function() {
-			//TODO 未実装
-			},
-
-			drawLine: function() {
-				var line = createSvgElement('line');
-				this._rootSvg.appendChild(line);
-				var sl = SVGLine.create(line);
-				return sl;
-			},
-			drawRect: function() {
-				var rect = createSvgElement('rect');
-				this._rootSvg.appendChild(rect);
-				var de = SVGRect.create(rect);
-				return de;
-			},
-			drawCircle: function() {
-				var circle = createSvgElement('circle');
-				this._rootSvg.appendChild(circle);
-				var de = SVGCircle.create(circle);
-				return de;
-			},
-			drawText: function(str) {
-				var text = createSvgElement('text');
-				this._rootSvg.appendChild(text);
-				var de = SVGText.create(text);
-
-				if (str != null) {
-					de.setText(str);
-				}
-
-				return de;
-			}
+		//TODO 仮実装、連番一意ID生成
+		function createDefId() {
+			var id = ID_SEQ_PREFIX + idSequence;
+			idSequence++;
+			return;
 		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.SVGGraphics',
+			field: {
+				_rootSvg: null,
+				_defs: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGGraphics
+				 */
+				constructor: function SVGGraphics(rootSvg, rootDefs) {
+					SVGGraphics._super.call(this);
+					this._defs = rootDefs;
+				},
+
+				_addDefinition: function(svgElementWrapper) {
+					//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
+					//wrapperインスタンスを持てるようにする
+
+					this._defs.appendChild(svgElementWrapper._element);
+				},
+
+				_removeDefinition: function(svgElementWrapper) {
+					this._defs.removeChild(svgElementWrapper._element);
+				},
+
+				getDefinition: function(id) {
+				//TODO id指定でdefinitionを返す
+				},
+
+				createLinearGradientDefinition: function(id) {
+				//TODO 新しいSVGLinearGradientを生成し、_addDefinitionして返す
+				//idはoptional、idが未指定の場合はIDを_addDefinitionの方で適当に（一意に）自動生成
+				//radialとlinearはコンストラクタ引数で指定する？
+				//かなりパラメータが違うからおとなしく別途createRadialGradientDefinition()を
+				//作った方がわかりやすいようにも思う
+				},
+
+				drawImage: function() {
+				//TODO 未実装
+				},
+
+				drawLine: function() {
+					var line = createSvgElement('line');
+					this._rootSvg.appendChild(line);
+					var sl = SVGLine.create(line);
+					return sl;
+				},
+				drawRect: function() {
+					var rect = createSvgElement('rect');
+					this._rootSvg.appendChild(rect);
+					var de = SVGRect.create(rect);
+					return de;
+				},
+				drawCircle: function() {
+					var circle = createSvgElement('circle');
+					this._rootSvg.appendChild(circle);
+					var de = SVGCircle.create(circle);
+					return de;
+				},
+				drawText: function(str) {
+					var text = createSvgElement('text');
+					this._rootSvg.appendChild(text);
+					var de = SVGText.create(text);
+
+					if (str != null) {
+						de.setText(str);
+					}
+
+					return de;
+				}
+			}
+		};
+		return desc;
 	});
 
 	//TODO layouter(仮)を差し込めるようにし、
