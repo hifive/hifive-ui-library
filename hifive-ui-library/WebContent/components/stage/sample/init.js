@@ -233,9 +233,14 @@
 		}
 	};
 
-
 	$(function() {
 		h5.core.controller('#appRoot', controller);
+
+		//TOOD classとして作ったコントローラはチェックでconstructorプロパティが重複すると言われる
+//		var dscClass = h5.cls.manager.getClass('h5.ui.components.stage.DragSessionController');
+//		var c = dscClass.create();
+//		var cc = h5.core.controller('body', c);
+
 	});
 
 })(jQuery);

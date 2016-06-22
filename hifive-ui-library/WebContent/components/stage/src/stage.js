@@ -19,6 +19,263 @@
 
 	var RootClass = h5.cls.RootClass;
 
+	//クラスとして作ったものを変える
+	//	RootClass.extend(function() {
+	//		var desc = {
+	//			name: 'h5.ui.components.stage.DragSessionController',
+	//			method: {
+	//				constructor: function DragSessionController() {
+	//					DragSessionController._super.call(this);
+	//				}
+	//			}
+	//		};
+	//		return desc;
+	//	});
+
+
+	/**
+	 * DragSession
+	 * <p>
+	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。
+	 * </p>
+	 *
+	 * @class
+	 * @name DragSession
+	 * @returns クラス定義
+	 */
+	RootClass.extend(function() {
+		// TODO 1つのShapeについて1つのDragSessionしか同時に実行できないように
+		// staticなマップで管理する
+
+		var DRAG_MODE_SELF = 'self';
+
+
+		var desc = {
+			name: 'h5.ui.components.stage.DragSession',
+			field: {
+				/**
+				 * ドラッグ操作対象オブジェクト
+				 */
+				_target: null,
+				_startX: null,
+				_startY: null,
+				_moveX: null,
+				_moveY: null,
+				_isCompleted: null,
+				_dragMode: null,
+				_controller: null,
+				_dragCallbacks: null
+			},
+			property: {
+				isCompleted: {
+					get: function() {
+						return this._isCompleted;
+					}
+				}
+			},
+			method: {
+				constructor: function DragSession(target, dragMode) {
+					DragSession._super.call(this);
+
+					this._isCompleted = false;
+
+					this._dragCallbacks = [];
+
+					//this._target = target;
+
+					//TODO byProxyか、オブジェクトをそのまま動かすかをdragModeで指定できるようにする
+					// proxy, selfのどちらか
+					//this._dragMode = DRAG_MODE_SELF; //dragMode;
+
+					//DOMならtop, left, SVGならx,yかtranslateか
+					//DUの場合はx,y
+					//this._startX = target.x;
+					//this._startY = target.y;
+
+					this._moveDx = 0;
+					this._moveDy = 0;
+
+					this._moveX = 0;
+					this._moveY = 0;
+				},
+
+				/**
+				 * 指定された位置に移動
+				 * <p>
+				 * このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(ArtShape)のmoveToやmoveByは呼ばれません。
+				 * ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。
+				 * </p>
+				 * <p>
+				 * このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。
+				 * </p>
+				 * <p>
+				 * 引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @param {number} x
+				 * @param {number} y
+				 */
+				moveTo: function(x, y) {
+
+					var dxTotal = x - this._moveX;
+					var dyTotal = y - this._moveY;
+
+					//					this._
+
+					this._moveX = x;
+					this._moveY = y;
+
+				},
+
+				moveBy: function(dx, dy) {
+					var x = this._moveX + dx;
+					var y = this._moveY + dy;
+					this.moveTo(x, y);
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を確定させる
+				 * <p>
+				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @returns {DragSession}
+				 */
+				complete: function() {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					this._controller.dispose();
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を元に戻す
+				 * <p>
+				 * moveメソッドで移動させた処理を元に戻します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @returns {DragSession}
+				 */
+				cancel: function() {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					if (this._dragMode === DRAG_MODE_SELF) {
+						this._target.moveTo(this._startX, this._startY);
+					}
+
+					this._controller.dispose();
+				},
+
+				addDragCallback: function(func) {
+					this._dragCallbacks.push(func);
+				},
+
+				_onMove: function(dx, dy) {
+					var callbacks = this._dragCallbacks;
+					for (var i = 0, len = callbacks.length; i < len; i++) {
+						var f = callbacks[i];
+						f(this, dx, dy);
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
+
+	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
+
+	var dragController = {
+		/**
+		 * @memberOf h5.ui.components.stage.DragController
+		 */
+		__name: 'h5.ui.components.stage.DragController',
+
+		_dragSession: null,
+
+		getDragSession: function() {
+			return this._dragSession;
+		},
+
+		'{rootElement} h5trackstart': function(context) {
+			this._dragSession = DragSession.create();
+			//TODO DragStartイベントの出し方
+			this.trigger('dgDragStart', {
+				dragSession: this._dragSession
+			});
+		},
+
+		'{rootElement} h5trackmove': function(context) {
+			if (!this._dragSession || this._dragSession.isCompleted) {
+				return;
+			}
+
+			var ev = context.event;
+			var dx = ev.dx;
+			var dy = ev.dy;
+			this._dragSession._onMove(dx, dy);
+		},
+
+		'{rootElement} h5trackend': function(context) {
+			if (!this._dragSession || this._dragSession.isCompleted) {
+				return;
+			}
+
+			var ds = this._dragSession;
+
+			ds.complete();
+
+			this._dragSession = null;
+
+			//TODO dragSessionを渡すべきか？
+			this.trigger('dgDragEnd', {
+				dragSession: ds
+			});
+		}
+	};
+
+	h5.core.expose(dragController);
+
+	var dragSessionController = {
+		/**
+		 * @memberOf h5.ui.components.stage.DragSessionController_TOBEDELETED
+		 */
+		__name: 'h5.ui.components.stage.DragSessionController',
+
+		_dragSession: null,
+
+		setDragSession: function(dragSession) {
+			this._dragSession = dragSession;
+		},
+
+		'{rootElement} h5trackstart': function(context) {
+		//ignore
+		},
+
+		'{rootElement} h5trackmove': function(context) {
+			var ev = context.event;
+			var dx = ev.dx;
+			var dy = ev.dy;
+			this._dragSession._onMove(dx, dy);
+		},
+
+		'{rootElement} h5trackend': function(context) {
+			this._dragSession.complete();
+		}
+	};
+
+
 	var Rect = RootClass.extend({
 		name: 'h5.ui.components.stage.Rect',
 		field: {
@@ -118,10 +375,27 @@
 		element.removeAttributeNS(null, key);
 	}
 
-	var SVGDrawElement = RootClass.extend({
+	var SVGElementWrapper = RootClass.extend(function() {
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGElementWrapper
+			 */
+			name: 'h5.ui.components.stage.SVGElementWrapper',
+			field: {
+				_element: null
+			},
+			method: {
+				constructor: function SVGElementWrapper() {
+					SVGElementWrapper._super.call(this);
+				}
+			}
+		};
+		return desc;
+	});
+
+	var SVGDrawElement = SVGElementWrapper.extend({
 		name: 'h5.ui.components.stage.SVGDrawElement',
 		field: {
-			_element: null,
 			_classes: null,
 			_attributes: null
 		},
@@ -526,14 +800,25 @@
 	var SVGGraphics = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGGraphics',
 		field: {
-			_rootSvg: null
+			_rootSvg: null,
+			_defs: null
 		},
 		method: {
 			/**
 			 * @memberOf h5.ui.components.stage.SVGGraphics
 			 */
-			constructor: function SVGGraphics() {
+			constructor: function SVGGraphics(rootSvg, rootDefs) {
 				SVGGraphics._super.call(this);
+				this._defs = rootDefs;
+			},
+
+			addDefChild: function(svgElement) {
+				//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
+				this._defs.appendChild(svgElement._element);
+			},
+
+			removeDefChild: function(svgElement) {
+				this._defs.removeChild(svgElement._element);
 			},
 
 			drawLine: function() {
@@ -688,7 +973,7 @@
 				},
 
 				_onAddedToRoot: function(stage) {
-				//do nothing
+					this._rootStage = stage;
 				}
 
 			//				scrollIntoView: {
@@ -712,11 +997,15 @@
 			_renderer: null
 		},
 		accessor: {
-			isSelected: null
+			isSelected: null,
+			isFocused: null
 		},
 		method: {
 			constructor: function BasicDisplayUnit() {
 				BasicDisplayUnit._super.call(this);
+
+				this.isSelected = false;
+				this.isFocused = false;
 
 				//TODO 仮想化
 				this._graphics = SVGGraphics.create();
@@ -725,11 +1014,44 @@
 				this.domRoot.setAttribute('data-stage-role', 'basicDU'); //TODO for debugging
 			},
 			/**
+			 * rendererのシグネチャ：function(graphics, du)
+			 *
 			 * @memberOf h5.ui.components.stage.BasicDisplayUnit
 			 */
 			setRenderer: function(renderer) {
+				if (this._renderer === renderer) {
+					return;
+				}
 				this._renderer = renderer;
+				if (renderer != null) {
+					//レンダラが変更かつセットされたら再描画
+					this.requestRender();
+				}
+			},
+
+			requestRender: function() {
+				//TODO 正しくは次の再描画フレームで描画
+				var that = this;
+				if (!this._graphics) {
+					return;
+				}
+
+				//TODO rAFをここで直接使わない
+				requestAnimationFrame(function() {
+					that._renderer(that._graphics, that);
+				}, 0);
+			},
+
+			_onAddedToRoot: function(stage) {
+				//TODO _superでなくgetParentClass()を
+				BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
+				this._rootStage = stage;
+				if (typeof this._renderer === 'function') {
+					this._graphics = stage.createGraphics();
+					this.requestRender();
+				}
 			}
+
 		}
 	});
 
@@ -785,6 +1107,23 @@
 		return desc;
 	});
 
+	RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.EdgeEndpoint',
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.EdgeEndpoint
+				 */
+				constructor: function EdgeEndpoint() {
+					EdgeEndpoint._super.call(this);
+				},
+
+
+			}
+		};
+		return desc;
+	});
+
 	var DisplayUnitContainer = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.DisplayUnitContainer',
 		field: {
@@ -833,9 +1172,6 @@
 			addDisplayUnit: function(du) {
 				this._children.push(du);
 				this._rootG.appendChild(du.domRoot);
-				if (typeof du._renderer === 'function') {
-					du._renderer(du._graphics, du);
-				}
 				du._parentDU = this;
 			},
 
@@ -845,6 +1181,9 @@
 					this._children.splice(idx, 1);
 					this._rootG.removeChild(du.domRoot);
 					du._parentDU = null;
+
+					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
+					du._rootStage = null;
 				}
 			},
 
@@ -858,8 +1197,11 @@
 			},
 
 			_onAddedToRoot: function(rootStage) {
-			//TODO ここでは定義しない方がよい？
-			//AbstractMethodにする？(できるようにする？)
+				var children = this._children;
+				for (var i = 0, len = children.length; i < len; i++) {
+					var du = children[i];
+					du._onAddedToRoot(rootStage);
+				}
 			},
 
 			setScale: function(scaleX, scaleY) {
@@ -954,16 +1296,21 @@
 
 			addDisplayUnit: function(du) {
 				Layer._super.prototype.addDisplayUnit.call(this, du);
-
-				du._onAddedToRoot(this._rootStage);
+				//du._onAddedToRoot(this._rootStage);
 			},
 
 			getWorldGlobalPosition: function() {
 				var p = WorldPoint.create(this.x, this.y);
 				return p;
+			},
+
+			_onAddedToRoot: function(stage) {
+				this._rootStage = stage;
+				Layer._super.prototype._onAddedToRoot.call(this, stage);
 			}
 		}
 	});
+
 
 	h5.u.obj.expose('h5.ui.components.stage', {
 		BasicDisplayUnit: BasicDisplayUnit,
@@ -997,6 +1344,7 @@
 		 */
 		__name: 'h5.ui.components.stage.StageController',
 
+		//ルートとなるSVG要素
 		_root: null,
 
 		_units: null,
@@ -1008,6 +1356,26 @@
 		_scaleY: 1,
 
 		_initData: null,
+
+		_defs: null,
+
+		_hasDefs: false,
+
+		_getDefs: function() {
+			if (!this._hasDefs) {
+				var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+				this._defs = defs;
+				this._root.appendChild(defs);
+				this._hasDefs = true;
+			}
+			return this._defs;
+		},
+
+		_createGraphics: function() {
+			var SVGGraphics = h5.cls.manager.getClass('h5.ui.components.stage.SVGGraphics');
+			var graphics = SVGGraphics.create(this._root, this._getDefs());
+			return graphics;
+		},
 
 		__construct: function() {
 			this._units = new Map();
@@ -1028,6 +1396,8 @@
 
 			this.refresh();
 		},
+
+		//_dragController: h5.ui.components.stage.DragController,
 
 		_updateRootSize: function(width, height) {
 			var w = width !== undefined ? width : $(this.rootElement).width();
@@ -1100,6 +1470,7 @@
 				this._layers.push(layer);
 			}
 			this._duRoot.appendChild(layer.domRoot);
+			layer._onAddedToRoot(this);
 		},
 
 		getLayer: function(id) {
@@ -1225,6 +1596,18 @@
 		getScrollPosition: function() {
 			var pos = stageModule.DisplayPoint.create(this._displayRect.x, this._displayRect.y);
 			return pos;
+		},
+
+		// dragScroll
+		_manipMode: null,
+
+		'{rootElement} dgDragStart': function(context, $el) {
+			var ds = context.evArg.dragSession;
+			ds.addDragCallback(this._own(this._onDragMove));
+		},
+
+		_onDragMove: function(ds, dx, dy) {
+			this.scrollBy(dx, dy);
 		}
 	};
 
