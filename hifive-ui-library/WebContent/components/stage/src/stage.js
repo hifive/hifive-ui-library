@@ -522,6 +522,9 @@
 			}
 		},
 		method: {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGLine
+			 */
 			constructor: function SVGLine(element) {
 				SVGLine._super.call(this, element);
 			}
@@ -796,6 +799,20 @@
 		}
 	});
 
+	var SVGLinearGradient = SVGElementWrapper.extend(function() {
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGLinearGradient
+			 */
+			name: 'h5.ui.components.stage.SVGLinearGradient',
+			method: {
+				constructor: function SVGLinearGradient() {
+					SVGLinearGradient._super.call(this);
+				}
+			}
+		};
+		return desc;
+	});
 
 	var SVGGraphics = RootClass.extend({
 		name: 'h5.ui.components.stage.SVGGraphics',
@@ -812,13 +829,18 @@
 				this._defs = rootDefs;
 			},
 
-			addDefChild: function(svgElement) {
+			_addDefinition: function(svgElementWrapper) {
 				//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
-				this._defs.appendChild(svgElement._element);
+				//wrapperインスタンスを持てるようにする
+				this._defs.appendChild(svgElementWrapper._element);
 			},
 
-			removeDefChild: function(svgElement) {
-				this._defs.removeChild(svgElement._element);
+			_removeDefinition: function(svgElementWrapper) {
+				this._defs.removeChild(svgElementWrapper._element);
+			},
+
+			drawImage: function() {
+			//TODO 未実装
 			},
 
 			drawLine: function() {
@@ -1320,7 +1342,8 @@
 		Point: Point,
 		WorldPoint: WorldPoint,
 		DisplayPoint: DisplayPoint,
-		Edge: Edge
+		Edge: Edge,
+		SVGLinearGradient: SVGLinearGradient
 	});
 
 	var stageLogic = {
@@ -1345,7 +1368,7 @@
 		__name: 'h5.ui.components.stage.StageController',
 
 		//ルートとなるSVG要素
-		_root: null,
+		_duRoot: null,
 
 		_units: null,
 
@@ -1365,7 +1388,7 @@
 			if (!this._hasDefs) {
 				var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 				this._defs = defs;
-				this._root.appendChild(defs);
+				this._duRoot.appendChild(defs);
 				this._hasDefs = true;
 			}
 			return this._defs;
@@ -1373,7 +1396,7 @@
 
 		_createGraphics: function() {
 			var SVGGraphics = h5.cls.manager.getClass('h5.ui.components.stage.SVGGraphics');
-			var graphics = SVGGraphics.create(this._root, this._getDefs());
+			var graphics = SVGGraphics.create(this._duRoot, this._getDefs());
 			return graphics;
 		},
 
@@ -1390,7 +1413,6 @@
 				//rootSvg.setAttribute('overflow', 'visible');
 			}
 			//$(this._root).css('position', 'relative');
-
 
 			this.rootElement.appendChild(this._duRoot);
 
