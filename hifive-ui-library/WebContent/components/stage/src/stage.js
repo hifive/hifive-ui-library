@@ -1051,8 +1051,8 @@
 			isFocused: null
 		},
 		method: {
-			constructor: function BasicDisplayUnit() {
-				BasicDisplayUnit._super.call(this);
+			constructor: function BasicDisplayUnit(id) {
+				BasicDisplayUnit._super.call(this, id);
 
 				this.isSelected = false;
 				this.isFocused = false;
@@ -1188,8 +1188,8 @@
 			/**
 			 * @memberOf h5.ui.components.stage.DisplayUnitContainer
 			 */
-			constructor: function DisplayUnitContainer() {
-				DisplayUnitContainer._super.call(this);
+			constructor: function DisplayUnitContainer(id) {
+				DisplayUnitContainer._super.call(this, id);
 
 				//TODO defaultValue
 				this.x = 0;
