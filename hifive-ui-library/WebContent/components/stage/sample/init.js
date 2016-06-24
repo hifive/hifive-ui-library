@@ -203,6 +203,12 @@
 
 		_createEdge: function(duFrom, duTo) {
 			var edge = Edge.create(duFrom, duTo);
+
+			edge.endpointFrom.junctionVerticalAlign = null;
+
+			edge.endpointFrom.junctionHorizontalAlign = 'offset';
+			edge.endpointFrom.junctionOffsetX = 20;
+
 			return edge;
 		},
 

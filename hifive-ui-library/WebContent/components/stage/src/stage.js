@@ -1152,8 +1152,24 @@
 			name: 'h5.ui.components.stage.Edge',
 			field: {
 				_from: null,
-				_to: null
+				_to: null,
+				_endpointFrom: null,
+				_endpointTo: null
 			},
+
+			accessor: {
+				endpointFrom: {
+					get: function() {
+						return this._endpointFrom;
+					}
+				},
+				endpointTo: {
+					get: function() {
+						return this._endpointTo;
+					}
+				}
+			},
+
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.Edge
@@ -1162,6 +1178,9 @@
 					Edge._super.call(this);
 					this._from = duFrom;
 					this._to = duTo;
+
+					this._endpointFrom = EdgeEndpoint.create();
+					this._endpointTo = EdgeEndpoint.create();
 
 					this.domRoot = createSvgElement('svg');
 					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
@@ -1197,7 +1216,7 @@
 		return desc;
 	});
 
-	RootClass.extend(function() {
+	var EdgeEndpoint = RootClass.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
