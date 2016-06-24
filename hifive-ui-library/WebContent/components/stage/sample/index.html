@@ -31,12 +31,13 @@
 <!-- クラスモジュール -->
 <script src="/hifive/src/h5.cls.js"></script>
 
+<script src="../../src/h5/ui/SelectionLogic.js"></script>
+
 <script src="../src/stage.js"></script>
 
 <script src="init.js"></script>
 
 <style>
-
 #appRoot {
 	width: 800px;
 	height: 800px;
@@ -49,7 +50,7 @@
 	background-color: yellow;
 }
 
-#stageRoot{
+#stageRoot {
 	width: 100%;
 	height: 700px;
 	border: 2px solid black;
@@ -61,7 +62,7 @@ line {
 	stroke-width: 2px;
 }
 
-rect, circle {
+rect,circle {
 	fill: #000;
 	stroke-width: 2px;
 }
@@ -71,7 +72,6 @@ text {
 	fill: black;
 	stroke-width: 2px;
 }
-
 </style>
 
 </head>
@@ -80,23 +80,17 @@ text {
 
 	<div id="appRoot">
 		<div id="controls">
-			<input type="button" name="moveTo" value="DU moveTo">
-			<input type="button" name="moveBy" value="DU moveBy">
-			<input type="button" name="stageScrollTo" value="Stage scrollTo">
-			<input type="button" name="stageScrollBy" value="Stage scrollBy">
-			ScaleX:<input type="range" name="scaleX" min="1" max="500" value="100">
-			ScaleY:<input type="range" name="scaleY" min="1" max="500" value="100">
-
-			<input type="button" name="getScrollPosition" value="getScrollPosition">
-			<span id="scrollPos"></span>
+			<input type="button" name="moveTo" value="DU moveTo"> <input type="button" name="moveBy" value="DU moveBy">
+			<input type="button" name="stageScrollTo" value="Stage scrollTo"> <input type="button" name="stageScrollBy"
+				value="Stage scrollBy"> ScaleX:<input type="range" name="scaleX" min="1" max="500" value="100">
+			ScaleY:<input type="range" name="scaleY" min="1" max="500" value="100"> <input type="button"
+				name="getScrollPosition" value="getScrollPosition"> <span id="scrollPos"></span>
 		</div>
-		<div id="stageRoot">
-
-		</div>
+		<div id="stageRoot"></div>
 
 	</div>
 
-<!--
+	<!--
 
 <svg width="180" height="200"
   xmlns="http://www.w3.org/2000/svg"

@@ -44,6 +44,10 @@
 			return $.inArray(obj, this._selected) !== -1;
 		},
 
+		isFocused: function(obj) {
+			return obj === this._focused;
+		},
+
 		/**
 		 * 選択されているオブジェクトのリストを返す
 		 *
@@ -76,20 +80,32 @@
 			}
 
 			this._focused = obj;
+
+			this._dispatchSelectionChangeEvent(obj, true, true);
 		},
 
 		/**
-		 * フォーカス状態のオブジェクトを非フォーカス状態にする
+		 * フォーカス状態のオブジェクトを非フォーカス状態にする。フォーカス状態のオブジェクトがない場合は何もしない。
 		 *
 		 * @instance
 		 * @param {Boolean} [andUnselect=true] trueの場合はunselectも実行する(デフォルトtrue)
+		 * @returns フォーカスが当たっていたオブジェクト
 		 */
 		unfocus: function(andUnselect) {
+			if (!this._focused) {
+				return null;
+			}
+
 			var focused = this._focused;
 			this._focused = null;
 			if (andUnselect !== false) {
 				this.unselect(focused);
 			}
+
+			//andUnselectがfalseの場合、フォーカスは外すが選択状態は残す
+			this._dispatchSelectionChangeEvent(focused, andUnselect === false, false);
+
+			return focused;
 		},
 
 		/**
@@ -128,6 +144,12 @@
 				// フォーカスされているものが無ければ、今回追加したものの先頭をフォーカスする
 				this.focus(actuals[0]);
 			}
+
+			for (var i = 0, len = actuals.length; i < len; i++) {
+				var obj = actuals[i];
+				this._dispatchSelectionChangeEvent(obj, true, this.isFocused(obj));
+			}
+
 			return actuals;
 		},
 
@@ -160,6 +182,12 @@
 					}
 				}
 			}
+
+			for (var i = 0, len = actuals.length; i < len; i++) {
+				var obj = actuals[i];
+				this._dispatchSelectionChangeEvent(obj, false, false);
+			}
+
 			return actuals;
 		},
 
@@ -170,13 +198,33 @@
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す
 		 */
 		unselectAll: function() {
-			var actuals = this._selected.splice(0);
-			this.unfocus();
-			return actuals;
+			var oldSelected = this._selected;
+			this._selected = [];
+			this._focused = null;
+
+			//TODO 仮実装
+			for (var i = 0, len = oldSelected.length; i < len; i++) {
+				var obj = oldSelected[i];
+				this._dispatchSelectionChangeEvent(obj, false, false);
+			}
+
+			return oldSelected;
 		},
 
-		_dispatchSelectionChangeEvent: function() {
-		//TODO 選択状態が変わったら選択状態を変更
+		_dispatchSelectionChangeEvent: function(obj, isSelected, isFocused) {
+			var listeners = this._listeners;
+			for (var i = 0, len = listeners.length; i < len; i++) {
+				var listener = listeners[i];
+				listener(obj, isSelected, isFocused);
+			}
+		},
+
+		_listeners: [],
+
+		//func(du, isSelected, isFocused)
+		addSelectionListener: function(func) {
+			//TODO 普通のEventDispatcherに変える
+			this._listeners.push(fush);
 		}
 	};
 	h5.core.expose(selectionLogic);

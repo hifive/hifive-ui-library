@@ -1044,11 +1044,23 @@
 		name: 'h5.ui.components.stage.BasicDisplayUnit',
 		field: {
 			_graphics: null,
-			_renderer: null
+			_renderer: null,
+			_isSelected: null,
+			_isFocused: null
 		},
 		accessor: {
-			isSelected: null,
-			isFocused: null
+			isSelected: {
+				get: function() {
+					return this._isSelected;
+				}
+			},
+			isFocused: {
+				get: function() {
+					return this._isFocused;
+				}
+			},
+			isSelectable: null
+		//TODO selectableフラグが変わったら選択状態を変える
 		},
 		method: {
 			constructor: function BasicDisplayUnit(id) {
@@ -1090,6 +1102,34 @@
 				requestAnimationFrame(function() {
 					that._renderer(that._graphics, that);
 				}, 0);
+			},
+
+			select: function(isExclusive) {
+				if (!this._rootStage) {
+					return;
+				}
+				this._rootStage.select(this, isExclusive);
+			},
+
+			unselect: function() {
+				if (!this._rootStage) {
+					return;
+				}
+				this._rootStage.unselect(this);
+			},
+
+			focus: function() {
+				if (!this._rootStage) {
+					return;
+				}
+				this._rootStage.focus(this);
+			},
+
+			unfocus: function(andUnselect) {
+				if (!this._rootStage) {
+					return;
+				}
+				this._rootStage.unfocus(andUnselect);
 			},
 
 			_onAddedToRoot: function(stage) {
@@ -1412,6 +1452,55 @@
 
 		_hasDefs: false,
 
+		canUIScrollX: true,
+
+		canUIScrollY: true,
+
+		scrollRangeX: null,
+
+		scrollRangeY: null,
+
+		//TODO dependsOn()
+		_selectionLogic: h5.ui.SelectionLogic,
+
+		select: function(displayUnit, isExclusive) {
+			this._selectionLogic.select(displayUnit, isExclusive);
+		},
+
+		selectAll: function() {
+		//TODO 再帰的にたどって全てのDUを選択状態にする
+		//ただしContainerは選択可能ではない
+		//DUはselectableかどうかを設定可能にする
+		},
+
+		unselect: function(du) {
+			this._selectionLogic.unselect(du);
+		},
+
+		unselectAll: function() {
+			this._selectionLogic.unselectAll();
+		},
+
+		getSelectedDisplayUnits: function() {
+			var selected = this._selectionLogic.getSelected();
+			return selected;
+		},
+
+		focus: function(displayUnit) {
+			this._selectionLogic.focus(displayUnit);
+			displayUnit._focused = true;
+		},
+
+		unfocus: function(andUnselect) {
+			this._selectionLogic.unfocus(andUnselect);
+			displayUnit._focused = false;
+		},
+
+		getFocusedDisplayUnit: function() {
+			var focused = this._selectionLogic.getFocused();
+			return focused;
+		},
+
 		_getDefs: function() {
 			if (!this._hasDefs) {
 				var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -1441,6 +1530,11 @@
 				//rootSvg.setAttribute('overflow', 'visible');
 			}
 			//$(this._root).css('position', 'relative');
+
+			this._selectionLogic.addSelectionListener(function(du, isSelected, isFocused) {
+				du._isSelected = isSelected;
+				du._isFocused = isFocused;
+			});
 
 			this.rootElement.appendChild(this._duRoot);
 
