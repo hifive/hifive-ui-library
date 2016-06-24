@@ -224,7 +224,7 @@
 		//func(du, isSelected, isFocused)
 		addSelectionListener: function(func) {
 			//TODO 普通のEventDispatcherに変える
-			this._listeners.push(fush);
+			this._listeners.push(func);
 		}
 	};
 	h5.core.expose(selectionLogic);

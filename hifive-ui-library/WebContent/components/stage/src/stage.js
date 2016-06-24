@@ -1066,8 +1066,8 @@
 			constructor: function BasicDisplayUnit(id) {
 				BasicDisplayUnit._super.call(this, id);
 
-				this.isSelected = false;
-				this.isFocused = false;
+				this._isSelected = false;
+				this._isFocused = false;
 
 				//TODO 仮想化
 				this._graphics = SVGGraphics.create();
