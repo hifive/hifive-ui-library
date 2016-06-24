@@ -29,11 +29,9 @@
 	var stageInitParam = {
 		layers: [{
 			id: LAYER_ID_MAIN
-		},
-		{
+		}, {
 			id: LAYER_ID_EDGE
-		}
-		]
+		}]
 	};
 
 	function keyGen() {
@@ -46,12 +44,12 @@
 	function byMap(map) {
 		var removeKeys = [];
 
-		for(var i = 0 ; i < MAX_ITER ; i++) {
+		for (var i = 0; i < MAX_ITER; i++) {
 			var key = keyGen();
 			var rect = Rect.create();
 			map.set(key, rect);
 
-			if(Math.random() < 0.3) {
+			if (Math.random() < 0.3) {
 				removeKeys.push(key);
 			}
 		}
@@ -62,9 +60,9 @@
 			array.push(value);
 		});
 
-		for(var i = 0, len = removeKeys.length ; i < len ; i++) {
+		for (var i = 0, len = removeKeys.length; i < len; i++) {
 			var rk = removeKeys[i];
-			map.delete(rk);
+			map['delete'](rk); //TODO deleteがEclipseだとキーワード扱いされてエラーになってしまう
 		}
 
 		return array;
@@ -73,24 +71,24 @@
 	function byObj(obj) {
 		var removeKeys = [];
 
-		for(var i = 0 ; i < MAX_ITER ; i++) {
+		for (var i = 0; i < MAX_ITER; i++) {
 			var key = keyGen();
 			var rect = Rect.create();
 			obj[key] = rect;
 
-			if(Math.random() < 0.3) {
+			if (Math.random() < 0.3) {
 				removeKeys.push(key);
 			}
 		}
 
 		var array = [];
 
-		for(var key in obj) {
+		for ( var key in obj) {
 			var value = obj[key];
 			array.push(value);
 		}
 
-		for(var i = 0, len = removeKeys.length ; i < len ; i++) {
+		for (var i = 0, len = removeKeys.length; i < len; i++) {
 			var rk = removeKeys[i];
 			delete obj[rk];
 		}
@@ -142,9 +140,9 @@
 		},
 
 		'[name="getScrollPosition"] click': function() {
-//			var pos = this._stageController.getScrollPosition();
-//			var str = pos.x + ', ' + pos.y;
-//			this.$find('#scrollPos').text(str);
+			//			var pos = this._stageController.getScrollPosition();
+			//			var str = pos.x + ', ' + pos.y;
+			//			this.$find('#scrollPos').text(str);
 
 
 			var map = new Map();
@@ -153,7 +151,7 @@
 			var beginTime = new Date().getTime();
 
 			//byMap(map);  //IE11 1600後半
-			byObj(obj);  //IE11 1600前半？
+			byObj(obj); //IE11 1600前半？
 
 			var endTime = new Date().getTime();
 
@@ -204,10 +202,12 @@
 		_createEdge: function(duFrom, duTo) {
 			var edge = Edge.create(duFrom, duTo);
 
-			edge.endpointFrom.junctionVerticalAlign = null;
+			edge.endpointTo.junctionVerticalAlign = 'top';
+
+			edge.endpointFrom.junctionVerticalAlign = 'bottom';
 
 			edge.endpointFrom.junctionHorizontalAlign = 'offset';
-			edge.endpointFrom.junctionOffsetX = 20;
+			edge.endpointFrom.junctionOffsetX = 15;
 
 			return edge;
 		},
@@ -243,9 +243,9 @@
 		h5.core.controller('#appRoot', controller);
 
 		//TOOD classとして作ったコントローラはチェックでconstructorプロパティが重複すると言われる
-//		var dscClass = h5.cls.manager.getClass('h5.ui.components.stage.DragSessionController');
-//		var c = dscClass.create();
-//		var cc = h5.core.controller('body', c);
+		//		var dscClass = h5.cls.manager.getClass('h5.ui.components.stage.DragSessionController');
+		//		var c = dscClass.create();
+		//		var cc = h5.core.controller('body', c);
 
 	});
 

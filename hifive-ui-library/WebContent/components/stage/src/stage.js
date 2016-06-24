@@ -839,6 +839,7 @@
 				 */
 				constructor: function SVGGraphics(rootSvg, rootDefs) {
 					SVGGraphics._super.call(this);
+					this._rootSvg = rootSvg;
 					this._defs = rootDefs;
 				},
 
@@ -1046,7 +1047,8 @@
 			_graphics: null,
 			_renderer: null,
 			_isSelected: null,
-			_isFocused: null
+			_isFocused: null,
+			_rootSvg: null
 		},
 		accessor: {
 			isSelected: {
@@ -1070,10 +1072,10 @@
 				this._isFocused = false;
 
 				//TODO 仮想化
-				this._graphics = SVGGraphics.create();
-				this._graphics._rootSvg = createSvgElement('svg');
-				this.domRoot = this._graphics._rootSvg;
+				this.domRoot = createSvgElement('svg');
+				this._rootSvg = this.domRoot;
 				this.domRoot.setAttribute('data-stage-role', 'basicDU'); //TODO for debugging
+				//this.domRoot = this._graphics._rootSvg; //TODO domRoot -> rootDom, rootElement
 			},
 			/**
 			 * rendererのシグネチャ：function(graphics, du)
@@ -1136,10 +1138,9 @@
 				//TODO _superでなくgetParentClass()を
 				BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
 				this._rootStage = stage;
-				if (typeof this._renderer === 'function') {
-					this._graphics = stage.createGraphics();
-					this.requestRender();
-				}
+
+				this._graphics = stage._createGraphics(this.domRoot);
+				this.requestRender();
 			}
 
 		}
@@ -1151,6 +1152,7 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Edge',
 			field: {
+				_svgLine: null,
 				_from: null,
 				_to: null,
 				_endpointFrom: null,
@@ -1193,23 +1195,115 @@
 					//TODO 仮実装
 					//バインドされているDUの位置が変わったら再描画が必要
 					var fr = this._from.getRect();
-					//var tr = this._to.getRect();
+					var tr = this._to.getRect();
 
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
 
-					var line = createSvgElement('line');
-					setSvgAttributes(line, {
-						x1: fwPos.x + fr.width,
-						y1: fwPos.y + fr.height,
-						x2: twPos.x,
-						y2: twPos.y
-					});
+					//初回のみlineを生成
+					if (!this._svgLine) {
+						this._svgLine = createSvgElement('line');
+						this.domRoot.appendChild(this._svgLine);
+					}
+					var line = this._svgLine;
 
-					this.domRoot.appendChild(line);
+					var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
+					var toHAlign = this.endpointTo.junctionHorizontalAlign;
+
+					var fromVAlign = this.endpointFrom.junctionVerticalAlign;
+					var toVAlign = this.endpointTo.junctionVerticalAlign;
+
+					var x1, y1, x2, y2;
+
+					switch (fromHAlign) {
+					case 'left':
+						x1 = fwPos.x;
+						break;
+					case 'right':
+						x1 = fwPos.x + fr.width;
+						break;
+					case 'offset':
+						x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
+						break;
+					case 'center':
+					default:
+						x1 = fwPos.x + fr.width / 2;
+						break;
+					}
+
+					switch (toHAlign) {
+					case 'left':
+						x2 = twPos.x;
+						break;
+					case 'right':
+						x2 = twPos.x + tr.width;
+						break;
+					case 'offset':
+						x2 = twPos.x + this.endpointTo.junctionOffsetX;
+						break;
+					case 'center':
+					default:
+						x2 = twPos.x + tr.width / 2;
+						break;
+					}
+
+					switch (fromVAlign) {
+					case 'top':
+						y1 = fwPos.y;
+						break;
+					case 'bottom':
+						y1 = fwPos.y + fr.height;
+						break;
+					case 'offset':
+						y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
+						break;
+					case 'middle':
+					default:
+						y1 = fwPos.y + fr.height / 2;
+						break;
+					}
+
+					switch (toVAlign) {
+					case 'top':
+						y2 = twPos.y;
+						break;
+					case 'bottom':
+						y2 = twPos.y + tr.height;
+						break;
+					case 'offset':
+						y2 = twPos.y + this.endpointTo.junctionOffsetY;
+						break;
+					case 'middle':
+					default:
+						y2 = twPos.y + tr.height / 2;
+						break;
+					}
+
+					setSvgAttributes(line, {
+						x1: x1,
+						y1: y1,
+						x2: x2,
+						y2: y2
+					});
 				},
+
+				//TODO BasicDUにも同じメソッドがある。クラス階層について要検討
+				requestRender: function() {
+					//TODO 正しくは次の再描画フレームで描画
+					if (!this._rootStage) {
+						return;
+					}
+
+					//TODO rAFをここで直接使わない
+					var that = this;
+					requestAnimationFrame(function() {
+						that._render();
+					});
+				},
+
 				_onAddedToRoot: function(stage) {
-					this._render();
+					this._rootStage = stage;
+					this.requestRender();
 				}
 			}
 		};
@@ -1314,6 +1408,10 @@
 					this._children.push(du);
 					this._rootG.appendChild(du.domRoot);
 					du._parentDU = this;
+
+					if (this._rootStage) {
+						du._onAddedToRoot(this._rootStage);
+					}
 				},
 
 				removeDisplayUnit: function(du) {
@@ -1338,6 +1436,8 @@
 				},
 
 				_onAddedToRoot: function(rootStage) {
+					this._rootStage = rootStage;
+
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
 						var du = children[i];
@@ -1586,9 +1686,9 @@
 			return this._defs;
 		},
 
-		_createGraphics: function() {
+		_createGraphics: function(svgRoot) {
 			var SVGGraphics = h5.cls.manager.getClass('h5.ui.components.stage.SVGGraphics');
-			var graphics = SVGGraphics.create(this._duRoot, this._getDefs());
+			var graphics = SVGGraphics.create(svgRoot, this._getDefs());
 			return graphics;
 		},
 
