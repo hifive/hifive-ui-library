@@ -1486,6 +1486,11 @@
 			return selected;
 		},
 
+		isSelected: function(displayUnit) {
+			var isSelected = this._selectionLogic.isSelected(displayUnit);
+			return isSelected;
+		},
+
 		focus: function(displayUnit) {
 			this._selectionLogic.focus(displayUnit);
 			displayUnit._focused = true;
@@ -1499,6 +1504,11 @@
 		getFocusedDisplayUnit: function() {
 			var focused = this._selectionLogic.getFocused();
 			return focused;
+		},
+
+		isFocused: function(displayUnit) {
+			var isFocused = this._selectionLogic.isFocused(displayUnit);
+			return isFocused;
 		},
 
 		_getDefs: function() {
