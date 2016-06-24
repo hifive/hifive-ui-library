@@ -1298,7 +1298,7 @@
 				},
 
 				getDisplayUnitById: function(id) {
-					var ret = getDisplayUnitByIdInner(this.id);
+					var ret = getDisplayUnitByIdInner(this, id);
 					return ret;
 				},
 
