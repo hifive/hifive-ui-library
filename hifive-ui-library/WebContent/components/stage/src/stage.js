@@ -1200,14 +1200,26 @@
 	RootClass.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.EdgeEndpoint',
+
+			accessor: {
+				//top, middle, bottom, offset, null
+				junctionVerticalAlign: null,
+
+				//left, center, right, offset, null
+				junctionHorizontalAlign: null,
+
+				//Alignがoffsetの場合のみ有効
+				junctionOffsetX: null,
+				junctionOffsetY: null
+			},
+
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.EdgeEndpoint
 				 */
 				constructor: function EdgeEndpoint() {
 					EdgeEndpoint._super.call(this);
-				},
-
+				}
 
 			}
 		};
