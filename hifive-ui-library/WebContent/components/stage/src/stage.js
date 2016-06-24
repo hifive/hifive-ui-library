@@ -1214,138 +1214,160 @@
 		return desc;
 	});
 
-	var DisplayUnitContainer = DisplayUnit.extend({
-		name: 'h5.ui.components.stage.DisplayUnitContainer',
-		field: {
-			_rootG: null,
-			_children: null,
-			_scaleX: null,
-			_scaleY: null,
-			_scrollX: null,
-			_scrollY: null
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.DisplayUnitContainer
-			 */
-			constructor: function DisplayUnitContainer(id) {
-				DisplayUnitContainer._super.call(this, id);
+	var DisplayUnitContainer = DisplayUnit.extend(function() {
+		function getDisplayUnitByIdInner(container, id) {
+			var children = container._children;
+			for (var i = 0, len = children.length; i < len; i++) {
+				var child = children[i];
 
-				//TODO defaultValue
-				this.x = 0;
-				this.y = 0;
-				this.width = 0;
-				this.height = 0;
-
-				this._scaleX = 1;
-				this._scaleY = 1;
-
-				this._scrollX = 0;
-				this._scrollY = 0;
-
-				this._children = [];
-
-				//TODO ここではsvgは作らない。
-				this.domRoot = createSvgElement('svg');
-				this.domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
-
-				//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
-				//width, heightの指定との整合性について検討
-				this.domRoot.setAttribute('overflow', 'visible');
-
-				//rootGは<g>要素。transformを一括してかけるため、
-				//子要素は全てこの<g>の下に追加する。
-				this._rootG = createSvgElement('g');
-				this.domRoot.appendChild(this._rootG);
-			},
-
-			addDisplayUnit: function(du) {
-				this._children.push(du);
-				this._rootG.appendChild(du.domRoot);
-				du._parentDU = this;
-			},
-
-			removeDisplayUnit: function(du) {
-				var idx = this._children.indexOf(du);
-				if (idx !== -1) {
-					this._children.splice(idx, 1);
-					this._rootG.removeChild(du.domRoot);
-					du._parentDU = null;
-
-					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
-					du._rootStage = null;
+				if (child.id === id) {
+					return child;
 				}
-			},
 
-			//TODO これはStageに用意すればよいだろう
-			//			getDisplayUnitById: function(id) {
-			//				return null; //TODO
-			//			},
-
-			getDisplayUnitAll: function() {
-				return this._children;
-			},
-
-			_onAddedToRoot: function(rootStage) {
-				var children = this._children;
-				for (var i = 0, len = children.length; i < len; i++) {
-					var du = children[i];
-					du._onAddedToRoot(rootStage);
+				if (DisplayUnitContainer.isClassOf(child)) {
+					var ret = getDisplayUnitByIdInner(child, id);
+					if (ret) {
+						return ret;
+					}
 				}
-			},
-
-			setScale: function(scaleX, scaleY) {
-				if (scaleX != null) {
-					this._scaleX = scaleX;
-				}
-				if (scaleY != null) {
-					this._scaleY = scaleY;
-				}
-				this._updateTransform();
-			},
-
-			scrollTo: function(worldX, worldY) {
-				//				var oldPos = DisplayPoint.create(this._scrollX, this._scrollY);
-
-				this._scrollX = worldX;
-				this._scrollY = worldY;
-				this._updateTransform();
-
-				//				var newPos = WorldPoint.create(worldX, worldY);
-
-				//				var evArg = {
-				//					scrollPosition: {
-				//						oldValue: oldPos,
-				//						newValue: newPos,
-				//						isChanged: true
-				//					},
-				//					scale: {
-				//						oldValue: {
-				//							x: this._scaleX,
-				//							y: this._scaleY
-				//						},
-				//						newValue: {
-				//							x: this._scaleX,
-				//							y: this._scaleY
-				//						},
-				//						isChanged: false
-				//					}
-				//				};
-				//				this.trigger(EVENT_SIGHT_CHANGE, evArg);
-			},
-
-			scrollBy: function(worldX, worldY) {
-				var x = this._scrollX + worldX;
-				var y = this._scrollY + worldY;
-				this.scrollTo(x, y);
-			},
-
-			_updateTransform: function() {
-				var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})',
-						-this._scrollX, -this._scrollY, this._scaleX, this._scaleY);
-				this._rootG.setAttribute('transform', transform);
 			}
+			return null;
 		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayUnitContainer',
+			field: {
+				_rootG: null,
+				_children: null,
+				_scaleX: null,
+				_scaleY: null,
+				_scrollX: null,
+				_scrollY: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayUnitContainer
+				 */
+				constructor: function DisplayUnitContainer(id) {
+					DisplayUnitContainer._super.call(this, id);
+
+					//TODO defaultValue
+					this.x = 0;
+					this.y = 0;
+					this.width = 0;
+					this.height = 0;
+
+					this._scaleX = 1;
+					this._scaleY = 1;
+
+					this._scrollX = 0;
+					this._scrollY = 0;
+
+					this._children = [];
+
+					//TODO ここではsvgは作らない。
+					this.domRoot = createSvgElement('svg');
+					this.domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
+
+					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
+					//width, heightの指定との整合性について検討
+					this.domRoot.setAttribute('overflow', 'visible');
+
+					//rootGは<g>要素。transformを一括してかけるため、
+					//子要素は全てこの<g>の下に追加する。
+					this._rootG = createSvgElement('g');
+					this.domRoot.appendChild(this._rootG);
+				},
+
+				addDisplayUnit: function(du) {
+					this._children.push(du);
+					this._rootG.appendChild(du.domRoot);
+					du._parentDU = this;
+				},
+
+				removeDisplayUnit: function(du) {
+					var idx = this._children.indexOf(du);
+					if (idx !== -1) {
+						this._children.splice(idx, 1);
+						this._rootG.removeChild(du.domRoot);
+						du._parentDU = null;
+
+						//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
+						du._rootStage = null;
+					}
+				},
+
+				getDisplayUnitById: function(id) {
+					var ret = getDisplayUnitByIdInner(this.id);
+					return ret;
+				},
+
+				getDisplayUnitAll: function() {
+					return this._children;
+				},
+
+				_onAddedToRoot: function(rootStage) {
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						var du = children[i];
+						du._onAddedToRoot(rootStage);
+					}
+				},
+
+				setScale: function(scaleX, scaleY) {
+					if (scaleX != null) {
+						this._scaleX = scaleX;
+					}
+					if (scaleY != null) {
+						this._scaleY = scaleY;
+					}
+					this._updateTransform();
+				},
+
+				scrollTo: function(worldX, worldY) {
+					//				var oldPos = DisplayPoint.create(this._scrollX, this._scrollY);
+
+					this._scrollX = worldX;
+					this._scrollY = worldY;
+					this._updateTransform();
+
+					//				var newPos = WorldPoint.create(worldX, worldY);
+
+					//				var evArg = {
+					//					scrollPosition: {
+					//						oldValue: oldPos,
+					//						newValue: newPos,
+					//						isChanged: true
+					//					},
+					//					scale: {
+					//						oldValue: {
+					//							x: this._scaleX,
+					//							y: this._scaleY
+					//						},
+					//						newValue: {
+					//							x: this._scaleX,
+					//							y: this._scaleY
+					//						},
+					//						isChanged: false
+					//					}
+					//				};
+					//				this.trigger(EVENT_SIGHT_CHANGE, evArg);
+				},
+
+				scrollBy: function(worldX, worldY) {
+					var x = this._scrollX + worldX;
+					var y = this._scrollY + worldY;
+					this.scrollTo(x, y);
+				},
+
+				_updateTransform: function() {
+					var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})',
+							-this._scrollX, -this._scrollY, this._scaleX, this._scaleY);
+					this._rootG.setAttribute('transform', transform);
+				}
+			}
+		};
+		return desc;
 	});
 
 
@@ -1479,6 +1501,18 @@
 
 		unselectAll: function() {
 			this._selectionLogic.unselectAll();
+		},
+
+		getDisplayUnitById: function(id) {
+			var layers = this._layers;
+			for (var i = 0, len = layers.length; i < len; i++) {
+				var layer = layers[i];
+				var du = layer.getDisplayUnitById(id);
+				if (du) {
+					return du;
+				}
+			}
+			return null;
 		},
 
 		getSelectedDisplayUnits: function() {
