@@ -276,45 +276,82 @@
 	};
 
 
-	var Rect = RootClass.extend({
-		name: 'h5.ui.components.stage.Rect',
-		field: {
-			_x: null,
-			_y: null
-		},
-		accessor: {
-			x: {
-				get: function() {
-					return this._x;
-				},
-				set: function(value) {
-					this._x = value;
-				}
+	var Rect = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.Rect',
+			field: {
+				_x: null,
+				_y: null
 			},
-			y: {
-				get: function() {
-					return this._y;
+			accessor: {
+				x: {
+					get: function() {
+						return this._x;
+					},
+					set: function(value) {
+						this._x = value;
+					}
 				},
-				set: function(value) {
-					this._y = value;
-				}
+				y: {
+					get: function() {
+						return this._y;
+					},
+					set: function(value) {
+						this._y = value;
+					}
+				},
+				width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
+				height: null
 			},
-			width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
-			height: null
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.Rect
-			 */
-			constructor: function Rect(x, y, width, height) {
-				Rect._super.call(this);
-				this._x = x !== undefined ? x : 0;
-				this._y = y !== undefined ? y : 0;
-				this._p_width = width !== undefined ? width : 0;
-				this._p_height = height !== undefined ? height : 0;
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.Rect
+				 */
+				constructor: function Rect(x, y, width, height) {
+					Rect._super.call(this);
+					this._x = x !== undefined ? x : 0;
+					this._y = y !== undefined ? y : 0;
+					this._p_width = width !== undefined ? width : 0;
+					this._p_height = height !== undefined ? height : 0;
+				},
+				setRect: function(x, y, width, height) {
+					if (x != null) {
+						this._x = x;
+					}
+					if (y != null) {
+						this._y = y;
+					}
+					if (width != null) {
+						this.width = width;
+					}
+					if (height != null) {
+						this.height = height;
+					}
+				},
+
+				setLocation: function(x, y) {
+					if (x != null) {
+						this._x = x;
+					}
+					if (y != null) {
+						this._y = y;
+					}
+				},
+
+				setSize: function(width, height) {
+					if (width != null) {
+						this.width = width;
+					}
+					if (height != null) {
+						this.height = height;
+					}
+				}
 			}
-		}
+		};
+		return desc;
 	});
+
+
 	var Point = RootClass.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.Point',
@@ -1134,6 +1171,12 @@
 				this._rootStage.unfocus(andUnselect);
 			},
 
+			//TODO 引数に位置を取れるようにする？
+			//TODO BasicDUに持たせる？ContentsDU?
+			scrollIntoView: function() {
+			//TODO 未実装。このDUが画面上に表示されるようにStageをスクロールする
+			},
+
 			_onAddedToRoot: function(stage) {
 				//TODO _superでなくgetParentClass()を
 				BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
@@ -1492,7 +1535,7 @@
 				},
 
 				_updateTransform: function() {
-					var transform = h5.u.str.format('translate({0},{1}) scale({2},{3})',
+					var transform = h5.u.str.format('scale({2},{3}) translate({0},{1})',
 							-this._scrollX, -this._scrollY, this._scaleX, this._scaleY);
 					this._rootG.setAttribute('transform', transform);
 				}
@@ -1503,55 +1546,59 @@
 
 
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
-	var Layer = DisplayUnitContainer.extend({
-		name: 'h5.ui.components.stage.Layer',
-		field: {
-			//_rootStage: null,
-			_canScrollX: true,
-			_canScrollY: true
-		},
-		method: {
-			/**
-			 * @constructor
-			 * @memberOf h5.ui.components.stage.Layer
-			 */
-			constructor: function Layer(id) {
-				Layer._super.call(this);
-				this.x = 0;
-				this.y = 0;
-				this.width = 0;
-				this.height = 0;
-
-				this._children = [];
-
-				//TODO ここではsvgは作らない。
-				//this.domRoot = createSvgElement('svg');
-				this.domRoot.setAttribute('data-stage-role', 'layer');
-				//				this.domRoot.setAttribute('x', 0);
-				//				this.domRoot.setAttribute('y', 0);
-				//				this.domRoot.setAttribute('width', 1000);
-				//				this.domRoot.setAttribute('height', 1000);
-
-				this.id = id;
-				this._canScrollX = true;
-				this._canScrollY = true;
+	var Layer = DisplayUnitContainer.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.Layer',
+			field: {
+				canUIScrollX: null,
+				canUIScrollY: null,
+				scrollRangeX: null,
+				scrollRangeY: null
 			},
+			method: {
+				/**
+				 * @constructor
+				 * @memberOf h5.ui.components.stage.Layer
+				 */
+				constructor: function Layer(id) {
+					Layer._super.call(this);
+					this.x = 0;
+					this.y = 0;
+					this.width = 0;
+					this.height = 0;
 
-			addDisplayUnit: function(du) {
-				Layer._super.prototype.addDisplayUnit.call(this, du);
-				//du._onAddedToRoot(this._rootStage);
-			},
+					this._children = [];
 
-			getWorldGlobalPosition: function() {
-				var p = WorldPoint.create(this.x, this.y);
-				return p;
-			},
+					//TODO ここではsvgは作らない。
+					//this.domRoot = createSvgElement('svg');
+					this.domRoot.setAttribute('data-stage-role', 'layer');
+					//				this.domRoot.setAttribute('x', 0);
+					//				this.domRoot.setAttribute('y', 0);
+					//				this.domRoot.setAttribute('width', 1000);
+					//				this.domRoot.setAttribute('height', 1000);
 
-			_onAddedToRoot: function(stage) {
-				this._rootStage = stage;
-				Layer._super.prototype._onAddedToRoot.call(this, stage);
+					this.id = id;
+					//					this._canScrollX = true;
+					//					this._canScrollY = true;
+				},
+
+				addDisplayUnit: function(du) {
+					Layer._super.prototype.addDisplayUnit.call(this, du);
+					//du._onAddedToRoot(this._rootStage);
+				},
+
+				getWorldGlobalPosition: function() {
+					var p = WorldPoint.create(this.x, this.y);
+					return p;
+				},
+
+				_onAddedToRoot: function(stage) {
+					this._rootStage = stage;
+					Layer._super.prototype._onAddedToRoot.call(this, stage);
+				}
 			}
-		}
+		};
+		return desc;
 	});
 
 
@@ -1576,9 +1623,195 @@
 
 (function($) {
 
+	var RootClass = h5.cls.RootClass;
+	var stageModule = h5.ui.components.stage;
+
+	var Viewport = RootClass.extend(function() {
+
+		var desc = {
+			name: 'h5.ui.components.stage.Viewport',
+
+			field: {
+				_displayRect: null,
+				_worldRect: null,
+				_scaleX: null,
+				_scaleY: null
+			},
+
+			accessor: {
+				scaleX: {
+					get: function() {
+						return this._scaleX;
+					}
+				},
+				scaleY: {
+					get: function() {
+						return this._scaleY;
+					}
+				},
+				displayX: {
+					get: function() {
+						return this._displayRect.x;
+					}
+				},
+				displayY: {
+					get: function() {
+						return this._displayRect.y;
+					}
+				},
+				displayWidth: {
+					get: function() {
+						return this._displayRect.width;
+					}
+				},
+				displayHeight: {
+					get: function() {
+						return this._displayRect.height;
+					}
+				},
+				worldX: {
+					get: function() {
+						return this._worldRect.x;
+					}
+				},
+				worldY: {
+					get: function() {
+						return this._worldRect.y;
+					}
+				},
+				worldWidth: {
+					get: function() {
+						return this._worldRect.width;
+					}
+				},
+				worldHeight: {
+					get: function() {
+						return this._worldRect.height;
+					}
+				},
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.Viewport
+				 */
+				constructor: function Viewport() {
+					Viewport._super.call(this);
+					this._displayRect = stageModule.Rect.create();
+					this._worldRect = stageModule.Rect.create();
+					this._scaleX = 1;
+					this._scaleY = 1;
+				},
+
+				setDisplaySize: function(dispWidth, dispHeight) {
+					this.setDisplayRect(null, null, dispWidth, dispHeight);
+				},
+
+				getDisplayRect: function() {
+					var rect = stageModule.Rect.create(this._displayRect.x, this._displayRect.y,
+							this._displayRect.width, this._displayRect.height);
+					return rect;
+				},
+
+				setDisplayRect: function(dispX, dispY, dispWidth, dispHeight) {
+					this._displayRect.setRect(dispX, dispY, dispWidth, dispHeight);
+
+					var wx = this._displayRect.x / this._scaleX;
+					var wy = this._displayRect.y / this._scaleY;
+					var ww = this._displayRect.width / this._scaleX;
+					var wh = this._displayRect.height / this._scaleY;
+					this._worldRect.setRect(wx, wy, ww, wh);
+				},
+
+				setWorldSize: function(worldWidth, worldHeight) {
+					this.setWorldRect(null, null, worldWidth, worldHeight);
+				},
+
+				setWorldRect: function(worldX, worldY, worldWidth, worldHeight) {
+					this._worldRect.setRect(worldX, worldY, worldWidth, worldHeight);
+
+					var dx = this._worldRect.x * this._scaleX;
+					var dy = this._worldRect.y * this._scaleY;
+					var dw = this._worldRect.width * this._scaleX;
+					var dh = this._worldRect.height * this._scaleY;
+					this._displayRect.setRect(dx, dy, dw, dh);
+				},
+
+				getWorldRect: function() {
+					var rect = stageModule.Rect.create(this._worldRect.x, this._worldRect.y,
+							this._worldRect.width, this._worldRect.height);
+					return rect;
+				},
+
+				//dispScaleCenterは、ディスプレイ座標系における、拡大時の中心座標。
+				//原点は画面の左上ではなくディスプレイ座標系自体の原点(スクロールしている場合特に注意)。
+				setScale: function(scaleX, scaleY, dispScaleCenterX, dispScaleCenterY) {
+					if (scaleX != null && scaleX >= 0) {
+						this._scaleX = scaleX;
+					}
+					if (scaleY != null && scaleY >= 0) {
+						this._scaleY = scaleY;
+					}
+
+					var oldWorldW = this._worldRect.width;
+					var oldWorldH = this._worldRect.height;
+
+					var newWorldW = this._displayRect.width / this._scaleX;
+					var newWorldH = this._displayRect.height / this._scaleY;
+					this._worldRect.setSize(newWorldW, newWorldH);
+
+					if (dispScaleCenterX == null) {
+						dispScaleCenterX = this._displayRect.width / 2 + this._displayRect.x;
+					}
+					if (dispScaleCenterY == null) {
+						dispScaleCenterY = this._displayRect.height / 2 + this._displayRect.y;
+					}
+
+					//今回の拡縮の際の中心点（ワールド座標系）
+					var worldScaleCenterX = dispScaleCenterX / this._scaleX;
+					var worldScaleCenterY = dispScaleCenterY / this._scaleY;
+
+					//この拡縮に伴って発生する左・上のずれの割合を算出
+					//(拡縮の中心が画面左上の場合(0,0)、右下の場合(1,1)になる)
+					var gapXRatio = (worldScaleCenterX - this._worldRect.x) / oldWorldW;
+					var gapYRatio = (worldScaleCenterY - this._worldRect.y) / oldWorldH;
+
+					//求められた比率を使って、実際のずれ量だけスクロールする
+					//これにより、指定されたcenterの位置を中心にスクロールしたことになる
+					var worldDx = (newWorldW - oldWorldW) * gapXRatio;
+					var worldDy = (newWorldH - oldWorldH) * gapYRatio;
+
+					//DisplayRect側を更新すれば、WorldRect側は自動的に更新される
+					this.scrollWorldBy(worldDx, worldDy);
+				},
+
+				scrollTo: function(dispX, dispY) {
+					this.setDisplayRect(dispX, dispY, null, null);
+				},
+
+				scrollBy: function(dispDx, dispDy) {
+					var x = this._displayRect.x + dispDx;
+					var y = this._displayRect.y + dispDy;
+					this.scrollTo(x, y);
+				},
+
+				scrollWorldTo: function(worldX, worldY) {
+					this.setWorldRect(worldX, worldY, null, null);
+				},
+
+				scrollWorldBy: function(worldDx, worldDy) {
+					var x = this._worldRect.x + worldDx;
+					var y = this._worldRect.y + worldDy;
+					this.scrollWorldTo(x, y);
+				}
+			}
+		};
+		return desc;
+	});
+
+
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
-	var stageModule = h5.ui.components.stage;
 
 	var DisplayPoint = stageModule.DisplayPoint;
 
@@ -1593,7 +1826,10 @@
 
 		_units: null,
 
-		_displayRect: null,
+		//ビューポートの大きさを表すRect。ワールド座標系。
+		_worldViewportRect: null,
+
+		_viewport: null,
 
 		_scaleX: 1,
 
@@ -1657,13 +1893,11 @@
 		},
 
 		focus: function(displayUnit) {
-			this._selectionLogic.focus(displayUnit);
-			displayUnit._focused = true;
+			return this._selectionLogic.focus(displayUnit);
 		},
 
 		unfocus: function(andUnselect) {
-			this._selectionLogic.unfocus(andUnselect);
-			displayUnit._focused = false;
+			return this._selectionLogic.unfocus(andUnselect);
 		},
 
 		getFocusedDisplayUnit: function() {
@@ -1695,7 +1929,7 @@
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
-			this._displayRect = stageModule.Rect.create(0, 0, 0, 0);
+			this._viewport = Viewport.create();
 		},
 
 		__ready: function() {
@@ -1713,7 +1947,7 @@
 
 			this.rootElement.appendChild(this._duRoot);
 
-			this.refresh();
+			this.refresh(true);
 		},
 
 		//_dragController: h5.ui.components.stage.DragController,
@@ -1725,8 +1959,7 @@
 			this._duRoot.setAttributeNS(null, 'width', w);
 			this._duRoot.setAttributeNS(null, 'height', h);
 
-			this._displayRect.width = w;
-			this._displayRect.height = h;
+			this._viewport.setDisplaySize(w, h);
 			this._updateViewBox();
 		},
 
@@ -1734,10 +1967,13 @@
 			//TODO ViewBoxで全体のスクロールやスケールを実現するかどうかは
 			//パフォーマンス等の観点を考えて検討
 
-			var x = this._displayRect.x;
-			var y = this._displayRect.y;
-			var w = this._displayRect.width; // / this._scaleX;
-			var h = this._displayRect.height; // / this._scaleY;
+			var wr = this._viewport.getWorldRect();
+
+			//位置は変えない
+			var x = 0;
+			var y = 0;
+			var w = wr.width;
+			var h = wr.height;
 
 			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
 		},
@@ -1803,16 +2039,15 @@
 		},
 
 		scrollTo: function(dispX, dispY) {
-			var oldPos = DisplayPoint.create(this._displayRect.x, this._displayRect.y);
+			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
 
+			this._viewport.scrollTo(dispX, dispY);
+
+			//TODO 移動制限
 			for (var i = 0, len = this._layers.length; i < len; i++) {
 				var layer = this._layers[i];
-				layer.scrollTo(dispX, dispY); //TODO scaleを考慮したスクロール量にする
+				layer.scrollTo(this._viewport.worldX, this._viewport.worldY);
 			}
-
-			this._displayRect.x = dispX;
-			this._displayRect.y = dispY;
-			//			this._updateViewBox();
 
 			var newPos = DisplayPoint.create(dispX, dispY);
 
@@ -1827,12 +2062,12 @@
 				},
 				scale: {
 					oldValue: {
-						x: this._scaleX,
-						y: this._scaleY
+						x: this._viewport.scaleX,
+						y: this._viewport.scaleY
 					},
 					newValue: {
-						x: this._scaleX,
-						y: this._scaleY
+						x: this._viewport.scaleX,
+						y: this._viewport.scaleY
 					},
 					isChanged: false
 				}
@@ -1840,41 +2075,54 @@
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
 		},
 
-		scrollBy: function(dispX, dispY) {
-			var x = this._displayRect.x + dispX;
-			var y = this._displayRect.y + dispY;
-			this.scrollTo(x, y);
+		scrollBy: function(displayDx, displayDy) {
+			var dx = this._viewport.displayX + displayDx;
+			var dy = this._viewport.displayY + displayDy;
+			this.scrollTo(dx, dy);
 		},
 
 		scrollWorldTo: function(worldX, worldY) {
-
+			this._viewport.scrollWorldTo(worldX, worldY);
 		},
 
-		scrollWorldBy: function(worldX, worldY) {
-
+		scrollWorldBy: function(worldDx, worldDy) {
+			var dx = this._viewport.worldX + worldDx;
+			var dy = this._viewport.worldY + worldDy;
+			this.scrollWorldTo(dx, dy);
 		},
 
 		/**
-		 * @param scaleX
-		 * @param scaleY
+		 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
+		 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
 		 * @param centerPercentX 拡縮時の中心点のx（左上を原点とし、表示サイズの端を100%としたときの割合をパーセントで与える。デフォルトでは50%）
 		 * @param centerPercentY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
 		setScale: function(scaleX, scaleY, centerPercentX, centerPercentY) {
-			if (scaleX != null) {
-				this._scaleX = scaleX;
+			if (centerPercentX == null) {
+				centerPercentX = 50;
 			}
-			if (scaleY != null) {
-				this._scaleY = scaleY;
+			if (centerPercentY == null) {
+				centerPercentY = 50;
 			}
+
+			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
+			var oldScaleX = this._viewport.scaleX;
+			var oldScaleY = this._viewport.scaleY;
+
+			var centerDispX = this._viewport.displayX + this._viewport.displayWidth
+					* (centerPercentX / 100);
+			var centerDispY = this._viewport.displayY + this._viewport.displayHeight
+					* (centerPercentY / 100);
+
+			this._viewport.setScale(scaleX, scaleY, centerDispX, centerDispY);
 
 			for (var i = 0, len = this._layers.length; i < len; i++) {
 				var layer = this._layers[i];
-				layer.setScale(this._scaleX, this._scaleY);
+				layer.setScale(this._viewport.scaleX, this._viewport.scaleY);
+				layer.scrollTo(-this._viewport.worldX, -this._viewport.worldY);
 			}
 
-			var oldPos = DisplayPoint.create(this._displayRect.x, this._displayRect.y);
-			var newPos = oldPos;
+			var newPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
 
 			//TODO 現在はこの場所でイベントを出しているが、
 			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
@@ -1887,25 +2135,17 @@
 				},
 				scale: {
 					oldValue: {
-						x: this._scaleX,
-						y: this._scaleY
+						x: oldScaleX,
+						y: oldScaleY
 					},
 					newValue: {
-						x: this._scaleX,
-						y: this._scaleY
+						x: scaleX,
+						y: scaleY
 					},
-					isChanged: false
+					isChanged: true
 				}
 			};
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
-		},
-
-		setScaleX: function(scaleX, centerPercentX) {
-			this.setScale(scaleX, null);
-		},
-
-		setScaleY: function(scaleY, centerPercentY) {
-			this.setScale(null, scaleY);
 		},
 
 		refresh: function(immediate) {
@@ -1913,7 +2153,8 @@
 		},
 
 		getScrollPosition: function() {
-			var pos = stageModule.DisplayPoint.create(this._displayRect.x, this._displayRect.y);
+			var pos = stageModule.DisplayPoint.create(this._worldViewportRect.x,
+					this._worldViewportRect.y);
 			return pos;
 		},
 
@@ -1923,6 +2164,38 @@
 		'{rootElement} dgDragStart': function(context, $el) {
 			var ds = context.evArg.dragSession;
 			ds.addDragCallback(this._own(this._onDragMove));
+		},
+
+		'{rootElement} mousewheel': function(context, $el) {
+			var event = context.event;
+
+			event.preventDefault();
+
+			// TODO どの操作でどうするかは要検討
+			if (event.shiftKey) {
+				// シフトキーが押されていたら拡大縮小
+				var ds = 0.1;
+				if (event.originalEvent.wheelDelta < 0) {
+					ds *= -1;
+				}
+
+				var rootOffset = $(this.rootElement).offset();
+				var cx = event.originalEvent.pageX - rootOffset.left;
+				var cy = event.originalEvent.pageY - rootOffset.top;
+
+				var centerPercentX = cx / this._viewport.displayWidth * 100;
+				var centerPercentY = cy / this._viewport.displayHeight * 100;
+
+				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds,
+						centerPercentX, centerPercentY);
+				return;
+			}
+
+			var dy = 40;
+			if (event.originalEvent.wheelDelta < 0) {
+				dy *= -1;
+			}
+			this.scrollBy(0, dy);
 		},
 
 		_onDragMove: function(ds, dx, dy) {

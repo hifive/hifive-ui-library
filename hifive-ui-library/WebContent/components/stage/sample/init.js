@@ -130,13 +130,14 @@
 		},
 
 		'[name="scaleX"] change': function(context, $el) {
-			var val = $el.val() / 100;
+			var val = parseInt($el.val()) / 100;
 			this._stageController.setScale(val, val);
 		},
 
 		'[name="scaleY"] change': function(context, $el) {
 			var val = $el.val();
-			this._stageController.setScaleY(val / 100);
+			var newScaleY = parseInt(val) / 100;
+			this._stageController.setScale(null, newScaleY);
 		},
 
 		'[name="getScrollPosition"] click': function() {
