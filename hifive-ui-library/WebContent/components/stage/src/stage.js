@@ -1081,13 +1081,37 @@
 	var BasicDisplayUnit = DisplayUnit.extend({
 		name: 'h5.ui.components.stage.BasicDisplayUnit',
 		field: {
+			/**
+			 * この要素を現在ドラッグ可能かどうか
+			 */
+			isDraggable: null,
 			_graphics: null,
 			_renderer: null,
 			_isSelected: null,
 			_isFocused: null,
-			_rootSvg: null
+			_rootSvg: null,
+
+			/**
+			 * この要素を現在選択可能かどうか
+			 */
+			_isSelectable: null
 		},
 		accessor: {
+			isSelectable: {
+				get: function() {
+					return this._isSelectable;
+				},
+				set: function(value) {
+					if (this._isSelectable === value) {
+						return;
+					}
+					this._isSelectable = value;
+					if (value === false) {
+						//選択不能になったので、選択状態を解除
+						this.unselect();
+					}
+				}
+			},
 			isSelected: {
 				get: function() {
 					return this._isSelected;
@@ -1821,16 +1845,20 @@
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var DisplayPoint = stageModule.DisplayPoint;
+	var BasicDisplayUnit = h5.cls.getClass('h5.ui.components.stage.BasicDisplayUnit');
 
 	//Containerを含めたすべてのDUを返す
-	function getDisplayUnitAll(root) {
+	function getAllSelectableDisplayUnits(root) {
 		var ret = [root];
 		if (root._children) {
 			var children = this._children;
 			for (var i = 0, len = children.length; i < len; i++) {
 				var child = children[i];
 				var childUnits = getDisplayUnitAll(child);
-				Array.prototype.push.apply(ret, childUnits);
+				var filtered = childUnits.filter(function(du) {
+					return BasicDisplayUnit.isClassOf(du) && du.isSelectable;
+				});
+				Array.prototype.push.apply(ret, filtered);
 			}
 		}
 		return ret;
@@ -1878,9 +1906,19 @@
 		},
 
 		selectAll: function() {
-		//TODO 再帰的にたどって全てのDUを選択状態にする
-		//ただしContainerは選択可能ではない
-		//DUはselectableかどうかを設定可能にする
+			var basicUnits = this._getAllSelectableDisplayUnits();
+			this._selectionLogic.select(basicUnits);
+		},
+
+		_getAllSelectableDisplayUnits: function() {
+			var layers = this._layers;
+			var ret = [];
+			for (var i = 0, len = layers.length; i < len; i++) {
+				var layer = layers[i];
+				var units = getAllSelectableDisplayUnits(layer);
+				Array.prototype.push.apply(ret, units);
+			}
+			return ret;
 		},
 
 		unselect: function(du) {
