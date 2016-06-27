@@ -1270,6 +1270,9 @@
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
 
+					//From,Toノードの中心座標を計算
+					var fwCenterY = fwPos.y + fr.height / 2;
+
 					//初回のみlineを生成
 					if (!this._svgLine) {
 						this._svgLine = createSvgElement('line');
@@ -1295,6 +1298,15 @@
 					case 'offset':
 						x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
 						break;
+					case 'nearest':
+						var fwCenterX = fwPos.x + fr.width / 2;
+						var twCenterX = twPos.x + tr.width / 2;
+						if (twCenterX - fwCenterX > 0) {
+							x1 = fwPos.x + fr.width;
+						} else {
+							x1 = fwPos.x;
+						}
+						break;
 					case 'center':
 					default:
 						x1 = fwPos.x + fr.width / 2;
@@ -1311,6 +1323,16 @@
 					case 'offset':
 						x2 = twPos.x + this.endpointTo.junctionOffsetX;
 						break;
+					case 'nearest':
+						var fwCenterX = fwPos.x + fr.width / 2;
+						var twCenterX = twPos.x + tr.width / 2;
+						if (twCenterX - fwCenterX > 0) {
+							//Toノードの中心がFromノードの中心より右にある＝right相当
+							x2 = twPos.x + tr.width;
+						} else {
+							x2 = twPos.x;
+						}
+						break;
 					case 'center':
 					default:
 						x2 = twPos.x + tr.width / 2;
@@ -1326,6 +1348,16 @@
 						break;
 					case 'offset':
 						y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
+						break;
+					case 'nearest':
+						var fwCenterY = fwPos.y + fr.height / 2;
+						var twCenterY = twPos.y + tr.height / 2;
+						if (twCenterY - fwCenterY > 0) {
+							//Toノードの中心がFromノードの中心より下にある＝bottom相当
+							y1 = fwPos.y + fr.height;
+						} else {
+							y1 = fwPos.y;
+						}
 						break;
 					case 'middle':
 					default:
@@ -1848,7 +1880,7 @@
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var DisplayPoint = stageModule.DisplayPoint;
-	var BasicDisplayUnit = h5.cls.getClass('h5.ui.components.stage.BasicDisplayUnit');
+	var BasicDisplayUnit = h5.cls.manager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 
 	//Containerを含めたすべてのDUを返す
 	function getAllSelectableDisplayUnits(root) {
