@@ -2098,6 +2098,10 @@
 		 * @param centerPercentY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
 		setScale: function(scaleX, scaleY, centerPercentX, centerPercentY) {
+			if (scaleX === this._viewport.scaleX && scaleY === this._viewport.scaleY) {
+				return;
+			}
+
 			if (centerPercentX == null) {
 				centerPercentX = 50;
 			}
@@ -2124,6 +2128,12 @@
 
 			var newPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
 
+			var isScrollPoisitionChanged = true;
+			if (centerPercentX === 0 && centerPercentY === 0) {
+				//左上を拡縮の基準とした場合、スクロールしない
+				isScrollPoisitionChanged = false;
+			}
+
 			//TODO 現在はこの場所でイベントを出しているが、
 			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
 			//描画更新後にイベントをあげるようにする
@@ -2131,7 +2141,7 @@
 				scrollPosition: {
 					oldValue: oldPos,
 					newValue: newPos,
-					isChanged: true
+					isChanged: isScrollPoisitionChanged
 				},
 				scale: {
 					oldValue: {
