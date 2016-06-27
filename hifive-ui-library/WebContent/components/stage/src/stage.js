@@ -1121,16 +1121,14 @@
 				get: function() {
 					return this._isFocused;
 				}
-			},
-			isSelectable: null
-		//TODO selectableフラグが変わったら選択状態を変える
+			}
 		},
 		method: {
 			constructor: function BasicDisplayUnit(id) {
 				BasicDisplayUnit._super.call(this, id);
 
 				this._isSelectable = true;
-				this._isDraggable = true;
+				this.isDraggable = true;
 
 				this._isSelected = false;
 				this._isFocused = false;
