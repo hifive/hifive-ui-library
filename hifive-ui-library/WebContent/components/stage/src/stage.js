@@ -1535,8 +1535,8 @@
 				},
 
 				_updateTransform: function() {
-					var transform = h5.u.str.format('scale({2},{3}) translate({0},{1})',
-							-this._scrollX, -this._scrollY, this._scaleX, this._scaleY);
+					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
 					this._rootG.setAttribute('transform', transform);
 				}
 			}
@@ -1745,7 +1745,7 @@
 
 				//dispScaleCenterは、ディスプレイ座標系における、拡大時の中心座標。
 				//原点は画面の左上ではなくディスプレイ座標系自体の原点(スクロールしている場合特に注意)。
-				setScale: function(scaleX, scaleY, dispScaleCenterX, dispScaleCenterY) {
+				setScale: function(scaleX, scaleY, centerWorldX, centerWorldY) {
 					if (scaleX != null && scaleX >= 0) {
 						this._scaleX = scaleX;
 					}
@@ -1753,23 +1753,24 @@
 						this._scaleY = scaleY;
 					}
 
-					var oldWorldW = this._worldRect.width;
-					var oldWorldH = this._worldRect.height;
+					//TODO 最小スケール値をここで持たせるか、Stageで制限するか
+					if (this._scaleX < 0.05) {
+						this._scaleX = 0.05;
+					}
+					if (this._scaleY < 0.05) {
+						this._scaleY = 0.05;
+					}
 
-					var newWorldW = this._displayRect.width / this._scaleX;
-					var newWorldH = this._displayRect.height / this._scaleY;
+					var oldWorldW = this.worldWidth;
+					var oldWorldH = this.worldHeight;
+
+					var newWorldW = this.displayWidth / this._scaleX;
+					var newWorldH = this.displayHeight / this._scaleY;
 					this._worldRect.setSize(newWorldW, newWorldH);
 
-					if (dispScaleCenterX == null) {
-						dispScaleCenterX = this._displayRect.width / 2 + this._displayRect.x;
-					}
-					if (dispScaleCenterY == null) {
-						dispScaleCenterY = this._displayRect.height / 2 + this._displayRect.y;
-					}
-
 					//今回の拡縮の際の中心点（ワールド座標系）
-					var worldScaleCenterX = dispScaleCenterX / this._scaleX;
-					var worldScaleCenterY = dispScaleCenterY / this._scaleY;
+					var worldScaleCenterX = centerWorldX;
+					var worldScaleCenterY = centerWorldY;
 
 					//この拡縮に伴って発生する左・上のずれの割合を算出
 					//(拡縮の中心が画面左上の場合(0,0)、右下の場合(1,1)になる)
@@ -1782,7 +1783,7 @@
 					var worldDy = (newWorldH - oldWorldH) * gapYRatio;
 
 					//DisplayRect側を更新すれば、WorldRect側は自動的に更新される
-					this.scrollWorldBy(worldDx, worldDy);
+					this.scrollWorldBy(-worldDx, -worldDy);
 				},
 
 				scrollTo: function(dispX, dispY) {
@@ -1803,17 +1804,37 @@
 					var x = this._worldRect.x + worldDx;
 					var y = this._worldRect.y + worldDy;
 					this.scrollWorldTo(x, y);
+				},
+
+				getWorldPositionFromDisplayOffset: function(displayOffsetX, displayOffsetY) {
+					var wx = this._worldRect.x + displayOffsetX / this._scaleX;
+					var wy = this._worldRect.y + displayOffsetY / this._scaleY;
+					var point = stageModule.WorldPoint.create(wx, wy);
+					return point;
 				}
+
 			}
 		};
 		return desc;
 	});
 
-
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
-
 	var DisplayPoint = stageModule.DisplayPoint;
+
+	//Containerを含めたすべてのDUを返す
+	function getDisplayUnitAll(root) {
+		var ret = [root];
+		if (root._children) {
+			var children = this._children;
+			for (var i = 0, len = children.length; i < len; i++) {
+				var child = children[i];
+				var childUnits = getDisplayUnitAll(child);
+				Array.prototype.push.apply(ret, childUnits);
+			}
+		}
+		return ret;
+	}
 
 	var stageController = {
 		/**
@@ -2094,43 +2115,47 @@
 		/**
 		 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
 		 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
-		 * @param centerPercentX 拡縮時の中心点のx（左上を原点とし、表示サイズの端を100%としたときの割合をパーセントで与える。デフォルトでは50%）
-		 * @param centerPercentY 拡縮時の中心点のy（仕様はxと同じ）
+		 * @param displayOffsetX 拡縮時の中心点のx（ディスプレイ座標系におけるoffsetX(stageのルート要素の左上を基準とした座標)）
+		 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
-		setScale: function(scaleX, scaleY, centerPercentX, centerPercentY) {
+		setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
 			if (scaleX === this._viewport.scaleX && scaleY === this._viewport.scaleY) {
 				return;
 			}
 
-			if (centerPercentX == null) {
-				centerPercentX = 50;
-			}
-			if (centerPercentY == null) {
-				centerPercentY = 50;
+			var offX = displayOffsetX;
+			var offY = displayOffsetY;
+
+			if (displayOffsetX == null && displayOffsetY == null) {
+				var rootOffset = $(this.rootElement).offset();
+				if (displayOffsetX == null) {
+					offX = rootOffset.left + this._viewport.displayWidth / 2;
+				}
+				if (displayOffsetY == null) {
+					offY = rootOffset.top + this._viewport.displayHeight / 2;
+				}
 			}
 
-			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
+			var scaleCenter = this._viewport.getWorldPositionFromDisplayOffset(offX, offY);
+
+			var oldScrollPos = DisplayPoint
+					.create(this._viewport.displayX, this._viewport.displayY);
 			var oldScaleX = this._viewport.scaleX;
 			var oldScaleY = this._viewport.scaleY;
 
-			var centerDispX = this._viewport.displayX + this._viewport.displayWidth
-					* (centerPercentX / 100);
-			var centerDispY = this._viewport.displayY + this._viewport.displayHeight
-					* (centerPercentY / 100);
-
-			this._viewport.setScale(scaleX, scaleY, centerDispX, centerDispY);
+			this._viewport.setScale(scaleX, scaleY, scaleCenter.x, scaleCenter.y);
 
 			for (var i = 0, len = this._layers.length; i < len; i++) {
 				var layer = this._layers[i];
 				layer.setScale(this._viewport.scaleX, this._viewport.scaleY);
-				layer.scrollTo(-this._viewport.worldX, -this._viewport.worldY);
+				layer.scrollTo(this._viewport.worldX, this._viewport.worldY);
 			}
 
-			var newPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
+			var newScrollPos = DisplayPoint
+					.create(this._viewport.displayX, this._viewport.displayY);
 
 			var isScrollPoisitionChanged = true;
-			if (centerPercentX === 0 && centerPercentY === 0) {
-				//左上を拡縮の基準とした場合、スクロールしない
+			if (oldScrollPos.x === newScrollPos.x && oldScrollPos.y === newScrollPos.y) {
 				isScrollPoisitionChanged = false;
 			}
 
@@ -2139,8 +2164,8 @@
 			//描画更新後にイベントをあげるようにする
 			var evArg = {
 				scrollPosition: {
-					oldValue: oldPos,
-					newValue: newPos,
+					oldValue: oldScrollPos,
+					newValue: newScrollPos,
 					isChanged: isScrollPoisitionChanged
 				},
 				scale: {
@@ -2190,14 +2215,14 @@
 				}
 
 				var rootOffset = $(this.rootElement).offset();
-				var cx = event.originalEvent.pageX - rootOffset.left;
-				var cy = event.originalEvent.pageY - rootOffset.top;
+				var offsetX = event.originalEvent.pageX - rootOffset.left;
+				var offsetY = event.originalEvent.pageY - rootOffset.top;
 
-				var centerPercentX = cx / this._viewport.displayWidth * 100;
-				var centerPercentY = cy / this._viewport.displayHeight * 100;
+				var scaleCenter = this._viewport
+						.getWorldPositionFromDisplayOffset(offsetX, offsetY);
 
 				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds,
-						centerPercentX, centerPercentY);
+						scaleCenter.x, scaleCenter.y);
 				return;
 			}
 
