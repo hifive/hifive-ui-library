@@ -1129,6 +1129,9 @@
 			constructor: function BasicDisplayUnit(id) {
 				BasicDisplayUnit._super.call(this, id);
 
+				this._isSelectable = true;
+				this._isDraggable = true;
+
 				this._isSelected = false;
 				this._isFocused = false;
 
