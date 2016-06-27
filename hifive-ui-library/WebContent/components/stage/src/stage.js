@@ -1302,6 +1302,7 @@
 						var fwCenterX = fwPos.x + fr.width / 2;
 						var twCenterX = twPos.x + tr.width / 2;
 						if (twCenterX - fwCenterX > 0) {
+							//Toノードの中心がFromノードの中心より右にある＝Fromノード側はright相当にする
 							x1 = fwPos.x + fr.width;
 						} else {
 							x1 = fwPos.x;
@@ -1327,10 +1328,10 @@
 						var fwCenterX = fwPos.x + fr.width / 2;
 						var twCenterX = twPos.x + tr.width / 2;
 						if (twCenterX - fwCenterX > 0) {
-							//Toノードの中心がFromノードの中心より右にある＝right相当
-							x2 = twPos.x + tr.width;
-						} else {
+							//Toノードの中心がFromノードの中心より右にある＝Toノード側はleft相当にする
 							x2 = twPos.x;
+						} else {
+							x2 = twPos.x + tr.width;
 						}
 						break;
 					case 'center':
@@ -1353,7 +1354,7 @@
 						var fwCenterY = fwPos.y + fr.height / 2;
 						var twCenterY = twPos.y + tr.height / 2;
 						if (twCenterY - fwCenterY > 0) {
-							//Toノードの中心がFromノードの中心より下にある＝bottom相当
+							//Toノードの中心がFromノードの中心より下にある＝Fromノード側はbottom相当にする
 							y1 = fwPos.y + fr.height;
 						} else {
 							y1 = fwPos.y;
@@ -1374,6 +1375,16 @@
 						break;
 					case 'offset':
 						y2 = twPos.y + this.endpointTo.junctionOffsetY;
+						break;
+					case 'nearest':
+						var fwCenterY = fwPos.y + fr.height / 2;
+						var twCenterY = twPos.y + tr.height / 2;
+						if (twCenterY - fwCenterY > 0) {
+							//Toノードの中心がFromノードの中心より下にある＝Toノード側はtop相当にする
+							y2 = twPos.y;
+						} else {
+							y2 = twPos.y + tr.height;
+						}
 						break;
 					case 'middle':
 					default:
