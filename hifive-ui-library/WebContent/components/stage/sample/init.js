@@ -237,6 +237,18 @@
 			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+		},
+
+		'{rootElement} duClick': function(context) {
+			var du = context.evArg.displayUnit;
+			var duId = du.id;
+			this.log.debug('duClick! id={0}', duId);
+		},
+
+		'{rootElement} duDblclick': function() {
+			var du = context.evArg.displayUnit;
+			var duId = du.id;
+			this.log.debug('duDblclick! id={0}', duId);
 		}
 	};
 
