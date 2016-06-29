@@ -1226,6 +1226,53 @@
 		return desc;
 	});
 
+	var SimpleSet = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SimpleSet',
+			field: {
+				_keys: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SimpleSet
+				 */
+				constructor: function SimpleSet() {
+					SimpleSet._super.call(this);
+					this._keys = [];
+				},
+				add: function(key) {
+					if (this.has(key)) {
+						return;
+					}
+					this._keys.push(key);
+				},
+				remove: function(key) {
+					var idx = $.inArray(key, this._keys);
+					if (idx === -1) {
+						//このタグは持っていない
+						return;
+					}
+					this._keys.splice(idx, 1);
+				},
+				has: function(key) {
+					return $.inArray(key, this._keys) !== -1;
+				},
+				clear: function() {
+					this._keys = [];
+				},
+				size: function() {
+					return this._keys.length;
+				},
+				toArray: function() {
+					return this._keys.slice(0);
+				},
+			}
+		};
+		return desc;
+	});
+
+	var ERR_CANNOT_MOVE_OFFSTAGE_DU = 'Stageに追加されていないDisplayUnitはディスプレイ座標系に基づいた移動はできません。';
+
 	//TODO layouter(仮)を差し込めるようにし、
 	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
 	//layouterがフックして強制ブロック・別の値をセット等できるようにする
@@ -1242,6 +1289,8 @@
 				_parentDU: null,
 
 				_rootStage: null,
+
+				_groupTag: null
 			},
 			accessor: {
 				x: null,
@@ -1249,7 +1298,12 @@
 				width: null,
 				height: null,
 				domRoot: null,
-				extraData: null
+				extraData: null,
+				groupTag: {
+					get: function() {
+						return this._groupTag;
+					}
+				}
 			},
 			method: {
 				/**
@@ -1272,6 +1326,8 @@
 					this.y = 0;
 					this.width = 0;
 					this.height = 0;
+
+					this._groupTag = SimpleSet.create();
 				},
 
 				setRect: function(rect) {
@@ -1320,6 +1376,23 @@
 						x: this.x,
 						y: this.y
 					});
+				},
+
+				moveDisplayTo: function(x, y) {
+					if (!this._rootStage) {
+						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
+					}
+					var worldPos = this._rootStage._viewport.getWorldPosition(x, y);
+					this.moveTo(worldPos.x, worldPos.y);
+				},
+
+				moveDisplayBy: function(x, y) {
+					if (!this._rootStage) {
+						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
+					}
+					var wx = this._rootStage._viewport.getXLengthOfWorld(x);
+					var wy = this._rootStage._viewport.getYLengthOfWorld(y);
+					this.moveBy(wx, wy);
 				},
 
 				scrollIntoView: function() {
@@ -2172,8 +2245,37 @@
 					var wy = this._worldRect.y + displayOffsetY / this._scaleY;
 					var point = stageModule.WorldPoint.create(wx, wy);
 					return point;
-				}
+				},
 
+				getXLengthOfWorld: function(displayXLength) {
+					return displayXLength / this._scaleX;
+				},
+
+				getYLengthOfWorld: function(displayYLength) {
+					return displayYLength / this._scaleY;
+				},
+
+				getXLengthOfDisplay: function(worldXLength) {
+					return worldXLength * this._scaleX;
+				},
+
+				getYLengthOfDisplay: function(worldYLength) {
+					return worldYLength * this._scaleY;
+				},
+
+				getWorldPosition: function(displayX, displayY) {
+					var wx = displayX / this._scaleX;
+					var wy = displayY / this._scaleY;
+					var point = stageModule.WorldPoint.create(wx, wy);
+					return point;
+				},
+
+				getDisplayPosition: function(worldX, worldY) {
+					var dispX = worldX * this._scaleX;
+					var dispY = worldY * this._scaleY;
+					var point = stageModule.DisplayPoint.create(dispX, dispY);
+					return point;
+				}
 			}
 		};
 		return desc;
@@ -2184,22 +2286,59 @@
 	var DisplayPoint = stageModule.DisplayPoint;
 	var BasicDisplayUnit = h5.cls.manager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 
-	//Containerを含めたすべてのDUを返す
+	/**
+	 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
+	 *
+	 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
+	 * @returns BasicDisplayUnitの配列
+	 */
 	function getAllSelectableDisplayUnits(root) {
-		var ret = [root];
-		if (root._children) {
-			var children = this._children;
+		var ret = [];
+
+		if (typeof root._children !== 'undefined') {
+			//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
+			var children = root._children;
 			for (var i = 0, len = children.length; i < len; i++) {
 				var child = children[i];
-				var childUnits = getDisplayUnitAll(child);
-				var filtered = childUnits.filter(function(du) {
+				var descendants = getAllSelectableDisplayUnits(child);
+				var filtered = descendants.filter(function(du) {
 					return BasicDisplayUnit.isClassOf(du) && du.isSelectable;
 				});
 				Array.prototype.push.apply(ret, filtered);
 			}
+		} else {
+			ret.push(root);
 		}
 		return ret;
 	}
+
+	/**
+	 * コンテナを含む、全てのDUを返す
+	 *
+	 * @private
+	 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
+	 * @returns 全てのDisplayUnitを含む配列
+	 */
+	function getAllDisplayUnits(root) {
+		var ret = [];
+
+		if (typeof root._children !== 'undefined') {
+			//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
+			var children = root._children;
+			for (var i = 0, len = children.length; i < len; i++) {
+				var child = children[i];
+				var descendants = getAllDisplayUnits(child);
+				Array.prototype.push.apply(ret, descendants);
+			}
+		} else {
+			ret.push(root);
+		}
+		return ret;
+	}
+
+	var DRAG_MODE_NONE = 0;
+	var DRAG_MODE_SCREEN = 1;
+	var DRAG_MODE_DU = 2;
 
 	var stageController = {
 		/**
@@ -2309,6 +2448,11 @@
 			return isFocused;
 		},
 
+		query: function() {
+			var allDU = this.get
+			h5.core.data.createQuery();
+		},
+
 		_getDefs: function() {
 			if (!this._hasDefs) {
 				var SVGDefinitions = h5.cls.manager
@@ -2331,6 +2475,7 @@
 			this._units = new Map();
 			this._layers = [];
 			this._viewport = Viewport.create();
+			this._dragMode = DRAG_MODE_NONE;
 		},
 
 		__ready: function() {
@@ -2414,18 +2559,49 @@
 			this.trigger(triggerEventName, evArg);
 		},
 
-		'{rootElement} h5trackstart': function(context) {
+		_dragMode: DRAG_MODE_NONE, // DRAG_MODE_SCREEN = 1; DRAG_MODE_DU = 2;
 
+		_dragTargetDU: null,
+
+		'{rootElement} h5trackstart': function(context) {
+			var event = context.event;
+			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
+
+			this._dragMode = DRAG_MODE_NONE;
+
+			if (du) {
+				if (du.isDraggable) {
+					this._dragMode = DRAG_MODE_DU;
+					this._dragTargetDU = du;
+				}
+			} else {
+				this._dragMode = DRAG_MODE_SCREEN;
+			}
 		},
 
 		'{rootElement} h5trackmove': function(context) {
-			var dx = context.event.dx;
-			var dy = context.event.dy;
-			this.scrollBy(-dx, -dy);
+			if (this._dragMode === DRAG_MODE_NONE) {
+				return;
+			}
+
+			var dispDx = context.event.dx;
+			var dispDy = context.event.dy;
+
+			switch (this._dragMode) {
+			case DRAG_MODE_DU:
+				this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
+				break;
+			case DRAG_MODE_SCREEN:
+				this.scrollBy(-dispDx, -dispDy);
+				break;
+			default:
+				break;
+			}
 		},
 
 		'{rootElement} h5trackend': function(context) {
-
+			this._dragMode = DRAG_MODE_NONE;
+			this._dragTargetDU = null;
 		},
 
 		//_dragController: h5.ui.components.stage.DragController,
