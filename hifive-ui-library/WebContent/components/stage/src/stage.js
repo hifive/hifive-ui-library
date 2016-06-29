@@ -890,6 +890,13 @@
 				_defs: null,
 				_renderWaitingList: null
 			},
+			accessor: {
+				isDirty: {
+					get: function() {
+						return this._renderWaitingList.length !== 0;
+					}
+				}
+			},
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.SVGGraphics
@@ -1192,15 +1199,21 @@
 			},
 
 			requestRender: function() {
-				//TODO 正しくは次の再描画フレームで描画
-				var that = this;
 				if (!this._graphics) {
 					return;
 				}
 
+				//TODO ここの描画自体も遅延させる
+				this._renderer(this._graphics, this);
+
+				if (!this._graphics.isDirty) {
+					return;
+				}
+
+				var that = this;
 				//TODO rAFをここで直接使わない
 				requestAnimationFrame(function() {
-					that._renderer(that._graphics, that);
+					that._graphics.render();
 				}, 0);
 			},
 
