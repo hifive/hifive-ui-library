@@ -19,6 +19,7 @@
 
 	var RootClass = h5.cls.RootClass;
 
+
 	//クラスとして作ったものを変える
 	//	RootClass.extend(function() {
 	//		var desc = {
@@ -430,71 +431,89 @@
 		return desc;
 	});
 
-	var SVGDrawElement = SVGElementWrapper.extend({
-		name: 'h5.ui.components.stage.SVGDrawElement',
-		field: {
-			_classes: null,
-			_attributes: null
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGDrawElement
-			 */
-			constructor: function SVGDrawElement(element) {
-				SVGDrawElement._super.call(this);
-				this._element = element;
-				this._classes = [];
-				this._attributes = new Map();
+	//TODO 本当はSVGDrawElementのfuncの中に入れたいが
+	//Eclipseのフォーマッタと相性が悪い。いずれ方法を検討。
+	var ERR_MUST_OVERRIDE_RENDER_FUNCTION = 'SVGDrawElementのrenderメソッドは、その子クラスで必ずオーバーライドする必要があります。';
+
+	var SVGDrawElement = SVGElementWrapper.extend(function() {
+
+		var desc = {
+			name: 'h5.ui.components.stage.SVGDrawElement',
+			field: {
+				_classes: null,
+				_attributes: null,
+				_graphics: null
 			},
-			setAttribute: function(key, value) {
-				this._setAttribute(key, value);
-				setSvgAttribute(this._element, key, value);
-			},
-			setAttributes: function(param) {
-				for ( var key in param) {
-					if (param.hasOwnProperty(key)) {
-						this.setAttribute(key, param[key]);
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGDrawElement
+				 */
+				constructor: function SVGDrawElement(graphics, element) {
+					SVGDrawElement._super.call(this);
+					this._element = element;
+					this._classes = [];
+					this._attributes = new Map();
+					this._graphics = graphics;
+				},
+				setAttribute: function(key, value) {
+					this._setAttribute(key, value);
+					setSvgAttribute(this._element, key, value);
+				},
+				setAttributes: function(param) {
+					for ( var key in param) {
+						if (param.hasOwnProperty(key)) {
+							this.setAttribute(key, param[key]);
+						}
 					}
-				}
-			},
-			removeAttribute: function(key) {
-				this._removeAttribute(key);
-				removeSvgAttribute(this._element, key);
-			},
-			removeAttributes: function(keys) {
-				for (var i = 0; i < keys.length; i++) {
-					this.removeAttribute(keys[i]);
-				}
-			},
-			addClass: function(className) {
-				for (var i = 0; i < this._classes.length; i++) {
-					if (this._classes[i] === className) {
-						return;
+				},
+				removeAttribute: function(key) {
+					this._removeAttribute(key);
+					removeSvgAttribute(this._element, key);
+				},
+				removeAttributes: function(keys) {
+					for (var i = 0; i < keys.length; i++) {
+						this.removeAttribute(keys[i]);
 					}
-				}
-				this._classes.push(className);
-				this.setAttribute('class', this._classes.join(' '));
-			},
-			removeClass: function(className) {
-				for (var i = 0; i < this._classes.length; i++) {
-					if (this._classes[i] === className) {
-						this._classes.splice(i, 1);
-						this.setAttribute('class', this._classes.join(' '));
-						break;
+				},
+				addClass: function(className) {
+					for (var i = 0; i < this._classes.length; i++) {
+						if (this._classes[i] === className) {
+							return;
+						}
 					}
+					this._classes.push(className);
+					this.setAttribute('class', this._classes.join(' '));
+				},
+				removeClass: function(className) {
+					for (var i = 0; i < this._classes.length; i++) {
+						if (this._classes[i] === className) {
+							this._classes.splice(i, 1);
+							this.setAttribute('class', this._classes.join(' '));
+							break;
+						}
+					}
+				},
+				requestRender: function() {
+					if (this._graphics) {
+						this._graphics._addToRenderWaitingList(this);
+					}
+				},
+				render: function() {
+					throw new Error(ERR_MUST_OVERRIDE_RENDER_FUNCTION);
+				},
+				_getAttribute: function(key) {
+					return this._attributes.has(key) ? this._attributes.get(key) : null;
+				},
+				_setAttribute: function(key, value) {
+					this._attributes.set(key, value);
+				},
+				_removeAttribute: function(key) {
+					// FIXME deleteがエラーとして表示される
+					this._attributes['delete'](key);
 				}
-			},
-			_getAttribute: function(key) {
-				return this._attributes.has(key) ? this._attributes.get(key) : null;
-			},
-			_setAttribute: function(key, value) {
-				this._attributes.set(key, value);
-			},
-			_removeAttribute: function(key) {
-				// FIXME deleteがエラーとして表示される
-				this._attributes['delete'](key);
 			}
-		}
+		};
+		return desc;
 	});
 
 	var SVGLine = SVGDrawElement.extend({
@@ -562,8 +581,8 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGLine
 			 */
-			constructor: function SVGLine(element) {
-				SVGLine._super.call(this, element);
+			constructor: function SVGLine(graphics, element) {
+				SVGLine._super.call(this, graphics, element);
 			}
 		}
 	});
@@ -675,8 +694,8 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGText
 			 */
-			constructor: function SVGText(element) {
-				SVGText._super.call(this, element);
+			constructor: function SVGText(graphics, element) {
+				SVGText._super.call(this, graphics, element);
 			},
 			setText: function(text) {
 				this._element.textContent = text;
@@ -767,8 +786,8 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGRect
 			 */
-			constructor: function SVGRect(element) {
-				SVGRect._super.call(this, element);
+			constructor: function SVGRect(graphics, element) {
+				SVGRect._super.call(this, graphics, element);
 			}
 		}
 	});
@@ -830,8 +849,8 @@
 			/**
 			 * @memberOf h5.ui.components.stage.SVGCircle
 			 */
-			constructor: function SVGCircle(element) {
-				SVGCircle._super.call(this, element);
+			constructor: function SVGCircle(graphics, element) {
+				SVGCircle._super.call(this, graphics, element);
 			}
 		}
 	});
@@ -868,7 +887,8 @@
 			name: 'h5.ui.components.stage.SVGGraphics',
 			field: {
 				_rootSvg: null,
-				_defs: null
+				_defs: null,
+				_renderWaitingList: null
 			},
 			method: {
 				/**
@@ -878,6 +898,7 @@
 					SVGGraphics._super.call(this);
 					this._rootSvg = rootSvg;
 					this._defs = rootDefs;
+					this._renderWaitingList = [];
 				},
 
 				_addDefinition: function(svgElementWrapper) {
@@ -889,6 +910,21 @@
 
 				_removeDefinition: function(svgElementWrapper) {
 					this._defs.removeChild(svgElementWrapper._element);
+				},
+
+				_addToRenderWaitingList: function(svgDrawElement) {
+					if ($.inArray(svgDrawElement, this._renderWaitingList) === -1) {
+						this._renderWaitingList.push(svgDrawElement);
+					}
+				},
+
+				render: function() {
+					var list = this._renderWaitingList;
+					for (var i = 0, len = list.length; i < len; i++) {
+						var drawElement = list[i];
+						drawElement.render();
+					}
+					this._renderWaitingList = [];
 				},
 
 				getDefinition: function(id) {
@@ -910,25 +946,25 @@
 				drawLine: function() {
 					var line = createSvgElement('line');
 					this._rootSvg.appendChild(line);
-					var sl = SVGLine.create(line);
+					var sl = SVGLine.create(this, line);
 					return sl;
 				},
 				drawRect: function() {
 					var rect = createSvgElement('rect');
 					this._rootSvg.appendChild(rect);
-					var de = SVGRect.create(rect);
+					var de = SVGRect.create(this, rect);
 					return de;
 				},
 				drawCircle: function() {
 					var circle = createSvgElement('circle');
 					this._rootSvg.appendChild(circle);
-					var de = SVGCircle.create(circle);
+					var de = SVGCircle.create(this, circle);
 					return de;
 				},
 				drawText: function(str) {
 					var text = createSvgElement('text');
 					this._rootSvg.appendChild(text);
-					var de = SVGText.create(text);
+					var de = SVGText.create(this, text);
 
 					if (str != null) {
 						de.setText(str);
@@ -2319,6 +2355,7 @@
 			this.scrollBy(dx, dy);
 		}
 	};
+
 
 	h5.core.expose(stageController);
 
