@@ -804,11 +804,17 @@
 						return;
 					}
 
+					var x = this.x;
+					var y = this.y;
+
+					// 下向きの三角形の始点は左上
+					// 上向きの三角形の始点は左下
 					if (this.direction === 'up') {
+						y += height;
 						height *= -1;
 					}
 
-					var d = 'M' + this.x + ',' + this.y;
+					var d = 'M' + x + ',' + y;
 					d += ' h' + width;
 					d += ' l' + (-width / 2) + ',' + height;
 					d += ' Z';
