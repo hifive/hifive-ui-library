@@ -738,28 +738,28 @@
 		var desc = {
 			name: 'h5.ui.components.stage.SVGTriangle',
 			field: {
-				_x: null,
-				_y: null,
+				_topX: null,
+				_topY: null,
 				_width: null,
 				_height: null,
 				_direction: null
 			},
 			accessor: {
-				x: {
+				topX: {
 					get: function() {
-						return this._x;
+						return this._topX;
 					},
 					set: function(value) {
-						this._x = value;
+						this._topX = value;
 						this.requestRender();
 					}
 				},
-				y: {
+				topY: {
 					get: function() {
-						return this._y;
+						return this._topY;
 					},
 					set: function(value) {
-						this._y = value;
+						this._topY = value;
 						this.requestRender();
 					}
 				},
@@ -786,48 +786,80 @@
 						return this._direction;
 					},
 					set: function(value) {
-						if (value === 'up' || value === 'down') {
-							this._direction = value;
-							this.requestRender();
-						}
+						this._direction = value;
+						this.requestRender();
 					}
 				}
 			},
 			method: {
 				constructor: function SVGTriangle(graphics, element) {
 					SVGTriangle._super.call(this, graphics, element);
-					this._x = 0;
-					this._y = 0;
+					this._topX = 0;
+					this._topY = 0;
 					this._width = 0;
 					this._height = 0;
-					this.direction = 'up';
+					this._direction = 'up';
 				},
 				render: function() {
 					this._renderChangedAttributes();
-
+					this._renderTriangle();
+				},
+				_renderTriangle: function() {
 					var width = this.width;
 					var height = this.height;
+
+					// 三角形が大きさを持たない場合
 					if (!width || !height) {
 						this.removeAttribute('d', true);
 						return;
 					}
 
-					var x = this.x;
-					var y = this.y;
+					var topX = this.topX;
+					var topY = this.topY;
+					var direction = this.direction;
+					var d;
+					if (typeof direction === 'number') {
+						d = direction;
+					} else {
+						switch (direction) {
+						case 'up':
+							d = 0;
+							break;
 
-					// 下向きの三角形の始点は左上
-					// 上向きの三角形の始点は左下
-					if (this.direction === 'up') {
-						y += height;
-						height *= -1;
+						case 'left':
+							d = 90;
+							break;
+
+						case 'down':
+							d = 180;
+							break;
+
+						case 'right':
+							d = 270;
+							break;
+
+						default:
+							d = 0;
+						}
 					}
 
-					var d = 'M' + x + ',' + y;
-					d += ' h' + width;
-					d += ' l' + (-width / 2) + ',' + height;
-					d += ' Z';
+					d = ((d + 270) % 360) * Math.PI / 180;
 
-					this.setAttribute('d', d, true);
+					// 頂点から底辺に直角に伸びる直線と底辺との交差点（底辺の中心）
+					var x1 = topX + height * Math.cos(d + Math.PI);
+					var y1 = topY + height * Math.sin(d + Math.PI);
+
+					// 底辺の中心から底辺の頂点へのそれぞれの軸方向の差分
+					var dx = width / 2 * Math.cos(d + Math.PI / 2);
+					var dy = width / 2 * Math.sin(d + Math.PI / 2);
+
+					var path = '';
+					path += ' M' + (x1 + dx) + ',' + (y1 + dy);
+					path += ' L' + (x1 - dx) + ',' + (y1 - dy);
+					path += ' L' + topX + ',' + topY;
+					path += ' Z';
+
+					this.setAttribute('d', path, true);
 				}
 			}
 		};
