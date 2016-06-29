@@ -2326,6 +2326,7 @@
 			//SVG要素はjQueryでは明示的にはサポートしていない(イベントハンドラなどは実際には動くが)こと、
 			//また、今回は独自にイベントを発生させるために内部的にキャッチしたいので
 			//直接リッスンする
+			//TODO removeする
 			root.addEventListener('click', this.own(this._rootClickHandler));
 			root.addEventListener('dblclick', this.own(this._rootDblclickHandler));
 		},

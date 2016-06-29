@@ -245,7 +245,7 @@
 			this.log.debug('duClick! id={0}', duId);
 		},
 
-		'{rootElement} duDblclick': function() {
+		'{rootElement} duDblclick': function(context) {
 			var du = context.evArg.displayUnit;
 			var duId = du.id;
 			this.log.debug('duDblclick! id={0}', duId);
