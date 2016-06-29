@@ -399,7 +399,33 @@
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
 	}
 
+	function isHifiveClass(target) {
+		return target && typeof target.getFullName === 'function'
+				&& typeof target.getParentClass === 'function';
+	}
+
 	function setSvgAttribute(element, key, value) {
+		// SVGGradientを考慮
+		if (value && typeof value.getClass === 'function') {
+			var clss = value.getClass();
+			var gradient = false;
+
+			while (isHifiveClass(clss)) {
+				var name = clss.getFullName();
+				if (name === 'h5.ui.components.stage.SVGGradient') {
+					gradient = true;
+					break;
+				}
+
+				clss = clss.getParentClass();
+			}
+
+			if (gradient) {
+				var id = value.id;
+				element.setAttributeNS(null, key, 'url(#' + id + ')');
+				return;
+			}
+		}
 		element.setAttributeNS(null, key, value);
 	}
 
@@ -708,24 +734,6 @@
 		return desc;
 	});
 
-	var SVGLinearGradient = SVGElementWrapper.extend(function() {
-		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGLinearGradient
-			 */
-			name: 'h5.ui.components.stage.SVGLinearGradient',
-			method: {
-				constructor: function SVGLinearGradient() {
-					SVGLinearGradient._super.call(this);
-				},
-				render: function() {
-					this._renderChangedAttributes();
-				}
-			}
-		};
-		return desc;
-	});
-
 	var SVGTriangle = SVGDrawElement.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGTriangle',
@@ -828,6 +836,162 @@
 		return desc;
 	});
 
+	function addSimpleGradientAccessor(target, attrNames) {
+		for (var i = 0; i < attrNames.length; i++) {
+			var attrName = attrNames[i];
+			var name = attrName.replace(/-(.)/g, function(match) {
+				return match.charAt(1).toUpperCase();
+			});
+
+			target[name] = (function(attrName) {
+				return {
+					get: function() {
+						return this._getAttribute(attrName);
+					},
+					set: function(value) {
+						this._setAttribute(attrName, value);
+					}
+				}
+			})(attrName);
+		}
+	}
+
+	var SVGGradient = SVGElementWrapper.extend(function() {
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGGradient
+			 */
+			name: 'h5.ui.components.stage.SVGGradient',
+			field: {
+				_attributes: null,
+				_stops: null
+			},
+			accessor: {
+				id: {
+					get: function() {
+						return this._getAttribute('id');
+					}
+				}
+			},
+			method: {
+				constructor: function SVGGradient(element, id) {
+					SVGGradient._super.call(this);
+					this._element = element;
+					this._attributes = new Map();
+					this._stops = [];
+
+					this._setAttribute('id', id);
+				},
+				addStop: function(offset, color, opacity) {
+					var stop = createSvgElement('stop');
+					if (offset !== undefined) {
+						setSvgAttribute(stop, 'offset', offset);
+					}
+					if (color !== undefined) {
+						setSvgAttribute(stop, 'stop-color', color);
+					}
+					if (opacity !== undefined) {
+						setSvgAttribute(stop, 'stop-opacity', opacity);
+					}
+
+					this._element.appendChild(stop);
+					this._stops.push({
+						element: stop,
+						offset: offset,
+						color: color,
+						opacity: opacity
+					});
+					return this;
+				},
+				_getAttribute: function(key) {
+					return this._attributes.has(key) ? this._attributes.get(key) : null;
+				},
+				_setAttribute: function(key, value) {
+					if (value === null || value === undefined) {
+						this._removeAttribute(key);
+						return;
+					}
+
+					if (this._attributes.get(key) === value) {
+						return;
+					}
+
+					this._attributes.set(key, value);
+					setSvgAttribute(this._element, key, value);
+				},
+				_removeAttribute: function(key) {
+					if (!this._attributes.has(key)) {
+						return;
+					}
+
+					this._attributes['delete'](key);
+					removeSvgAttribute(this._element, key);
+				}
+			}
+		};
+		return desc;
+	});
+
+	var SVGLinearGradient = SVGGradient.extend(function() {
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGLinearGradient
+			 */
+			name: 'h5.ui.components.stage.SVGLinearGradient',
+			accessor: {},
+			method: {
+				constructor: function SVGLinearGradient(element, id) {
+					SVGLinearGradient._super.call(this, element, id);
+				},
+				from: function(x1, y1) {
+					this.x1 = x1;
+					this.y1 = y1;
+					return this;
+				},
+				to: function(x2, y2) {
+					this.x2 = x2;
+					this.y2 = y2;
+					return this;
+				}
+			}
+		};
+
+		addSimpleGradientAccessor(desc.accessor, ['x1', 'y1', 'x2', 'y2', 'spreadMethod']);
+		return desc;
+	});
+
+	var SVGRadialGradient = SVGGradient.extend(function() {
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGRadialGradient
+			 */
+			name: 'h5.ui.components.stage.SVGRadialGradient',
+			accessor: {},
+			method: {
+				constructor: function SVGRadialGradient(element, id) {
+					SVGRadialGradient._super.call(this, element, id);
+				},
+				center: function(cx, cy) {
+					this.cx = cx;
+					this.cy = cy;
+					return this;
+				},
+				radius: function(r) {
+					this.r = r;
+					return this;
+				},
+				focus: function(fx, fy) {
+					this.fx = fx;
+					this.fy = fy;
+					return this;
+				}
+			}
+		};
+
+		addSimpleGradientAccessor(desc.accessor, ['cx', 'cy', 'r', 'fx', 'fy', 'spreadMethod']);
+		return desc;
+	});
+
 	var SVGGraphics = RootClass.extend(function() {
 		//TODO 仮実装
 		var idSequence = 0;
@@ -836,9 +1000,7 @@
 
 		//TODO 仮実装、連番一意ID生成
 		function createDefId() {
-			var id = ID_SEQ_PREFIX + idSequence;
-			idSequence++;
-			return;
+			return ID_SEQ_PREFIX + idSequence++;
 		}
 
 		var desc = {
@@ -897,11 +1059,21 @@
 				},
 
 				createLinearGradient: function(id) {
-				//TODO 新しいSVGLinearGradientを生成し、_addDefinitionして返す
-				//idはoptional、idが未指定の場合はIDを_addDefinitionの方で適当に（一意に）自動生成
-				//radialとlinearはコンストラクタ引数で指定する？
-				//かなりパラメータが違うからおとなしく別途createRadialGradientDefinition()を
-				//作った方がわかりやすいようにも思う
+					// TODO sequential id
+
+					var element = createSvgElement('linearGradient');
+					var gradient = SVGLinearGradient.create(element, id);
+					this._addDefinition(gradient);
+					return gradient;
+				},
+
+				createRadialGradient: function(id) {
+					// TODO sequential id
+
+					var element = createSvgElement('radialGradient');
+					var gradient = SVGRadialGradient.create(element, id);
+					this._addDefinition(gradient);
+					return gradient;
 				},
 
 				clear: function() {
