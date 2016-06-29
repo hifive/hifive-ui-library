@@ -890,7 +890,7 @@
 				//TODO id指定でdefinitionを返す
 				},
 
-				createLinearGradientDefinition: function(id) {
+				createLinearGradient: function(id) {
 				//TODO 新しいSVGLinearGradientを生成し、_addDefinitionして返す
 				//idはoptional、idが未指定の場合はIDを_addDefinitionの方で適当に（一意に）自動生成
 				//radialとlinearはコンストラクタ引数で指定する？
@@ -1951,10 +1951,13 @@
 
 		_hasDefs: false,
 
+		//UI操作によってスクロールするかどうか
 		canUIScrollX: true,
 
 		canUIScrollY: true,
 
+		//(UI操作によるかどうかは関係なく)スクロールする範囲を配列で指定。
+		//[from, to] をWorld座標で指定。
 		scrollRangeX: null,
 
 		scrollRangeY: null,
