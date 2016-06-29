@@ -1229,6 +1229,7 @@
 					if (id == null) {
 						//TODO ただの連番でなくGUID等にする
 						this.id = 'duid_' + duIdSequence;
+						duIdSequence++;
 					} else {
 						//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 						this.id = id;
@@ -1389,7 +1390,8 @@
 				//TODO 仮想化
 				this.domRoot = createSvgElement('svg');
 				this._rootSvg = this.domRoot;
-				this.domRoot.setAttribute('data-stage-role', 'basicDU'); //TODO for debugging
+				this.domRoot.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
+				this.domRoot.setAttribute('data-h5-dyn-du-id', this.id);
 				//this.domRoot = this._graphics._rootSvg; //TODO domRoot -> rootDom, rootElement
 			},
 			/**
@@ -2314,7 +2316,83 @@
 
 			this.rootElement.appendChild(this._duRoot);
 
+			this._setupRootEventListeners();
+
 			this.refresh(true);
+		},
+
+		_setupRootEventListeners: function() {
+			var root = this.rootElement;
+			//SVG要素はjQueryでは明示的にはサポートしていない(イベントハンドラなどは実際には動くが)こと、
+			//また、今回は独自にイベントを発生させるために内部的にキャッチしたいので
+			//直接リッスンする
+			root.addEventListener('click', this.own(this._rootClickHandler));
+			root.addEventListener('dblclick', this.own(this._rootDblclickHandler));
+		},
+
+		/**
+		 * targetで指定された要素を含むBasicDUを返す。 BasicDUに含まれていない場合はnullを返す。
+		 *
+		 * @param target
+		 */
+		_getIncludingDisplayUnit: function(target) {
+			function getIncludingDUInner(elem) {
+				if (elem === root) {
+					return null;
+				}
+				var duId = elem.getAttribute('data-h5-dyn-du-id');
+				var du = this.getDisplayUnitById(duId);
+				if (BasicDisplayUnit.isClassOf(du)) {
+					return du;
+				}
+				return getIncludingDUInner.call(this, elem.parentNode);
+			}
+
+			var root = this.rootElement;
+
+			var ret = getIncludingDUInner.call(this, target);
+			return ret;
+		},
+
+		_rootClickHandler: function(event) {
+			this._processClick(event, 'duClick');
+		},
+
+		_rootDblclickHandler: function(event) {
+			this._processClick(event, 'duDblclick');
+		},
+
+		_processClick: function(event, triggerEventName) {
+			var du = this._getIncludingDisplayUnit(event.target);
+			var isExclusive = !event.shiftKey;
+			if (!du) {
+				if (isExclusive) {
+					this._selectionLogic.unselectAll();
+				}
+				return;
+			}
+			du.select(isExclusive);
+			du.focus();
+
+			var evArg = {
+				stageController: this,
+				displayUnit: du
+			};
+			this.trigger(triggerEventName, evArg);
+		},
+
+		'{rootElement} h5trackstart': function(context) {
+
+		},
+
+		'{rootElement} h5trackmove': function(context) {
+			var dx = context.event.dx;
+			var dy = context.event.dy;
+			this.scrollBy(-dx, -dy);
+		},
+
+		'{rootElement} h5trackend': function(context) {
+
 		},
 
 		//_dragController: h5.ui.components.stage.DragController,
