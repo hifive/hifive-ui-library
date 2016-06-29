@@ -413,6 +413,12 @@
 		element.removeAttributeNS(null, key);
 	}
 
+	function removeSvgAttributes(element, keys) {
+		for (var i = 0; i < keys.length; i++) {
+			removeSvgAttribute(element, key[i]);
+		}
+	}
+
 	var SVGElementWrapper = RootClass.extend(function() {
 		var desc = {
 			/**
@@ -437,12 +443,47 @@
 
 	var SVGDrawElement = SVGElementWrapper.extend(function() {
 
+		function getChangedAttributes() {
+			return {
+				changed: [],
+				removed: [],
+				addChanged: function(name) {
+					if (this.changed.indexOf(name) === -1) {
+						this.changed.push(name);
+					}
+					var index;
+					if ((index = this.removed.indexOf(name)) !== -1) {
+						this.removed.splice(index, 1);
+					}
+				},
+				addRemoved: function(name) {
+					if (this.removed.indexOf(name) === -1) {
+						this.removed.push(name);
+					}
+					var index;
+					if ((index = this.changed.indexOf(name)) !== -1) {
+						this.changed.splice(index, 1);
+					}
+				},
+				removeEntry: function(name) {
+					var index;
+					if ((index = this.changed.indexOf(name)) !== -1) {
+						this.changed.splice(index, 1);
+					}
+					if ((index = this.removed.indexOf(name)) !== -1) {
+						this.removed.splice(index, 1);
+					}
+				}
+			};
+		}
+
 		var desc = {
 			name: 'h5.ui.components.stage.SVGDrawElement',
 			field: {
 				_classes: null,
 				_attributes: null,
-				_graphics: null
+				_graphics: null,
+				_changedAttributes: null
 			},
 			method: {
 				/**
@@ -450,45 +491,75 @@
 				 */
 				constructor: function SVGDrawElement(graphics, element) {
 					SVGDrawElement._super.call(this);
+					this._graphics = graphics;
 					this._element = element;
 					this._classes = [];
 					this._attributes = new Map();
-					this._graphics = graphics;
+					this._changedAttributes = getChangedAttributes();
 				},
-				setAttribute: function(key, value) {
-					this._setAttribute(key, value);
-					setSvgAttribute(this._element, key, value);
+				getAttribute: function(key) {
+					return this._attributes.has(key) ? this._attributes.get(key) : null;
 				},
-				setAttributes: function(param) {
+				setAttribute: function(key, value, sync) {
+					if (value === null) {
+						this.removeAttribute(key);
+						return;
+					}
+
+					if (this._attributes.get(key) === value) {
+						return;
+					}
+
+					this._attributes.set(key, value);
+					if (sync) {
+						this._changedAttributes.removeEntry(key);
+						setSvgAttribute(this._element, key, value);
+					} else {
+						this._changedAttributes.addChanged(key);
+						this.requestRender();
+					}
+				},
+				setAttributes: function(param, sync) {
 					for ( var key in param) {
 						if (param.hasOwnProperty(key)) {
-							this.setAttribute(key, param[key]);
+							this.setAttribute(key, param[key], sync);
 						}
 					}
 				},
-				removeAttribute: function(key) {
-					this._removeAttribute(key);
-					removeSvgAttribute(this._element, key);
-				},
-				removeAttributes: function(keys) {
-					for (var i = 0; i < keys.length; i++) {
-						this.removeAttribute(keys[i]);
+				removeAttribute: function(key, sync) {
+					// FIXME deleteがエラーとして表示される
+					if (!this._attributes.has(key)) {
+						return;
+					}
+
+					this._attributes['delete'](key);
+					if (sync) {
+						this._changedAttributes.removeEntry(key);
+						removeSvgAttribute(this._element, key);
+					} else {
+						this._changedAttributes.addRemoved(key);
+						this.requestRender();
 					}
 				},
-				addClass: function(className) {
+				removeAttributes: function(keys, sync) {
+					for (var i = 0; i < keys.length; i++) {
+						this.removeAttribute(keys[i], sync);
+					}
+				},
+				addClass: function(className, sync) {
 					for (var i = 0; i < this._classes.length; i++) {
 						if (this._classes[i] === className) {
 							return;
 						}
 					}
 					this._classes.push(className);
-					this.setAttribute('class', this._classes.join(' '));
+					this.setAttribute('class', this._classes.join(' '), sync);
 				},
-				removeClass: function(className) {
+				removeClass: function(className, sync) {
 					for (var i = 0; i < this._classes.length; i++) {
 						if (this._classes[i] === className) {
 							this._classes.splice(i, 1);
-							this.setAttribute('class', this._classes.join(' '));
+							this.setAttribute('class', this._classes.join(' '), sync);
 							break;
 						}
 					}
@@ -501,358 +572,140 @@
 				render: function() {
 					throw new Error(ERR_MUST_OVERRIDE_RENDER_FUNCTION);
 				},
-				_getAttribute: function(key) {
-					return this._attributes.has(key) ? this._attributes.get(key) : null;
-				},
-				_setAttribute: function(key, value) {
-					this._attributes.set(key, value);
-				},
-				_removeAttribute: function(key) {
-					// FIXME deleteがエラーとして表示される
-					this._attributes['delete'](key);
+				_renderChangedAttributes: function() {
+					// Delete removed attributes
+					var removed = this._changedAttributes.removed;
+					if (removed) {
+						removeSvgAttributes(this._element, removed);
+						removed.splice(0, removed.length);
+					}
+
+					var changed = this._changedAttributes.changed;
+					if (changed) {
+						for (var i = 0; i < changed.length; i++) {
+							var key = changed[i];
+							setSvgAttribute(this._element, key, this._attributes.get(key));
+						}
+						changed.splice(0, changed.length);
+					}
 				}
 			}
 		};
 		return desc;
 	});
 
-	var SVGLine = SVGDrawElement.extend({
-		name: 'h5.ui.components.stage.SVGLine',
-		field: {},
-		accessor: {
-			x1: {
-				get: function() {
-					return this._getAttribute('x1');
-				},
-				set: function(value) {
-					this.setAttribute('x1', value);
-				}
-			},
-			x2: {
-				get: function() {
-					return this._getAttribute('x2');
-				},
-				set: function(value) {
-					this.setAttribute('x2', value);
-				}
-			},
-			y1: {
-				get: function() {
-					return this._getAttribute('y1');
-				},
-				set: function(value) {
-					this.setAttribute('y1', value);
-				}
-			},
-			y2: {
-				get: function() {
-					return this._getAttribute('y2');
-				},
-				set: function(value) {
-					this.setAttribute('y2', value);
-				}
-			},
-			stroke: {
-				get: function() {
-					return this._getAttribute('stroke');
-				},
-				set: function(value) {
-					this.setAttribute('stroke', value);
-				}
-			},
-			strokeWidth: {
-				get: function() {
-					return this._getAttribute('stroke-width');
-				},
-				set: function(value) {
-					this.setAttribute('stroke-width', value);
-				}
-			},
-			fill: {
-				get: function() {
-					return this._getAttribute('fill');
-				},
-				set: function(value) {
-					this.setAttribute('fill', value);
-				}
-			}
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGLine
-			 */
-			constructor: function SVGLine(graphics, element) {
-				SVGLine._super.call(this, graphics, element);
-			}
-		}
-	});
+	/**
+	 * @param {Object} target
+	 * @param {string[]} attrNames
+	 */
+	function addSimpleSVGAccessor(target, attrNames) {
+		for (var i = 0; i < attrNames.length; i++) {
+			var attrName = attrNames[i];
+			var name = attrName.replace(/-(.)/g, function(match) {
+				return match.charAt(1).toUpperCase();
+			});
 
-	var SVGText = SVGDrawElement.extend({
-		name: 'h5.ui.components.stage.SVGText',
-		field: {},
-		accessor: {
-			x: {
-				get: function() {
-					return this._getAttribute('x');
-				},
-				set: function(value) {
-					this.setAttribute('x', value);
-				}
-			},
-			y: {
-				get: function() {
-					return this._getAttribute('y');
-				},
-				set: function(value) {
-					this.setAttribute('y', value);
-				}
-			},
-			dx: {
-				get: function() {
-					return this._getAttribute('dx');
-				},
-				set: function(value) {
-					var val = value;
-					if (Array.isArray(value)) {
-						val = value.join(',');
+			target[name] = (function(attrName) {
+				return {
+					get: function() {
+						return this.getAttribute(attrName);
+					},
+					set: function(value) {
+						this.setAttribute(attrName, value);
 					}
-					this.setAttribute('dx', val);
-					this._setAttribute('dx', val);
 				}
-			},
-			dy: {
-				get: function() {
-					return this._getAttribute('dy');
-				},
-				set: function(value) {
-					var val = value;
-					if (Array.isArray(value)) {
-						val = value.join(',');
-					}
-					this.setAttribute('dx', val);
-					this._setAttribute('dx', val);
-				}
-			},
-			textAnchor: {
-				get: function() {
-					return this._getAttribute('text-anchor');
-				},
-				set: function(value) {
-					this.setAttribute('text-anchor', value);
-				}
-			},
-			dominantBaseline: {
-				get: function() {
-					return this._getAttribute('dominant-baseline');
-				},
-				set: function(value) {
-					this.setAttribute('dominant-baseline', value);
-				}
-			},
-			fontFamily: {
-				get: function() {
-					return this._getAttribute('font-family');
-				},
-				set: function(value) {
-					this.setAttribute('font-family', value);
-				}
-			},
-			fontSize: {
-				get: function() {
-					return this._getAttribute('font-size');
-				},
-				set: function(value) {
-					this.setAttribute('font-size', value);
-				}
-			},
-			fontWeight: {
-				get: function() {
-					return this._getAttribute('font-weight');
-				},
-				set: function(value) {
-					this.setAttribute('font-weight', value);
-				}
-			},
-			fill: {
-				get: function() {
-					return this._getAttribute('fill');
-				},
-				set: function(value) {
-					this.setAttribute('fill', value);
-				}
-			},
-			rotate: {
-				get: function() {
-					return this._getAttribute('rotate');
-				},
-				set: function(value) {
-					this.setAttribute('rotate', value);
-				}
-			}
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGText
-			 */
-			constructor: function SVGText(graphics, element) {
-				SVGText._super.call(this, graphics, element);
-			},
-			setText: function(text) {
-				this._element.textContent = text;
-				//				var str = document.createTextNode(text);
-				//				this._element.appendChild(str);
-			}
+			})(attrName);
 		}
+	}
+
+	var SVGLine = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGLine',
+			accessor: {},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGLine
+				 */
+				constructor: function SVGLine(graphics, element) {
+					SVGLine._super.call(this, graphics, element);
+				},
+				render: function() {
+					this._renderChangedAttributes();
+				}
+			}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width',
+				'fill']);
+		return desc;
 	});
 
-	var SVGRect = SVGDrawElement.extend({
-		name: 'h5.ui.components.stage.SVGRect',
-		field: {},
-		accessor: {
-			x: {
-				get: function() {
-					return this._getAttribute('x');
+	var SVGText = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGText',
+			accessor: {},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGText
+				 */
+				constructor: function SVGText(graphics, element) {
+					SVGText._super.call(this, graphics, element);
 				},
-				set: function(value) {
-					this.setAttribute('x', value);
-				}
-			},
-			y: {
-				get: function() {
-					return this._getAttribute('y');
+				render: function() {
+					this._renderChangedAttributes();
 				},
-				set: function(value) {
-					this.setAttribute('y', value);
-				}
-			},
-			width: {
-				get: function() {
-					return this._getAttribute('width');
-				},
-				set: function(value) {
-					this.setAttribute('width', value);
-				}
-			},
-			height: {
-				get: function() {
-					return this._getAttribute('height');
-				},
-				set: function(value) {
-					this.setAttribute('height', value);
-				}
-			},
-			stroke: {
-				get: function() {
-					return this._getAttribute('stroke');
-				},
-				set: function(value) {
-					this.setAttribute('stroke', value);
-				}
-			},
-			strokeWidth: {
-				get: function() {
-					return this._getAttribute('stroke-width');
-				},
-				set: function(value) {
-					this.setAttribute('stroke-width', value);
-				}
-			},
-			rx: {
-				get: function() {
-					return this._getAttribute('rx');
-				},
-				set: function(value) {
-					this.setAttribute('rx', value);
-				}
-			},
-			ry: {
-				get: function() {
-					return this._getAttribute('ry');
-				},
-				set: function(value) {
-					this.setAttribute('ry', value);
-				}
-			},
-			fill: {
-				get: function() {
-					return this._getAttribute('fill');
-				},
-				set: function(value) {
-					this.setAttribute('fill', value);
+				setText: function(text) {
+					this._element.textContent = text;
 				}
 			}
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGRect
-			 */
-			constructor: function SVGRect(graphics, element) {
-				SVGRect._super.call(this, graphics, element);
-			}
-		}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['x', 'y', 'dx', 'dy', 'text-anchor',
+				'dominant-baseline', 'font-family', 'font-size', 'font-weight', 'fill', 'rotate']);
+		return desc;
 	});
 
-	var SVGCircle = SVGDrawElement.extend({
-		name: 'h5.ui.components.stage.SVGCircle',
-		field: {},
-		accessor: {
-			cx: {
-				get: function() {
-					return this._getAttribute('cx');
+	var SVGRect = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGRect',
+			accessor: {},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGRect
+				 */
+				constructor: function SVGRect(graphics, element) {
+					SVGRect._super.call(this, graphics, element);
 				},
-				set: function(value) {
-					this.setAttribute('cx', value);
-				}
-			},
-			cy: {
-				get: function() {
-					return this._getAttribute('cy');
-				},
-				set: function(value) {
-					this.setAttribute('cy', value);
-				}
-			},
-			r: {
-				get: function() {
-					return this._getAttribute('r');
-				},
-				set: function(value) {
-					this.setAttribute('r', value);
-				}
-			},
-			stroke: {
-				get: function() {
-					return this._getAttribute('stroke');
-				},
-				set: function(value) {
-					this.setAttribute('stroke', value);
-				}
-			},
-			strokeWidth: {
-				get: function() {
-					return this._getAttribute('stroke-width');
-				},
-				set: function(value) {
-					this.setAttribute('stroke-width', value);
-				}
-			},
-			fill: {
-				get: function() {
-					return this._getAttribute('fill');
-				},
-				set: function(value) {
-					this.setAttribute('fill', value);
+				render: function() {
+					this._renderChangedAttributes();
 				}
 			}
-		},
-		method: {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGCircle
-			 */
-			constructor: function SVGCircle(graphics, element) {
-				SVGCircle._super.call(this, graphics, element);
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['x', 'y', 'width', 'height', 'stroke', 'stroke-width',
+				'fill', 'rx', 'ry']);
+		return desc;
+	});
+
+	var SVGCircle = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGCircle',
+			accessor: {},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGCircle
+				 */
+				constructor: function SVGCircle(graphics, element) {
+					SVGCircle._super.call(this, graphics, element);
+				},
+				render: function() {
+					this._renderChangedAttributes();
+				}
 			}
-		}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['cx', 'cy', 'r', 'stroke', 'stroke-width', 'fill']);
+		return desc;
 	});
 
 	var SVGLinearGradient = SVGElementWrapper.extend(function() {
@@ -864,9 +717,108 @@
 			method: {
 				constructor: function SVGLinearGradient() {
 					SVGLinearGradient._super.call(this);
+				},
+				render: function() {
+					this._renderChangedAttributes();
 				}
 			}
 		};
+		return desc;
+	});
+
+	var SVGTriangle = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGTriangle',
+			field: {
+				_x: null,
+				_y: null,
+				_width: null,
+				_height: null,
+				_direction: null
+			},
+			accessor: {
+				x: {
+					get: function() {
+						return this._x;
+					},
+					set: function(value) {
+						this._x = value;
+						this.requestRender();
+					}
+				},
+				y: {
+					get: function() {
+						return this._y;
+					},
+					set: function(value) {
+						this._y = value;
+						this.requestRender();
+					}
+				},
+				width: {
+					get: function() {
+						return this._width;
+					},
+					set: function(value) {
+						this._width = value;
+						this.requestRender();
+					}
+				},
+				height: {
+					get: function() {
+						return this._height;
+					},
+					set: function(value) {
+						this._height = value;
+						this.requestRender();
+					}
+				},
+				direction: {
+					get: function() {
+						return this._direction;
+					},
+					set: function(value) {
+						if (value === 'up' || value === 'down') {
+							this._direction = value;
+							this.requestRender();
+						}
+					}
+				}
+			},
+			method: {
+				constructor: function SVGTriangle(graphics, element) {
+					SVGTriangle._super.call(this, graphics, element);
+					this._x = 0;
+					this._y = 0;
+					this._width = 0;
+					this._height = 0;
+					this.direction = 'up';
+				},
+				render: function() {
+					this._renderChangedAttributes();
+
+					var width = this.width;
+					var height = this.height;
+					if (!width || !height) {
+						this.removeAttribute('d', true);
+						return;
+					}
+
+					if (this.direction === 'up') {
+						height *= -1;
+					}
+
+					var d = 'M' + this.x + ',' + this.y;
+					d += ' h' + width;
+					d += ' l' + (-width / 2) + ',' + height;
+					d += ' Z';
+
+					this.setAttribute('d', d, true);
+				}
+			}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['stroke', 'stroke-width', 'fill']);
 		return desc;
 	});
 
@@ -987,6 +939,12 @@
 						de.setText(str);
 					}
 
+					return de;
+				},
+				drawTriangle: function() {
+					var path = createSvgElement('path');
+					this._rootSvg.appendChild(path);
+					var de = SVGTriangle.create(this, path);
 					return de;
 				}
 			}
