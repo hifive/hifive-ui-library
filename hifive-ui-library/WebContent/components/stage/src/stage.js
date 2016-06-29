@@ -2448,9 +2448,51 @@
 			return isFocused;
 		},
 
-		query: function() {
-			var allDU = this.get
-			h5.core.data.createQuery();
+		/**
+		 * 引数で指定された全てのタグを含むDisplayUnitを返します。
+		 *
+		 * @param tags タグ文字列またはタグ文字列の配列
+		 * @returns {Array}
+		 */
+		getDisplayUnitsByGroupTag: function(tags) {
+			var ret = [];
+
+			//Array.isArray()はES5＝IE9以上で実装されているので利用可能
+			if (!Array.isArray(tags)) {
+				tags = [tags];
+			}
+
+			var allUnits = this.getDisplayUnitsAll();
+			for (var i = 0, len = allUnits.length; i < len; i++) {
+				var hasAllTags = true;
+				var unit = allUnits[i];
+
+				//tagsで指定された全てのタグを含んでいたら
+				//そのDUを戻り値に含める
+				var groupTag = unit.groupTag;
+				for (var j = 0, jLen = tags.length; j < jLen; j++) {
+					if (!groupTag.has(tags[j])) {
+						hasAllTags = false;
+						break;
+					}
+				}
+
+				if (hasAllTags) {
+					ret.push(unit);
+				}
+			}
+
+			return ret;
+		},
+
+		getDisplayUnitsAll: function() {
+			var ret = [];
+			var layers = this._layers;
+			for (var i = 0, len = layers.length; i < len; i++) {
+				var units = getAllDisplayUnits(layers[i]);
+				Array.prototype.push.apply(ret, units);
+			}
+			return ret;
 		},
 
 		_getDefs: function() {
