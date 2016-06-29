@@ -836,6 +836,64 @@
 		return desc;
 	});
 
+	var SVGDefinitions = SVGElementWrapper.extend(function() {
+		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
+		var desc = {
+			/**
+			 * @memberOf h5.ui.components.stage.SVGDefinitions
+			 */
+			name: 'h5.ui.components.stage.SVGDefinitions',
+			field: {
+				_definitions: null
+			},
+			method: {
+				constructor: function SVGDefinitions(element) {
+					SVGDefinitions._super.call(this);
+					this._element = element;
+					this._definitions = new Map();
+				},
+				get: function(id) {
+					return this._definitions.has(id) ? this._definitions.get(id) : null;
+				},
+				has: function(target) {
+					var id = this._getId(target);
+					return id === null ? false : this._definitions.get(id);
+				},
+				add: function(definition) {
+					var id = this._getId(definition);
+					if (id === null) {
+						// TODO
+						return;
+					}
+
+					this._definitions.set(id, definition);
+					this._element.appendChild(definition._element);
+				},
+				remove: function(target) {
+					var id = this._getId(target);
+					if (id === null) {
+						// TODO
+						return;
+					}
+
+					var definition = this._definitions.get(id);
+					if (!definition) {
+						return;
+					}
+					this._element.removeChild(definition._element);
+				},
+				_getId: function(target) {
+					if (typeof target === 'string') {
+						return target;
+					}
+					var id = target.id;
+					return id === undefined ? null : id;
+				}
+			}
+		};
+		return desc;
+	});
+
 	function addSimpleGradientAccessor(target, attrNames) {
 		for (var i = 0; i < attrNames.length; i++) {
 			var attrName = attrNames[i];
@@ -1029,14 +1087,16 @@
 				},
 
 				_addDefinition: function(svgElementWrapper) {
-					//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
-					//wrapperインスタンスを持てるようにする
+					if (this._defs.has(svgElementWrapper)) {
+						//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
+						return;
+					}
 
-					this._defs.appendChild(svgElementWrapper._element);
+					this._defs.add(svgElementWrapper);
 				},
 
-				_removeDefinition: function(svgElementWrapper) {
-					this._defs.removeChild(svgElementWrapper._element);
+				_removeDefinition: function(id) {
+					this._defs.remove(id);
 				},
 
 				_addToRenderWaitingList: function(svgDrawElement) {
@@ -1055,11 +1115,13 @@
 				},
 
 				getDefinition: function(id) {
-				//TODO id指定でdefinitionを返す
+					return this._defs.get(id);
 				},
 
 				createLinearGradient: function(id) {
-					// TODO sequential id
+					if (id === undefined) {
+						id = createDefId();
+					}
 
 					var element = createSvgElement('linearGradient');
 					var gradient = SVGLinearGradient.create(element, id);
@@ -1068,7 +1130,9 @@
 				},
 
 				createRadialGradient: function(id) {
-					// TODO sequential id
+					if (id === undefined) {
+						id = createDefId();
+					}
 
 					var element = createSvgElement('radialGradient');
 					var gradient = SVGRadialGradient.create(element, id);
@@ -2213,9 +2277,11 @@
 
 		_getDefs: function() {
 			if (!this._hasDefs) {
-				var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-				this._defs = defs;
-				this._duRoot.appendChild(defs);
+				var SVGDefinitions = h5.cls.manager
+						.getClass('h5.ui.components.stage.SVGDefinitions');
+				var element = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+				this._defs = SVGDefinitions.create(element);
+				this._duRoot.appendChild(element);
 				this._hasDefs = true;
 			}
 			return this._defs;
