@@ -946,6 +946,16 @@
 				//作った方がわかりやすいようにも思う
 				},
 
+				clear: function() {
+					//TODO clearもrender()のタイミングに遅延する？？
+
+					while (this._rootSvg.firstChild) {
+						this._rootSvg.removeChild(this._rootSvg.firstChild);
+					}
+					this._renderWaitingList = [];
+					//TODO drawLineなどで作ったSVGDrawElementインスタンスから自分への参照を除去
+				},
+
 				drawImage: function() {
 				//TODO 未実装
 				},
