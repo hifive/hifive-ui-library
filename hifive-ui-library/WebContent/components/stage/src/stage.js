@@ -600,10 +600,12 @@
 				},
 				_renderChangedAttributes: function() {
 					// Delete removed attributes
+					var attrChanged = false;
 					var removed = this._changedAttributes.removed;
 					if (removed) {
 						removeSvgAttributes(this._element, removed);
 						removed.splice(0, removed.length);
+						attrChanged = true;
 					}
 
 					var changed = this._changedAttributes.changed;
@@ -613,7 +615,10 @@
 							setSvgAttribute(this._element, key, this._attributes.get(key));
 						}
 						changed.splice(0, changed.length);
+						attrChanged = true;
 					}
+
+					return attrChanged;
 				}
 			}
 		};
@@ -669,25 +674,88 @@
 	var SVGText = SVGDrawElement.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGText',
-			accessor: {},
+			field: {
+				_textContent: null,
+				_text: null
+			},
+			accessor: {
+				dominantBaseline: {
+					get: function() {
+						return this.getAttribute('dominant-baseline');
+					},
+					set: function(value) {
+						switch (value) {
+						case 'auto':
+						case 'alphabetic':
+						case 'text-before-edge':
+						case 'central':
+						case 'text-after-edge':
+							this.setAttribute('dominant-baseline', value);
+							break;
+						}
+					}
+				}
+			},
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.SVGText
 				 */
 				constructor: function SVGText(graphics, element) {
 					SVGText._super.call(this, graphics, element);
+					this._textContent = this._text = null;
 				},
 				render: function() {
-					this._renderChangedAttributes();
+					var changed = this._renderChangedAttributes();
+
+					if (this._text) {
+						this._element.textContent = this._textContent = this._text;
+						this._text = null;
+						changed = true;
+					}
+
+					if (!changed) {
+						return;
+					}
+
+					// IEのdominant-baselineハック
+					// TODO translate実装時に、位置を修正する必要がある
+					if (!h5.env.ua.isIE) {
+						return;
+					}
+
+					var dominantBaseline = this.dominantBaseline;
+					var dy = 0;
+					if (dominantBaseline && dominantBaseline !== 'auto'
+							&& dominantBaseline !== 'alphabetic') {
+						var y = this.y || 0; // TODO y座標が数字以外の場合
+						var bbox = this._element.getBBox();
+
+						switch (dominantBaseline) {
+						case 'text-before-edge':
+							dy = y - bbox.y;
+							break;
+						case 'text-after-edge':
+							dy = y - bbox.y - bbox.height;
+							break;
+						case 'central':
+							dy = y - bbox.y - bbox.height / 2;
+							break;
+						}
+					}
+
+					this.setAttribute('transform', 'translate(0, ' + dy + ')', true);
 				},
 				setText: function(text) {
-					this._element.textContent = text;
+					if (this._textContent !== text) {
+						this._text = text;
+						this.requestRender();
+					}
 				}
 			}
 		};
 
-		addSimpleSVGAccessor(desc.accessor, ['x', 'y', 'dx', 'dy', 'text-anchor',
-				'dominant-baseline', 'font-family', 'font-size', 'font-weight', 'fill', 'rotate']);
+		addSimpleSVGAccessor(desc.accessor, ['x', 'y', 'dx', 'dy', 'text-anchor', 'font-family',
+				'font-size', 'font-weight', 'fill', 'rotate']);
 		return desc;
 	});
 
