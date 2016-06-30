@@ -405,6 +405,10 @@
 	}
 
 	function setSvgAttribute(element, key, value) {
+		setAttributeNS(element, null, key, value);
+	}
+
+	function setAttributeNS(element, ns, key, value) {
 		// SVGGradientを考慮
 		if (value && typeof value.getClass === 'function') {
 			var clss = value.getClass();
@@ -422,21 +426,25 @@
 
 			if (gradient) {
 				var id = value.id;
-				element.setAttributeNS(null, key, 'url(#' + id + ')');
+				element.setAttributeNS(ns, key, 'url(#' + id + ')');
 				return;
 			}
 		}
-		element.setAttributeNS(null, key, value);
+		element.setAttributeNS(ns, key, value);
 	}
 
 	function setSvgAttributes(element, param) {
 		for ( var key in param) {
-			element.setAttributeNS(null, key, param[key]);
+			setSvgAttribute(element, key, param[key]);
 		}
 	}
 
+	function removeAttributeNS(element, ns, key) {
+		element.removeAttributeNS(ns, key);
+	}
+
 	function removeSvgAttribute(element, key) {
-		element.removeAttributeNS(null, key);
+		removeAttributeNS(null, element, key);
 	}
 
 	function removeSvgAttributes(element, keys) {
@@ -444,6 +452,8 @@
 			removeSvgAttribute(element, key[i]);
 		}
 	}
+
+	var NS_XLINK = "http://www.w3.org/1999/xlink";
 
 	var SVGElementWrapper = RootClass.extend(function() {
 		var desc = {
@@ -471,34 +481,29 @@
 
 		function getChangedAttributes() {
 			return {
-				changed: [],
-				removed: [],
-				addChanged: function(name) {
-					if (this.changed.indexOf(name) === -1) {
-						this.changed.push(name);
+				changed: new Map(),
+				removed: new Map(),
+				addChanged: function(name, ns) {
+					if (!this.changed.has(name)) {
+						this.changed.set(name, {
+							name: name,
+							ns: ns
+						});
 					}
-					var index;
-					if ((index = this.removed.indexOf(name)) !== -1) {
-						this.removed.splice(index, 1);
-					}
+					this.removed['delete'](name);
 				},
-				addRemoved: function(name) {
-					if (this.removed.indexOf(name) === -1) {
-						this.removed.push(name);
+				addRemoved: function(name, ns) {
+					if (!this.removed.has(name)) {
+						this.removed, set(name, {
+							name: name,
+							ns: ns
+						});
 					}
-					var index;
-					if ((index = this.changed.indexOf(name)) !== -1) {
-						this.changed.splice(index, 1);
-					}
+					this.changed['delete'](name);
 				},
 				removeEntry: function(name) {
-					var index;
-					if ((index = this.changed.indexOf(name)) !== -1) {
-						this.changed.splice(index, 1);
-					}
-					if ((index = this.removed.indexOf(name)) !== -1) {
-						this.removed.splice(index, 1);
-					}
+					this.changed['delete'](name);
+					this.removed['delete'](name);
 				}
 			};
 		}
@@ -526,7 +531,23 @@
 				getAttribute: function(key) {
 					return this._attributes.has(key) ? this._attributes.get(key) : null;
 				},
+				getXLinkAttribute: function(key) {
+					return this.getAttribute(key);
+				},
 				setAttribute: function(key, value, sync) {
+					this._setAttributeNS(null, key, value, sync);
+				},
+				setXLinkAttribute: function(key, value, sync) {
+					this._setAttributeNS(NS_XLINK, key, value, sync);
+				},
+				setXLinkAttributes: function(param, sync) {
+					for ( var key in param) {
+						if (param.hasOwnProperty(key)) {
+							this.setXLinkAttribute(key, param[key], sync);
+						}
+					}
+				},
+				_setAttributeNS: function(ns, key, value, sync) {
 					if (value === null) {
 						this.removeAttribute(key);
 						return;
@@ -539,9 +560,9 @@
 					this._attributes.set(key, value);
 					if (sync) {
 						this._changedAttributes.removeEntry(key);
-						setSvgAttribute(this._element, key, value);
+						setAttributeNS(this._element, ns, key, value);
 					} else {
-						this._changedAttributes.addChanged(key);
+						this._changedAttributes.addChanged(key, ns);
 						this.requestRender();
 					}
 				},
@@ -553,6 +574,12 @@
 					}
 				},
 				removeAttribute: function(key, sync) {
+					this._removeAttributeNS(null, key, sync);
+				},
+				removeXLinkAttribute: function(key, sync) {
+					this._removeAttributeNS(NS_XLINK, key, sync);
+				},
+				_removeAttributeNS: function(ns, key, sync) {
 					// FIXME deleteがエラーとして表示される
 					if (!this._attributes.has(key)) {
 						return;
@@ -561,9 +588,9 @@
 					this._attributes['delete'](key);
 					if (sync) {
 						this._changedAttributes.removeEntry(key);
-						removeSvgAttribute(this._element, key);
+						removeAttributeNS(this._element, ns, key);
 					} else {
-						this._changedAttributes.addRemoved(key);
+						this._changedAttributes.addRemoved(key, ns);
 						this.requestRender();
 					}
 				},
@@ -602,19 +629,23 @@
 					// Delete removed attributes
 					var attrChanged = false;
 					var removed = this._changedAttributes.removed;
-					if (removed) {
-						removeSvgAttributes(this._element, removed);
-						removed.splice(0, removed.length);
+					if (removed.size) {
+						var element = this._element;
+						removed.forEach(function(value, key) {
+							removeAttributeNS(element, value.ns, key);
+						});
+						removed.clear();
 						attrChanged = true;
 					}
 
 					var changed = this._changedAttributes.changed;
-					if (changed) {
-						for (var i = 0; i < changed.length; i++) {
-							var key = changed[i];
-							setSvgAttribute(this._element, key, this._attributes.get(key));
-						}
-						changed.splice(0, changed.length);
+					if (changed.size) {
+						var element = this._element;
+						var attributes = this._attributes;
+						changed.forEach(function(value, key) {
+							setAttributeNS(element, value.ns, key, attributes.get(key));
+						});
+						changed.clear();
 						attrChanged = true;
 					}
 
@@ -643,6 +674,30 @@
 					},
 					set: function(value) {
 						this.setAttribute(attrName, value);
+					}
+				}
+			})(attrName);
+		}
+	}
+
+	/**
+	 * @param {Object} target
+	 * @param {string[]} attrNames
+	 */
+	function addSimpleXLinkAccessor(target, attrNames) {
+		for (var i = 0; i < attrNames.length; i++) {
+			var attrName = attrNames[i];
+			var name = attrName.replace(/-(.)/g, function(match) {
+				return match.charAt(1).toUpperCase();
+			});
+
+			target[name] = (function(attrName) {
+				return {
+					get: function() {
+						return this.getXLinkAttribute(attrName);
+					},
+					set: function(value) {
+						this.setXLinkAttribute(attrName, value);
 					}
 				}
 			})(attrName);
@@ -933,6 +988,28 @@
 		};
 
 		addSimpleSVGAccessor(desc.accessor, ['stroke', 'stroke-width', 'fill']);
+		return desc;
+	});
+
+	var SVGImage = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGImage',
+			accessor: {},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGImage
+				 */
+				constructor: function SVGImage(graphics, element) {
+					SVGImage._super.call(this, graphics, element);
+				},
+				render: function() {
+					this._renderChangedAttributes();
+				}
+			}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['x', 'y', 'width', 'height', 'preserveAspectRatio']);
+		addSimpleXLinkAccessor(desc.accessor, ['href']);
 		return desc;
 	});
 
@@ -1251,7 +1328,10 @@
 				},
 
 				drawImage: function() {
-				//TODO 未実装
+					var image = createSvgElement('image');
+					this._rootSvg.appendChild(image);
+					var de = SVGImage.create(this, image);
+					return de;
 				},
 
 				drawLine: function() {
@@ -1718,7 +1798,7 @@
 					var fromVAlign = this.endpointFrom.junctionVerticalAlign;
 					var toVAlign = this.endpointTo.junctionVerticalAlign;
 
-					var x1, y1, x2, y2;
+					var x1,y1,x2,y2;
 
 					switch (fromHAlign) {
 					case 'left':
