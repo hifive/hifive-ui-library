@@ -2893,11 +2893,8 @@
 				var offsetX = event.originalEvent.pageX - rootOffset.left;
 				var offsetY = event.originalEvent.pageY - rootOffset.top;
 
-				var scaleCenter = this._viewport
-						.getWorldPositionFromDisplayOffset(offsetX, offsetY);
-
-				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds,
-						scaleCenter.x, scaleCenter.y);
+				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds, offsetX,
+						offsetY);
 				return;
 			}
 
