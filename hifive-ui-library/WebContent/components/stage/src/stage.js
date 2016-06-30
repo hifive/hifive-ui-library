@@ -2419,9 +2419,6 @@
 
 		_units: null,
 
-		//ビューポートの大きさを表すRect。ワールド座標系。
-		_worldViewportRect: null,
-
 		_viewport: null,
 
 		_scaleX: 1,
@@ -2931,8 +2928,8 @@
 		},
 
 		getScrollPosition: function() {
-			var pos = stageModule.DisplayPoint.create(this._worldViewportRect.x,
-					this._worldViewportRect.y);
+			var pos = stageModule.DisplayPoint.create(this._viewport.displayX,
+					this._viewport.displayY);
 			return pos;
 		},
 
@@ -2953,7 +2950,7 @@
 			if (event.shiftKey) {
 				// シフトキーが押されていたら拡大縮小
 				var ds = 0.1;
-				if (event.originalEvent.wheelDelta < 0) {
+				if (event.originalEvent.wheelDelta > 0) {
 					ds *= -1;
 				}
 
@@ -2967,7 +2964,7 @@
 			}
 
 			var dy = 40;
-			if (event.originalEvent.wheelDelta < 0) {
+			if (event.originalEvent.wheelDelta > 0) {
 				dy *= -1;
 			}
 			this.scrollBy(0, dy);
