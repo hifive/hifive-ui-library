@@ -541,7 +541,7 @@
 					this._setAttribute(key, value, this.isDefinition);
 				},
 				setAttributes: function(param) {
-					this._setAttributes(params, this.isDefinition);
+					this._setAttributes(param, this.isDefinition);
 				},
 				setXLinkAttribute: function(key, value) {
 					this._setXLinkAttribute(key, value, this.isDefinition);
