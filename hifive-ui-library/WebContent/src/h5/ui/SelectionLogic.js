@@ -178,9 +178,9 @@
 					// 選択状態を解除
 					var spliced = this._selected.splice(idx, 1);
 					actuals.push(spliced[0]);
-					if (this._focus === obj) {
+					if (this._focused === obj) {
 						// フォーカス状態ならフォーカスも解除
-						this._focus = null;
+						this._focused = null;
 					}
 				}
 			}
