@@ -523,6 +523,9 @@
 				requestRender: function() {
 					if (this._graphics) {
 						this._graphics._addToRenderWaitingList(this);
+					} else {
+						//graphicsに属していない場合は直ちに描画する
+						this.render();
 					}
 				},
 				render: function() {
@@ -1761,7 +1764,7 @@
 					var fromVAlign = this.endpointFrom.junctionVerticalAlign;
 					var toVAlign = this.endpointTo.junctionVerticalAlign;
 
-					var x1,y1,x2,y2;
+					var x1, y1, x2, y2;
 
 					switch (fromHAlign) {
 					case 'left':
