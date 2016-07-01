@@ -541,7 +541,7 @@
 					this._setAttribute(key, value, this.isDefinition);
 				},
 				setAttributes: function(param) {
-					this._setAttributes(params, this.isDefinition)
+					this._setAttributes(params, this.isDefinition);
 				},
 				setXLinkAttribute: function(key, value) {
 					this._setXLinkAttribute(key, value, this.isDefinition);
@@ -696,7 +696,7 @@
 					set: function(value) {
 						this.setAttribute(attrName, value);
 					}
-				}
+				};
 			})(attrName);
 		}
 	}
@@ -1747,9 +1747,6 @@
 
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
-
-					//From,Toノードの中心座標を計算
-					var fwCenterY = fwPos.y + fr.height / 2;
 
 					//初回のみlineを生成
 					if (!this._svgLine) {
