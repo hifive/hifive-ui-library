@@ -409,26 +409,9 @@
 	}
 
 	function setAttributeNS(element, ns, key, value) {
-		// SVGGradientを考慮
-		if (value && typeof value.getClass === 'function') {
-			var clss = value.getClass();
-			var gradient = false;
-
-			while (isHifiveClass(clss)) {
-				var name = clss.getFullName();
-				if (name === 'h5.ui.components.stage.SVGGradient') {
-					gradient = true;
-					break;
-				}
-
-				clss = clss.getParentClass();
-			}
-
-			if (gradient) {
-				var id = value.id;
-				element.setAttributeNS(ns, key, 'url(#' + id + ')');
-				return;
-			}
+		if (value && value.isDefinition && value.definitionUrl) {
+			element.setAttributeNS(ns, key, value.definitionUrl);
+			return;
 		}
 		element.setAttributeNS(ns, key, value);
 	}
@@ -455,29 +438,11 @@
 
 	var NS_XLINK = "http://www.w3.org/1999/xlink";
 
-	var SVGElementWrapper = RootClass.extend(function() {
-		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGElementWrapper
-			 */
-			name: 'h5.ui.components.stage.SVGElementWrapper',
-			field: {
-				_element: null
-			},
-			method: {
-				constructor: function SVGElementWrapper() {
-					SVGElementWrapper._super.call(this);
-				}
-			}
-		};
-		return desc;
-	});
-
 	//TODO 本当はSVGDrawElementのfuncの中に入れたいが
 	//Eclipseのフォーマッタと相性が悪い。いずれ方法を検討。
 	var ERR_MUST_OVERRIDE_RENDER_FUNCTION = 'SVGDrawElementのrenderメソッドは、その子クラスで必ずオーバーライドする必要があります。';
 
-	var SVGDrawElement = SVGElementWrapper.extend(function() {
+	var SVGElementWrapper = RootClass.extend(function() {
 
 		function getChangedAttributes() {
 			return {
@@ -494,7 +459,7 @@
 				},
 				addRemoved: function(name, ns) {
 					if (!this.removed.has(name)) {
-						this.removed, set(name, {
+						this.removed.set(name, {
 							name: name,
 							ns: ns
 						});
@@ -509,24 +474,59 @@
 		}
 
 		var desc = {
-			name: 'h5.ui.components.stage.SVGDrawElement',
+			/**
+			 * @memberOf h5.ui.components.stage.SVGElementWrapper
+			 */
+			name: 'h5.ui.components.stage.SVGElementWrapper',
 			field: {
+				_element: null,
+				_graphics: null,
+
+				_isDefinition: null,
 				_classes: null,
 				_attributes: null,
-				_graphics: null,
 				_changedAttributes: null
 			},
+			accessor: {
+				isDefinition: {
+					get: function() {
+						return this._isDefinition;
+					}
+				},
+				definitionUrl: {
+					get: function() {
+						var id = this.id;
+						return this.isDefinition && id ? 'url(#' + this.id + ')' : null;
+					}
+				},
+				id: {
+					get: function() {
+						return this.getAttribute('id');
+					}
+				}
+			},
 			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.SVGDrawElement
-				 */
-				constructor: function SVGDrawElement(graphics, element) {
-					SVGDrawElement._super.call(this);
-					this._graphics = graphics;
+				constructor: function SVGElementWrapper(graphics, element, id) {
+					SVGElementWrapper._super.call(this);
 					this._element = element;
+					this._graphics = graphics;
+
+					this._isDefinition = false;
 					this._classes = [];
 					this._attributes = new Map();
 					this._changedAttributes = getChangedAttributes();
+
+					if (id) {
+						this._setAttribute('id', id, true);
+					}
+				},
+				requestRender: function() {
+					if (this._graphics) {
+						this._graphics._addToRenderWaitingList(this);
+					}
+				},
+				render: function() {
+					throw new Error(ERR_MUST_OVERRIDE_RENDER_FUNCTION);
 				},
 				getAttribute: function(key) {
 					return this._attributes.has(key) ? this._attributes.get(key) : null;
@@ -534,13 +534,32 @@
 				getXLinkAttribute: function(key) {
 					return this.getAttribute(key);
 				},
-				setAttribute: function(key, value, sync) {
+				setAttribute: function(key, value) {
+					this._setAttribute(key, value, this.isDefinition);
+				},
+				setAttributes: function(param) {
+					this._setAttributes(params, this.isDefinition)
+				},
+				setXLinkAttribute: function(key, value) {
+					this._setXLinkAttribute(key, value, this.isDefinition);
+				},
+				setXLinkAttributes: function(param) {
+					this._setXLinkAttributes(param, this.isDefinition);
+				},
+				_setAttribute: function(key, value, sync) {
 					this._setAttributeNS(null, key, value, sync);
 				},
-				setXLinkAttribute: function(key, value, sync) {
+				_setAttributes: function(param, sync) {
+					for ( var key in param) {
+						if (param.hasOwnProperty(key)) {
+							this.setAttribute(key, param[key], sync);
+						}
+					}
+				},
+				_setXLinkAttribute: function(key, value, sync) {
 					this._setAttributeNS(NS_XLINK, key, value, sync);
 				},
-				setXLinkAttributes: function(param, sync) {
+				_setXLinkAttributes: function(params, sync) {
 					for ( var key in param) {
 						if (param.hasOwnProperty(key)) {
 							this.setXLinkAttribute(key, param[key], sync);
@@ -564,13 +583,6 @@
 					} else {
 						this._changedAttributes.addChanged(key, ns);
 						this.requestRender();
-					}
-				},
-				setAttributes: function(param, sync) {
-					for ( var key in param) {
-						if (param.hasOwnProperty(key)) {
-							this.setAttribute(key, param[key], sync);
-						}
 					}
 				},
 				removeAttribute: function(key, sync) {
@@ -617,20 +629,12 @@
 						}
 					}
 				},
-				requestRender: function() {
-					if (this._graphics) {
-						this._graphics._addToRenderWaitingList(this);
-					}
-				},
-				render: function() {
-					throw new Error(ERR_MUST_OVERRIDE_RENDER_FUNCTION);
-				},
 				_renderChangedAttributes: function() {
 					// Delete removed attributes
 					var attrChanged = false;
+					var element = this._element;
 					var removed = this._changedAttributes.removed;
 					if (removed.size) {
-						var element = this._element;
 						removed.forEach(function(value, key) {
 							removeAttributeNS(element, value.ns, key);
 						});
@@ -640,7 +644,6 @@
 
 					var changed = this._changedAttributes.changed;
 					if (changed.size) {
-						var element = this._element;
 						var attributes = this._attributes;
 						changed.forEach(function(value, key) {
 							setAttributeNS(element, value.ns, key, attributes.get(key));
@@ -650,6 +653,21 @@
 					}
 
 					return attrChanged;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var SVGDrawElement = SVGElementWrapper.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGDrawElement',
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGDrawElement
+				 */
+				constructor: function SVGDrawElement(graphics, element, id) {
+					SVGDrawElement._super.call(this, graphics, element, id);
 				}
 			}
 		};
@@ -798,7 +816,7 @@
 						}
 					}
 
-					this.setAttribute('transform', 'translate(0, ' + dy + ')', true);
+					this._setAttribute('transform', 'translate(0, ' + dy + ')', true);
 				},
 				setText: function(text) {
 					if (this._textContent !== text) {
@@ -982,7 +1000,7 @@
 					path += ' L' + topX + ',' + topY;
 					path += ' Z';
 
-					this.setAttribute('d', path, true);
+					this._setAttribute('d', path, true);
 				}
 			}
 		};
@@ -1071,26 +1089,6 @@
 		return desc;
 	});
 
-	function addSimpleGradientAccessor(target, attrNames) {
-		for (var i = 0; i < attrNames.length; i++) {
-			var attrName = attrNames[i];
-			var name = attrName.replace(/-(.)/g, function(match) {
-				return match.charAt(1).toUpperCase();
-			});
-
-			target[name] = (function(attrName) {
-				return {
-					get: function() {
-						return this._getAttribute(attrName);
-					},
-					set: function(value) {
-						this._setAttribute(attrName, value);
-					}
-				}
-			})(attrName);
-		}
-	}
-
 	var SVGGradient = SVGElementWrapper.extend(function() {
 		var desc = {
 			/**
@@ -1098,24 +1096,13 @@
 			 */
 			name: 'h5.ui.components.stage.SVGGradient',
 			field: {
-				_attributes: null,
 				_stops: null
-			},
-			accessor: {
-				id: {
-					get: function() {
-						return this._getAttribute('id');
-					}
-				}
 			},
 			method: {
 				constructor: function SVGGradient(element, id) {
-					SVGGradient._super.call(this);
-					this._element = element;
-					this._attributes = new Map();
+					SVGGradient._super.call(this, null, element, id);
+					this._isDefinition = true;
 					this._stops = [];
-
-					this._setAttribute('id', id);
 				},
 				addStop: function(offset, color, opacity) {
 					var stop = createSvgElement('stop');
@@ -1137,30 +1124,6 @@
 						opacity: opacity
 					});
 					return this;
-				},
-				_getAttribute: function(key) {
-					return this._attributes.has(key) ? this._attributes.get(key) : null;
-				},
-				_setAttribute: function(key, value) {
-					if (value === null || value === undefined) {
-						this._removeAttribute(key);
-						return;
-					}
-
-					if (this._attributes.get(key) === value) {
-						return;
-					}
-
-					this._attributes.set(key, value);
-					setSvgAttribute(this._element, key, value);
-				},
-				_removeAttribute: function(key) {
-					if (!this._attributes.has(key)) {
-						return;
-					}
-
-					this._attributes['delete'](key);
-					removeSvgAttribute(this._element, key);
 				}
 			}
 		};
@@ -1191,7 +1154,7 @@
 			}
 		};
 
-		addSimpleGradientAccessor(desc.accessor, ['x1', 'y1', 'x2', 'y2', 'spreadMethod']);
+		addSimpleSVGAccessor(desc.accessor, ['x1', 'y1', 'x2', 'y2', 'spreadMethod']);
 		return desc;
 	});
 
@@ -1223,7 +1186,7 @@
 			}
 		};
 
-		addSimpleGradientAccessor(desc.accessor, ['cx', 'cy', 'r', 'fx', 'fy', 'spreadMethod']);
+		addSimpleSVGAccessor(desc.accessor, ['cx', 'cy', 'r', 'fx', 'fy', 'spreadMethod']);
 		return desc;
 	});
 
