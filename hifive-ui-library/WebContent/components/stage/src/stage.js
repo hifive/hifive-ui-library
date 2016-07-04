@@ -1903,10 +1903,10 @@
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
 			accessor: {
-				//top, middle, bottom, offset, null
+				//top, middle, bottom, offset, nearest, null
 				junctionVerticalAlign: null,
 
-				//left, center, right, offset, null
+				//left, center, right, offset, nearest, null
 				junctionHorizontalAlign: null,
 
 				//Alignがoffsetの場合のみ有効
