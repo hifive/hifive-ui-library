@@ -399,6 +399,7 @@
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
 	}
 
+	//TODO 削除予定
 	function isHifiveClass(target) {
 		return target && typeof target.getFullName === 'function'
 				&& typeof target.getParentClass === 'function';
@@ -435,6 +436,17 @@
 			removeSvgAttribute(element, key[i]);
 		}
 	}
+
+	var SvgUtil = {
+		createSvgElement: createSvgElement,
+		setSvgAttribute: setSvgAttribute,
+		setSvgAttributes: setSvgAttributes,
+		removeSvgAttribute: removeSvgAttribute,
+		removeSvgAttributes: removeSvgAttributes
+	};
+	h5.u.obj.expose('h5.ui.components.stage', {
+		SvgUtil: SvgUtil
+	});
 
 	var NS_XLINK = "http://www.w3.org/1999/xlink";
 
@@ -1697,6 +1709,8 @@
 	//TODO Path <- Edge などとする
 	//TODO DUからrect系をはずすか
 	var Edge = DisplayUnit.extend(function() {
+		var ERR_CANNOT_USE_RECT_METHOD = 'EdgeではsetRectは使えません';
+
 		var desc = {
 			name: 'h5.ui.components.stage.Edge',
 			field: {
@@ -1737,7 +1751,7 @@
 					//this._render();
 				},
 				setRect: function() {
-					throw new Error('EdgeではsetRectは使えません');
+					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
 				_render: function() {
 					//TODO 仮実装
@@ -1947,6 +1961,26 @@
 			return null;
 		}
 
+		/**
+		 * 指定された範囲内の値を返す。min,maxの値は含む(value > maxの場合、返る値はmax)。<br>
+		 * min,maxにnullを指定した場合はその方向の上/下限は無視する。<br>
+		 *
+		 * @private
+		 * @param value 値
+		 * @param min 最小値(nullの場合は無視)
+		 * @param max 最大値(nullの場合は無視)
+		 * @returns クランプされた値
+		 */
+		function clamp(value, min, max) {
+			if (min != null && value < min) {
+				return min;
+			}
+			if (max != null && value > max) {
+				return max;
+			}
+			return value;
+		}
+
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
@@ -1955,7 +1989,12 @@
 				_scaleX: null,
 				_scaleY: null,
 				_scrollX: null,
-				_scrollY: null
+				_scrollY: null,
+				_minScaleX: null,
+				_minScaleY: null,
+				_maxScaleX: null,
+				_maxScaleY: null,
+				_isUpdateTransformReserved: null
 			},
 			method: {
 				/**
@@ -1973,8 +2012,16 @@
 					this._scaleX = 1;
 					this._scaleY = 1;
 
+					//min,maxは、nullの場合は無効とする
+					this._minScaleX = null;
+					this._minScaleY = null;
+					this._maxScaleX = null;
+					this._maxScaleY = null;
+
 					this._scrollX = 0;
 					this._scrollY = 0;
+
+					this._isUpdateTransformReserved = false;
 
 					this._children = [];
 
@@ -2033,6 +2080,18 @@
 					}
 				},
 
+				setMinScale: function(minScaleX, minScaleY) {
+					this._minScaleX = minScaleX;
+					this._minScaleY = minScaleY;
+					this._clampScale();
+				},
+
+				setMaxScale: function(maxScaleX, maxScaleY) {
+					this._maxScaleX = maxScaleX;
+					this._maxScaleY = maxScaleY;
+					this._clampScale();
+				},
+
 				setScale: function(scaleX, scaleY) {
 					if (scaleX != null) {
 						this._scaleX = scaleX;
@@ -2040,7 +2099,7 @@
 					if (scaleY != null) {
 						this._scaleY = scaleY;
 					}
-					this._updateTransform();
+					this._clampScale();
 				},
 
 				scrollTo: function(worldX, worldY) {
@@ -2079,10 +2138,37 @@
 					this.scrollTo(x, y);
 				},
 
+				_clampScale: function() {
+					var x = clamp(this._scaleX, this._minScaleX, this._maxScaleX);
+					var y = clamp(this._scaleY, this._minScaleY, this._maxScaleY);
+
+					var isScaleChanged = false;
+					if (this._scaleX !== x || this._scaleY !== y) {
+						isScaleChanged = true;
+					}
+
+					this._scaleX = x;
+					this._scaleY = y;
+
+					if (isScaleChanged) {
+						this._updateTransform();
+					}
+				},
+
 				_updateTransform: function() {
-					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
-					this._rootG.setAttribute('transform', transform);
+					if (this._isUpdateTransformReserved) {
+						return;
+					}
+					this._isUpdateTransformReserved = true;
+
+					var that = this;
+					//TODO rAFはここで直接呼ばない
+					requestAnimationFrame(function() {
+						that._isUpdateTransformReserved = false;
+						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+								that._scaleX, that._scaleY, -that._scrollX, -that._scrollY);
+						that._rootG.setAttribute('transform', transform);
+					});
 				}
 			}
 		};
@@ -2457,8 +2543,11 @@
 		 */
 		__name: 'h5.ui.components.stage.StageController',
 
-		//ルートとなるSVG要素
+		//ルートとなるSVG要素(直接の子は_layerRootGのg要素のみ)
 		_duRoot: null,
+
+		//全てのレイヤーの親となるg要素。実質的に全てのDUはこのg要素の下に入る。
+		_layerRootG: null,
 
 		_units: null,
 
@@ -2471,8 +2560,6 @@
 		_initData: null,
 
 		_defs: null,
-
-		_hasDefs: false,
 
 		//UI操作によってスクロールするかどうか
 		canUIScrollX: true,
@@ -2604,13 +2691,12 @@
 		},
 
 		_getDefs: function() {
-			if (!this._hasDefs) {
+			if (!this._defs) {
 				var SVGDefinitions = h5.cls.manager
 						.getClass('h5.ui.components.stage.SVGDefinitions');
 				var element = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 				this._defs = SVGDefinitions.create(element);
 				this._duRoot.appendChild(element);
-				this._hasDefs = true;
 			}
 			return this._defs;
 		},
@@ -2630,11 +2716,13 @@
 
 		__ready: function() {
 			if (!this._duRoot) {
-				var rootSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+				var rootSvg = stageModule.SvgUtil.createSvgElement('svg');
 				this._duRoot = rootSvg;
+				this._layerRootG = stageModule.SvgUtil.createSvgElement('g');
+				this._duRoot.appendChild(this._layerRootG);
+
 				//rootSvg.setAttribute('overflow', 'visible');
 			}
-			//$(this._root).css('position', 'relative');
 
 			this._selectionLogic.addSelectionListener(function(du, isSelected, isFocused) {
 				du._isSelected = isSelected;
@@ -2760,8 +2848,10 @@
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
-			this._duRoot.setAttributeNS(null, 'width', w);
-			this._duRoot.setAttributeNS(null, 'height', h);
+			stageModule.SvgUtil.setSvgAttributes(this._duRoot, {
+				width: w,
+				height: h
+			});
 
 			this._viewport.setDisplaySize(w, h);
 			this._updateViewBox();
@@ -2795,9 +2885,10 @@
 			}
 		},
 
+		//TODO layerRootGに直接ではなくデフォルト（背景）レイヤーにaddする
 		addDisplayUnit: function(displayUnit) {
 			this._units.set(displayUnit.id, displayUnit);
-			this._duRoot.appendChild(displayUnit.domRoot);
+			this._layerRootG.appendChild(displayUnit.domRoot);
 
 			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
 			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
@@ -2813,9 +2904,8 @@
 		},
 
 		removeDisplayUnitById: function(id) {
-			//FIXME deleteが失敗する
-			this._unit["delete"](displayUnit.id);
-			this._duRoot.removeChild(displayUnit.domRoot);
+			this._unit["delete"](id);
+			this._layerRootG.removeChild(displayUnit.domRoot);
 		},
 
 		removeDisplayUnitAll: function() {
@@ -2828,7 +2918,7 @@
 			} else {
 				this._layers.push(layer);
 			}
-			this._duRoot.appendChild(layer.domRoot);
+			this._layerRootG.appendChild(layer.domRoot);
 			layer._onAddedToRoot(this);
 		},
 
@@ -2896,6 +2986,11 @@
 		},
 
 		/**
+		 * このステージの拡大率を設定します。スケール値はワールド座標系に対して設定されます。<br>
+		 * つまり、scaleを2にすると、画面上は各オブジェクトが2倍の大きさの大きさで表示されます。<br>
+		 * このメソッドを呼び出すことは、すべてのレイヤーのsetScale()に同じ値を設定することと等価です。<br>
+		 * ただし、DisplayUnit.setScale()と異なり、拡縮時の中心位置を指定することができます。
+		 *
 		 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
 		 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
 		 * @param displayOffsetX 拡縮時の中心点のx（ディスプレイ座標系におけるoffsetX(stageのルート要素の左上を基準とした座標)）
