@@ -35,6 +35,30 @@
 
 
 	/**
+	 * 指定された範囲内の値を返す。min,maxの値は含む(value > maxの場合、返る値はmax)。<br>
+	 * min,maxにnullを指定した場合はその方向の上/下限は無視する。<br>
+	 *
+	 * @private
+	 * @param value 値
+	 * @param min 最小値(nullの場合は無視)
+	 * @param max 最大値(nullの場合は無視)
+	 * @returns クランプされた値
+	 */
+	function clamp(value, min, max) {
+		if (min != null && value < min) {
+			return min;
+		}
+		if (max != null && value > max) {
+			return max;
+		}
+		return value;
+	}
+
+	h5.u.obj.expose('h5.ui.components.stage.StageUtil', {
+		clamp: clamp
+	});
+
+	/**
 	 * DragSession
 	 * <p>
 	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。
@@ -1961,25 +1985,7 @@
 			return null;
 		}
 
-		/**
-		 * 指定された範囲内の値を返す。min,maxの値は含む(value > maxの場合、返る値はmax)。<br>
-		 * min,maxにnullを指定した場合はその方向の上/下限は無視する。<br>
-		 *
-		 * @private
-		 * @param value 値
-		 * @param min 最小値(nullの場合は無視)
-		 * @param max 最大値(nullの場合は無視)
-		 * @returns クランプされた値
-		 */
-		function clamp(value, min, max) {
-			if (min != null && value < min) {
-				return min;
-			}
-			if (max != null && value > max) {
-				return max;
-			}
-			return value;
-		}
+		var StageUtil = h5.ui.components.stage.StageUtil;
 
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
@@ -2103,33 +2109,9 @@
 				},
 
 				scrollTo: function(worldX, worldY) {
-					//				var oldPos = DisplayPoint.create(this._scrollX, this._scrollY);
-
 					this._scrollX = worldX;
 					this._scrollY = worldY;
 					this._updateTransform();
-
-					//				var newPos = WorldPoint.create(worldX, worldY);
-
-					//				var evArg = {
-					//					scrollPosition: {
-					//						oldValue: oldPos,
-					//						newValue: newPos,
-					//						isChanged: true
-					//					},
-					//					scale: {
-					//						oldValue: {
-					//							x: this._scaleX,
-					//							y: this._scaleY
-					//						},
-					//						newValue: {
-					//							x: this._scaleX,
-					//							y: this._scaleY
-					//						},
-					//						isChanged: false
-					//					}
-					//				};
-					//				this.trigger(EVENT_SIGHT_CHANGE, evArg);
 				},
 
 				scrollBy: function(worldX, worldY) {
@@ -2139,8 +2121,8 @@
 				},
 
 				_clampScale: function() {
-					var x = clamp(this._scaleX, this._minScaleX, this._maxScaleX);
-					var y = clamp(this._scaleY, this._minScaleY, this._maxScaleY);
+					var x = StageUtil.clamp(this._scaleX, this._minScaleX, this._maxScaleX);
+					var y = StageUtil.clamp(this._scaleY, this._minScaleY, this._maxScaleY);
 
 					var isScaleChanged = false;
 					if (this._scaleX !== x || this._scaleY !== y) {
@@ -2537,6 +2519,8 @@
 	var DRAG_MODE_SCREEN = 1;
 	var DRAG_MODE_DU = 2;
 
+	var StageUtil = h5.ui.components.stage.StageUtil;
+
 	var stageController = {
 		/**
 		 * @memberOf h5.ui.components.stage.StageController
@@ -2553,10 +2537,6 @@
 
 		_viewport: null,
 
-		_scaleX: 1,
-
-		_scaleY: 1,
-
 		_initData: null,
 
 		_defs: null,
@@ -2567,10 +2547,16 @@
 		canUIScrollY: true,
 
 		//(UI操作によるかどうかは関係なく)スクロールする範囲を配列で指定。
-		//[from, to] をWorld座標で指定。
-		scrollRangeX: null,
+		//{ min: , max: } をディスプレイ座標で指定。
+		_scrollRangeX: {
+			min: null,
+			max: null
+		},
 
-		scrollRangeY: null,
+		_scrollRangeY: {
+			min: null,
+			max: null
+		},
 
 		//TODO dependsOn()
 		_selectionLogic: h5.ui.SelectionLogic,
@@ -2932,18 +2918,43 @@
 			return null;
 		},
 
+		_isUpdateTransformReserved: false,
+
+		_updateTransform: function() {
+			if (this._isUpdateTransformReserved) {
+				return;
+			}
+			this._isUpdateTransformReserved = true;
+
+			var that = this;
+			//TODO rAFはここで直接呼ばない
+			requestAnimationFrame(function() {
+				that._isUpdateTransformReserved = false;
+				var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+						that._viewport.scaleX, that._viewport.scaleY, -that._viewport.worldX,
+						-that._viewport.worldY);
+				that._layerRootG.setAttribute('transform', transform);
+			});
+		},
+
 		scrollTo: function(dispX, dispY) {
 			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
 
-			this._viewport.scrollTo(dispX, dispY);
+			var actualDispX = StageUtil
+					.clamp(dispX, this._scrollRangeX.min, this._scrollRangeX.max);
+			var actualDispY = StageUtil
+					.clamp(dispY, this._scrollRangeY.min, this._scrollRangeY.max);
 
-			//TODO 移動制限
-			for (var i = 0, len = this._layers.length; i < len; i++) {
-				var layer = this._layers[i];
-				layer.scrollTo(this._viewport.worldX, this._viewport.worldY);
+			if (this._viewport.displayX === actualDispX && this._viewport.displayY === actualDispY) {
+				//サイズが現在と変わらなかったら何もしない
+				return;
 			}
 
-			var newPos = DisplayPoint.create(dispX, dispY);
+			this._viewport.scrollTo(actualDispX, actualDispY);
+
+			this._updateTransform();
+
+			var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
 			//TODO 現在はこの場所でイベントを出しているが、
 			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
@@ -2976,7 +2987,8 @@
 		},
 
 		scrollWorldTo: function(worldX, worldY) {
-			this._viewport.scrollWorldTo(worldX, worldY);
+			var dispPos = this._viewport.getDisplayPosition(worldX, worldY);
+			this.scrollTo(dispPos.x, dispPos.y);
 		},
 
 		scrollWorldBy: function(worldDx, worldDy) {
@@ -3023,12 +3035,6 @@
 
 			this._viewport.setScale(scaleX, scaleY, scaleCenter.x, scaleCenter.y);
 
-			for (var i = 0, len = this._layers.length; i < len; i++) {
-				var layer = this._layers[i];
-				layer.setScale(this._viewport.scaleX, this._viewport.scaleY);
-				layer.scrollTo(this._viewport.worldX, this._viewport.worldY);
-			}
-
 			var newScrollPos = DisplayPoint
 					.create(this._viewport.displayX, this._viewport.displayY);
 
@@ -3036,6 +3042,8 @@
 			if (oldScrollPos.x === newScrollPos.x && oldScrollPos.y === newScrollPos.y) {
 				isScrollPoisitionChanged = false;
 			}
+
+			this._updateTransform();
 
 			//TODO 現在はこの場所でイベントを出しているが、
 			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
@@ -3110,7 +3118,22 @@
 
 		_onDragMove: function(ds, dx, dy) {
 			this.scrollBy(dx, dy);
+		},
+
+		setScrollRangeX: function(minDisplayX, maxDisplayX) {
+			this._scrollRangeX = {
+				min: minDisplayX,
+				max: maxDisplayX
+			};
+		},
+
+		setScrollRangeY: function(minDisplayY, maxDisplayY) {
+			this._scrollRangeY = {
+				min: minDisplayY,
+				max: maxDisplayY
+			};
 		}
+
 	};
 
 
