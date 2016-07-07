@@ -2163,8 +2163,6 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
-				canUIScrollX: null,
-				canUIScrollY: null,
 				scrollRangeX: null,
 				scrollRangeY: null
 			},
@@ -2516,8 +2514,15 @@
 	}
 
 	var DRAG_MODE_NONE = 0;
-	var DRAG_MODE_SCREEN = 1;
-	var DRAG_MODE_DU = 2;
+	var DRAG_MODE_AUTO = 1;
+	var DRAG_MODE_SCREEN = 2;
+	var DRAG_MODE_DU = 3;
+	var DRAG_MODE_SELECT = 4;
+
+	var SCROLL_DIRECTION_NONE = 0;
+	var SCROLL_DIRECTION_X = 1;
+	var SCROLL_DIRECTION_Y = 2;
+	var SCROLL_DIRECTION_XY = 3;
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
@@ -2543,10 +2548,7 @@
 
 		_defs: null,
 
-		//UI操作によってスクロールするかどうか
-		canUIScrollX: true,
-
-		canUIScrollY: true,
+		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
 
 		//(UI操作によるかどうかは関係なく)スクロールする範囲を配列で指定。
 		//{ min: , max: } をディスプレイ座標で指定。
@@ -2709,7 +2711,7 @@
 			this._units = new Map();
 			this._layers = [];
 			this._viewport = Viewport.create();
-			this._dragMode = DRAG_MODE_NONE;
+			this.UIDragMode = DRAG_MODE_AUTO;
 		},
 
 		__ready: function() {
@@ -2795,7 +2797,9 @@
 			this.trigger(triggerEventName, evArg);
 		},
 
-		_dragMode: DRAG_MODE_NONE, // DRAG_MODE_SCREEN = 1; DRAG_MODE_DU = 2;
+		UIDragMode: DRAG_MODE_AUTO,
+
+		_currentDragMode: DRAG_MODE_NONE,
 
 		_dragTargetDU: null,
 
@@ -2803,32 +2807,91 @@
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
 
-			this._dragMode = DRAG_MODE_NONE;
+			this._currentDragMode = DRAG_MODE_NONE;
 
-			if (du) {
-				if (du.isDraggable) {
-					this._dragMode = DRAG_MODE_DU;
-					this._dragTargetDU = du;
+			switch (this.UIDragMode) {
+			case DRAG_MODE_NONE:
+				//UI操作によるドラッグを行わないモードの場合は、何もしない
+				break;
+			case DRAG_MODE_DU:
+				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
+				//DUを掴んでいなかった場合は、何もしない
+				if (du && du.isDraggable) {
+					this._currentDragMode = DRAG_MODE_DU;
 				}
-			} else {
-				this._dragMode = DRAG_MODE_SCREEN;
+				break;
+			case DRAG_MODE_SCREEN:
+				if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
+					//SCREENドラッグモード固定、かつ、
+					//UI操作によるスクロールがX,Yどちらかの方向に移動可能な場合はスクリーンドラッグを開始
+					this._currentDragMode = DRAG_MODE_SCREEN;
+				}
+				break;
+			case DRAG_MODE_SELECT:
+				//SELECTモード固定なら、SELECTドラッグを開始
+				this._currentDragMode = DRAG_MODE_SELECT;
+				break;
+			case DRAG_MODE_AUTO:
+			default:
+				//UIDragModeがAUTOの場合
+				if (du) {
+					if (du.isDraggable) {
+						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
+						this._currentDragMode = DRAG_MODE_DU;
+						this._dragTargetDU = du;
+					}
+				} else {
+					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
+					//押していなくてかつスクロール方向がNONE以外ならSCREENドラッグを開始
+					if (event.ctrlKey) {
+						this._currentDragMode = DRAG_MODE_SELECT;
+					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
+						this._currentDragMode = DRAG_MODE_SCREEN;
+					}
+				}
+				break;
 			}
 		},
 
 		'{rootElement} h5trackmove': function(context) {
-			if (this._dragMode === DRAG_MODE_NONE) {
+			if (this._currentDragMode === DRAG_MODE_NONE) {
 				return;
 			}
 
 			var dispDx = context.event.dx;
 			var dispDy = context.event.dy;
 
-			switch (this._dragMode) {
+			if (dispDx === 0 && dispDy === 0) {
+				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
+				return;
+			}
+
+			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
 				this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
 				break;
 			case DRAG_MODE_SCREEN:
-				this.scrollBy(-dispDx, -dispDy);
+				switch (this.UIDragScreenScrollDirection) {
+				case SCROLL_DIRECTION_X:
+					dispDy = 0;
+					break;
+				case SCROLL_DIRECTION_Y:
+					dispDx = 0;
+					break;
+				case SCROLL_DIRECTION_XY:
+					break;
+				case SCROLL_DIRECTION_NONE:
+				default:
+					dispDx = 0;
+					dispDy = 0;
+					break;
+				}
+
+				if (dispDx !== 0 || dispDy !== 0) {
+					//X,Yどちらかの方向に移動量がある場合はスクロール処理を行う
+					//ただしScrollRangeが指定されている場合は実際にはスクロールしない可能性はある
+					this.scrollBy(-dispDx, -dispDy);
+				}
 				break;
 			default:
 				break;
@@ -2836,7 +2899,7 @@
 		},
 
 		'{rootElement} h5trackend': function(context) {
-			this._dragMode = DRAG_MODE_NONE;
+			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragTargetDU = null;
 		},
 
@@ -2993,6 +3056,10 @@
 		},
 
 		scrollBy: function(displayDx, displayDy) {
+			if (displayDx === 0 && displayDy === 0) {
+				return;
+			}
+
 			var dx = this._viewport.displayX + displayDx;
 			var dy = this._viewport.displayY + displayDy;
 			this.scrollTo(dx, dy);
@@ -3004,6 +3071,10 @@
 		},
 
 		scrollWorldBy: function(worldDx, worldDy) {
+			if (worldDx === 0 && worldDy === 0) {
+				return;
+			}
+
 			var dx = this._viewport.worldX + worldDx;
 			var dy = this._viewport.worldY + worldDy;
 			this.scrollWorldTo(dx, dy);
