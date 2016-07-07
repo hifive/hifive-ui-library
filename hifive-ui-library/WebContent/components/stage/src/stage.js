@@ -2225,12 +2225,17 @@
 		SVGLinearGradient: SVGLinearGradient
 	});
 
+})(jQuery);
+
+(function() {
+
 	var stageLogic = {
 		__name: 'h5.ui.components.stage.StageLogic'
 	};
 
-})(jQuery);
+	h5.core.expose(stageLogic);
 
+})();
 
 (function($) {
 
@@ -2238,6 +2243,7 @@
 	var stageModule = h5.ui.components.stage;
 
 	var Viewport = RootClass.extend(function() {
+		var DEFAULT_BOUNDARY_WIDTH = 25;
 
 		var desc = {
 			name: 'h5.ui.components.stage.Viewport',
@@ -2246,7 +2252,8 @@
 				_displayRect: null,
 				_worldRect: null,
 				_scaleX: null,
-				_scaleY: null
+				_scaleY: null,
+				boundaryWidth: null
 			},
 
 			accessor: {
@@ -2312,6 +2319,7 @@
 					this._worldRect = stageModule.Rect.create();
 					this._scaleX = 1;
 					this._scaleY = 1;
+					this.boundaryWidth = DEFAULT_BOUNDARY_WIDTH;
 				},
 
 				setDisplaySize: function(dispWidth, dispHeight) {
@@ -2452,6 +2460,41 @@
 					var dispY = worldY * this._scaleY;
 					var point = stageModule.DisplayPoint.create(dispX, dispY);
 					return point;
+				},
+
+				/**
+				 * 指定されたディスプレイ座標が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
+				 *
+				 * @param displayX
+				 * @param displayY
+				 * @returns { x: -1 or 0 or 1, y: -1 or 0 or 1 } というオブジェクト。
+				 *          -1の場合は上端または左端、1は下端または右端、0は中央部分
+				 */
+				getNineSlicePosition: function(displayX, displayY) {
+					var nineSlice = {
+						x: 0,
+						y: 0
+					};
+
+					if (this.displayWidth > this.boundaryWidth * 2) {
+						//境界とみなす幅(上下あるので2倍する)より現在の描画サイズが小さい場合は
+						//必ず「中央」とみなす
+						if (displayX < this.boundaryWidth) {
+							nineSlice.x = -1;
+						} else if (displayX > (this.displayWidth - this.boundaryWidth)) {
+							nineSlice.x = 1;
+						}
+					}
+
+					if (this.displayHeight > this.boundaryWidth * 2) {
+						if (displayY < this.boundaryWidth) {
+							nineSlice.y = -1;
+						} else if (displayY > (this.displayHeight - this.boundaryWidth)) {
+							nineSlice.y = 1;
+						}
+					}
+
+					return nineSlice;
 				}
 			}
 		};
@@ -2513,6 +2556,7 @@
 		return ret;
 	}
 
+	//TODO DRAG_MODE, SCR_DIR を定数として見えるようにする
 	var DRAG_MODE_NONE = 0;
 	var DRAG_MODE_AUTO = 1;
 	var DRAG_MODE_SCREEN = 2;
@@ -2523,6 +2567,9 @@
 	var SCROLL_DIRECTION_X = 1;
 	var SCROLL_DIRECTION_Y = 2;
 	var SCROLL_DIRECTION_XY = 3;
+
+	var BOUNDARY_SCROLL_INTERVAL = 20;
+	var BOUNDARY_SCROLL_INCREMENT = 10;
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
@@ -2868,6 +2915,14 @@
 
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
+				var nineSlice = this._viewport.getNineSlicePosition(context.event.offsetX,
+						context.event.offsetY);
+				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
+					this._beginBoundaryScroll(nineSlice, this._dragTargetDU);
+				} else {
+					this._endBoundaryScroll();
+				}
+
 				this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
 				break;
 			case DRAG_MODE_SCREEN:
@@ -2901,6 +2956,37 @@
 		'{rootElement} h5trackend': function(context) {
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragTargetDU = null;
+			this._endBoundaryScroll();
+		},
+
+		_boundaryScrollTimerId: null,
+
+		_nineSlice: null,
+
+		_beginBoundaryScroll: function(nineSlice, followingDU) {
+			//途中で方向が変わった場合のため、9-Sliceだけは常に更新する
+			this._nineSlice = nineSlice;
+
+			if (this._boundaryScrollTimerId) {
+				return;
+			}
+
+			var that = this;
+			this._boundaryScrollTimerId = setInterval(function() {
+				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.x;
+				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.y;
+
+				that.scrollBy(boundaryScrX, boundaryScrY);
+				followingDU.moveDisplayBy(boundaryScrX, boundaryScrY);
+			}, BOUNDARY_SCROLL_INTERVAL);
+		},
+
+		_endBoundaryScroll: function() {
+			if (this._boundaryScrollTimerId) {
+				clearInterval(this._boundaryScrollTimerId);
+				this._boundaryScrollTimerId = null;
+				this._nineSlice = null;
+			}
 		},
 
 		//_dragController: h5.ui.components.stage.DragController,
@@ -2909,6 +2995,7 @@
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
+			//TODO svgのwidth, heightはsetAttribute()を使うのが正しい？？NS確認
 			stageModule.SvgUtil.setSvgAttributes(this._duRoot, {
 				width: w,
 				height: h
@@ -2919,9 +3006,6 @@
 		},
 
 		_updateViewBox: function() {
-			//TODO ViewBoxで全体のスクロールやスケールを実現するかどうかは
-			//パフォーマンス等の観点を考えて検討
-
 			var wr = this._viewport.getWorldRect();
 
 			//位置は変えない
