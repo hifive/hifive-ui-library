@@ -301,80 +301,95 @@
 	};
 
 
-	var Rect = RootClass.extend(function() {
-		var desc = {
-			name: 'h5.ui.components.stage.Rect',
-			field: {
-				_x: null,
-				_y: null
-			},
-			accessor: {
-				x: {
-					get: function() {
-						return this._x;
+	var Rect = RootClass
+			.extend(function() {
+				var desc = {
+					name: 'h5.ui.components.stage.Rect',
+					field: {
+						_x: null,
+						_y: null
 					},
-					set: function(value) {
-						this._x = value;
-					}
-				},
-				y: {
-					get: function() {
-						return this._y;
+					accessor: {
+						x: {
+							get: function() {
+								return this._x;
+							},
+							set: function(value) {
+								this._x = value;
+							}
+						},
+						y: {
+							get: function() {
+								return this._y;
+							},
+							set: function(value) {
+								this._y = value;
+							}
+						},
+						width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
+						height: null
 					},
-					set: function(value) {
-						this._y = value;
-					}
-				},
-				width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
-				height: null
-			},
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.Rect
-				 */
-				constructor: function Rect(x, y, width, height) {
-					Rect._super.call(this);
-					this._x = x !== undefined ? x : 0;
-					this._y = y !== undefined ? y : 0;
-					this._p_width = width !== undefined ? width : 0;
-					this._p_height = height !== undefined ? height : 0;
-				},
-				setRect: function(x, y, width, height) {
-					if (x != null) {
-						this._x = x;
-					}
-					if (y != null) {
-						this._y = y;
-					}
-					if (width != null) {
-						this.width = width;
-					}
-					if (height != null) {
-						this.height = height;
-					}
-				},
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.Rect
+						 */
+						constructor: function Rect(x, y, width, height) {
+							Rect._super.call(this);
+							this._x = x !== undefined ? x : 0;
+							this._y = y !== undefined ? y : 0;
+							this._p_width = width !== undefined ? width : 0;
+							this._p_height = height !== undefined ? height : 0;
+						},
+						setRect: function(x, y, width, height) {
+							if (x != null) {
+								this._x = x;
+							}
+							if (y != null) {
+								this._y = y;
+							}
+							if (width != null) {
+								this.width = width;
+							}
+							if (height != null) {
+								this.height = height;
+							}
+						},
 
-				setLocation: function(x, y) {
-					if (x != null) {
-						this._x = x;
-					}
-					if (y != null) {
-						this._y = y;
-					}
-				},
+						setLocation: function(x, y) {
+							if (x != null) {
+								this._x = x;
+							}
+							if (y != null) {
+								this._y = y;
+							}
+						},
 
-				setSize: function(width, height) {
-					if (width != null) {
-						this.width = width;
+						setSize: function(width, height) {
+							if (width != null) {
+								this.width = width;
+							}
+							if (height != null) {
+								this.height = height;
+							}
+						},
+
+						/**
+						 * 引数のrectが表す領域を、このRectが表す領域が完全に含んでいるかどうかを返します。部分的にのみ含んでいる場合はfalseです。
+						 *
+						 * @param rect
+						 */
+						contains: function(rect) {
+							if (rect.x >= this.x && (rect.x + rect.width) <= (this.x + this.width)
+									&& rect.y >= this.y
+									&& (rect.y + rect.height) <= (this.y + this.height)) {
+								return true;
+							}
+							return false;
+						}
 					}
-					if (height != null) {
-						this.height = height;
-					}
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 
 	var Point = RootClass.extend(function() {
@@ -2432,6 +2447,13 @@
 					return point;
 				},
 
+				getDisplayPositionFromDisplayOffset: function(displayOffsetX, displayOffsetY) {
+					var dispX = this.displayX + displayOffsetX;
+					var dispY = this.displayY + displayOffsetY;
+					var point = stageModule.DisplayPoint.create(dispX, dispY);
+					return point;
+				},
+
 				getXLengthOfWorld: function(displayXLength) {
 					return displayXLength / this._scaleX;
 				},
@@ -2665,6 +2687,40 @@
 			return null;
 		},
 
+		getDisplayUnitUnderPointer: function() {
+			return this._lastEnteredDU;
+		},
+
+		getDisplayUnitsInRect: function(displayX, displayY, displayWidth, displayHeight,
+				isSelectableOnly) {
+			var wtl = this._viewport.getWorldPosition(displayX, displayY);
+			var ww = this._viewport.getXLengthOfWorld(displayWidth);
+			var wh = this._viewport.getYLengthOfWorld(displayHeight);
+
+			//ワールド座標系のRectに直す
+			var wRect = stageModule.Rect.create(wtl.x, wtl.y, ww, wh);
+
+			if (isSelectableOnly === undefined) {
+				//isSelectableOnlyはデフォルト：true
+				isSelectableOnly = true;
+			}
+
+			//指定されたRectに完全に含まれるDUを全て返す
+			var ret = [];
+			var allDU = isSelectableOnly ? this._getAllSelectableDisplayUnits() : this
+					.getDisplayUnitsAll();
+			for (var i = 0, len = allDU.length; i < len; i++) {
+				var du = allDU[i];
+				var worldGlobalPos = du.getWorldGlobalPosition();
+				var duGlobalRect = stageModule.Rect.create(worldGlobalPos.x, worldGlobalPos.y,
+						du.width, du.height);
+				if (wRect.contains(duGlobalRect)) {
+					ret.push(du);
+				}
+			}
+			return ret;
+		},
+
 		getSelectedDisplayUnits: function() {
 			var selected = this._selectionLogic.getSelected();
 			return selected;
@@ -2829,6 +2885,12 @@
 		},
 
 		_processClick: function(event, triggerEventName) {
+			if (this._isDraggingJustEnded) {
+				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
+				this._isDraggingJustEnded = false;
+				return;
+			}
+
 			var du = this._getIncludingDisplayUnit(event.target);
 			var isExclusive = !event.shiftKey;
 			if (!du) {
@@ -2852,6 +2914,12 @@
 		_currentDragMode: DRAG_MODE_NONE,
 
 		_dragTargetDU: null,
+
+		_dragSelectStartPos: null,
+
+		_dragSelectStartSelectedDU: null,
+
+		_dragLastPagePos: null,
 
 		'{rootElement} h5trackstart': function(context) {
 			var event = context.event;
@@ -2880,6 +2948,8 @@
 			case DRAG_MODE_SELECT:
 				//SELECTモード固定なら、SELECTドラッグを開始
 				this._currentDragMode = DRAG_MODE_SELECT;
+				saveDragSelectStartPos.call(this);
+				this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -2893,14 +2963,26 @@
 				} else {
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
 					//押していなくてかつスクロール方向がNONE以外ならSCREENドラッグを開始
-					if (event.ctrlKey) {
+					if (event.shiftKey) {
 						this._currentDragMode = DRAG_MODE_SELECT;
+						saveDragSelectStartPos.call(this);
+						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
 					}
 				}
 				break;
 			}
+
+			function saveDragSelectStartPos() {
+				var rootOffset = $(this.rootElement).offset();
+
+				var dispStartOffX = event.pageX - rootOffset.left;
+				var dispStartOffY = event.pageY - rootOffset.top;
+				this._dragSelectStartPos = this._viewport.getDisplayPositionFromDisplayOffset(
+						dispStartOffX, dispStartOffY);
+			}
+
 		},
 
 		'{rootElement} h5trackmove': function(context) {
@@ -2908,25 +2990,50 @@
 				return;
 			}
 
-			var dispDx = context.event.dx;
-			var dispDy = context.event.dy;
+			//このフラグは、clickイベントハンドラ(_processClick())の中で
+			//「ドラッグ操作直後のclickイベントかどうか」（＝そのclickイベントは無視すべきかどうか）を
+			//判断するためのフラグである。
+			//ただし、h5trackendは一度もマウスが動かなかった場合でも発火するため、
+			//trackendのタイミングでtrueにしてしまうと、常にフラグがtrueになってしまう。
+			//そのため、一度以上実際にmoveが起きたこのタイミングでフラグをtrueにすることで
+			//実際ドラッグが行われた場合のみフラグがONになる。
+			this._isDraggingJustEnded = true;
+
+			var event = context.event;
+
+			var dispDx = event.dx;
+			var dispDy = event.dy;
 
 			if (dispDx === 0 && dispDy === 0) {
 				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
 				return;
 			}
 
+			var that = this;
+
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
-				var nineSlice = this._viewport.getNineSlicePosition(context.event.offsetX,
-						context.event.offsetY);
-				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
-					this._beginBoundaryScroll(nineSlice, this._dragTargetDU);
-				} else {
-					this._endBoundaryScroll();
-				}
-
+				toggleBoundaryScroll.call(this, function(dispScrX, dispScrY) {
+					that._dragTargetDU.moveDisplayBy(dispScrX, dispScrY);
+				});
 				this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
+				break;
+			case DRAG_MODE_SELECT:
+				this._dragLastPagePos = {
+					x: event.pageX,
+					y: event.pageY
+				};
+
+				toggleBoundaryScroll.call(this, function() {
+					var dragSelectedDU = dragSelect.call(that);
+					var tempSelection = that._dragSelectStartSelectedDU.concat(dragSelectedDU);
+					that.select(tempSelection, true);
+				});
+
+				var dragSelectedDU = dragSelect.call(this);
+				var tempSelection = this._dragSelectStartSelectedDU.concat(dragSelectedDU);
+				this.select(tempSelection, true);
+				console.log(this.getSelectedDisplayUnits().length);
 				break;
 			case DRAG_MODE_SCREEN:
 				switch (this.UIDragScreenScrollDirection) {
@@ -2954,19 +3061,68 @@
 			default:
 				break;
 			}
+
+			function dragSelect() {
+				var rootOffset = $(this.rootElement).offset();
+
+				var dispLastOffX = this._dragLastPagePos.x - rootOffset.left;
+				var dispLastOffY = this._dragLastPagePos.y - rootOffset.top;
+
+				var dispStartPos = this._dragSelectStartPos;
+				var dispLastPos = this._viewport.getDisplayPositionFromDisplayOffset(dispLastOffX,
+						dispLastOffY);
+
+				var dispW = dispLastPos.x - dispStartPos.x;
+				var dispActualX;
+				if (dispW < 0) {
+					dispActualX = dispLastPos.x;
+					dispW *= -1;
+				} else {
+					dispActualX = dispStartPos.x;
+				}
+
+				var dispH = dispLastPos.y - dispStartPos.y;
+				var dispActualY;
+				if (dispH < 0) {
+					dispActualY = dispLastPos.y;
+					dispH *= -1;
+				} else {
+					dispActualY = dispStartPos.y;
+				}
+
+				this.log.debug('dragSelect: x={0},y={1},w={2},h={3}', dispActualX, dispActualY,
+						dispW, dispH);
+
+				return this.getDisplayUnitsInRect(dispActualX, dispActualY, dispW, dispH, true);
+			}
+
+			function toggleBoundaryScroll(callback) {
+				var nineSlice = this._viewport.getNineSlicePosition(context.event.offsetX,
+						context.event.offsetY);
+				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
+					this._beginBoundaryScroll(nineSlice, callback);
+				} else {
+					this._endBoundaryScroll();
+				}
+			}
 		},
 
 		'{rootElement} h5trackend': function(context) {
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragTargetDU = null;
+			this._dragSelectStartPos = null;
+			this._dragSelectStartSelectedDU = null;
+			this._dragLastPagePos = null;
 			this._endBoundaryScroll();
 		},
+
+		_isDraggingJustEnded: false,
 
 		_boundaryScrollTimerId: null,
 
 		_nineSlice: null,
 
-		_beginBoundaryScroll: function(nineSlice, followingDU) {
+		_beginBoundaryScroll: function(nineSlice, callback) {
 			//途中で方向が変わった場合のため、9-Sliceだけは常に更新する
 			this._nineSlice = nineSlice;
 
@@ -2976,11 +3132,12 @@
 
 			var that = this;
 			this._boundaryScrollTimerId = setInterval(function() {
+				//ディスプレイ座標系での移動量
 				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.x;
 				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.y;
 
 				that.scrollBy(boundaryScrX, boundaryScrY);
-				followingDU.moveDisplayBy(boundaryScrX, boundaryScrY);
+				callback(boundaryScrX, boundaryScrY);
 			}, BOUNDARY_SCROLL_INTERVAL);
 		},
 
