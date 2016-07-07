@@ -2571,6 +2571,9 @@
 	var BOUNDARY_SCROLL_INTERVAL = 20;
 	var BOUNDARY_SCROLL_INCREMENT = 10;
 
+	var EVENT_DU_MOUSE_LEAVE = 'duMouseLeave';
+	var EVENT_DU_MOUSE_ENTER = 'duMouseEnter';
+
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
 	var StageUtil = h5.ui.components.stage.StageUtil;
@@ -3273,12 +3276,41 @@
 			return pos;
 		},
 
-		// dragScroll
-		_manipMode: null,
+		//		'{rootElement} dgDragStart': function(context, $el) {
+		//			var ds = context.evArg.dragSession;
+		//			ds.addDragCallback(this._own(this._onDragMove));
+		//		},
 
-		'{rootElement} dgDragStart': function(context, $el) {
-			var ds = context.evArg.dragSession;
-			ds.addDragCallback(this._own(this._onDragMove));
+		_lastEnteredDU: null,
+
+		'{rootElement} mousemove': function(context, $el) {
+			if (this._currentDragMode !== DRAG_MODE_NONE) {
+				//ドラッグ中の場合はドラッグハンドラ(h5trackmove)の方で処理する
+				return;
+			}
+
+			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
+
+			if (currentMouseOverDU === this._lastEnteredDU) {
+				return;
+			}
+
+			if (this._lastEnteredDU) {
+				//いずれかのDUにマウスオーバーしていた場合、
+				//マウスオーバーしているDUが変わったので、前のDUはMouseLeaveにする
+				this.trigger(EVENT_DU_MOUSE_LEAVE, {
+					displayUnit: this._lastEnteredDU
+				});
+			}
+
+			this._lastEnteredDU = currentMouseOverDU;
+
+			if (currentMouseOverDU) {
+				//新しく別のDUにマウスオーバーした場合
+				this.trigger(EVENT_DU_MOUSE_ENTER, {
+					displayUnit: currentMouseOverDU
+				});
+			}
 		},
 
 		'{rootElement} mousewheel': function(context, $el) {
@@ -3310,9 +3342,9 @@
 			this.scrollBy(0, dy);
 		},
 
-		_onDragMove: function(ds, dx, dy) {
-			this.scrollBy(dx, dy);
-		},
+		//		_onDragMove: function(ds, dx, dy) {
+		//			this.scrollBy(dx, dy);
+		//		},
 
 		setScrollRangeX: function(minDisplayX, maxDisplayX) {
 			this._scrollRangeX = {
