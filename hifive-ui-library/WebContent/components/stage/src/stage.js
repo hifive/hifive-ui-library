@@ -2519,6 +2519,8 @@
 	var DRAG_MODE_SCREEN = 1;
 	var DRAG_MODE_DU = 2;
 
+	var ABSOLUTE_SCALE_MIN = 0.01;
+
 	var StageUtil = h5.ui.components.stage.StageUtil;
 
 	var stageController = {
@@ -2555,6 +2557,16 @@
 
 		_scrollRangeY: {
 			min: null,
+			max: null
+		},
+
+		_scaleRangeX: {
+			min: ABSOLUTE_SCALE_MIN,
+			max: null
+		},
+
+		_scaleRangeY: {
+			min: ABSOLUTE_SCALE_MIN,
 			max: null
 		},
 
@@ -3009,7 +3021,12 @@
 		 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
 		setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
-			if (scaleX === this._viewport.scaleX && scaleY === this._viewport.scaleY) {
+			var actualScaleX = StageUtil
+					.clamp(scaleX, this._scaleRangeX.min, this._scaleRangeX.max);
+			var actualScaleY = StageUtil
+					.clamp(scaleY, this._scaleRangeY.min, this._scaleRangeY.max);
+
+			if (actualScaleX === this._viewport.scaleX && actualScaleY === this._viewport.scaleY) {
 				return;
 			}
 
@@ -3033,7 +3050,7 @@
 			var oldScaleX = this._viewport.scaleX;
 			var oldScaleY = this._viewport.scaleY;
 
-			this._viewport.setScale(scaleX, scaleY, scaleCenter.x, scaleCenter.y);
+			this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x, scaleCenter.y);
 
 			var newScrollPos = DisplayPoint
 					.create(this._viewport.displayX, this._viewport.displayY);
@@ -3060,13 +3077,35 @@
 						y: oldScaleY
 					},
 					newValue: {
-						x: scaleX,
-						y: scaleY
+						x: actualScaleX,
+						y: actualScaleY
 					},
 					isChanged: true
 				}
 			};
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
+		},
+
+		setScaleRangeX: function(min, max) {
+			var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
+
+			this._scaleRangeX = {
+				min: actualMin,
+				max: max
+			};
+
+			this.setScale(this._viewport.scaleX, null);
+		},
+
+		setScaleRangeY: function(min, max) {
+			var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
+
+			this._scaleRangeY = {
+				min: actualMin,
+				max: max
+			};
+
+			this.setScale(null, this._viewport.scaleY);
 		},
 
 		refresh: function(immediate) {
