@@ -1791,7 +1791,6 @@
 
 					this.domRoot = createSvgElement('svg');
 					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
-					//this._render();
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
@@ -2182,8 +2181,8 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
-				scrollRangeX: null,
-				scrollRangeY: null
+				_scrollRangeX: null,
+				_scrollRangeY: null
 			},
 			method: {
 				/**
@@ -2192,12 +2191,6 @@
 				 */
 				constructor: function Layer(id) {
 					Layer._super.call(this);
-					this.x = 0;
-					this.y = 0;
-					this.width = 0;
-					this.height = 0;
-
-					this._children = [];
 
 					//TODO ここではsvgは作らない。
 					//this.domRoot = createSvgElement('svg');
@@ -2208,23 +2201,16 @@
 					//				this.domRoot.setAttribute('height', 1000);
 
 					this.id = id;
-					//					this._canScrollX = true;
-					//					this._canScrollY = true;
 				},
 
-				addDisplayUnit: function(du) {
-					Layer._super.prototype.addDisplayUnit.call(this, du);
-					//du._onAddedToRoot(this._rootStage);
-				},
-
+				/**
+				 * オーバーライド
+				 *
+				 * @returns
+				 */
 				getWorldGlobalPosition: function() {
 					var p = WorldPoint.create(this.x, this.y);
 					return p;
-				},
-
-				_onAddedToRoot: function(stage) {
-					this._rootStage = stage;
-					Layer._super.prototype._onAddedToRoot.call(this, stage);
 				}
 			}
 		};
