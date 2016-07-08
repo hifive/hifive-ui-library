@@ -2597,6 +2597,11 @@
 	var BOUNDARY_SCROLL_INTERVAL = 20;
 	var BOUNDARY_SCROLL_INCREMENT = 10;
 
+	var EVENT_DU_CLICK = 'duClick';
+	var EVENT_DU_DBLCLICK = 'duDblclick';
+
+	var EVENT_DU_SELECT = 'duSelect';
+
 	var EVENT_DU_MOUSE_LEAVE = 'duMouseLeave';
 	var EVENT_DU_MOUSE_ENTER = 'duMouseEnter';
 
@@ -2607,6 +2612,8 @@
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
+
+	var SELECTION_CHANGE = 'stageSelectionChange';
 
 	var StageUtil = h5.ui.components.stage.StageUtil;
 
@@ -2840,14 +2847,49 @@
 				//rootSvg.setAttribute('overflow', 'visible');
 			}
 
-			this._selectionLogic.addSelectionListener(function(du, isSelected, isFocused) {
-				du._isSelected = isSelected;
-				du._isFocused = isFocused;
-			});
-
 			this.rootElement.appendChild(this._duRoot);
 
 			this.refresh(true);
+		},
+
+		'{this._selectionLogic} selectionChange': function(context) {
+			var ev = context.event;
+
+			//今回新たに選択されたDUの選択フラグをONにする
+			var selected = ev.changes.selected;
+			for (var i = 0, len = selected.length; i < len; i++) {
+				var newSelectedDU = selected[i];
+				newSelectedDU._isSelected = true;
+			}
+
+			//今回非選択状態になったDUの選択フラグをOFFにする
+			var unselected = ev.changes.unselected;
+			for (var i = 0, len = unselected.length; i < len; i++) {
+				var unselectedDU = unselected[i];
+				unselectedDU._isSelected = false;
+			}
+
+			var focused = ev.focused;
+			if (focused) {
+				focused._isFocused = true;
+			}
+
+			var unfocusedDU = ev.changes.unfocused;
+			if (unfocusedDU) {
+				unfocusedDU._isFocused = false;
+			}
+
+			var evArg = {
+				selected: ev.selected,
+				focused: ev.focused,
+				changes: {
+					selected: ev.changes.selected,
+					unselected: ev.changes.unselected,
+					unfocused: ev.changes.unfocused
+				}
+			};
+
+			this.trigger(SELECTION_CHANGE, evArg);
 		},
 
 		/**
@@ -2882,21 +2924,42 @@
 			}
 
 			var du = this._getIncludingDisplayUnit(event.target);
+
 			var isExclusive = !event.shiftKey;
 			if (!du) {
+				//ステージがクリックされた場合はDUからのイベントは発生しない
 				if (isExclusive) {
+					//ステージがクリックされ、かつ排他選択だった(shiftKeyが押されていなかった)時は全て選択解除
 					this._selectionLogic.unselectAll();
 				}
 				return;
 			}
-			du.select(isExclusive);
-			du.focus();
 
+			//以下はDUがクリック・ダブルクリックされた場合
+
+			//duClickイベントは、DUがselectableかどうかに関係なく発生させる
 			var evArg = {
 				stageController: this,
 				displayUnit: du
 			};
 			this.trigger(triggerEventName, evArg);
+
+			if (!du.isSelectable) {
+				//DUがselectableでない場合は選択処理はしない
+				return;
+			}
+
+			du.select(isExclusive);
+			du.focus();
+
+			//dblclickはclickに続いて発生するので、二重に選択イベントを出すことになるので
+			//clickイベントのときだけイベントを発生させる
+			if (event.type === 'click') {
+				this.trigger(EVENT_DU_SELECT, {
+					stageController: this,
+					displayUnit: du
+				});
+			}
 		},
 
 		UIDragMode: DRAG_MODE_AUTO,
@@ -3451,11 +3514,11 @@
 		_lastEnteredDU: null,
 
 		'{rootElement} click': function(context) {
-			this._processClick(context.event, 'duClick');
+			this._processClick(context.event, EVENT_DU_CLICK);
 		},
 
 		'{rootElement} dblclick': function(context) {
-			this._processClick(context.event, 'duDblclick');
+			this._processClick(context.event, EVENT_DU_DBLCLICK);
 		},
 
 		'{rootElement} contextmenu': function(context) {

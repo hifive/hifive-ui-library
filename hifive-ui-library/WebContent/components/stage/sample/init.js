@@ -271,6 +271,12 @@
 			var du = context.evArg.displayUnit;
 			this.log.debug('duContextmenu id=' + du.id);
 			//context.event.preventDefault();
+		},
+
+		'{rootElement} stageSelectionChange': function(context) {
+			var ev = context.evArg;
+			this.log.debug('stageSelectionChange: focused.id={2}, selected={0},unselected={1}',
+					ev.changes.selected.length, ev.changes.unselected.length, ev.focused ? ev.focused.id : 'null');
 		}
 	};
 
