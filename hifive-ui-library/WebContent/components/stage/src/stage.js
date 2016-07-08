@@ -2599,7 +2599,12 @@
 
 	var EVENT_DU_MOUSE_LEAVE = 'duMouseLeave';
 	var EVENT_DU_MOUSE_ENTER = 'duMouseEnter';
+
 	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
+	var EVENT_DRAG_SELECT_END = 'stageDragSelectEnd';
+
+	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
+	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
@@ -2936,7 +2941,9 @@
 				this._currentDragMode = DRAG_MODE_SELECT;
 				saveDragSelectStartPos.call(this);
 				this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
-				this.trigger(EVENT_DRAG_SELECT_START);
+				this.trigger(EVENT_DRAG_SELECT_START, {
+					stageController: this
+				});
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -2954,7 +2961,9 @@
 						this._currentDragMode = DRAG_MODE_SELECT;
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
-						this.trigger(EVENT_DRAG_SELECT_START);
+						this.trigger(EVENT_DRAG_SELECT_START, {
+							stageController: this
+						});
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
 					}
@@ -3096,6 +3105,12 @@
 		},
 
 		'{rootElement} h5trackend': function(context) {
+			if (this._currentDragMode === DRAG_MODE_SELECT) {
+				this.trigger(EVENT_DRAG_SELECT_END, {
+					stageController: this
+				});
+			}
+
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragTargetDU = null;
 			this._dragSelectStartPos = null;
@@ -3444,14 +3459,13 @@
 		},
 
 		'{rootElement} contextmenu': function(context) {
-			var EVENT_SCREEN_CONTEXTMENU = 'stageContextmenu';
-			var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
-
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
 			if (!du) {
 				//スクリーンが右クリックされた
-				var scrEv = this.trigger(EVENT_SCREEN_CONTEXTMENU);
+				var scrEv = this.trigger(EVENT_STAGE_CONTEXTMENU, {
+					stageController: this
+				});
 				if (scrEv.isDefaultPrevented()) {
 					context.event.preventDefault();
 				}
@@ -3467,6 +3481,7 @@
 				du.focus();
 			}
 			var duEv = this.trigger(EVENT_DU_CONTEXTMENU, {
+				stageController: this,
 				displayUnit: du
 			});
 			if (duEv.isDefaultPrevented()) {
@@ -3532,10 +3547,6 @@
 			}
 			this.scrollBy(0, dy);
 		},
-
-		//		_onDragMove: function(ds, dx, dy) {
-		//			this.scrollBy(dx, dy);
-		//		},
 
 		setScrollRangeX: function(minDisplayX, maxDisplayX) {
 			this._scrollRangeX = {
