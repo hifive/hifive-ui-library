@@ -162,11 +162,6 @@
 				this.focus(actuals[0]);
 			}
 
-			for (var i = 0, len = actuals.length; i < len; i++) {
-				var obj = actuals[i];
-				this._dispatchSelectionChangeEvent(obj, true, this.isFocused(obj));
-			}
-
 			this._dispatchSelectionChangeEvent(actuals, unselected, oldFocused);
 
 			return actuals;
