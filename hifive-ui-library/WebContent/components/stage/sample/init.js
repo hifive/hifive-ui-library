@@ -141,23 +141,24 @@
 		},
 
 		'[name="getScrollPosition"] click': function() {
-			//			var pos = this._stageController.getScrollPosition();
-			//			var str = pos.x + ', ' + pos.y;
-			//			this.$find('#scrollPos').text(str);
+		//			var pos = this._stageController.getScrollPosition();
+		//			var str = pos.x + ', ' + pos.y;
+		//			this.$find('#scrollPos').text(str);
 
-
-			var map = new Map();
-			var obj = Object.create(null);
-
-			var beginTime = new Date().getTime();
-
-			//byMap(map);  //IE11 1600後半
-			byObj(obj); //IE11 1600前半？
-
-			var endTime = new Date().getTime();
-
-			var str = 'time=' + (endTime - beginTime);
-			this.$find('#scrollPos').text('map: ' + str);
+		//this._stageController.UIDragScreenScrollDirection = 3;
+		//
+		//			var map = new Map();
+		//			var obj = Object.create(null);
+		//
+		//			var beginTime = new Date().getTime();
+		//
+		//			//byMap(map);  //IE11 1600後半
+		//			byObj(obj); //IE11 1600前半？
+		//
+		//			var endTime = new Date().getTime();
+		//
+		//			var str = 'time=' + (endTime - beginTime);
+		//			this.$find('#scrollPos').text('map: ' + str);
 		},
 
 		_createDU: function(rect) {
@@ -249,6 +250,27 @@
 			var du = context.evArg.displayUnit;
 			var duId = du.id;
 			this.log.debug('duDblclick! id={0}', duId);
+		},
+
+		'{rootElement} duMouseEnter': function(context) {
+			var du = context.evArg.displayUnit;
+			this.log.debug('duMouseEnter  du.id=' + du.id);
+		},
+
+		'{rootElement} duMouseLeave': function(context) {
+			var du = context.evArg.displayUnit;
+			this.log.debug('duMouseLeave du.id=' + du.id);
+		},
+
+		'{rootElement} stageContextmenu': function(context) {
+			this.log.debug('stageContextmenu');
+			context.event.preventDefault();
+		},
+
+		'{rootElement} duContextmenu': function(context) {
+			var du = context.evArg.displayUnit;
+			this.log.debug('duContextmenu id=' + du.id);
+			//context.event.preventDefault();
 		}
 	};
 

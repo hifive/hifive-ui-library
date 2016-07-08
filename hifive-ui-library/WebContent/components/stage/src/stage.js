@@ -2842,19 +2842,7 @@
 
 			this.rootElement.appendChild(this._duRoot);
 
-			this._setupRootEventListeners();
-
 			this.refresh(true);
-		},
-
-		_setupRootEventListeners: function() {
-			var root = this.rootElement;
-			//SVG要素はjQueryでは明示的にはサポートしていない(イベントハンドラなどは実際には動くが)こと、
-			//また、今回は独自にイベントを発生させるために内部的にキャッチしたいので
-			//直接リッスンする
-			//TODO removeする
-			root.addEventListener('click', this.own(this._rootClickHandler));
-			root.addEventListener('dblclick', this.own(this._rootDblclickHandler));
 		},
 
 		/**
@@ -2879,14 +2867,6 @@
 
 			var ret = getIncludingDUInner.call(this, target);
 			return ret;
-		},
-
-		_rootClickHandler: function(event) {
-			this._processClick(event, 'duClick');
-		},
-
-		_rootDblclickHandler: function(event) {
-			this._processClick(event, 'duDblclick');
 		},
 
 		_processClick: function(event, triggerEventName) {
@@ -3454,6 +3434,45 @@
 		//		},
 
 		_lastEnteredDU: null,
+
+		'{rootElement} click': function(context) {
+			this._processClick(context.event, 'duClick');
+		},
+
+		'{rootElement} dblclick': function(context) {
+			this._processClick(context.event, 'duDblclick');
+		},
+
+		'{rootElement} contextmenu': function(context) {
+			var EVENT_SCREEN_CONTEXTMENU = 'stageContextmenu';
+			var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
+
+			var du = this._getIncludingDisplayUnit(context.event.target);
+
+			if (!du) {
+				//スクリーンが右クリックされた
+				var scrEv = this.trigger(EVENT_SCREEN_CONTEXTMENU);
+				if (scrEv.isDefaultPrevented()) {
+					context.event.preventDefault();
+				}
+				return;
+			}
+
+			if (!du.isSelected) {
+				//非選択状態のDUで右クリック(コンテキストメニュー)されたら、
+				//そのDUを単独選択＆フォーカス状態にしてイベントをあげる。
+				//予め選択されているDUで右クリックされた場合はそのままにする。
+				//(Windowsエクスプローラと同じ挙動)
+				du.select(true);
+				du.focus();
+			}
+			var duEv = this.trigger(EVENT_DU_CONTEXTMENU, {
+				displayUnit: du
+			});
+			if (duEv.isDefaultPrevented()) {
+				context.event.preventDefault();
+			}
+		},
 
 		'{rootElement} mousemove': function(context, $el) {
 			if (this._currentDragMode !== DRAG_MODE_NONE) {
