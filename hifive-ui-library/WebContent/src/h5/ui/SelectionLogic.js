@@ -76,14 +76,19 @@
 		 * @instance
 		 */
 		focus: function(obj) {
+			var oldFocused = this._focused;
+			var newSelected = null;
 			if (!this.isSelected(obj)) {
 				//非選択状態であれば自動的に選択状態に(追加)する
-				this.select(obj);
+				newSelected = this.select(obj);
+			} else {
+				//既に選択済みだったので、新規選択リストは空をセット
+				newSelected = [];
 			}
 
 			this._focused = obj;
 
-			this._dispatchSelectionChangeEvent(obj, true, true);
+			this._dispatchSelectionChangeEvent(newSelected, [], oldFocused);
 		},
 
 		/**
@@ -98,14 +103,17 @@
 				return null;
 			}
 
+			var unselected = null;
 			var focused = this._focused;
 			this._focused = null;
 			if (andUnselect !== false) {
-				this.unselect(focused);
+				unselected = this.unselect(focused);
+			} else {
+				//andUnselectがtrueの場合は、unselectされるものはないので空配列をセットする
+				unselected = [];
 			}
 
-			//andUnselectがfalseの場合、フォーカスは外すが選択状態は残す
-			this._dispatchSelectionChangeEvent(focused, andUnselect === false, false);
+			this._dispatchSelectionChangeEvent([], unselected, focused);
 
 			return focused;
 		},
@@ -122,9 +130,16 @@
 		 * @returns {Any[]} 実際に選択されたオブジェクトの配列を返す(既に選択済みだったものは除く)
 		 */
 		select: function(objs, isExclusive) {
+			var oldFocused = this._focused;
+			var unselected = null;
+
 			if (isExclusive) {
-				this.unselectAll();
+				unselected = this._unselectAll();
+			} else {
+				//isExclusiveがfalseの場合は、今回unselectされるものはないので空配列をイベントのchangesに入れる
+				unselected = [];
 			}
+
 			var objs = $.isArray(objs) ? objs : [objs];
 
 			// デフォルトで、先頭のものをfocus状態にする
@@ -152,6 +167,8 @@
 				this._dispatchSelectionChangeEvent(obj, true, this.isFocused(obj));
 			}
 
+			this._dispatchSelectionChangeEvent(actuals, unselected, oldFocused);
+
 			return actuals;
 		},
 
@@ -166,6 +183,8 @@
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す(既に選択状態ではなかったものは除く)
 		 */
 		unselect: function(objs) {
+			var oldFocused = this._focused;
+
 			var objs = $.isArray(objs) ? objs : [objs];
 			var actuals = [];
 			for (var i = 0, l = objs.length; i < l; i++) {
@@ -185,10 +204,7 @@
 				}
 			}
 
-			for (var i = 0, len = actuals.length; i < len; i++) {
-				var obj = actuals[i];
-				this._dispatchSelectionChangeEvent(obj, false, false);
-			}
+			this._dispatchSelectionChangeEvent([], actuals, oldFocused);
 
 			return actuals;
 		},
@@ -200,34 +216,54 @@
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す
 		 */
 		unselectAll: function() {
-			var oldSelected = this._selected;
-			this._selected = [];
-			this._focused = null;
+			var oldFocused = this._focused;
+			var oldSelected = this._unselectAll();
 
-			//TODO 仮実装
-			for (var i = 0, len = oldSelected.length; i < len; i++) {
-				var obj = oldSelected[i];
-				this._dispatchSelectionChangeEvent(obj, false, false);
-			}
+			this._dispatchSelectionChangeEvent([], oldSelected, oldFocused);
 
 			return oldSelected;
 		},
 
-		_dispatchSelectionChangeEvent: function(obj, isSelected, isFocused) {
-			var listeners = this._listeners;
-			for (var i = 0, len = listeners.length; i < len; i++) {
-				var listener = listeners[i];
-				listener(obj, isSelected, isFocused);
-			}
+		/**
+		 * 全ての選択状態のオブジェクトについて選択状態を解除する（イベントは発生させない）
+		 *
+		 * @instance
+		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す
+		 */
+		_unselectAll: function() {
+			var oldSelected = this._selected;
+			this._selected = [];
+			this._focused = null;
+
+			return oldSelected;
 		},
 
-		_listeners: [],
+		_dispatchSelectionChangeEvent: function(newSelected, unselected, unfocused) {
+			var event = {
+				type: 'selectionChange',
+				selected: this._selected,
+				focused: this._focused,
+				changes: {
+					selected: newSelected,
+					unselected: unselected,
+					unfocused: unfocused
+				}
+			};
+			this.dispatchEvent(event);
+		},
 
-		//func(du, isSelected, isFocused)
-		addSelectionListener: function(func) {
-			//TODO 普通のEventDispatcherに変える
-			this._listeners.push(func);
+		_dispatchChangeEvent: function(obj, isSelected, isFocused) {
+			var event = {
+				type: 'change',
+				item: obj,
+				isSelected: isSelected,
+				isFocused: isFocused
+			};
+			this.dispatchEvent(event);
 		}
 	};
+
+	h5.mixin.eventDispatcher.mix(selectionLogic);
+
 	h5.core.expose(selectionLogic);
 })();
