@@ -21117,7 +21117,7 @@
 		_render: function(renderRange) {
 			var focused = document.activeElement;
 			var $root = $(this.rootElement);
-			if ($root.find(focused) && $(focused).is(':input')) {
+			if ($root.find(focused).length !== 0 && $(focused).is(':input')) {
 				focused.blur();
 			}
 
