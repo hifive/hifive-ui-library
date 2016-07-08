@@ -45,6 +45,10 @@
 	 * @returns クランプされた値
 	 */
 	function clamp(value, min, max) {
+		if (value == null) {
+			return value;
+		}
+
 		if (min != null && value < min) {
 			return min;
 		}
@@ -2595,6 +2599,7 @@
 
 	var EVENT_DU_MOUSE_LEAVE = 'duMouseLeave';
 	var EVENT_DU_MOUSE_ENTER = 'duMouseEnter';
+	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
@@ -2947,9 +2952,11 @@
 				break;
 			case DRAG_MODE_SELECT:
 				//SELECTモード固定なら、SELECTドラッグを開始
+				//TODO コード共通化
 				this._currentDragMode = DRAG_MODE_SELECT;
 				saveDragSelectStartPos.call(this);
 				this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
+				this.trigger(EVENT_DRAG_SELECT_START);
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -2967,6 +2974,7 @@
 						this._currentDragMode = DRAG_MODE_SELECT;
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
+						this.trigger(EVENT_DRAG_SELECT_START);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
 					}
@@ -3340,6 +3348,13 @@
 					.clamp(scaleX, this._scaleRangeX.min, this._scaleRangeX.max);
 			var actualScaleY = StageUtil
 					.clamp(scaleY, this._scaleRangeY.min, this._scaleRangeY.max);
+
+			if (scaleX == null) {
+				actualScaleX = this._viewport.scaleX;
+			}
+			if (scaleY == null) {
+				actualScaleY = this._viewport.scaleY;
+			}
 
 			if (actualScaleX === this._viewport.scaleX && actualScaleY === this._viewport.scaleY) {
 				return;
