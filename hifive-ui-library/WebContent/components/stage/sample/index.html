@@ -53,7 +53,8 @@
 }
 
 #stageRoot {
-	width: 100%;
+	/* 	width: 100%; */
+	width: 800px;
 	height: 700px;
 	/* 	border: 10px solid black; */
 	/* 	box-sizing: border-box; */
@@ -82,12 +83,12 @@ text {
 
 	<div id="appRoot">
 		<div id="controls">
-			<input placeholder="dummy" type="text" name="dummy">
-			<input type="button" name="moveTo" value="DU moveTo"> <input type="button" name="moveBy" value="DU moveBy">
-			<input type="button" name="stageScrollTo" value="Stage scrollTo"> <input type="button" name="stageScrollBy"
-				value="Stage scrollBy"> ScaleX:<input type="range" name="scaleX" min="1" max="500" value="100">
-			ScaleY:<input type="range" name="scaleY" min="1" max="500" value="100"> <input type="button"
-				name="getScrollPosition" value="getScrollPosition"> <span id="scrollPos"></span>
+			<input placeholder="dummy" type="text" name="dummy"> <input type="button" name="moveTo" value="DU moveTo">
+			<input type="button" name="moveBy" value="DU moveBy"> <input type="button" name="stageScrollTo"
+				value="Stage scrollTo"> <input type="button" name="stageScrollBy" value="Stage scrollBy"> ScaleX:<input
+				type="range" name="scaleX" min="1" max="500" value="100"> ScaleY:<input type="range" name="scaleY" min="1"
+				max="500" value="100"> <input type="button" name="getScrollPosition" value="getScrollPosition"> <span
+				id="scrollPos"></span>
 		</div>
 		<div id="stageRoot"></div>
 

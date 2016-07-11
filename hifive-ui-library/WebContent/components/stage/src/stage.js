@@ -3030,10 +3030,12 @@
 				this._duRoot = rootSvg;
 				this._layerRootG = stageModule.SvgUtil.createSvgElement('g');
 				this._duRoot.appendChild(this._layerRootG);
-
-				//rootSvg.setAttribute('overflow', 'visible');
 			}
 
+			$(this.rootElement).css({
+				position: 'absolute',
+				overflow: 'hidden'
+			});
 			this.rootElement.appendChild(this._duRoot);
 
 			this.refresh(true);
@@ -3165,6 +3167,8 @@
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
 
+			var $root = $(this.rootElement);
+
 			this._currentDragMode = DRAG_MODE_NONE;
 
 			switch (this.UIDragMode) {
@@ -3176,6 +3180,7 @@
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
 					this._currentDragMode = DRAG_MODE_DU;
+					setCursor('default');
 				}
 				break;
 			case DRAG_MODE_SCREEN:
@@ -3183,6 +3188,7 @@
 					//SCREENドラッグモード固定、かつ、
 					//UI操作によるスクロールがX,Yどちらかの方向に移動可能な場合はスクリーンドラッグを開始
 					this._currentDragMode = DRAG_MODE_SCREEN;
+					setCursor('move');
 				}
 				break;
 			case DRAG_MODE_SELECT:
@@ -3194,6 +3200,7 @@
 				this.trigger(EVENT_DRAG_SELECT_START, {
 					stageController: this
 				});
+				setCursor('default');
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -3203,6 +3210,7 @@
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 						this._currentDragMode = DRAG_MODE_DU;
 						this._dragTargetDU = du;
+						setCursor('default');
 					}
 				} else {
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
@@ -3214,8 +3222,10 @@
 						this.trigger(EVENT_DRAG_SELECT_START, {
 							stageController: this
 						});
+						setCursor('default');
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
+						setCursor('move');
 					}
 				}
 				break;
@@ -3230,6 +3240,12 @@
 						dispStartOffX, dispStartOffY);
 			}
 
+			//注：Chrome51では、cursorの値を変えても、
+			//ドラッグが終了するまでカーソルが変わらない。
+			//IE11, FFでは、cursorを書き換えた瞬間に(ドラッグ途中でも)変更される。
+			function setCursor(value) {
+				$root.css('cursor', value);
+			}
 		},
 
 		'{rootElement} h5trackmove': function(context) {
@@ -3367,6 +3383,7 @@
 			this._dragSelectStartSelectedDU = null;
 			this._dragLastPagePos = null;
 			this._endBoundaryScroll();
+			$(this.rootElement).css('cursor', 'auto');
 		},
 
 		_isDraggingJustEnded: false,
