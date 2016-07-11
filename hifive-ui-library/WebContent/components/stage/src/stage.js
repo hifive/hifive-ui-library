@@ -2202,8 +2202,8 @@
 			name: 'h5.ui.components.stage.Layer',
 			field: {
 				UIDragScreenScrollDirection: null,
-				_scrollRangeX: null,
-				_scrollRangeY: null
+				_scrollRangeDisplayX: null,
+				_scrollRangeDisplayY: null
 			},
 			method: {
 				/**
@@ -2220,11 +2220,11 @@
 
 					this.UIDragScreenScrollDirection = ScrollDirection.XY;
 
-					this._scrollRangeX = {
+					this._scrollRangeDisplayX = {
 						min: null,
 						max: null
 					};
-					this._scrollRangeY = {
+					this._scrollRangeDisplayY = {
 						min: null,
 						max: null
 					};
@@ -2238,6 +2238,20 @@
 				getWorldGlobalPosition: function() {
 					var p = WorldPoint.create(this.x, this.y);
 					return p;
+				},
+
+				setScrollRangeDisplayX: function(minDisplayX, maxDisplayX) {
+					this._scrollRangeDisplayX = {
+						min: minDisplayX,
+						max: maxDisplayX
+					};
+				},
+
+				setScrollRangeDisplayY: function(minDisplayY, maxDisplayY) {
+					this._scrollRangeDisplayY = {
+						min: minDisplayY,
+						max: maxDisplayY
+					};
 				}
 			}
 		};
