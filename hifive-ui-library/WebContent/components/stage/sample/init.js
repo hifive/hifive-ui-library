@@ -267,6 +267,12 @@
 			context.event.preventDefault();
 		},
 
+		'{rootElement} contextmenu': function(context) {
+		//			var du = context.evArg.displayUnit;
+		//			this.log.debug('duContextmenu id=' + du.id);
+		//context.event.preventDefault();
+		},
+
 		'{rootElement} duContextmenu': function(context) {
 			var du = context.evArg.displayUnit;
 			this.log.debug('duContextmenu id=' + du.id);
@@ -276,8 +282,30 @@
 		'{rootElement} stageSelectionChange': function(context) {
 			var ev = context.evArg;
 			this.log.debug('stageSelectionChange: focused.id={2}, selected={0},unselected={1}',
-					ev.changes.selected.length, ev.changes.unselected.length, ev.focused ? ev.focused.id : 'null');
+					ev.changes.selected.length, ev.changes.unselected.length,
+					ev.focused ? ev.focused.id : 'null');
+		},
+
+		'{rootElement} duKeyDown': function(context) {
+			//最新のWeb仕様(DOM4, Dom Level3 Events)では、
+			//キーボードイベントでは key か code を使用すべきとされている。IE9,FF23, Ch51以降で対応。
+			//charCode, keyCode, whichはDeprecatedなので使用しない。
+			//なお、keyboardEvent.key において矢印キーの値は
+			//IE,FF36-は"Right"、FF37+,Chは"ArrowRight"のような文字列になるので注意。
+			//詳細：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+			this.log.debug('duKeyDown tagName={0}, key={1}', context.event.target.tagName,
+					context.event.key);
+		},
+
+		'{rootElement} duKeyPress': function(context) {
+			this.log.debug('duKeyPress tagName={0}, key={1}', context.event.target.tagName,
+					context.event.key);
+		},
+
+		'{rootElement} duKeyUp': function(context) {
+			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
 		}
+
 	};
 
 	$(function() {

@@ -14,6 +14,161 @@
  * limitations under the License.
  *
  */
+(function() {
+	//TODO FocusControllerはh5.ui.focusManager()としてグローバルに実装する予定
+	//一時的にこっちに置いている
+
+	var DATA_FOCUS_GROUP = 'data-h5-focus-group';
+
+	function FocusGroup(elem, groupName) {
+		this.element = elem;
+		this.name = groupName;
+	}
+
+	var isKeyboardEventCtorSupported = typeof KeyboardEvent === 'function';
+
+	var focusController = {
+		/**
+		 * @memberOf h5.ui.FocusController
+		 */
+		__name: 'h5.ui.FocusController',
+
+		_currentFocusGroupElement: null,
+
+		_currentFocusGroupName: null,
+
+		_lastClickElement: null,
+
+		isKeyEventEmulationEnabled: true,
+
+		'{document} mousedown': function(context, $el) {
+			this._updateFocus(context.event.target);
+		},
+
+		'{document} touchstart': function(context, $el) {
+			this._updateFocus(context.event.target);
+		},
+
+		'{document} keydown': function(context, $el) {
+			this._processKeyEvent(context.event);
+		},
+
+		'{document} keypress': function(context) {
+			this._processKeyEvent(context.event);
+		},
+
+		'{document} keyup': function(context) {
+			this._processKeyEvent(context.event);
+		},
+
+		_processKeyEvent: function(event) {
+			if (!this.isKeyEventEmulationEnabled || event.originalEvent.isFocusEmulated === true
+					|| event.isFocusEmulated === true) {
+				//エミュレーションして出したイベントの場合は二重処理しない
+				return;
+			}
+
+			var activeElement = document.activeElement;
+			if (activeElement) {
+				var activeElementName = activeElement.tagName.toLowerCase();
+				if (activeElementName === 'input' || activeElementName === 'textarea'
+						|| activeElementName === 'select') {
+					//input, textarea, selectがアクティブな状態で発生したキーイベントの場合は何もしない
+					return;
+				}
+			}
+
+			var focused = this.getFocusedElement();
+			if (focused) {
+				this._dispatchPseudoKeyboardEvent(event.originalEvent, focused);
+			}
+		},
+
+		_dispatchPseudoKeyboardEvent: function(originalEvent, eventSource) {
+			//DOM4では new KeyboardEvent()とすべき。
+			//しかし、IE11では KeyboardEventはコンストラクタとして使えない。
+			//TODO ブラウザ互換性対応
+			//KeyboardEventコンストラクタをサポートしているのはChrome, Firefox31以降（IEは非対応）
+
+			var pseudoEvent;
+
+			if (isKeyboardEventCtorSupported) {
+				pseudoEvent = new KeyboardEvent(event.type, originalEvent);
+				pseudoEvent.isFocusEmulated = true;
+				eventSource.dispatchEvent(pseudoEvent);
+				return;
+			}
+
+			//KeyboardEventコンストラクタをサポートしていない場合は
+			//jQuery Eventでエミュレート(IE11等)
+
+			pseudoEvent = $.event.fix(originalEvent);
+			pseudoEvent.isFocusEmulated = true;
+			pseudoEvent.target = eventSource;
+			pseudoEvent.currentTarget = eventSource;
+
+			$(eventSource).trigger(pseudoEvent);
+
+			return;
+
+			//IE11, Chrome51
+			//Chrome, Safari(WebKit系ブラウザ)は、initKeyboardEvent()にバグがあり
+			//keyやkeyCodeなどが正しくセットされず、実質使用できない。
+			//また、IEにおいても、initKeyboardEvent()で設定されるのはkeyのみで、
+			//keyCodeなど他の値は正しく設定されない。
+			//しかも、char, which, keyCode等は読み取り専用になっており
+			//後から設定することもできない(IE11)。
+
+		},
+
+		_updateFocus: function(element) {
+			this._lastClickElement = element;
+
+			var $t = $(element);
+
+			var groupElement = $t.parents('[data-h5-focus-group]').get(0);
+			this._currentFocusGroupElement = groupElement;
+
+			if (groupElement) {
+				this._currentFocusGroupName = $(groupElement).data('h5FocusGroup');
+			} else {
+				this._currentFocusGroupName = null;
+			}
+		},
+
+		getFocusedGroup: function() {
+			var focus;
+			if (!this._currentFocusGroupElement) {
+				focus = new FocusGroup(document.body, null);
+			} else {
+				focus = new FocusGroup(this._currentFocusGroupElement, this._currentFocusGroupName);
+			}
+			return focus;
+		},
+
+		setFocusedElement: function(element) {
+			this._updateFocus(element);
+		},
+
+		getFocusedElement: function() {
+			return this._lastClickElement;
+		}
+	};
+
+	h5.core.expose(focusController);
+
+	//	h5.u.obj.expose('h5.ui', {
+	//		focusManager: {
+	//			init: function() {
+	//				h5.core.controller('body', focusController);
+	//			}
+	//		}
+	//	});
+
+	//h5.core.expose(focusController);
+
+})();
+
 (function($) {
 	'use strict';
 
@@ -2631,6 +2786,10 @@
 	var EVENT_DU_MOUSE_LEAVE = 'duMouseLeave';
 	var EVENT_DU_MOUSE_ENTER = 'duMouseEnter';
 
+	var EVENT_DU_KEY_DOWN = 'duKeyDown';
+	var EVENT_DU_KEY_PRESS = 'duKeyPress';
+	var EVENT_DU_KEY_UP = 'duKeyUp';
+
 	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
 	var EVENT_DRAG_SELECT_END = 'stageDragSelectEnd';
 
@@ -2689,6 +2848,8 @@
 
 		//TODO dependsOn()
 		_selectionLogic: h5.ui.SelectionLogic,
+
+		_focusController: h5.ui.FocusController,
 
 		select: function(displayUnit, isExclusive) {
 			this._selectionLogic.select(displayUnit, isExclusive);
@@ -3649,6 +3810,52 @@
 				dy *= -1;
 			}
 			this.scrollBy(0, dy);
+		},
+
+		'{rootElement} keydown': function(context) {
+			this._processKeyEvent(context.event, EVENT_DU_KEY_DOWN);
+		},
+
+		'{rootElement} keypress': function(context) {
+			this._processKeyEvent(context.event, EVENT_DU_KEY_PRESS);
+		},
+
+		'{rootElement} keyup': function(context) {
+			this._processKeyEvent(context.event, EVENT_DU_KEY_UP);
+		},
+
+		_processKeyEvent: function(event, eventName) {
+			if (this._isInputTag(event.target)) {
+				return;
+			}
+
+			var du = this._getIncludingDisplayUnit(event.target);
+
+			if (!du || du !== this.getFocusedDisplayUnit()) {
+				//DUがない（＝ステージをクリックした後キー入力した、等）または
+				//現在Stageとしてフォーカスが当たっている要素以外からのキーイベントの場合は何もしない
+				return;
+			}
+
+			//TODO domRootがスクロールしても消えないことを保証する
+			var eventSource = du.domRoot;
+
+			var ev = $.event.fix(event.originalEvent);
+			ev.type = eventName;
+			ev.target = eventSource;
+			ev.currentTarget = eventSource;
+
+			$(eventSource).trigger(ev, {
+				displayUnit: du
+			});
+		},
+
+		_isInputTag: function(element) {
+			var tag = element.tagName.toLowerCase();
+			if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+				return true;
+			}
+			return false;
 		},
 
 		setScrollRangeX: function(minDisplayX, maxDisplayX) {
