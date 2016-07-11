@@ -3510,9 +3510,20 @@
 		'{rootElement} contextmenu': function(context) {
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
+			var orgEvent = context.event.originalEvent;
+
+			//new Event(orgEvent)では、offsetXなどがコピーされないので
+			//$.event.fix()を使用する。ただしこのAPIはあまりきちんとしたI/Fになっていないので
+			//将来的な内部仕様の変更のリスクがある。
+			//ただし、全くUndocumentedなわけではなく、
+			//jQueryのサイトでもEvent Extensionsとしてver.1.7以降使える仕組みとして説明されてはいる。
+			//https://learn.jquery.com/events/event-extensions/
+			var fixedEvent = $.event.fix(orgEvent);
+
 			if (!du) {
 				//スクリーンが右クリックされた
-				var scrEv = this.trigger(EVENT_STAGE_CONTEXTMENU, {
+				fixedEvent.type = EVENT_STAGE_CONTEXTMENU;
+				var scrEv = this.trigger(fixedEvent, {
 					stageController: this
 				});
 				if (scrEv.isDefaultPrevented()) {
@@ -3529,7 +3540,10 @@
 				du.select(true);
 				du.focus();
 			}
-			var duEv = this.trigger(EVENT_DU_CONTEXTMENU, {
+
+			fixedEvent.type = EVENT_DU_CONTEXTMENU;
+
+			var duEv = this.trigger(fixedEvent, {
 				stageController: this,
 				displayUnit: du
 			});
