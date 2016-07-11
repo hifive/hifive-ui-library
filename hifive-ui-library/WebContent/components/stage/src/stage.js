@@ -17,6 +17,26 @@
 (function($) {
 	'use strict';
 
+	var DragMode = {
+		NONE: 0,
+		AUTO: 1,
+		SCREEN: 2,
+		DU: 3,
+		SELECT: 4
+	};
+
+	var ScrollDirection = {
+		NONE: 0,
+		X: 1,
+		Y: 2,
+		XY: 3
+	};
+
+	h5.u.obj.expose('h5.ui.components.stage', {
+		DragMode: DragMode,
+		ScrollDirection: ScrollDirection
+	});
+
 	var RootClass = h5.cls.RootClass;
 
 
@@ -2181,6 +2201,7 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
+				UIDragScreenScrollDirection: null,
 				_scrollRangeX: null,
 				_scrollRangeY: null
 			},
@@ -2192,15 +2213,21 @@
 				constructor: function Layer(id) {
 					Layer._super.call(this);
 
-					//TODO ここではsvgは作らない。
-					//this.domRoot = createSvgElement('svg');
-					this.domRoot.setAttribute('data-stage-role', 'layer');
-					//				this.domRoot.setAttribute('x', 0);
-					//				this.domRoot.setAttribute('y', 0);
-					//				this.domRoot.setAttribute('width', 1000);
-					//				this.domRoot.setAttribute('height', 1000);
-
 					this.id = id;
+
+					//TODO ここではsvgは作らない。
+					this.domRoot.setAttribute('data-stage-role', 'layer');
+
+					this.UIDragScreenScrollDirection = ScrollDirection.XY;
+
+					this._scrollRangeX = {
+						min: null,
+						max: null
+					};
+					this._scrollRangeY = {
+						min: null,
+						max: null
+					};
 				},
 
 				/**
@@ -2568,17 +2595,16 @@
 		return ret;
 	}
 
-	//TODO DRAG_MODE, SCR_DIR を定数として見えるようにする
-	var DRAG_MODE_NONE = 0;
-	var DRAG_MODE_AUTO = 1;
-	var DRAG_MODE_SCREEN = 2;
-	var DRAG_MODE_DU = 3;
-	var DRAG_MODE_SELECT = 4;
+	var DRAG_MODE_NONE = stageModule.DragMode.NONE;
+	var DRAG_MODE_AUTO = stageModule.DragMode.AUTO;
+	var DRAG_MODE_SCREEN = stageModule.DragMode.SCREEN;
+	var DRAG_MODE_DU = stageModule.DragMode.DU;
+	var DRAG_MODE_SELECT = stageModule.DragMode.SELECT;
 
-	var SCROLL_DIRECTION_NONE = 0;
-	var SCROLL_DIRECTION_X = 1;
-	var SCROLL_DIRECTION_Y = 2;
-	var SCROLL_DIRECTION_XY = 3;
+	var SCROLL_DIRECTION_NONE = stageModule.ScrollDirection.NONE;
+	var SCROLL_DIRECTION_X = stageModule.ScrollDirection.X;
+	var SCROLL_DIRECTION_Y = stageModule.ScrollDirection.Y;
+	var SCROLL_DIRECTION_XY = stageModule.ScrollDirection.XY;
 
 	var BOUNDARY_SCROLL_INTERVAL = 20;
 	var BOUNDARY_SCROLL_INCREMENT = 10;
