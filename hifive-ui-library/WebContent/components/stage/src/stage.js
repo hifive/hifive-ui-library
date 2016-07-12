@@ -93,7 +93,7 @@
 			var pseudoEvent;
 
 			if (isKeyboardEventCtorSupported) {
-				pseudoEvent = new KeyboardEvent(event.type, originalEvent);
+				pseudoEvent = new KeyboardEvent(originalEvent.type, originalEvent);
 				pseudoEvent.isFocusEmulated = true;
 				eventSource.dispatchEvent(pseudoEvent);
 				return;
