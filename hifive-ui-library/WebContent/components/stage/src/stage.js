@@ -2845,6 +2845,8 @@
 
 	var LAYER_ID_FOREMOST = '_foremost_layer_';
 
+	var PROXY_DEFAULT_CURSOR_OFFSET = 3;
+
 	var StageUtil = h5.ui.components.stage.StageUtil;
 
 	var stageController = {
@@ -3228,6 +3230,8 @@
 
 		_dragSession: null,
 
+		_dragRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
+
 		'{rootElement} h5trackstart': function(context) {
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
@@ -3311,6 +3315,21 @@
 							dragSession: this._dragSession
 						});
 
+						//プロキシが設定されたらそれを表示
+						var proxyElem = this._dragSession.getProxyElement();
+						var rootOffset = $root.offset();
+						this._dragRootOffset = rootOffset; //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
+						var proxyLeft = event.pageX - rootOffset.left;
+						var proxyTop = event.pageY - rootOffset.top;
+						if (proxyElem) {
+							$root.append(proxyElem);
+							$(proxyElem).css({
+								position: 'absolute',
+								left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+								top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+							});
+						}
+
 						//						for (var i = 0, len = this._dragSession._targets.length; i < len; i++) {
 						//							var targetDU = this._dragSession._targets[i];
 						//							stageModule.SvgUtil.setAttribute(targetDU.domRoot, 'pointer-events',
@@ -3337,6 +3356,7 @@
 			}
 
 			function saveDragSelectStartPos() {
+				//TODO rootOffsetの取得をDUドラッグの場合と共通化
 				var rootOffset = $(this.rootElement).offset();
 
 				var dispStartOffX = event.pageX - rootOffset.left;
@@ -3404,6 +3424,20 @@
 					dragSession: this._dragSession,
 					dragOverDisplayUnit: dragOverDU
 				});
+
+				//プロキシが設定されたらそれを表示
+				//TODO プロキシの移動はDragSessionに任せる方向で。constructorでドラッグのルート(Stage)を渡せば可能のはず
+				var proxyElem = this._dragSession.getProxyElement();
+				if (proxyElem) {
+					var proxyLeft = event.pageX - this._dragRootOffset.left;
+					var proxyTop = event.pageY - this._dragRootOffset.top;
+
+					$(proxyElem).css({
+						position: 'absolute',
+						left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+						top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+					});
+				}
 
 				this._dragSession.onMove(context);
 				break;
@@ -3519,16 +3553,15 @@
 
 			if (this._dragSession) {
 				if (!this._dragSession.canDrop) {
-					//元の位置に戻す
+					//TODO 元の位置に戻す
 				}
 
-				//				for (var i = 0, len = this._dragSession._targets.length; i < len; i++) {
-				//					var targetDU = this._dragSession._targets[i];
-				//					stageModule.SvgUtil.removeAttribute(targetDU.domRoot, 'pointer-events');
-				//				}
-				//TODO DUの位置を元に戻す
+				if (this._dragSession.getProxyElement()) {
+					this.rootElement.removeChild(this._dragSession.getProxyElement());
+				}
 			}
 
+			this._dragRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
