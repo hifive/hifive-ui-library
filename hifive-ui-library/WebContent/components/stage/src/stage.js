@@ -249,28 +249,37 @@
 	 */
 	RootClass.extend(function() {
 
+		function defaultMoveFunction(context, du, data, dragSession) {
+			var dx = context.event.dx;
+			var dy = context.event.dy;
+			var ret = {
+				dx: dx,
+				dy: dy
+			};
+			return ret;
+		}
+
 		var desc = {
 			name: 'h5.ui.components.stage.DragSession',
 			field: {
+				canDrop: null,
+
 				/**
 				 * ドラッグ操作対象オブジェクト
 				 */
-				_target: null,
+				_targets: null,
+
 				_startX: null,
 				_startY: null,
+				_moveDx: null,
+				_moveDy: null,
 				_moveX: null,
 				_moveY: null,
+
 				_isCompleted: null,
-				_dragMode: null,
-				_controller: null,
-				_dragCallbacks: null
-			},
-			property: {
-				isCompleted: {
-					get: function() {
-						return this._isCompleted;
-					}
-				}
+				_moveFunction: null,
+
+				_moveFunctionData: null
 			},
 			method: {
 				/**
@@ -281,11 +290,12 @@
 				constructor: function DragSession() {
 					DragSession._super.call(this);
 
+					this.canDrop = true;
+
 					this._isCompleted = false;
+					this._moveFunction = defaultMoveFunction;
 
-					this._dragCallbacks = [];
-
-					//this._target = target;
+					this._moveFunctionData = {};
 
 					//TODO byProxyか、オブジェクトをそのまま動かすかをdragModeで指定できるようにする
 					// proxy, selfのどちらか
@@ -321,22 +331,20 @@
 				 * @param {number} x
 				 * @param {number} y
 				 */
-				moveTo: function(x, y) {
-
-					var dxTotal = x - this._moveX;
-					var dyTotal = y - this._moveY;
-
-					//					this._
-
-					this._moveX = x;
-					this._moveY = y;
-
+				setTarget: function(targets) {
+					if (!Array.isArray(targets)) {
+						targets = [targets];
+					}
+					this._targets = targets;
+					//TODO 元の位置を覚えておく
 				},
 
-				moveBy: function(dx, dy) {
-					var x = this._moveX + dx;
-					var y = this._moveY + dy;
-					this.moveTo(x, y);
+				setMoveFunction: function(func) {
+					this._moveFunction = func;
+				},
+
+				setProxy: function(dom) {
+				//TODO
 				},
 
 				/**
@@ -379,17 +387,36 @@
 					}
 
 					this._controller.dispose();
+
+					this._moveFunctionData = null;
 				},
 
-				addDragCallback: function(func) {
-					this._dragCallbacks.push(func);
-				},
+				onMove: function(context) {
+					for (var i = 0, len = this._targets.length; i < len; i++) {
+						var du = this._targets[i];
 
-				_onMove: function(dx, dy) {
-					var callbacks = this._dragCallbacks;
-					for (var i = 0, len = callbacks.length; i < len; i++) {
-						var f = callbacks[i];
-						f(this, dx, dy);
+						var data = this._moveFunctionData[du.id];
+						if (!data) {
+							data = {};
+							this._moveFunctionData[du.id] = data;
+						}
+
+						var move = this._moveFunction(context, du, data, this);
+						if (!move) {
+							continue;
+						}
+
+						var dx = move.dx;
+						var dy = move.dy;
+
+						if (dx === 0 && dy === 0) {
+							continue;
+						}
+						if (move.isWorld === true) {
+							du.moveBy(dx, dy);
+						} else {
+							du.moveDisplayBy(dx, dy);
+						}
 					}
 				}
 			}
@@ -3177,9 +3204,21 @@
 
 		_dragLastPagePos: null,
 
+		_dragSession: null,
+
 		'{rootElement} h5trackstart': function(context) {
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
+
+			if (du && du.isSelectable) {
+				//FIXME du.isSelectedのフラグ値がおかしいので要修正
+				if (!this.isSelected(du)) {
+					//選択されていない場合は、単独選択する
+					du.select(true);
+				}
+				//フォーカスは必ずあてる
+				du.focus();
+			}
 
 			var $root = $(this.rootElement);
 
@@ -3193,6 +3232,9 @@
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
+					this._dragSession = h5.cls.manager.getClass(
+							'h5.ui.components.stage.DragSession').create();
+					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
 				}
@@ -3222,8 +3264,11 @@
 				if (du) {
 					if (du.isDraggable) {
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
+						this._dragSession = h5.cls.manager.getClass(
+								'h5.ui.components.stage.DragSession').create();
+						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
-						this._dragTargetDU = du;
+						//this._dragTargetDU = du;
 						setCursor('default');
 					}
 				} else {
@@ -3291,9 +3336,17 @@
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
 				toggleBoundaryScroll.call(this, function(dispScrX, dispScrY) {
-					that._dragTargetDU.moveDisplayBy(dispScrX, dispScrY);
+					//TODO 仮実装
+					that._dragSession.onMove({
+						event: {
+							dx: dispScrX,
+							dy: dispScrY
+						}
+					});
+					//that._dragTargetDU.moveDisplayBy(dispScrX, dispScrY);
 				});
-				this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
+				this._dragSession.onMove(context);
+				//this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
 				break;
 			case DRAG_MODE_SELECT:
 				this._dragLastPagePos = {
@@ -3391,6 +3444,7 @@
 				});
 			}
 
+			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragTargetDU = null;
 			this._dragSelectStartPos = null;
