@@ -3188,7 +3188,7 @@
 			var unfocusedDU = ev.changes.unfocused;
 			if (unfocusedDU) {
 				unfocusedDU._isFocused = false;
-				unfocussedDU.requestRender();
+				unfocusedDU.requestRender();
 			}
 
 			var evArg = {
@@ -3297,6 +3297,8 @@
 		_dragSession: null,
 
 		_dragRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
+
+		_dragSelectOverlayRect: null,
 
 		'{rootElement} h5trackstart': function(context) {
 			var event = context.event;
