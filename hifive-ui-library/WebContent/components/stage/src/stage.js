@@ -3358,6 +3358,17 @@
 					stageController: this
 				});
 				setCursor('default');
+
+				this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
+				this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
+				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+					x: this._dragSelectStartPos.x,
+					y: this._dragSelectStartPos.y,
+					width: 0,
+					height: 0,
+					'pointer-events': 'none'
+				});
+				this._foremostLayer.domRoot.appendChild(this._dragSelectOverlayRect); //TODO foremostLayerはLayerにしなくてよさそう
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -3415,6 +3426,17 @@
 							stageController: this
 						});
 						setCursor('default');
+
+						this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
+						this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
+						stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+							x: this._dragSelectStartPos.x,
+							y: this._dragSelectStartPos.y,
+							width: 0,
+							height: 0,
+							'pointer-events': 'none'
+						});
+						this._foremostLayer.domRoot.appendChild(this._dragSelectOverlayRect);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
 						setCursor('move');
@@ -3581,6 +3603,16 @@
 					dispActualY = dispStartPos.y;
 				}
 
+				var worldPos = this._viewport.getWorldPosition(dispActualX, dispActualY);
+				var ww = this._viewport.getXLengthOfWorld(dispW);
+				var wh = this._viewport.getYLengthOfWorld(dispH);
+				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+					x: worldPos.x,
+					y: worldPos.y,
+					width: ww,
+					height: wh
+				});
+
 				this.log.debug('dragSelect: x={0},y={1},w={2},h={3}', dispActualX, dispActualY,
 						dispW, dispH);
 
@@ -3627,6 +3659,11 @@
 				if (this._dragSession.getProxyElement()) {
 					this.rootElement.removeChild(this._dragSession.getProxyElement());
 				}
+			}
+
+			if (this._dragSelectOverlayRect) {
+				this._foremostLayer.domRoot.removeChild(this._dragSelectOverlayRect);
+				this._dragSelectOverlayRect = null;
 			}
 
 			this._dragRootOffset = null;
