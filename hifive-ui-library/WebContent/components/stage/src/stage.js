@@ -2822,6 +2822,13 @@
 	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
 	var EVENT_DRAG_SELECT_END = 'stageDragSelectEnd';
 
+	var EVENT_DRAG_DU_START = 'stageDragStart';
+	var EVENT_DRAG_DU_MOVE = 'stageDragMove';
+	var EVENT_DRAG_DU_END = 'stageDragEnd';
+	var EVENT_DRAG_DU_DONE = 'stageDragDone';
+	var EVENT_DRAG_DU_FAIL = 'stageDragFail';
+	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
+
 	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
@@ -3237,6 +3244,9 @@
 					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
+					this.trigger(EVENT_DRAG_DU_START, {
+						dragSession: this._dragSession
+					});
 				}
 				break;
 			case DRAG_MODE_SCREEN:
@@ -3270,6 +3280,9 @@
 						this._currentDragMode = DRAG_MODE_DU;
 						//this._dragTargetDU = du;
 						setCursor('default');
+						this.trigger(EVENT_DRAG_DU_START, {
+							dragSession: this._dragSession
+						});
 					}
 				} else {
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
@@ -3345,6 +3358,13 @@
 					});
 					//that._dragTargetDU.moveDisplayBy(dispScrX, dispScrY);
 				});
+
+				this.trigger(EVENT_DRAG_DU_MOVE, {
+					dragSession: this._dragSession,
+					dragOverDisplayUnit: null
+				//TODO マウスオーバーしているDUを入れる
+				});
+
 				this._dragSession.onMove(context);
 				//this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
 				break;
@@ -3423,6 +3443,7 @@
 				this.log.debug('dragSelect: x={0},y={1},w={2},h={3}', dispActualX, dispActualY,
 						dispW, dispH);
 
+				//TODO isSelectableがfalseなものを除く
 				return this.getDisplayUnitsInRect(dispActualX, dispActualY, dispW, dispH, true);
 			}
 
@@ -3442,6 +3463,16 @@
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
 				});
+			}
+
+			this.trigger(EVENT_DRAG_DU_END, {
+				dragSession: this._dragSession,
+				dragOverDisplayUnit: null
+			//TODO マウスオーバーしているDUを入れる
+			});
+
+			if (!dragSession.canDrop) {
+				//TODO DUの位置を元に戻す
 			}
 
 			this._dragSession = null; //TODO dragSessionをdisposeする
