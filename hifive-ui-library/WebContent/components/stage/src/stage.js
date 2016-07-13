@@ -3179,7 +3179,11 @@
 				stageController: this,
 				displayUnit: du
 			};
-			this.trigger(triggerEventName, evArg);
+			var bizEvent = $.event.fix(event.originalEvent);
+			bizEvent.type = triggerEventName;
+			bizEvent.target = du.domRoot;
+			bizEvent.currentTarget = du.domRoot;
+			$(du.domRoot).trigger(bizEvent, evArg);
 
 			if (!du.isSelectable) {
 				//DUがselectableでない場合は選択処理はしない
@@ -3471,7 +3475,7 @@
 			//TODO マウスオーバーしているDUを入れる
 			});
 
-			if (!dragSession.canDrop) {
+			if (this._dragSession && !this._dragSession.canDrop) {
 				//TODO DUの位置を元に戻す
 			}
 
