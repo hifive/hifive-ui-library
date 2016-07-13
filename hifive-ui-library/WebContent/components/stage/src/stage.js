@@ -334,12 +334,13 @@
 				 * @param {number} x
 				 * @param {number} y
 				 */
-				setTarget: function(targets) {
-					if (!Array.isArray(targets)) {
-						targets = [targets];
-					}
-					this._targets = targets;
+				setTarget: function(target) {
+					this._targets = target;
 					//TODO 元の位置を覚えておく
+				},
+
+				getTarget: function() {
+					return this._targets;
 				},
 
 				setMoveFunction: function(func) {
@@ -399,8 +400,17 @@
 				},
 
 				onMove: function(context) {
-					for (var i = 0, len = this._targets.length; i < len; i++) {
-						var du = this._targets[i];
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = this._targets;
+					if (!Array.isArray(targets)) {
+						targets = [targets];
+					}
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
 
 						var data = this._moveFunctionData[du.id];
 						if (!data) {
