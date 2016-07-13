@@ -276,6 +276,7 @@
 				_moveX: null,
 				_moveY: null,
 
+				_proxy: null,
 				_isCompleted: null,
 				_moveFunction: null,
 
@@ -296,6 +297,8 @@
 					this._moveFunction = defaultMoveFunction;
 
 					this._moveFunctionData = {};
+
+					this._proxy = null;
 
 					//TODO byProxyか、オブジェクトをそのまま動かすかをdragModeで指定できるようにする
 					// proxy, selfのどちらか
@@ -343,8 +346,12 @@
 					this._moveFunction = func;
 				},
 
-				setProxy: function(dom) {
-				//TODO
+				setProxyElement: function(element) {
+					this._proxy = element;
+				},
+
+				getProxyElement: function() {
+					return this._proxy;
 				},
 
 				/**
@@ -3149,6 +3156,12 @@
 
 			var root = this.rootElement;
 
+			if (!target
+					|| target === root
+					|| !(root.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+				return null;
+			}
+
 			var ret = getIncludingDUInner.call(this, target);
 			return ret;
 		},
@@ -3250,6 +3263,9 @@
 					this.trigger(EVENT_DRAG_DU_START, {
 						dragSession: this._dragSession
 					});
+					if (dragSession.getProxy()) {
+						//TODO プロキシを出す
+					}
 				}
 				break;
 			case DRAG_MODE_SCREEN:
