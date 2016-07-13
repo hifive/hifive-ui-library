@@ -240,7 +240,7 @@
 	/**
 	 * DragSession
 	 * <p>
-	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。コンストラクタで渡された図形についてのドラッグ操作を管理します。
+	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。
 	 * </p>
 	 *
 	 * @class
@@ -248,11 +248,6 @@
 	 * @returns クラス定義
 	 */
 	RootClass.extend(function() {
-		// TODO 1つのShapeについて1つのDragSessionしか同時に実行できないように
-		// staticなマップで管理する
-
-		var DRAG_MODE_SELF = 'self';
-
 
 		var desc = {
 			name: 'h5.ui.components.stage.DragSession',
@@ -278,7 +273,12 @@
 				}
 			},
 			method: {
-				constructor: function DragSession(target, dragMode) {
+				/**
+				 * @memberOf h5.ui.components.stage.DragSession
+				 * @param target
+				 * @param dragMode
+				 */
+				constructor: function DragSession() {
 					DragSession._super.call(this);
 
 					this._isCompleted = false;
@@ -656,11 +656,11 @@
 	}
 
 	var SvgUtil = {
-		createSvgElement: createSvgElement,
-		setSvgAttribute: setSvgAttribute,
-		setSvgAttributes: setSvgAttributes,
-		removeSvgAttribute: removeSvgAttribute,
-		removeSvgAttributes: removeSvgAttributes
+		createElement: createSvgElement,
+		setAttribute: setSvgAttribute,
+		setAttributes: setSvgAttributes,
+		removeAttribute: removeSvgAttribute,
+		removeAttributes: removeSvgAttributes
 	};
 	h5.u.obj.expose('h5.ui.components.stage', {
 		SvgUtil: SvgUtil
@@ -2770,6 +2770,8 @@
 	var DRAG_MODE_DU = stageModule.DragMode.DU;
 	var DRAG_MODE_SELECT = stageModule.DragMode.SELECT;
 
+	var Z_INDEX_DRAG_TARGET = 1000;
+
 	var SCROLL_DIRECTION_NONE = stageModule.ScrollDirection.NONE;
 	var SCROLL_DIRECTION_X = stageModule.ScrollDirection.X;
 	var SCROLL_DIRECTION_Y = stageModule.ScrollDirection.Y;
@@ -2800,6 +2802,8 @@
 
 	var SELECTION_CHANGE = 'stageSelectionChange';
 
+	var LAYER_ID_FOREMOST = '_foremost_layer_';
+
 	var StageUtil = h5.ui.components.stage.StageUtil;
 
 	var stageController = {
@@ -2813,6 +2817,8 @@
 
 		//全てのレイヤーの親となるg要素。実質的に全てのDUはこのg要素の下に入る。
 		_layerRootG: null,
+
+		_foremostLayer: null,
 
 		_units: null,
 
@@ -3026,10 +3032,17 @@
 
 		__ready: function() {
 			if (!this._duRoot) {
-				var rootSvg = stageModule.SvgUtil.createSvgElement('svg');
+				var rootSvg = stageModule.SvgUtil.createElement('svg');
 				this._duRoot = rootSvg;
-				this._layerRootG = stageModule.SvgUtil.createSvgElement('g');
+				this._layerRootG = stageModule.SvgUtil.createElement('g');
 				this._duRoot.appendChild(this._layerRootG);
+
+				//常にForegroundに表示されるレイヤーを追加
+				this._foremostLayer = stageModule.Layer.create(LAYER_ID_FOREMOST);
+				this._layerRootG.appendChild(this._foremostLayer.domRoot);
+				stageModule.SvgUtil.setAttribute(this._foremostLayer.domRoot, 'pointer-events',
+						'none');
+				this._foremostLayer._onAddedToRoot(this);
 			}
 
 			$(this.rootElement).css({
@@ -3061,6 +3074,7 @@
 			var focused = ev.focused;
 			if (focused) {
 				focused._isFocused = true;
+				this._focusController.setFocusedElement(focused.domRoot);
 			}
 
 			var unfocusedDU = ev.changes.unfocused;
@@ -3426,7 +3440,7 @@
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
 			//TODO svgのwidth, heightはsetAttribute()を使うのが正しい？？NS確認
-			stageModule.SvgUtil.setSvgAttributes(this._duRoot, {
+			stageModule.SvgUtil.setAttributes(this._duRoot, {
 				width: w,
 				height: h
 			});
@@ -3493,7 +3507,9 @@
 			} else {
 				this._layers.push(layer);
 			}
-			this._layerRootG.appendChild(layer.domRoot);
+			//先にaddしたレイヤーの方が手前に来るようにする
+			//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
+			this._layerRootG.insertBefore(layer.domRoot, this._layerRootG.firstChild);
 			layer._onAddedToRoot(this);
 		},
 
