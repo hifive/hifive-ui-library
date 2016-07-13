@@ -240,6 +240,8 @@
 			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
 		},
 
 		'{rootElement} duClick': function(context) {

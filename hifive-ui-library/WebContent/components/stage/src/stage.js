@@ -2743,6 +2743,55 @@
 		return desc;
 	});
 
+	var CoordinateConverter = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.CoordinateConverter',
+			field: {
+				_viewport: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.CoordinateConverter
+				 */
+				constructor: function CoordinateConverter(viewport) {
+					CoordinateConverter._super.call(this);
+					this._viewport = viewport;
+				},
+				toWorldPosition: function(displayX, displayY) {
+					var x;
+					var y;
+					if (arguments.length === 1 && stageModule.DisplayPoint.isClassOf(displayX)) {
+						x = displayX.x;
+						y = displayX.y;
+					} else {
+						x = displayX;
+						y = displayY;
+					}
+					return this._viewport.getWorldPosition(x, y);
+				},
+				toWorldXLength: function(displayXLength) {
+					return this._viewport.getXLengthOfWorld(displayXLength);
+				},
+				toWorldYLength: function(displayYLength) {
+					return this._viewport.getYLengthOfWorld(displayYLength);
+				},
+				toDisplayPosition: function(worldX, worldY) {
+					var x;
+					var y;
+					if (arguments.length === 1 && stageModule.WorldPoint.isClassOf(worldX)) {
+						x = worldX.x;
+						y = worldX.y;
+					} else {
+						x = worldX;
+						y = worldY;
+					}
+					return this._viewport.getDisplayPosition(x, y);
+				},
+			}
+		};
+		return desc;
+	});
+
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var DisplayPoint = stageModule.DisplayPoint;
@@ -2894,6 +2943,8 @@
 			min: ABSOLUTE_SCALE_MIN,
 			max: null
 		},
+
+		coordinateConverter: null,
 
 		//TODO dependsOn()
 		_selectionLogic: h5.ui.SelectionLogic,
@@ -3071,6 +3122,7 @@
 			this._layers = [];
 			this._viewport = Viewport.create();
 			this.UIDragMode = DRAG_MODE_AUTO;
+			this.coordinateConverter = CoordinateConverter.create(this._viewport);
 		},
 
 		__ready: function() {
