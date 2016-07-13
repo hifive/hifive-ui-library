@@ -3061,6 +3061,7 @@
 			var focused = ev.focused;
 			if (focused) {
 				focused._isFocused = true;
+				this._focusController.setFocusedElement(focused.domRoot);
 			}
 
 			var unfocusedDU = ev.changes.unfocused;
