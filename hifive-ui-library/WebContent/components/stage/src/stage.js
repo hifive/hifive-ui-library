@@ -673,7 +673,7 @@
 	}
 
 	function removeSvgAttribute(element, key) {
-		removeAttributeNS(null, element, key);
+		removeAttributeNS(element, null, key);
 	}
 
 	function removeSvgAttributes(element, keys) {
@@ -3207,8 +3207,6 @@
 
 		_currentDragMode: DRAG_MODE_NONE,
 
-		_dragTargetDU: null,
-
 		_dragSelectStartPos: null,
 
 		_dragSelectStartSelectedDU: null,
@@ -3221,6 +3219,7 @@
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
 
+			//TODO shiftKeyやctrlKeyが押されていた場合…など、特殊な場合の選択挙動を調整
 			if (du && du.isSelectable) {
 				//FIXME du.isSelectedのフラグ値がおかしいので要修正
 				if (!this.isSelected(du)) {
@@ -3282,11 +3281,16 @@
 								'h5.ui.components.stage.DragSession').create();
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
-						//this._dragTargetDU = du;
 						setCursor('default');
 						this.trigger(EVENT_DRAG_DU_START, {
 							dragSession: this._dragSession
 						});
+
+						//						for (var i = 0, len = this._dragSession._targets.length; i < len; i++) {
+						//							var targetDU = this._dragSession._targets[i];
+						//							stageModule.SvgUtil.setAttribute(targetDU.domRoot, 'pointer-events',
+						//									'none');
+						//						}
 					}
 				} else {
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
@@ -3360,17 +3364,16 @@
 							dy: dispScrY
 						}
 					});
-					//that._dragTargetDU.moveDisplayBy(dispScrX, dispScrY);
 				});
+
+				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
 				this.trigger(EVENT_DRAG_DU_MOVE, {
 					dragSession: this._dragSession,
-					dragOverDisplayUnit: null
-				//TODO マウスオーバーしているDUを入れる
+					dragOverDisplayUnit: dragOverDU
 				});
 
 				this._dragSession.onMove(context);
-				//this._dragTargetDU.moveDisplayBy(dispDx, dispDy);
 				break;
 			case DRAG_MODE_SELECT:
 				this._dragLastPagePos = {
@@ -3469,24 +3472,52 @@
 				});
 			}
 
+			var dragOverDU = this._getDragOverDisplayUnit(context.event);
+
 			this.trigger(EVENT_DRAG_DU_END, {
 				dragSession: this._dragSession,
-				dragOverDisplayUnit: null
+				dragOverDisplayUnit: dragOverDU
 			//TODO マウスオーバーしているDUを入れる
 			});
 
-			if (this._dragSession && !this._dragSession.canDrop) {
+			if (this._dragSession) {
+				if (!this._dragSession.canDrop) {
+					//元の位置に戻す
+				}
+
+				//				for (var i = 0, len = this._dragSession._targets.length; i < len; i++) {
+				//					var targetDU = this._dragSession._targets[i];
+				//					stageModule.SvgUtil.removeAttribute(targetDU.domRoot, 'pointer-events');
+				//				}
 				//TODO DUの位置を元に戻す
 			}
 
 			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
-			this._dragTargetDU = null;
 			this._dragSelectStartPos = null;
 			this._dragSelectStartSelectedDU = null;
 			this._dragLastPagePos = null;
 			this._endBoundaryScroll();
 			$(this.rootElement).css('cursor', 'auto');
+		},
+
+		_getDragOverDisplayUnit: function(event) {
+			var dragOverDU = null;
+
+			var dragFocusDU = this._getIncludingDisplayUnit(event.target);
+			if (dragFocusDU) {
+				stageModule.SvgUtil.setAttribute(dragFocusDU.domRoot, 'display', 'none');
+			}
+
+			//TODO elementFromPointと、DUのRectから論理的に探索するのと高速な方式にする
+			var el = document.elementFromPoint(event.clientX, event.clientY);
+			dragOverDU = this._getIncludingDisplayUnit(el);
+
+			if (dragFocusDU) {
+				stageModule.SvgUtil.removeAttribute(dragFocusDU.domRoot, 'display');
+			}
+
+			return dragOverDU;
 		},
 
 		_isDraggingJustEnded: false,

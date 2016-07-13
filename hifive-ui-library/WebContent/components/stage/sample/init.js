@@ -175,7 +175,8 @@
 					x: 10,
 					y: 0,
 					width: 20,
-					height: 20
+					height: 20,
+					opacity: 0.4
 				});
 
 				//				var vLayout = VerticalLayout.create();
@@ -186,11 +187,12 @@
 					x: 30,
 					y: 0,
 					width: 20,
-					height: 20
+					height: 20,
+					opacity: 0.4
 				});
 
 				var text = graphics.drawText();
-				text.setText(du.extraData.userText);
+				text.setText('' + du.id);
 				text.setAttributes({
 					x: 0,
 					y: 10,
