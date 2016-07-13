@@ -3167,6 +3167,7 @@
 			for (var i = 0, len = selected.length; i < len; i++) {
 				var newSelectedDU = selected[i];
 				newSelectedDU._isSelected = true;
+				newSelectedDU.requestRender();
 			}
 
 			//今回非選択状態になったDUの選択フラグをOFFにする
@@ -3174,17 +3175,20 @@
 			for (var i = 0, len = unselected.length; i < len; i++) {
 				var unselectedDU = unselected[i];
 				unselectedDU._isSelected = false;
+				unselectedDU.requestRender();
 			}
 
 			var focused = ev.focused;
 			if (focused) {
 				focused._isFocused = true;
 				this._focusController.setFocusedElement(focused.domRoot);
+				focused.requestRender();
 			}
 
 			var unfocusedDU = ev.changes.unfocused;
 			if (unfocusedDU) {
 				unfocusedDU._isFocused = false;
+				unfocussedDU.requestRender();
 			}
 
 			var evArg = {
