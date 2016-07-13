@@ -3298,7 +3298,16 @@
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
 						setCursor('default');
-						this.trigger(EVENT_DRAG_DU_START, {
+
+						//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+						var delegatedJQueryEvent = $.event
+								.fix(context.event.h5DelegatingEvent.originalEvent);
+
+						delegatedJQueryEvent.type = EVENT_DRAG_DU_START;
+						delegatedJQueryEvent.target = this.rootElement;
+						delegatedJQueryEvent.currentTarget = this.rootElement;
+
+						this.trigger(delegatedJQueryEvent, {
 							dragSession: this._dragSession
 						});
 
@@ -3368,6 +3377,9 @@
 				return;
 			}
 
+			//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+			var delegatedJQueryEvent = $.event.fix(context.event.h5DelegatingEvent.originalEvent);
+
 			var that = this;
 
 			switch (this._currentDragMode) {
@@ -3384,7 +3396,11 @@
 
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
-				this.trigger(EVENT_DRAG_DU_MOVE, {
+				delegatedJQueryEvent.type = EVENT_DRAG_DU_MOVE;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this.trigger(delegatedJQueryEvent, {
 					dragSession: this._dragSession,
 					dragOverDisplayUnit: dragOverDU
 				});
@@ -3490,7 +3506,12 @@
 
 			var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
-			this.trigger(EVENT_DRAG_DU_END, {
+			var delegatedJQueryEvent = $.event.fix(context.event.h5DelegatingEvent.originalEvent);
+			delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
+			delegatedJQueryEvent.target = this.rootElement;
+			delegatedJQueryEvent.currentTarget = this.rootElement;
+
+			this.trigger(delegatedJQueryEvent, {
 				dragSession: this._dragSession,
 				dragOverDisplayUnit: dragOverDU
 			//TODO マウスオーバーしているDUを入れる

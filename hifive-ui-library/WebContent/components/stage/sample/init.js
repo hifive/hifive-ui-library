@@ -306,6 +306,18 @@
 
 		'{rootElement} duKeyUp': function(context) {
 			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
+		},
+
+		'{rootElement} stageDragStart': function(context) {
+			this.log.debug('stageDragStart');
+		},
+
+		'{rootElement} stageDragMove': function(context) {
+			this.log.debug('stageDragMove');
+		},
+
+		'{rootElement} stageDragEnd': function(context) {
+			this.log.debug('stageDragEnd');
 		}
 
 	};
