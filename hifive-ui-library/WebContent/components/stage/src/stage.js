@@ -3843,6 +3843,12 @@
 		},
 
 		'{rootElement} mouseup': function(context) {
+			this._isMousedown = false;
+
+			if (this._currentDragMode === DRAG_MODE_NONE) {
+				return;
+			}
+
 			if (this._currentDragMode === DRAG_MODE_SELECT) {
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
@@ -4073,6 +4079,10 @@
 		},
 
 		scrollTo: function(dispX, dispY) {
+			this._scrollTo(dispX, dispY);
+		},
+
+		_scrollTo: function(dispX, dispY) {
 			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
 
 			var actualDispX = StageUtil
@@ -4116,6 +4126,10 @@
 		},
 
 		scrollBy: function(displayDx, displayDy) {
+			this._scrollBy(displayDx, displayDy);
+		},
+
+		_scrollBy: function(displayDx, displayDy) {
 			if (displayDx === 0 && displayDy === 0) {
 				return;
 			}
