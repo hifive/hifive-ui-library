@@ -234,6 +234,8 @@
 		__ready: function() {
 			this._stageController.setup(stageInitParam);
 
+			//this._stageController.isWheelScrollDirectionReversed = false;
+
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(0, 100, 100, 100));
@@ -251,6 +253,8 @@
 			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			this._stageController.getLayer(LAYER_ID_EDGE).UIDragScreenScrollDirection = h5.ui.components.stage.ScrollDirection.XY;
 
 			var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
 

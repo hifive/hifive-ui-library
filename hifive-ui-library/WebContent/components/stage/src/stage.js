@@ -2520,9 +2520,7 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
-				UIDragScreenScrollDirection: null,
-				_scrollRangeDisplayX: null,
-				_scrollRangeDisplayY: null
+				UIDragScreenScrollDirection: null
 			},
 			method: {
 				/**
@@ -2538,15 +2536,6 @@
 					this.domRoot.setAttribute('data-stage-role', 'layer');
 
 					this.UIDragScreenScrollDirection = ScrollDirection.XY;
-
-					this._scrollRangeDisplayX = {
-						min: null,
-						max: null
-					};
-					this._scrollRangeDisplayY = {
-						min: null,
-						max: null
-					};
 				},
 
 				/**
@@ -2557,20 +2546,6 @@
 				getWorldGlobalPosition: function() {
 					var p = WorldPoint.create(this.x, this.y);
 					return p;
-				},
-
-				setScrollRangeDisplayX: function(minDisplayX, maxDisplayX) {
-					this._scrollRangeDisplayX = {
-						min: minDisplayX,
-						max: maxDisplayX
-					};
-				},
-
-				setScrollRangeDisplayY: function(minDisplayY, maxDisplayY) {
-					this._scrollRangeDisplayY = {
-						min: minDisplayY,
-						max: maxDisplayY
-					};
 				}
 			}
 		};
@@ -3109,6 +3084,10 @@
 		_defs: null,
 
 		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
+
+		isWheelScrollDirectionReversed: false,
+
+		isWheelScaleDirectionReversed: false,
 
 		//(UI操作によるかどうかは関係なく)スクロールする範囲を配列で指定。
 		//{ min: , max: } をディスプレイ座標で指定。
@@ -4394,6 +4373,9 @@
 				if (event.originalEvent.wheelDelta > 0) {
 					ds *= -1;
 				}
+				if (this.isWheelScaleDirectionReversed) {
+					ds *= -1;
+				}
 
 				var rootOffset = $(this.rootElement).offset();
 				var offsetX = event.originalEvent.pageX - rootOffset.left;
@@ -4404,8 +4386,12 @@
 				return;
 			}
 
+			//ステージをスクロールする
 			var dy = 40;
 			if (event.originalEvent.wheelDelta > 0) {
+				dy *= -1;
+			}
+			if (this.isWheelScrollDirectionReversed) {
 				dy *= -1;
 			}
 			this.scrollBy(0, dy);
