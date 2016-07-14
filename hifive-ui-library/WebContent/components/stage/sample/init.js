@@ -178,7 +178,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 0.4
+					opacity: 1
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
 
@@ -193,7 +193,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 0.4
+					opacity: 1
 				});
 
 				var text = graphics.drawText();

@@ -2589,9 +2589,16 @@
 				 */
 				constructor: function BulkOperation(targets) {
 					BulkOperation._super.call(this);
+					if (!targets) {
+						return;
+					}
 					this._targets = Array.isArray(targets) ? targets : [targets];
 				},
 				addTargets: function(targets) {
+					if (!targets) {
+						return;
+					}
+
 					var candidate = Array.isArray(targets) ? targets : [targets];
 					for (var i = 0, len = candidate.length; i < len; i++) {
 						var t = candidate[i];
@@ -2611,6 +2618,10 @@
 					}
 				},
 				moveToForefront: function() {
+					if (!this._targets) {
+						return;
+					}
+
 					for (var i = 0, len = this._targets.length; i < len; i++) {
 						var dom = this._targets[i].domRoot;
 						if (dom) {
@@ -4025,7 +4036,7 @@
 
 		_isUpdateTransformReserved: false,
 
-		_updateTransform: function() {
+		_updateLayerScrollPosition: function() {
 			if (this._isUpdateTransformReserved) {
 				return;
 			}
@@ -4035,10 +4046,33 @@
 			//TODO rAFはここで直接呼ばない
 			requestAnimationFrame(function() {
 				that._isUpdateTransformReserved = false;
-				var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-						that._viewport.scaleX, that._viewport.scaleY, -that._viewport.worldX,
-						-that._viewport.worldY);
-				that._layerRootG.setAttribute('transform', transform);
+				for (var i = 0, len = that._layers.length; i < len; i++) {
+					var layer = that._layers[i];
+
+					var scrollX = -that._viewport.worldX;
+					var scrollY = -that._viewport.worldY;
+
+					switch (layer.UIDragScreenScrollDirection) {
+					case SCROLL_DIRECTION_XY:
+						break;
+					case SCROLL_DIRECTION_X:
+						scrollY = 0;
+						break;
+					case SCROLL_DIRECTION_Y:
+						scrollX = 0;
+						break;
+					case SCROLL_DIRECTION_NONE:
+					default:
+						scrollX = 0;
+						scrollY = 0;
+						break;
+					}
+
+					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+							that._viewport.scaleX, that._viewport.scaleY, scrollX, scrollY);
+
+					layer._rootG.setAttribute('transform', transform);
+				}
 			});
 		},
 
@@ -4057,7 +4091,7 @@
 
 			this._viewport.scrollTo(actualDispX, actualDispY);
 
-			this._updateTransform();
+			this._updateLayerScrollPosition();
 
 			var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
@@ -4168,7 +4202,7 @@
 				isScrollPoisitionChanged = false;
 			}
 
-			this._updateTransform();
+			this._updateLayerScrollPosition();
 
 			//TODO 現在はこの場所でイベントを出しているが、
 			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
