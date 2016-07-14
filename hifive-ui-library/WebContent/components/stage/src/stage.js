@@ -3235,9 +3235,9 @@
 		},
 
 		_processClick: function(event, triggerEventName) {
-			if (this._isDraggingJustEnded) {
+			if (this._isDraggingStarted) {
 				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
-				this._isDraggingJustEnded = false;
+				this._isDraggingStarted = false;
 				return;
 			}
 
@@ -3305,7 +3305,7 @@
 
 		_dragSelectOverlayRect: null,
 
-		'{rootElement} h5trackstart': function(context) {
+		_startDrag: function(context) {
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
 
@@ -3468,9 +3468,13 @@
 			}
 		},
 
+		'{rootElement} h5trackstart': function(context) {
+		//do nothing
+		},
+
 		'{rootElement} h5trackmove': function(context) {
-			if (this._currentDragMode === DRAG_MODE_NONE) {
-				return;
+			if (!this._isDraggingStarted) {
+				this._startDrag(context);
 			}
 
 			//このフラグは、clickイベントハンドラ(_processClick())の中で
@@ -3480,7 +3484,11 @@
 			//trackendのタイミングでtrueにしてしまうと、常にフラグがtrueになってしまう。
 			//そのため、一度以上実際にmoveが起きたこのタイミングでフラグをtrueにすることで
 			//実際ドラッグが行われた場合のみフラグがONになる。
-			this._isDraggingJustEnded = true;
+			this._isDraggingStarted = true;
+
+			if (this._currentDragMode === DRAG_MODE_NONE) {
+				return;
+			}
 
 			var event = context.event;
 
@@ -3671,6 +3679,7 @@
 				this._dragSelectOverlayRect = null;
 			}
 
+			this._isDraggingStarted = false;
 			this._dragRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
@@ -3700,7 +3709,7 @@
 			return dragOverDU;
 		},
 
-		_isDraggingJustEnded: false,
+		_isDraggingStarted: false,
 
 		_boundaryScrollTimerId: null,
 
