@@ -2543,13 +2543,9 @@
 				},
 
 				setScale: function(scaleX, scaleY) {
-					if (scaleX != null) {
-						this._scaleX = scaleX;
-					}
-					if (scaleY != null) {
-						this._scaleY = scaleY;
-					}
-					this._clampScale();
+					var x = scaleX == null ? this._scaleX : scaleX;
+					var y = scaleY == null ? this._scaleY : scaleY;
+					this._clampScale(x, y);
 				},
 
 				scrollTo: function(worldX, worldY) {
@@ -2564,9 +2560,9 @@
 					this.scrollTo(x, y);
 				},
 
-				_clampScale: function() {
-					var x = StageUtil.clamp(this._scaleX, this._minScaleX, this._maxScaleX);
-					var y = StageUtil.clamp(this._scaleY, this._minScaleY, this._maxScaleY);
+				_clampScale: function(scaleX, scaleY) {
+					var x = StageUtil.clamp(scaleX, this._minScaleX, this._maxScaleX);
+					var y = StageUtil.clamp(scaleY, this._minScaleY, this._maxScaleY);
 
 					var isScaleChanged = false;
 					if (this._scaleX !== x || this._scaleY !== y) {
@@ -2633,6 +2629,72 @@
 				getWorldGlobalPosition: function() {
 					var p = WorldPoint.create(this.x, this.y);
 					return p;
+				},
+
+				/**
+				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				moveTo: function(worldX, worldY) {
+					this.x = worldX;
+					this.y = worldY;
+					this._updateTransform();
+				},
+
+				/**
+				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				moveBy: function(worldX, worldY) {
+					var x = this.x + worldX;
+					var y = this.y + worldY;
+					this.scrollTo(x, y);
+				},
+
+				/**
+				 * オーバーライド。レイヤーではtranslate量にDUのx,yの値を用いる。
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				_updateTransform: function() {
+					//TODO Reservedチェック部分と、実際にupdateする部分をわける方がよいか
+					if (this._isUpdateTransformReserved) {
+						return;
+					}
+					this._isUpdateTransformReserved = true;
+
+					var that = this;
+					//TODO rAFはここで直接呼ばない
+					requestAnimationFrame(function() {
+						that._isUpdateTransformReserved = false;
+
+						var scaleXStr = getScaleString(that._scaleX);
+						var scaleYStr = getScaleString(that._scaleY);
+
+						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+								scaleXStr, scaleYStr, that.x, that.y);
+						that._rootG.setAttribute('transform', transform);
+					});
+
+					//小数表現を正規化して小数文字列を返す
+					function getScaleString(scale) {
+						var intPart = Math.floor(scale);
+						if (intPart === scale) {
+							return '' + intPart;
+						}
+						var decPart = scale - intPart;
+
+						//TODO 精度を良くする
+						var dp1 = Math.floor(decPart * 10);
+						var dp2 = Math.floor(decPart * 100 - dp1 * 10);
+						var ret = '' + intPart + '.' + dp1 + dp2;
+						return ret;
+					}
 				}
 			}
 		};
@@ -4280,6 +4342,7 @@
 
 			this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x, scaleCenter.y);
 
+			//TODO clampする、もしくはscrollTo()する
 			var newScrollPos = DisplayPoint
 					.create(this._viewport.displayX, this._viewport.displayY);
 
