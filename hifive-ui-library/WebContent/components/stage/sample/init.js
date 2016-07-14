@@ -253,6 +253,8 @@
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
 
 			var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
+
+			this._stageController.setScrollRangeY(-200, 200);
 		},
 
 		'{rootElement} duClick': function(context) {

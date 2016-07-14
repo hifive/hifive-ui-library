@@ -2622,6 +2622,7 @@
 						return;
 					}
 
+					//TODO 完全に最前面にするためには、foremostLayerに移動させる必要がある
 					for (var i = 0, len = this._targets.length; i < len; i++) {
 						var dom = this._targets[i].domRoot;
 						if (dom) {
@@ -3933,8 +3934,8 @@
 				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.x;
 				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.y;
 
-				that.scrollBy(boundaryScrX, boundaryScrY);
-				callback(boundaryScrX, boundaryScrY);
+				var actualDiff = that._scrollBy(boundaryScrX, boundaryScrY);
+				callback(actualDiff.dx, actualDiff.dy);
 			}, BOUNDARY_SCROLL_INTERVAL);
 		},
 
@@ -4070,11 +4071,12 @@
 						break;
 					}
 
-					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-							that._viewport.scaleX, that._viewport.scaleY, scrollX, scrollY);
-
-					layer._rootG.setAttribute('transform', transform);
+					layer.setScale(that._viewport.scaleX, that._viewport.scaleY);
+					layer.moveTo(scrollX, scrollY);
 				}
+
+				that._foremostLayer.setScale(that._viewport.scaleX, that._viewport.scaleY);
+				that._foremostLayer.moveTo(scrollX, scrollY);
 			});
 		},
 
@@ -4090,9 +4092,14 @@
 			var actualDispY = StageUtil
 					.clamp(dispY, this._scrollRangeY.min, this._scrollRangeY.max);
 
+			var actualDiff = {
+				dx: actualDispX - this._viewport.displayX,
+				dy: actualDispY - this._viewport.displayY
+			};
+
 			if (this._viewport.displayX === actualDispX && this._viewport.displayY === actualDispY) {
 				//サイズが現在と変わらなかったら何もしない
-				return;
+				return actualDiff;
 			}
 
 			this._viewport.scrollTo(actualDispX, actualDispY);
@@ -4123,6 +4130,8 @@
 				}
 			};
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
+
+			return actualDiff;
 		},
 
 		scrollBy: function(displayDx, displayDy) {
@@ -4136,7 +4145,8 @@
 
 			var dx = this._viewport.displayX + displayDx;
 			var dy = this._viewport.displayY + displayDy;
-			this.scrollTo(dx, dy);
+			var actualDiff = this._scrollTo(dx, dy);
+			return actualDiff;
 		},
 
 		scrollWorldTo: function(worldX, worldY) {
