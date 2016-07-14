@@ -148,8 +148,26 @@
 
 			var actuals = [];
 
+			var isActuallyUnselected = true;
+			if (unselected.length === 0) {
+				isActuallyUnselected = false;
+			}
+
 			for (var i = 0, l = objs.length; i < l; i++) {
 				var obj = objs[i];
+
+				if (isActuallyUnselected) {
+					//unselectedのうち今回選択する要素は除外する
+					//このメソッドの終了時にobjは必ず選択されるので、
+					//選択済みかどうかに関わらずこのフィルタ処理を行う
+					var reselectIdx = $.inArray(obj, unselected);
+					if (reselectIdx !== -1) {
+						//TODO splice()とfilter()で新しい配列を作るのとで速度比較
+						unselected.splice(reselectIdx, 1);
+					}
+				}
+				//TODO unselectAllを最初にやってしまうと、ここのisSelectedのチェックの意味がなくなり
+				//actualsがおかしくなる
 				if (this.isSelected(obj)) {
 					// 選択済みなら何もしない
 					continue;
@@ -158,7 +176,7 @@
 				this._selected.push(obj);
 				actuals.push(obj);
 			}
-			if (actuals.length && shouldRefocus) {
+			if (actuals.length > 0 && shouldRefocus) {
 				// フォーカスされているものが無ければ、今回追加したものの先頭をフォーカスする
 				this.focus(actuals[0]);
 			}
@@ -223,6 +241,7 @@
 		/**
 		 * 全ての選択状態のオブジェクトについて選択状態を解除する（イベントは発生させない）
 		 *
+		 * @private
 		 * @instance
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す
 		 */
