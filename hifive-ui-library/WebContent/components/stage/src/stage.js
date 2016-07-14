@@ -2983,8 +2983,6 @@
 	var DRAG_MODE_DU = stageModule.DragMode.DU;
 	var DRAG_MODE_SELECT = stageModule.DragMode.SELECT;
 
-	var Z_INDEX_DRAG_TARGET = 1000;
-
 	var SCROLL_DIRECTION_NONE = stageModule.ScrollDirection.NONE;
 	var SCROLL_DIRECTION_X = stageModule.ScrollDirection.X;
 	var SCROLL_DIRECTION_Y = stageModule.ScrollDirection.Y;
@@ -3802,7 +3800,6 @@
 			this.trigger(delegatedJQueryEvent, {
 				dragSession: this._dragSession,
 				dragOverDisplayUnit: dragOverDU
-			//TODO マウスオーバーしているDUを入れる
 			});
 
 			if (this._dragSession && !this._dragSession.isCompleted) {
