@@ -237,19 +237,21 @@
 		clamp: clamp
 	});
 
+	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
+	var Event = h5.cls.manager.getClass('h5.event.Event');
+
 	/**
 	 * DragSession
 	 * <p>
-	 * 図形(Shapeクラス)のドラッグ操作を行うためのクラスです。
+	 * DisplayUnitのドラッグ操作を行うためのクラスです。
 	 * </p>
 	 *
 	 * @class
 	 * @name DragSession
 	 * @returns クラス定義
 	 */
-	RootClass.extend(function() {
-
-		//du, data, event, delta, dragSession
+	EventDispatcher.extend(function() {
+		//eventはnullの場合がある（doPseudoMoveByの場合）
 		function defaultMoveFunction(du, data, event, delta, dragSession) {
 			var ret = {
 				dx: delta.x,
@@ -301,6 +303,13 @@
 
 				//du.id -> 当該DU用のdataオブジェクト へのマップ
 				_moveFunctionDataMap: null
+			},
+			accessor: {
+				isCompleted: {
+					get: function() {
+						return this._isCompleted;
+					}
+				}
 			},
 			method: {
 				/**
@@ -388,18 +397,29 @@
 				/**
 				 * ドラッグセッションを終了して位置を確定させる
 				 * <p>
-				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。
+				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。ただし、canDropがfalseの場合には代わりにキャンセルが行われます。
 				 * </p>
 				 *
 				 * @memberOf DragSession
 				 * @instance
 				 * @returns {DragSession}
 				 */
-				complete: function() {
+				end: function() {
 					if (this._isCompleted) {
 						return;
 					}
 					this._isCompleted = true;
+
+					if (!this.canDrop) {
+						//ドロップできない場合はキャンセル処理を行う
+						this.cancel();
+						return;
+					}
+
+					this._cleanUp();
+
+					var event = Event.create('dragSessionEnd');
+					this.dispatchEvent(event);
 				},
 
 				/**
@@ -409,24 +429,40 @@
 				 * </p>
 				 *
 				 * @memberOf DragSession
-				 * @instance
 				 * @returns {DragSession}
 				 */
-				cancel: function() {
+				cancel: function(andRollbackPosition) {
 					if (this._isCompleted) {
 						return;
 					}
 					this._isCompleted = true;
 
-					if (this._dragMode === DRAG_MODE_SELF) {
-						this._target.moveTo(this._startX, this._startY);
+					if (andRollbackPosition !== false) {
+						//引数に明示的にfalseを渡された場合を除き、
+						//ドラッグしていたDUの位置を戻す
+						this._rollbackPosition();
 					}
 
-					this._moveFunctionDataMap = null;
+					this._cleanUp();
+
+					var event = Event.create('dragSessionCancel');
+					this.dispatchEvent(event);
 				},
 
-				onMove: function(event) {
-					if (!this._targets) {
+				//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
+				//（境界スクロールなどのときに使用）
+				//引数にはディスプレイ座標系での移動差分量を渡す。
+				doPseudoMoveBy: function(dx, dy) {
+					var delta = {
+						x: dx,
+						y: dy
+					};
+
+					this._deltaMove(null, delta);
+				},
+
+				doMove: function(event) {
+					if (this._isCompleted) {
 						return;
 					}
 
@@ -443,16 +479,24 @@
 					this._totalMoveX += cursorDx < 0 ? -cursorDx : cursorDx;
 					this._totalMoveY += cursorDy < 0 ? -cursorDy : cursorDy;
 
-					var targets = this._targets;
-					if (!Array.isArray(targets)) {
-						targets = [targets];
-					}
-
 					//前回からの差分移動量
 					var delta = {
 						x: cursorDx,
 						y: cursorDy
 					};
+
+					this._deltaMove(event, delta);
+				},
+
+				_deltaMove: function(event, delta) {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = this._targets;
+					if (!Array.isArray(targets)) {
+						targets = [targets];
+					}
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -479,6 +523,27 @@
 						} else {
 							du.moveDisplayBy(dx, dy);
 						}
+					}
+				},
+
+				_rollbackPosition: function() {
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						var pos = this._targetInitialPositions[i];
+						du.moveTo(pos.x, pos.y);
+					}
+				},
+
+				_cleanUp: function() {
+					this._targets = null;
+					this._targetInitialPositions = null;
+					this._moveFunction = null;
+					this._moveFunctionDataMap = null;
+
+					if (this._proxyElement) {
+						$(this._proxyElement).remove();
+						this._proxyElement = null;
 					}
 				}
 			}
@@ -3526,6 +3591,15 @@
 		'{rootElement} mousedown': function(context) {
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
+			//TODO 初回のmousemoveのタイミングで
+			//動作対象を決めると、DUの端の方にカーソルがあったときに
+			//mousedown時にはDUの上にカーソルがあったのに
+			//moveのときに離れてしまい、スクリーンドラッグと判定されるなど
+			//挙動が一貫しない可能性がある。
+			//そのため、ドラッグモードについては
+			//mousedownのタイミングで決定しつつ、
+			//実際にdragStartとみなす（イベントを発生させる）のは
+			//moveのタイミングにするのがよい。
 			context.event.preventDefault();
 		},
 
@@ -3579,12 +3653,7 @@
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
 				toggleBoundaryScroll.call(this, function(dispScrX, dispScrY) {
-				//TODO 仮実装
-				//					that._dragSession.onMove(
-				//						event: {
-				//							dx: dispScrX,
-				//							dy: dispScrY
-				//					});
+					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
 				});
 
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
@@ -3612,7 +3681,7 @@
 					});
 				}
 
-				this._dragSession.onMove(context.event);
+				this._dragSession.doMove(context.event);
 				break;
 			case DRAG_MODE_SELECT:
 				this._dragLastPagePos = {
@@ -3736,13 +3805,12 @@
 			//TODO マウスオーバーしているDUを入れる
 			});
 
-			if (this._dragSession) {
-				if (!this._dragSession.canDrop) {
-					//TODO 元の位置に戻す
-				}
-
-				if (this._dragSession.getProxyElement()) {
-					this.rootElement.removeChild(this._dragSession.getProxyElement());
+			if (this._dragSession && !this._dragSession.isCompleted) {
+				//end(), cancel()を呼ぶと、プロキシは自動的に削除される
+				if (this._dragSession.canDrop) {
+					this._dragSession.end();
+				} else {
+					this._dragSession.cancel();
 				}
 			}
 
@@ -4175,10 +4243,6 @@
 				this._processDragMove(context);
 				return;
 			}
-
-			//			if (this._currentDragMode !== DRAG_MODE_NONE) {
-			//				return;
-			//			}
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
 
