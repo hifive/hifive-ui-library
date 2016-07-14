@@ -3266,8 +3266,13 @@
 			bizEvent.currentTarget = du.domRoot;
 			$(du.domRoot).trigger(bizEvent, evArg);
 
-			if (!du.isSelectable) {
-				//DUがselectableでない場合は選択処理はしない
+			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
+				//DUがselectableでない場合は選択処理はしない。
+				//また、イベントのデフォルト処理がキャンセルされた場合も
+				//clickイベントの場合の選択処理は行わない
+				//これは、直前のduClickのイベントハンドラの中でユーザーが他のDUを選択した場合に
+				//この後の処理によって選択状態が強制的に変更されてしまうことを防ぐ
+				//（ユーザーが任意に選択状態を設定できる余地を残す）ためである。
 				return;
 			}
 
