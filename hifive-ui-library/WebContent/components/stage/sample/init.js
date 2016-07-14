@@ -182,7 +182,13 @@
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
 
-				rect2._element.style.fill = du.isSelected ? 'red' : 'black';
+				if (du.isFocused) {
+					rect2._element.style.fill = 'blue';
+				} else if (du.isSelected) {
+					rect2._element.style.fill = 'red';
+				} else {
+					rect2._element.style.fill = 'black';
+				}
 
 				//				var vLayout = VerticalLayout.create();
 				//				vLyaout.add(rect1, rect2, rect3).align();
