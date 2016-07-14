@@ -126,21 +126,22 @@
 		 *
 		 * @instance
 		 * @param {Any|Any[]} objs 配列で渡された場合はその中身を選択対象として扱います
-		 * @param {Boolean} isExclusive trueが指定された場合、現在選択されているものを全て解除して、引数に渡されたものだけを選択状態にする
+		 * @param {Boolean} isExclusive
+		 *            trueが指定された場合、現在選択されているものを全て解除して、引数に渡されたものだけを選択状態にする。デフォルト：false。
 		 * @returns {Any[]} 実際に選択されたオブジェクトの配列を返す(既に選択済みだったものは除く)
 		 */
 		select: function(objs, isExclusive) {
 			var oldFocused = this._focused;
 			var unselected = null;
 
-			if (isExclusive) {
+			if (isExclusive === true) {
 				unselected = this._unselectAll();
 			} else {
 				//isExclusiveがfalseの場合は、今回unselectされるものはないので空配列をイベントのchangesに入れる
 				unselected = [];
 			}
 
-			var objs = $.isArray(objs) ? objs : [objs];
+			objs = $.isArray(objs) ? objs : [objs];
 
 			// デフォルトで、先頭のものをfocus状態にする
 			var shouldRefocus = this._selected.length === 0;
