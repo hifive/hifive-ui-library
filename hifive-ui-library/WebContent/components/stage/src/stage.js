@@ -3759,7 +3759,6 @@
 				var dragSelectedDU = dragSelect.call(this);
 				var tempSelection = this._dragSelectStartSelectedDU.concat(dragSelectedDU);
 				this.select(tempSelection, true);
-				console.log(this.getSelectedDisplayUnits().length);
 				break;
 			case DRAG_MODE_SCREEN:
 				switch (this.UIDragScreenScrollDirection) {
@@ -3825,9 +3824,6 @@
 					width: ww,
 					height: wh
 				});
-
-				this.log.debug('dragSelect: x={0},y={1},w={2},h={3}', dispActualX, dispActualY,
-						dispW, dispH);
 
 				//TODO isSelectableがfalseなものを除く
 				return this.getDisplayUnitsInRect(dispActualX, dispActualY, dispW, dispH, true);
