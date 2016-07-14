@@ -2577,6 +2577,53 @@
 		return desc;
 	});
 
+	var BulkOperation = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.BulkOperation',
+			field: {
+				_targets: null,
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.BulkOperation
+				 */
+				constructor: function BulkOperation(targets) {
+					BulkOperation._super.call(this);
+					this._targets = Array.isArray(targets) ? targets : [targets];
+				},
+				addTargets: function(targets) {
+					var candidate = Array.isArray(targets) ? targets : [targets];
+					for (var i = 0, len = candidate.length; i < len; i++) {
+						var t = candidate[i];
+						if ($.inArray(t, this._targets) === -1) {
+							//既存の配列に存在しないもののみ対象として追加
+							this._targets.push(t);
+						}
+					}
+				},
+				getTargets: function() {
+					return this._targets;
+				},
+				remove: function() {
+					for (var i = 0, len = this._targets.length; i < len; i++) {
+						var t = this._targets[i];
+						t.remove();
+					}
+				},
+				moveToForefront: function() {
+					for (var i = 0, len = this._targets.length; i < len; i++) {
+						var dom = this._targets[i].domRoot;
+						if (dom) {
+							var parent = dom.parentNode;
+							parent.removeChild(dom);
+							parent.appendChild(dom);
+						}
+					}
+				}
+			}
+		};
+		return desc;
+	});
 
 	h5.u.obj.expose('h5.ui.components.stage', {
 		BasicDisplayUnit: BasicDisplayUnit,
@@ -2606,6 +2653,7 @@
 
 	var RootClass = h5.cls.RootClass;
 	var stageModule = h5.ui.components.stage;
+	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 
 	var Viewport = RootClass.extend(function() {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
@@ -3522,6 +3570,10 @@
 						this.trigger(delegatedJQueryEvent, {
 							dragSession: this._dragSession
 						});
+
+						//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+						var op = BulkOperation.create(this._dragSession.getTarget());
+						op.moveToForefront();
 
 						//プロキシが設定されたらそれを表示
 						var proxyElem = this._dragSession.getProxyElement();
