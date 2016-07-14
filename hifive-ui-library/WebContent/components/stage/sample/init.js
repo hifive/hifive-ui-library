@@ -170,6 +170,8 @@
 
 			//TODO 引数はsvgではなくこのUnitインスタンス
 			unit.setRenderer(function(graphics, du) {
+				graphics.clear();
+
 				var rect2 = graphics.drawRect();
 				rect2.setAttributes({
 					x: 10,
@@ -178,6 +180,9 @@
 					height: 20,
 					opacity: 0.4
 				});
+				//				rect2.fill = du.isSelected ? 'red' : 'black';
+
+				rect2._element.style.fill = du.isSelected ? 'red' : 'black';
 
 				//				var vLayout = VerticalLayout.create();
 				//				vLyaout.add(rect1, rect2, rect3).align();
@@ -291,23 +296,23 @@
 		},
 
 		'{rootElement} duKeyDown': function(context) {
-			//最新のWeb仕様(DOM4, Dom Level3 Events)では、
-			//キーボードイベントでは key か code を使用すべきとされている。IE9,FF23, Ch51以降で対応。
-			//charCode, keyCode, whichはDeprecatedなので使用しない。
-			//なお、keyboardEvent.key において矢印キーの値は
-			//IE,FF36-は"Right"、FF37+,Chは"ArrowRight"のような文字列になるので注意。
-			//詳細：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
-			this.log.debug('duKeyDown tagName={0}, key={1}', context.event.target.tagName,
-					context.event.key);
+		//最新のWeb仕様(DOM4, Dom Level3 Events)では、
+		//キーボードイベントでは key か code を使用すべきとされている。IE9,FF23, Ch51以降で対応。
+		//charCode, keyCode, whichはDeprecatedなので使用しない。
+		//なお、keyboardEvent.key において矢印キーの値は
+		//IE,FF36-は"Right"、FF37+,Chは"ArrowRight"のような文字列になるので注意。
+		//詳細：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+		//			this.log.debug('duKeyDown tagName={0}, key={1}', context.event.target.tagName,
+		//					context.event.key);
 		},
 
 		'{rootElement} duKeyPress': function(context) {
-			this.log.debug('duKeyPress tagName={0}, key={1}', context.event.target.tagName,
-					context.event.key);
+		//			this.log.debug('duKeyPress tagName={0}, key={1}', context.event.target.tagName,
+		//					context.event.key);
 		},
 
 		'{rootElement} duKeyUp': function(context) {
-			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
+		//			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
 		},
 
 		'{rootElement} stageDragStart': function(context) {

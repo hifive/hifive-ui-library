@@ -249,12 +249,11 @@
 	 */
 	RootClass.extend(function() {
 
-		function defaultMoveFunction(context, du, data, dragSession) {
-			var dx = context.event.dx;
-			var dy = context.event.dy;
+		//du, data, event, delta, dragSession
+		function defaultMoveFunction(du, data, event, delta, dragSession) {
 			var ret = {
-				dx: dx,
-				dy: dy
+				dx: delta.x,
+				dy: delta.y
 			};
 			return ret;
 		}
@@ -269,18 +268,39 @@
 				 */
 				_targets: null,
 
-				_startX: null,
-				_startY: null,
-				_moveDx: null,
-				_moveDy: null,
+				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
+				//setTarget()のタイミングでセットされる。
+				//同じインデックスの位置を保持。
+				_targetInitialPositions: null,
+
+				//ドラッグ開始時のPagePosition
+				_startPageX: null,
+				_startPageY: null,
+
+				//最後のmousemove時のPagePosition
+				_lastPageX: null,
+				_lastPageY: null,
+
+				//開始場所を原点としたときの、現在のカーソル位置の座標差分
 				_moveX: null,
 				_moveY: null,
 
-				_proxy: null,
+				//開始時点を0としたときの、現在までのカーソルの移動総量
+				//こちらはmoveXYと異なり延べ距離を表す。
+				_totalMoveX: null,
+				_totalMoveY: null,
+
+				//ドラッグプロキシ。DUではなく通常のDOM要素を指定する必要がある。
+				_proxyElement: null,
+
+				//このドラッグセッションの完了フラグ
 				_isCompleted: null,
+
+				//移動関数。移動対象のDUごとに呼ばれる
 				_moveFunction: null,
 
-				_moveFunctionData: null
+				//du.id -> 当該DU用のdataオブジェクト へのマップ
+				_moveFunctionDataMap: null
 			},
 			method: {
 				/**
@@ -288,7 +308,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function DragSession() {
+				constructor: function DragSession(event) {
 					DragSession._super.call(this);
 
 					this.canDrop = true;
@@ -296,24 +316,22 @@
 					this._isCompleted = false;
 					this._moveFunction = defaultMoveFunction;
 
-					this._moveFunctionData = {};
+					this._moveFunctionDataMap = {};
 
-					this._proxy = null;
+					this._proxyElement = null;
 
-					//TODO byProxyか、オブジェクトをそのまま動かすかをdragModeで指定できるようにする
-					// proxy, selfのどちらか
-					//this._dragMode = DRAG_MODE_SELF; //dragMode;
+					//TODO touchイベント、pointer event対応
+					this._startPageX = event.pageX;
+					this._startPageY = event.pageY;
 
-					//DOMならtop, left, SVGならx,yかtranslateか
-					//DUの場合はx,y
-					//this._startX = target.x;
-					//this._startY = target.y;
-
-					this._moveDx = 0;
-					this._moveDy = 0;
+					this._lastPageX = event.pageX;
+					this._lastPageY = event.pageY;
 
 					this._moveX = 0;
 					this._moveY = 0;
+
+					this._totalMoveX = 0;
+					this._totalMoveY = 0;
 				},
 
 				/**
@@ -336,7 +354,19 @@
 				 */
 				setTarget: function(target) {
 					this._targets = target;
-					//TODO 元の位置を覚えておく
+
+					//セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
+					var positions = [];
+					var targets = Array.isArray(target) ? target : [target];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var t = targets[i];
+						var pos = {
+							x: t.x,
+							y: t.y
+						};
+						positions.push(pos);
+					}
+					this._targetInitialPositions = positions;
 				},
 
 				getTarget: function() {
@@ -348,11 +378,11 @@
 				},
 
 				setProxyElement: function(element) {
-					this._proxy = element;
+					this._proxyElement = element;
 				},
 
 				getProxyElement: function() {
-					return this._proxy;
+					return this._proxyElement;
 				},
 
 				/**
@@ -370,8 +400,6 @@
 						return;
 					}
 					this._isCompleted = true;
-
-					this._controller.dispose();
 				},
 
 				/**
@@ -394,37 +422,54 @@
 						this._target.moveTo(this._startX, this._startY);
 					}
 
-					this._controller.dispose();
-
-					this._moveFunctionData = null;
+					this._moveFunctionDataMap = null;
 				},
 
-				onMove: function(context) {
+				onMove: function(event) {
 					if (!this._targets) {
 						return;
 					}
+
+					var cursorDx = event.pageX - this._lastPageX;
+					var cursorDy = event.pageY - this._lastPageY;
+
+					this._lastPageX = event.pageX;
+					this._lastPageY = event.pageY;
+
+					this._moveX = event.pageX - this._startPageX;
+					this._moveY = event.pageY - this._startPageY;
+
+					//totalMoveXYには絶対値で積算していく
+					this._totalMoveX += cursorDx < 0 ? -cursorDx : cursorDx;
+					this._totalMoveY += cursorDy < 0 ? -cursorDy : cursorDy;
 
 					var targets = this._targets;
 					if (!Array.isArray(targets)) {
 						targets = [targets];
 					}
 
+					//前回からの差分移動量
+					var delta = {
+						x: cursorDx,
+						y: cursorDy
+					};
+
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 
-						var data = this._moveFunctionData[du.id];
+						var data = this._moveFunctionDataMap[du.id];
 						if (!data) {
 							data = {};
-							this._moveFunctionData[du.id] = data;
+							this._moveFunctionDataMap[du.id] = data;
 						}
 
-						var move = this._moveFunction(context, du, data, this);
+						var move = this._moveFunction(du, data, event, delta, this);
 						if (!move) {
 							continue;
 						}
 
-						var dx = move.dx;
-						var dy = move.dy;
+						var dx = typeof move.dx === 'number' ? move.dx : 0;
+						var dy = typeof move.dy === 'number' ? move.dy : 0;
 
 						if (dx === 0 && dy === 0) {
 							continue;
@@ -457,7 +502,7 @@
 		},
 
 		'{rootElement} h5trackstart': function(context) {
-			this._dragSession = DragSession.create();
+			this._dragSession = DragSession.create(context.event);
 			//TODO DragStartイベントの出し方
 			this.trigger('dgDragStart', {
 				dragSession: this._dragSession
@@ -1838,6 +1883,8 @@
 			_isFocused: null,
 			_rootSvg: null,
 
+			_isRenderRequested: null,
+
 			/**
 			 * この要素を現在選択可能かどうか
 			 */
@@ -1880,6 +1927,8 @@
 				this._isSelected = false;
 				this._isFocused = false;
 
+				this._isRenderRequested = false;
+
 				//TODO 仮想化
 				this.domRoot = createSvgElement('svg');
 				this._rootSvg = this.domRoot;
@@ -1908,16 +1957,22 @@
 					return;
 				}
 
-				//TODO ここの描画自体も遅延させる
-				this._renderer(this._graphics, this);
-
-				if (!this._graphics.isDirty) {
+				if (this._isRenderRequested) {
 					return;
 				}
+				this._isRenderRequested = true;
 
 				var that = this;
+
 				//TODO rAFをここで直接使わない
 				requestAnimationFrame(function() {
+					that._isRenderRequested = false;
+					that._renderer(that._graphics, that);
+
+					if (!that._graphics.isDirty) {
+						return;
+					}
+
 					that._graphics.render();
 				}, 0);
 			},
@@ -2715,10 +2770,10 @@
 				},
 
 				/**
-				 * 指定されたディスプレイ座標が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
+				 * 指定されたディスプレイ座標（ただしStageルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
 				 *
-				 * @param displayX
-				 * @param displayY
+				 * @param displayX ディスプレイX座標（ただしStageルート要素の左上を原点とする値）
+				 * @param displayY ディスプレイY座標（ただしStageルート要素の左上を原点とする値）
 				 * @returns { x: -1 or 0 or 1, y: -1 or 0 or 1 } というオブジェクト。
 				 *          -1の場合は上端または左端、1は下端または右端、0は中央部分
 				 */
@@ -3301,7 +3356,7 @@
 
 		_dragSession: null,
 
-		_dragRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
+		_dragStartRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
 
 		_dragSelectOverlayRect: null,
 
@@ -3320,7 +3375,14 @@
 				du.focus();
 			}
 
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
+
 			var $root = $(this.rootElement);
+
+			this._dragStartRootOffset = $root.offset(); //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
 
 			this._currentDragMode = DRAG_MODE_NONE;
 
@@ -3333,7 +3395,7 @@
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
 					this._dragSession = h5.cls.manager.getClass(
-							'h5.ui.components.stage.DragSession').create();
+							'h5.ui.components.stage.DragSession').create(context.event);
 					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -3382,14 +3444,13 @@
 					if (du.isDraggable) {
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 						this._dragSession = h5.cls.manager.getClass(
-								'h5.ui.components.stage.DragSession').create();
+								'h5.ui.components.stage.DragSession').create(context.event);
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
 						setCursor('default');
 
 						//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
-						var delegatedJQueryEvent = $.event
-								.fix(context.event.h5DelegatingEvent.originalEvent);
+						var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 
 						delegatedJQueryEvent.type = EVENT_DRAG_DU_START;
 						delegatedJQueryEvent.target = this.rootElement;
@@ -3401,10 +3462,8 @@
 
 						//プロキシが設定されたらそれを表示
 						var proxyElem = this._dragSession.getProxyElement();
-						var rootOffset = $root.offset();
-						this._dragRootOffset = rootOffset; //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
-						var proxyLeft = event.pageX - rootOffset.left;
-						var proxyTop = event.pageY - rootOffset.top;
+						var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+						var proxyTop = event.pageY - this._dragStartRootOffset.top;
 						if (proxyElem) {
 							$root.append(proxyElem);
 							$(proxyElem).css({
@@ -3413,12 +3472,6 @@
 								top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
 							});
 						}
-
-						//						for (var i = 0, len = this._dragSession._targets.length; i < len; i++) {
-						//							var targetDU = this._dragSession._targets[i];
-						//							stageModule.SvgUtil.setAttribute(targetDU.domRoot, 'pointer-events',
-						//									'none');
-						//						}
 					}
 				} else {
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
@@ -3468,13 +3521,26 @@
 			}
 		},
 
-		'{rootElement} h5trackstart': function(context) {
-		//do nothing
+		_isMousedown: false,
+
+		'{rootElement} mousedown': function(context) {
+			this._isMousedown = true;
+			this._isDraggingStarted = false;
+			context.event.preventDefault();
 		},
 
-		'{rootElement} h5trackmove': function(context) {
+		_processDragMove: function(context) {
+			if (!this._isMousedown) {
+				//mousedownしていない＝ドラッグ操作でない場合
+				return;
+			}
+
+			context.event.preventDefault();
+
 			if (!this._isDraggingStarted) {
 				this._startDrag(context);
+				this._isDraggingStarted = true;
+				return;
 			}
 
 			//このフラグは、clickイベントハンドラ(_processClick())の中で
@@ -3492,8 +3558,13 @@
 
 			var event = context.event;
 
-			var dispDx = event.dx;
-			var dispDy = event.dy;
+			var dispDx = event.pageX - this._dragLastPagePos.x;
+			var dispDy = event.pageY - this._dragLastPagePos.y;
+
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
 
 			if (dispDx === 0 && dispDy === 0) {
 				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
@@ -3501,20 +3572,19 @@
 			}
 
 			//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
-			var delegatedJQueryEvent = $.event.fix(context.event.h5DelegatingEvent.originalEvent);
+			var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 
 			var that = this;
 
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
 				toggleBoundaryScroll.call(this, function(dispScrX, dispScrY) {
-					//TODO 仮実装
-					that._dragSession.onMove({
-						event: {
-							dx: dispScrX,
-							dy: dispScrY
-						}
-					});
+				//TODO 仮実装
+				//					that._dragSession.onMove(
+				//						event: {
+				//							dx: dispScrX,
+				//							dy: dispScrY
+				//					});
 				});
 
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
@@ -3532,8 +3602,8 @@
 				//TODO プロキシの移動はDragSessionに任せる方向で。constructorでドラッグのルート(Stage)を渡せば可能のはず
 				var proxyElem = this._dragSession.getProxyElement();
 				if (proxyElem) {
-					var proxyLeft = event.pageX - this._dragRootOffset.left;
-					var proxyTop = event.pageY - this._dragRootOffset.top;
+					var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+					var proxyTop = event.pageY - this._dragStartRootOffset.top;
 
 					$(proxyElem).css({
 						position: 'absolute',
@@ -3542,7 +3612,7 @@
 					});
 				}
 
-				this._dragSession.onMove(context);
+				this._dragSession.onMove(context.event);
 				break;
 			case DRAG_MODE_SELECT:
 				this._dragLastPagePos = {
@@ -3634,8 +3704,10 @@
 			}
 
 			function toggleBoundaryScroll(callback) {
-				var nineSlice = this._viewport.getNineSlicePosition(context.event.offsetX,
-						context.event.offsetY);
+				var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
+				var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
+
+				var nineSlice = this._viewport.getNineSlicePosition(pointerX, pointerY);
 				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
 					this._beginBoundaryScroll(nineSlice, callback);
 				} else {
@@ -3644,7 +3716,7 @@
 			}
 		},
 
-		'{rootElement} h5trackend': function(context) {
+		'{rootElement} mouseup': function(context) {
 			if (this._currentDragMode === DRAG_MODE_SELECT) {
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
@@ -3653,7 +3725,7 @@
 
 			var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
-			var delegatedJQueryEvent = $.event.fix(context.event.h5DelegatingEvent.originalEvent);
+			var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 			delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
 			delegatedJQueryEvent.target = this.rootElement;
 			delegatedJQueryEvent.currentTarget = this.rootElement;
@@ -3679,12 +3751,14 @@
 				this._dragSelectOverlayRect = null;
 			}
 
+			this._isMousedown = false;
 			this._isDraggingStarted = false;
-			this._dragRootOffset = null;
+			this._dragStartRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
 			this._dragSelectStartSelectedDU = null;
+			//			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
 			this._endBoundaryScroll();
 			$(this.rootElement).css('cursor', 'auto');
@@ -4096,10 +4170,15 @@
 		},
 
 		'{rootElement} mousemove': function(context, $el) {
-			if (this._currentDragMode !== DRAG_MODE_NONE) {
+			if (this._isMousedown) {
 				//ドラッグ中の場合はドラッグハンドラ(h5trackmove)の方で処理する
+				this._processDragMove(context);
 				return;
 			}
+
+			//			if (this._currentDragMode !== DRAG_MODE_NONE) {
+			//				return;
+			//			}
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
 
