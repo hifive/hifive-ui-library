@@ -76,7 +76,10 @@
 		 * @instance
 		 */
 		focus: function(obj) {
-			var oldFocused = this._focused;
+			//今回フォーカスを当てる要素と直前までフォーカスが当たっていた要素が同じ場合は
+			//oldFocusedはnullにする
+			var oldFocused = obj === this._focused ? null : this._focused;
+
 			var newSelected = null;
 			if (!this.isSelected(obj)) {
 				//非選択状態であれば自動的に選択状態に(追加)する

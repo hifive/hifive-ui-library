@@ -3843,7 +3843,7 @@
 			}
 		},
 
-		'{rootElement} mouseup': function(context) {
+		'{document} mouseup': function(context) {
 			this._isMousedown = false;
 
 			if (this._currentDragMode === DRAG_MODE_NONE) {
@@ -4340,10 +4340,21 @@
 			}
 		},
 
-		'{rootElement} mousemove': function(context, $el) {
+		/**
+		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
+		 *
+		 * @param context
+		 * @param $el
+		 */
+		'{document} mousemove': function(context) {
 			if (this._isMousedown) {
-				//ドラッグ中の場合はドラッグハンドラ(h5trackmove)の方で処理する
+				//ドラッグ中の場合はドラッグハンドラで処理する
 				this._processDragMove(context);
+				return;
+			}
+
+			if (this.rootElement.compareDocumentPosition(context.event.target) !== Node.DOCUMENT_POSITION_CONTAINED_BY) {
+				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
 				return;
 			}
 
