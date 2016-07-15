@@ -1774,7 +1774,7 @@
 	//TODO layouter(仮)を差し込めるようにし、
 	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
 	//layouterがフックして強制ブロック・別の値をセット等できるようにする
-	var DisplayUnit = h5.cls.RootClass.extend(function() {
+	var DisplayUnit = EventDispatcher.extend(function() {
 		var duIdSequence = 0;
 
 		var classDesc = {
@@ -1805,6 +1805,9 @@
 							return;
 						}
 						this._x = value;
+
+						var ev = Event.create('positionChange');
+						this.dispatchEvent(ev);
 					}
 				},
 				y: {
@@ -1816,6 +1819,9 @@
 							return;
 						}
 						this._y = value;
+
+						var ev = Event.create('positionChange');
+						this.dispatchEvent(ev);
 					}
 				},
 				width: {
@@ -1827,6 +1833,9 @@
 							return;
 						}
 						this._width = value;
+
+						var ev = Event.create('sizeChange');
+						this.dispatchEvent(ev);
 					}
 				},
 				height: {
@@ -1838,6 +1847,9 @@
 							return;
 						}
 						this._height = value;
+
+						var ev = Event.create('sizeChange');
+						this.dispatchEvent(ev);
 					}
 				},
 				domRoot: null,
@@ -2173,7 +2185,9 @@
 				_from: null,
 				_to: null,
 				_endpointFrom: null,
-				_endpointTo: null
+				_endpointTo: null,
+				_fromSizeChangeHandler: null,
+				_toSizeChangeHandler: null
 			},
 
 			accessor: {
@@ -2198,11 +2212,19 @@
 					this._from = duFrom;
 					this._to = duTo;
 
+					var that = this;
+					this._fromSizeChangeHandler = function() {
+						that.requestRender();
+					};
+
 					this._endpointFrom = EdgeEndpoint.create();
 					this._endpointTo = EdgeEndpoint.create();
 
 					this.domRoot = createSvgElement('svg');
 					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+
+					//TODO エッジが切れる問題対応。引かれた線に合わせてRectを調整する方法とどちらが良いか
+					this.domRoot.setAttribute('overflow', 'visible');
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
@@ -2373,7 +2395,20 @@
 
 				_onAddedToRoot: function(stage) {
 					this._rootStage = stage;
+
+					this._from.addEventListener('sizeChange', this._fromSizeChangeHandler);
+					this._to.addEventListener('sizeChange', this._fromSizeChangeHandler);
+					this._from.addEventListener('positionChange', this._fromSizeChangeHandler);
+					this._to.addEventListener('positionChange', this._fromSizeChangeHandler);
+
 					this.requestRender();
+				},
+
+				_onRemove: function() {
+					this._from.removeEventListener('sizeChange', this._fromSizeChangeHandler);
+					this._to.removeEventListener('sizeChange', this._fromSizeChangeHandler);
+					this._from.removeEventListener('positionChange', this._fromSizeChangeHandler);
+					this._to.removeEventListener('positionChange', this._fromSizeChangeHandler);
 				}
 			}
 		};
@@ -2502,6 +2537,12 @@
 				removeDisplayUnit: function(du) {
 					var idx = this._children.indexOf(du);
 					if (idx !== -1) {
+						//削除されるDU側にクリーンアップのタイミングを与える
+						//TODO ここで記述するのがよいか？
+						if (typeof du._onRemove === 'function') {
+							du._onRemove();
+						}
+
 						this._children.splice(idx, 1);
 						this._rootG.removeChild(du.domRoot);
 						du._parentDU = null;
