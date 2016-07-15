@@ -236,6 +236,9 @@
 
 			//this._stageController.isWheelScrollDirectionReversed = false;
 
+			this._stageController.setScaleRangeX(0.2, 2);
+			this._stageController.setScaleRangeY(0.2, 2);
+
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(0, 100, 100, 100));

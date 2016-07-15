@@ -2714,26 +2714,33 @@
 					requestAnimationFrame(function() {
 						that._isUpdateTransformReserved = false;
 
-						var scaleXStr = getScaleString(that._scaleX);
-						var scaleYStr = getScaleString(that._scaleY);
+						var scaleXStr = getNormalizedValueString(that._scaleX);
+						var scaleYStr = getNormalizedValueString(that._scaleY);
+						var tx = getNormalizedValueString(that.x);
+						var ty = getNormalizedValueString(that.y);
 
 						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-								scaleXStr, scaleYStr, that.x, that.y);
+								scaleXStr, scaleYStr, tx, ty);
 						that._rootG.setAttribute('transform', transform);
 					});
 
 					//小数表現を正規化して小数文字列を返す
-					function getScaleString(scale) {
-						var intPart = Math.floor(scale);
-						if (intPart === scale) {
+					function getNormalizedValueString(value) {
+						var PRECISION = 10;
+
+						var intPart = Math.floor(value);
+						if (value === intPart) {
+							//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
 							return '' + intPart;
 						}
-						var decPart = scale - intPart;
-
-						//TODO 精度を良くする
-						var dp1 = Math.floor(decPart * 10);
-						var dp2 = Math.floor(decPart * 100 - dp1 * 10);
-						var ret = '' + intPart + '.' + dp1 + dp2;
+						var str = value.toString();
+						var dotIdx = str.indexOf('.');
+						if (dotIdx === -1) {
+							return '' + intPart;
+						}
+						var decstr = str.slice(dotIdx + 1);
+						var len = decstr.length > PRECISION ? PRECISION : decstr.length;
+						var ret = '' + intPart + '.' + decstr.slice(0, len);
 						return ret;
 					}
 				}
