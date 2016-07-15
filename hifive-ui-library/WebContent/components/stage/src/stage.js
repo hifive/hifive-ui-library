@@ -2397,6 +2397,10 @@
 					this._classSet.remove(cssClass);
 				},
 
+				clearClass: function() {
+					this._classSet.clear();
+				},
+
 				getClassSet: function() {
 					return this._classSet;
 				},
