@@ -270,6 +270,9 @@
 				 */
 				_targets: null,
 
+				//ドラッグ中のカーソル制御範囲
+				_cursorRoot: null,
+
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTarget()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
@@ -317,7 +320,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function DragSession(event) {
+				constructor: function DragSession(rootElement, event) {
 					DragSession._super.call(this);
 
 					this.canDrop = true;
@@ -328,6 +331,8 @@
 					this._moveFunctionDataMap = {};
 
 					this._proxyElement = null;
+
+					this._cursorRoot = rootElement;
 
 					//TODO touchイベント、pointer event対応
 					this._startPageX = event.pageX;
@@ -488,6 +493,10 @@
 					this._deltaMove(event, delta);
 				},
 
+				setCursor: function(cursorStyle) {
+					$(this._cursorRoot).css('cursor', cursorStyle);
+				},
+
 				_deltaMove: function(event, delta) {
 					if (!this._targets) {
 						return;
@@ -567,7 +576,7 @@
 		},
 
 		'{rootElement} h5trackstart': function(context) {
-			this._dragSession = DragSession.create(context.event);
+			this._dragSession = DragSession.create(this.rootElement, context.event);
 			//TODO DragStartイベントの出し方
 			this.trigger('dgDragStart', {
 				dragSession: this._dragSession
@@ -3720,7 +3729,8 @@
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
 					this._dragSession = h5.cls.manager.getClass(
-							'h5.ui.components.stage.DragSession').create(context.event);
+							'h5.ui.components.stage.DragSession').create(this.rootElement,
+							context.event);
 					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -3769,7 +3779,8 @@
 					if (du.isDraggable) {
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 						this._dragSession = h5.cls.manager.getClass(
-								'h5.ui.components.stage.DragSession').create(context.event);
+								'h5.ui.components.stage.DragSession').create(this.rootElement,
+								context.event);
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
 						setCursor('default');
@@ -4058,17 +4069,19 @@
 				});
 			}
 
-			var dragOverDU = this._getDragOverDisplayUnit(context.event);
+			if (this._currentDragMode === DRAG_MODE_DU) {
+				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
-			var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-			delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
-			delegatedJQueryEvent.target = this.rootElement;
-			delegatedJQueryEvent.currentTarget = this.rootElement;
+				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
 
-			this.trigger(delegatedJQueryEvent, {
-				dragSession: this._dragSession,
-				dragOverDisplayUnit: dragOverDU
-			});
+				this.trigger(delegatedJQueryEvent, {
+					dragSession: this._dragSession,
+					dragOverDisplayUnit: dragOverDU
+				});
+			}
 
 			if (this._dragSession && !this._dragSession.isCompleted) {
 				//end(), cancel()を呼ぶと、プロキシは自動的に削除される
