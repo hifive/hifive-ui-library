@@ -4556,7 +4556,7 @@
 				return;
 			}
 
-			if (this.rootElement.compareDocumentPosition(context.event.target) !== Node.DOCUMENT_POSITION_CONTAINED_BY) {
+			if (!(this.rootElement.compareDocumentPosition(context.event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
 				return;
 			}
