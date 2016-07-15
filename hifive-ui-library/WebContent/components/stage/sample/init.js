@@ -343,10 +343,20 @@
 
 		'{rootElement} stageDragMove': function(context) {
 			this.log.debug('stageDragMove');
+			context.evArg.dragSession.setCursor('not-allowed');
 		},
 
 		'{rootElement} stageDragEnd': function(context) {
 			this.log.debug('stageDragEnd');
+		},
+
+		'{rootElement} stageClick': function(context) {
+			this.log.debug('stageClick');
+		},
+
+		'[name="scrollIntoView"] click': function() {
+			var du = this._stageController.getDisplayUnitById('duid_4');
+			du.scrollIntoView();
 		}
 
 	};

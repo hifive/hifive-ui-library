@@ -1989,8 +1989,12 @@
 
 					if (mode == null || mode == 'center') {
 						var wr = this._rootStage._viewport.getWorldRect();
-						var cx = this.x + (this.width / 2);
-						var cy = this.y + (this.height / 2);
+						var cx = this.x + this.width / 2;
+						var cy = this.y + this.height / 2;
+
+						var moveDx = wr.x - cx + wr.width / 2;
+						var moveDy = wr.y - cy + wr.height / 2;
+						this._rootStage.scrollWorldBy(-moveDx, -moveDy);
 						return;
 					}
 
@@ -3653,6 +3657,7 @@
 				var stageClickEventArg = {
 					stageController: this
 				};
+				//TODO duClickとstageClickは背反なのでここでのイベントクローンはコード共通化できる
 				var stageClickEvent = $.event.fix(event.originalEvent);
 				stageClickEvent.type = EVENT_STAGE_CLICK;
 				stageClickEvent.target = this.rootElement;
