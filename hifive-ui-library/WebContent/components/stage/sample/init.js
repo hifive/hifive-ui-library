@@ -352,6 +352,7 @@
 
 		'{rootElement} stageClick': function(context) {
 			this.log.debug('stageClick');
+			//context.event.preventDefault();
 		},
 
 		'[name="scrollIntoView"] click': function() {

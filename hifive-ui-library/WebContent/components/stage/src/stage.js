@@ -1979,6 +1979,7 @@
 				 * 引数なし、または"center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
 				 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
 				 * 引数に"glance"を指定した場合、このDUが「ちょうど見える」ようにスクロールします。
+				 * glanceの場合、DUがすでに可視範囲にすべて入っている場合はスクロールしません。
 				 */
 				scrollIntoView: function(mode) {
 					//TODO 引数に位置を取れるようにする？
@@ -3662,11 +3663,10 @@
 				stageClickEvent.type = EVENT_STAGE_CLICK;
 				stageClickEvent.target = this.rootElement;
 				stageClickEvent.currentTarget = this.rootElement;
-				var stageClickPrevented = $(this.rootElement).trigger(stageClickEvent,
-						stageClickEventArg);
+				$(this.rootElement).trigger(stageClickEvent, stageClickEventArg);
 
 				//ステージがクリックされた場合はDUからのイベントは発生しない
-				if (isExclusive && !stageClickPrevented) {
+				if (isExclusive && !stageClickEvent.isDefaultPrevented()) {
 					//ステージがクリックされ、かつ排他選択だった(shiftKeyが押されていなかった)時、かつ
 					//ステージクリックのデフォルト挙動がキャンセルされなかった場合は全て選択解除
 					this._selectionLogic.unselectAll();
