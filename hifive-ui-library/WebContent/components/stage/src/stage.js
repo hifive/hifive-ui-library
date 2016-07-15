@@ -4750,7 +4750,7 @@
 			if (event.shiftKey) {
 				// シフトキーが押されていたら拡大縮小
 				var ds = 0.1;
-				if (event.originalEvent.wheelDelta > 0) {
+				if (event.originalEvent.wheelDelta < 0) {
 					ds *= -1;
 				}
 				if (this.isWheelScaleDirectionReversed) {
@@ -4768,7 +4768,7 @@
 
 			//ステージをスクロールする
 			var dy = 40;
-			if (event.originalEvent.wheelDelta < 0) {
+			if (event.originalEvent.wheelDelta > 0) {
 				dy *= -1;
 			}
 			if (this.isWheelScrollDirectionReversed) {
