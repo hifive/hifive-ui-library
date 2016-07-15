@@ -344,7 +344,9 @@
 		},
 
 		'{rootElement} stageDragMove': function(context) {
-			this.log.debug('stageDragMove');
+			var dragOverDU = context.evArg.dragOverDisplayUnit;
+			this.log.debug('stageDragMove: dragOverDUID={0}', dragOverDU == null ? 'null'
+					: dragOverDU.id);
 			//context.evArg.dragSession.setCursor('not-allowed');
 		},
 

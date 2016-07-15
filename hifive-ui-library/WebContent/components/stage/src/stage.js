@@ -4273,21 +4273,11 @@
 		},
 
 		_getDragOverDisplayUnit: function(event) {
-			var dragOverDU = null;
-
-			var dragFocusDU = this._getIncludingDisplayUnit(event.target);
-			if (dragFocusDU) {
-				stageModule.SvgUtil.setAttribute(dragFocusDU.domRoot, 'display', 'none');
-			}
-
-			//TODO elementFromPointと、DUのRectから論理的に探索するのと高速な方式にする
-			var el = document.elementFromPoint(event.clientX, event.clientY);
-			dragOverDU = this._getIncludingDisplayUnit(el);
-
-			if (dragFocusDU) {
-				stageModule.SvgUtil.removeAttribute(dragFocusDU.domRoot, 'display');
-			}
-
+			//ドラッグ中、ドラッグ対象のDUはpointer-events=noneの
+			//隠し最前面レイヤーに移動している。
+			//そのため、イベントはその他のレイヤーにあるDUから発生する。
+			//つまり、event.targetを含むDUは、ドラッグオーバーしているDUになる。
+			var dragOverDU = this._getIncludingDisplayUnit(event.target);
 			return dragOverDU;
 		},
 
