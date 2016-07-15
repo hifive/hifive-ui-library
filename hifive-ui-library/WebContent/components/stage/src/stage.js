@@ -269,13 +269,19 @@
 				 */
 				_targets: null,
 
-				//ドラッグ中のカーソル制御範囲
+				//ドラッグ中のカーソル制御範囲(setCursor()のcursorスタイルの付与先)
 				_cursorRoot: null,
 
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTarget()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
 				_targetInitialPositions: null,
+
+				//各ドラッグ対象のドラッグ開始直前の親DU
+				_targetInitialParentDU: null,
+
+				//ドラッグ中のDUを格納するレイヤーノード
+				_foregroundRootElement: null,
 
 				//ドラッグ開始時のPagePosition
 				_startPageX: null,
@@ -319,7 +325,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function DragSession(rootElement, event) {
+				constructor: function DragSession(rootElement, foregroundRootElement, event) {
 					DragSession._super.call(this);
 
 					this.canDrop = true;
@@ -332,6 +338,7 @@
 					this._proxyElement = null;
 
 					this._cursorRoot = rootElement;
+					this._foregroundRootElement = foregroundRootElement;
 
 					//TODO touchイベント、pointer event対応
 					this._startPageX = event.pageX;
@@ -367,19 +374,6 @@
 				 */
 				setTarget: function(target) {
 					this._targets = target;
-
-					//セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
-					var positions = [];
-					var targets = Array.isArray(target) ? target : [target];
-					for (var i = 0, len = targets.length; i < len; i++) {
-						var t = targets[i];
-						var pos = {
-							x: t.x,
-							y: t.y
-						};
-						positions.push(pos);
-					}
-					this._targetInitialPositions = positions;
 				},
 
 				getTarget: function() {
@@ -398,6 +392,12 @@
 					return this._proxyElement;
 				},
 
+				begin: function() {
+					this._saveInitialStates();
+					this._moveToForeground();
+					this._setDraggingFlag(true);
+				},
+
 				/**
 				 * ドラッグセッションを終了して位置を確定させる
 				 * <p>
@@ -414,11 +414,15 @@
 					}
 					this._isCompleted = true;
 
+					this._setDraggingFlag(false);
+
 					if (!this.canDrop) {
 						//ドロップできない場合はキャンセル処理を行う
 						this.cancel();
 						return;
 					}
+
+					this._moveToOriginalParent();
 
 					this._cleanUp();
 
@@ -444,7 +448,7 @@
 					if (andRollbackPosition !== false) {
 						//引数に明示的にfalseを渡された場合を除き、
 						//ドラッグしていたDUの位置を戻す
-						this._rollbackPosition();
+						this._rollbackStates();
 					}
 
 					this._cleanUp();
@@ -496,6 +500,37 @@
 					$(this._cursorRoot).css('cursor', cursorStyle);
 				},
 
+				/**
+				 * セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
+				 */
+				_saveInitialStates: function() {
+					var parentDUs = [];
+					var positions = [];
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var t = targets[i]; //DU
+						var pos = {
+							x: t.x,
+							y: t.y
+						};
+						positions.push(pos);
+						parentDUs.push(t.parentDisplayUnit);
+					}
+					this._targetInitialPositions = positions;
+					this._targetInitialParentDU = parentDUs;
+				},
+
+				_moveToForeground: function() {
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var t = targets[i]; //DU
+						var gpos = t.getWorldGlobalPosition();
+						t.domRoot.parentNode.removeChild(t.domRoot);
+						this._foregroundRootElement.appendChild(t.domRoot);
+						t.moveTo(gpos.x, gpos.y);
+					}
+				},
+
 				_deltaMove: function(event, delta) {
 					if (!this._targets) {
 						return;
@@ -534,11 +569,39 @@
 					}
 				},
 
-				_rollbackPosition: function() {
+				_moveToOriginalParent: function() {
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						var orgParentDU = this._targetInitialParentDU[i];
+						var gpos = du.getWorldGlobalPosition();
+
+						//TODO ツリーの親子関係を変えない方式がよいか、変える方式がよいか
+
+						//DUの描画内容をフォアグラウンドに移動させるとき、
+						//DU自体のツリーの親子関係は変えずに
+						//domRootを最前面レイヤーに移動させている。
+						//そのため、gposの値は元々のツリー位置上の値となる。
+						//そこで、親DUのx,yを引くことで意図した値になる。
+						gpos.x -= orgParentDU.x;
+						gpos.y -= orgParentDU.y;
+
+						var localPos = orgParentDU.globalToLocalPosition(gpos.x, gpos.y);
+						du.domRoot.parentNode.removeChild(du.domRoot);
+						orgParentDU._rootG.appendChild(du.domRoot);
+						du.moveTo(localPos.x, localPos.y);
+					}
+				},
+
+				_rollbackStates: function() {
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						var pos = this._targetInitialPositions[i];
+						var orgParentDU = this._targetInitialParentDU[i];
+
+						du.domRoot.parentNode.removeChild(du.domRoot);
+						orgParentDU._rootG.appendChild(du.domRoot);
 						du.moveTo(pos.x, pos.y);
 					}
 				},
@@ -546,12 +609,23 @@
 				_cleanUp: function() {
 					this._targets = null;
 					this._targetInitialPositions = null;
+					this._targetInitialParentDU = null;
+					this._foregroundRootElement = null;
+					this._cursorRoot = null;
 					this._moveFunction = null;
 					this._moveFunctionDataMap = null;
 
 					if (this._proxyElement) {
 						$(this._proxyElement).remove();
 						this._proxyElement = null;
+					}
+				},
+
+				_setDraggingFlag: function(value) {
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						du._isDragging = value;
 					}
 				}
 			}
@@ -1797,7 +1871,6 @@
 				_width: null,
 				_height: null,
 
-				//TODO privateなプロパティへの対応
 				_parentDU: null,
 
 				_rootStage: null,
@@ -1866,6 +1939,11 @@
 				groupTag: {
 					get: function() {
 						return this._groupTag;
+					}
+				},
+				parentDisplayUnit: {
+					get: function() {
+						return this._parentDU;
 					}
 				}
 			},
@@ -2032,6 +2110,13 @@
 						parentDU = this._parentDU._parentDU;
 					}
 
+					//TODO ドラッグ中にDUの親子関係を変えずに
+					//実DOMのみ最前面レイヤーに移動させる都合上行っている
+					if (this.isDragging) {
+						wgx -= this._parentDU.x;
+						wgy -= this._parentDU.y;
+					}
+
 					var wpos = WorldPoint.create(wgx, wgy);
 					return wpos;
 				},
@@ -2053,6 +2138,12 @@
 					 * この要素を現在ドラッグ可能かどうか
 					 */
 					isDraggable: null,
+
+					/**
+					 * 現在この要素をドラッグ中かどうか。
+					 */
+					_isDragging: null,
+
 					_graphics: null,
 					_renderer: null,
 					_isSelected: null,
@@ -2114,6 +2205,11 @@
 									'height').set.call(this, value);
 							this.requestRender();
 						}
+					},
+					isDragging: {
+						get: function() {
+							return this._isDragging;
+						}
 					}
 				},
 				method: {
@@ -2122,6 +2218,7 @@
 
 						this._isSelectable = true;
 						this.isDraggable = true;
+						this._isDragging = false;
 
 						this._isSelected = false;
 						this._isFocused = false;
@@ -2668,6 +2765,18 @@
 					this.scrollTo(x, y);
 				},
 
+				globalToLocalPosition: function(worldGlobalX, worldGlobalY) {
+					var gpos = this.getWorldGlobalPosition();
+					var localPos = WorldPoint.create(worldGlobalX - gpos.x, worldGlobalY - gpos.y);
+					return localPos;
+				},
+
+				localToGlobalPosition: function(worldLocalX, worldLocalY) {
+					var gpos = this.getWorldGlobalPosition();
+					var globalPos = WorldPoint.create(worldLocalX + gpos.x, worldLocalY + gpos.y);
+					return globalPos;
+				},
+
 				_clampScale: function(scaleX, scaleY) {
 					var x = StageUtil.clamp(scaleX, this._minScaleX, this._maxScaleX);
 					var y = StageUtil.clamp(scaleY, this._minScaleY, this._maxScaleY);
@@ -2849,6 +2958,11 @@
 				},
 				getTargets: function() {
 					return this._targets;
+				},
+				forEach: function(func) {
+					for (var i = 0, len = this._targets.length; i < len; i++) {
+						func.call(this, this._targets[i], i, this);
+					}
 				},
 				remove: function() {
 					for (var i = 0, len = this._targets.length; i < len; i++) {
@@ -3775,13 +3889,16 @@
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
-					this._dragSession = DragSession.create(this.rootElement, context.event);
+					this._dragSession = DragSession.create(this.rootElement,
+							this._foremostLayer._rootG, context.event);
 					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
 					this.trigger(EVENT_DRAG_DU_START, {
 						dragSession: this._dragSession
 					});
+
+					//TODO 処理をAUTOの場合と統一
 					if (dragSession.getProxy()) {
 						//TODO プロキシを出す
 					}
@@ -3823,7 +3940,8 @@
 				if (du) {
 					if (du.isDraggable) {
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
-						this._dragSession = DragSession.create(this.rootElement, context.event);
+						this._dragSession = DragSession.create(this.rootElement,
+								this._foremostLayer._rootG, context.event);
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
 						setCursor('default');
@@ -3838,6 +3956,8 @@
 						this.trigger(delegatedJQueryEvent, {
 							dragSession: this._dragSession
 						});
+
+						this._dragSession.begin();
 
 						//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
 						var op = BulkOperation.create(this._dragSession.getTarget());

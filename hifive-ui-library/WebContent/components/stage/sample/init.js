@@ -178,7 +178,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 0.3
+					opacity: 1
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
 
@@ -199,7 +199,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 0.3
+					opacity: 0.5
 				});
 
 				var text = graphics.drawText();
@@ -337,7 +337,8 @@
 		'{rootElement} stageDragStart': function(context) {
 			this.log.debug('stageDragStart');
 
-			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：' + context.evArg.dragSession.getTarget().length + '</div>')[0];
+			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
+					+ context.evArg.dragSession.getTarget().length + '</div>')[0];
 
 			context.evArg.dragSession.setProxyElement(elem);
 		},
