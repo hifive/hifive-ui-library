@@ -414,15 +414,13 @@
 					}
 					this._isCompleted = true;
 
-					this._setDraggingFlag(false);
-
 					if (!this.canDrop) {
 						//ドロップできない場合はキャンセル処理を行う
 						this.cancel();
 						return;
 					}
 
-					//this._moveToOriginalParent();
+					this._setDraggingFlag(false);
 
 					this._cleanUp();
 
@@ -450,6 +448,8 @@
 						//ドラッグしていたDUの位置を戻す
 						this._rollbackStates();
 					}
+
+					this._setDraggingFlag(false);
 
 					this._cleanUp();
 
@@ -598,10 +598,6 @@
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						var pos = this._targetInitialPositions[i];
-						var orgParentDU = this._targetInitialParentDU[i];
-
-						du.domRoot.parentNode.removeChild(du.domRoot);
-						orgParentDU._rootG.appendChild(du.domRoot);
 						du.moveTo(pos.x, pos.y);
 					}
 				},
