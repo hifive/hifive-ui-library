@@ -1996,10 +1996,9 @@
 						//centerモード
 						var cx = gpos.x + this.width / 2;
 						var cy = gpos.y + this.height / 2;
-
-						moveDx = wr.x - cx + wr.width / 2;
-						moveDy = wr.y - cy + wr.height / 2;
-						this._rootStage.scrollWorldBy(-moveDx, -moveDy);
+						moveDx = cx - wr.x - wr.width / 2;
+						moveDy = cy - wr.y - wr.height / 2;
+						this._rootStage.scrollWorldBy(moveDx, moveDy);
 						return;
 					}
 
