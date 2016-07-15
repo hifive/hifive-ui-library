@@ -4768,7 +4768,7 @@
 
 			//ステージをスクロールする
 			var dy = 40;
-			if (event.originalEvent.wheelDelta > 0) {
+			if (event.originalEvent.wheelDelta < 0) {
 				dy *= -1;
 			}
 			if (this.isWheelScrollDirectionReversed) {
