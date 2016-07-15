@@ -3760,7 +3760,7 @@
 					height: 0,
 					'pointer-events': 'none'
 				});
-				this._foremostLayer.domRoot.appendChild(this._dragSelectOverlayRect); //TODO foremostLayerはLayerにしなくてよさそう
+				this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect); //TODO foremostLayerはLayerにしなくてよさそう
 				break;
 			case DRAG_MODE_AUTO:
 			default:
@@ -3823,7 +3823,7 @@
 							height: 0,
 							'pointer-events': 'none'
 						});
-						this._foremostLayer.domRoot.appendChild(this._dragSelectOverlayRect);
+						this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						this._currentDragMode = DRAG_MODE_SCREEN;
 						setCursor('move');
@@ -4080,7 +4080,7 @@
 			}
 
 			if (this._dragSelectOverlayRect) {
-				this._foremostLayer.domRoot.removeChild(this._dragSelectOverlayRect);
+				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
 				this._dragSelectOverlayRect = null;
 			}
 
@@ -4278,7 +4278,7 @@
 				}
 
 				that._foremostLayer.setScale(that._viewport.scaleX, that._viewport.scaleY);
-				that._foremostLayer.moveTo(scrollX, scrollY);
+				that._foremostLayer.moveTo(-that._viewport.worldX, -that._viewport.worldY);
 			});
 		},
 
