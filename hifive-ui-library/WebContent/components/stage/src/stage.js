@@ -1975,11 +1975,10 @@
 				},
 
 				/**
-				 * このDUが可視範囲に入るように、ステージをスクロールします。
-				 * 引数なし、または"center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
+				 * このDUが可視範囲に入るように、ステージをスクロールします。<br>
+				 * "center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
 				 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
-				 * 引数に"glance"を指定した場合、このDUが「ちょうど見える」ようにスクロールします。
-				 * glanceの場合、DUがすでに可視範囲にすべて入っている場合はスクロールしません。
+				 * 引数なしの場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
 				 */
 				scrollIntoView: function(mode) {
 					//TODO 引数に位置を取れるようにする？
@@ -1988,18 +1987,35 @@
 						return;
 					}
 
-					if (mode == null || mode == 'center') {
-						var wr = this._rootStage._viewport.getWorldRect();
-						var cx = this.x + this.width / 2;
-						var cy = this.y + this.height / 2;
+					var gpos = this.getWorldGlobalPosition();
+					var wr = this._rootStage._viewport.getWorldRect();
+					var moveDx = 0;
+					var moveDy = 0;
 
-						var moveDx = wr.x - cx + wr.width / 2;
-						var moveDy = wr.y - cy + wr.height / 2;
+					if (mode == 'center') {
+						//centerモード
+						var cx = gpos.x + this.width / 2;
+						var cy = gpos.y + this.height / 2;
+
+						moveDx = wr.x - cx + wr.width / 2;
+						moveDy = wr.y - cy + wr.height / 2;
 						this._rootStage.scrollWorldBy(-moveDx, -moveDy);
 						return;
 					}
 
 					//glanceモード
+					if (gpos.x < wr.x) {
+						moveDx = gpos.x - wr.x;
+					} else if (gpos.x + this.width > wr.x + wr.width) {
+						moveDx = gpos.x + this.width - (wr.x + wr.width);
+					}
+
+					if (gpos.y < wr.y) {
+						moveDy = gpos.y - wr.y;
+					} else if (gpos.y + this.height > wr.y + wr.height) {
+						moveDy = gpos.y + this.height - (wr.y + wr.height);
+					}
+					this._rootStage.scrollWorldBy(moveDx, moveDy);
 				},
 
 				getWorldGlobalPosition: function() {
@@ -4193,8 +4209,6 @@
 			}
 		},
 
-		//_dragController: h5.ui.components.stage.DragController,
-
 		_updateRootSize: function(width, height) {
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
@@ -4526,11 +4540,6 @@
 					this._viewport.displayY);
 			return pos;
 		},
-
-		//		'{rootElement} dgDragStart': function(context, $el) {
-		//			var ds = context.evArg.dragSession;
-		//			ds.addDragCallback(this._own(this._onDragMove));
-		//		},
 
 		_lastEnteredDU: null,
 

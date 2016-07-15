@@ -178,7 +178,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 1
+					opacity: 0.3
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
 
@@ -199,7 +199,7 @@
 					y: 0,
 					width: 20,
 					height: 20,
-					opacity: 1
+					opacity: 0.3
 				});
 
 				var text = graphics.drawText();
@@ -253,7 +253,8 @@
 				this._units.push(unit);
 			}
 
-			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(container);
+			var mainLayer = this._stageController.getLayer(LAYER_ID_MAIN);
+			mainLayer.addDisplayUnit(container);
 
 			var edge = this._createEdge(this._units[1], this._units[3]);
 			this._edges.push(edge);
@@ -357,6 +358,11 @@
 
 		'[name="scrollIntoView"] click': function() {
 			var du = this._stageController.getDisplayUnitById('duid_4');
+			du.scrollIntoView('center');
+		},
+
+		'[name="scrollIntoView_glance"] click': function() {
+			var du = this._stageController.getDisplayUnitById('duid_5');
 			du.scrollIntoView();
 		}
 
