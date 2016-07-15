@@ -87,7 +87,6 @@
 		_dispatchPseudoKeyboardEvent: function(originalEvent, eventSource) {
 			//DOM4では new KeyboardEvent()とすべき。
 			//しかし、IE11では KeyboardEventはコンストラクタとして使えない。
-			//TODO ブラウザ互換性対応
 			//KeyboardEventコンストラクタをサポートしているのはChrome, Firefox31以降（IEは非対応）
 
 			var pseudoEvent;
@@ -2906,6 +2905,7 @@
 	var RootClass = h5.cls.RootClass;
 	var stageModule = h5.ui.components.stage;
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
+	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
 
 	var Viewport = RootClass.extend(function() {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
@@ -3775,9 +3775,7 @@
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
-					this._dragSession = h5.cls.manager.getClass(
-							'h5.ui.components.stage.DragSession').create(this.rootElement,
-							context.event);
+					this._dragSession = DragSession.create(this.rootElement, context.event);
 					this._dragSession.setTarget(this._selectionLogic.getSelected());
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -3825,9 +3823,7 @@
 				if (du) {
 					if (du.isDraggable) {
 						//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
-						this._dragSession = h5.cls.manager.getClass(
-								'h5.ui.components.stage.DragSession').create(this.rootElement,
-								context.event);
+						this._dragSession = DragSession.create(this.rootElement, context.event);
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
 						this._currentDragMode = DRAG_MODE_DU;
 						setCursor('default');

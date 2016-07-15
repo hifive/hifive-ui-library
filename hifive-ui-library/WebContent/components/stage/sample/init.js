@@ -337,14 +337,14 @@
 		'{rootElement} stageDragStart': function(context) {
 			this.log.debug('stageDragStart');
 
-			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：3</div>')[0];
+			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：' + context.evArg.dragSession.getTarget().length + '</div>')[0];
 
 			context.evArg.dragSession.setProxyElement(elem);
 		},
 
 		'{rootElement} stageDragMove': function(context) {
 			this.log.debug('stageDragMove');
-			context.evArg.dragSession.setCursor('not-allowed');
+			//context.evArg.dragSession.setCursor('not-allowed');
 		},
 
 		'{rootElement} stageDragEnd': function(context) {
