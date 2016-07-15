@@ -1974,8 +1974,27 @@
 					this.moveBy(wx, wy);
 				},
 
-				scrollIntoView: function() {
-				//TODO
+				/**
+				 * このDUが可視範囲に入るように、ステージをスクロールします。
+				 * 引数なし、または"center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
+				 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
+				 * 引数に"glance"を指定した場合、このDUが「ちょうど見える」ようにスクロールします。
+				 */
+				scrollIntoView: function(mode) {
+					//TODO 引数に位置を取れるようにする？
+					//TODO BasicDUに持たせる？ContentsDU?
+					if (!this._rootStage) {
+						return;
+					}
+
+					if (mode == null || mode == 'center') {
+						var wr = this._rootStage._viewport.getWorldRect();
+						var cx = this.x + (this.width / 2);
+						var cy = this.y + (this.height / 2);
+						return;
+					}
+
+					//glanceモード
 				},
 
 				getWorldGlobalPosition: function() {
@@ -2164,12 +2183,6 @@
 							return;
 						}
 						this._rootStage.unfocus(andUnselect);
-					},
-
-					//TODO 引数に位置を取れるようにする？
-					//TODO BasicDUに持たせる？ContentsDU?
-					scrollIntoView: function() {
-					//TODO
 					},
 
 					_onAddedToRoot: function(stage) {
@@ -3280,6 +3293,8 @@
 	var EVENT_DRAG_DU_FAIL = 'stageDragFail';
 	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
 
+	var EVENT_STAGE_CLICK = 'stageClick';
+
 	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
@@ -3626,6 +3641,7 @@
 		_processClick: function(event, triggerEventName) {
 			if (this._isDraggingStarted) {
 				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
+				//mouseupよりもclickイベントが後に発生するので、
 				this._isDraggingStarted = false;
 				return;
 			}
@@ -3633,10 +3649,21 @@
 			var du = this._getIncludingDisplayUnit(event.target);
 
 			var isExclusive = !event.shiftKey;
-			if (!du) {
+			if (!du && event.type === 'click') {
+				var stageClickEventArg = {
+					stageController: this
+				};
+				var stageClickEvent = $.event.fix(event.originalEvent);
+				stageClickEvent.type = EVENT_STAGE_CLICK;
+				stageClickEvent.target = this.rootElement;
+				stageClickEvent.currentTarget = this.rootElement;
+				var stageClickPrevented = $(this.rootElement).trigger(stageClickEvent,
+						stageClickEventArg);
+
 				//ステージがクリックされた場合はDUからのイベントは発生しない
-				if (isExclusive) {
-					//ステージがクリックされ、かつ排他選択だった(shiftKeyが押されていなかった)時は全て選択解除
+				if (isExclusive && !stageClickPrevented) {
+					//ステージがクリックされ、かつ排他選択だった(shiftKeyが押されていなかった)時、かつ
+					//ステージクリックのデフォルト挙動がキャンセルされなかった場合は全て選択解除
 					this._selectionLogic.unselectAll();
 				}
 				return;
@@ -4098,7 +4125,6 @@
 			}
 
 			this._isMousedown = false;
-			this._isDraggingStarted = false;
 			this._dragStartRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
 			this._currentDragMode = DRAG_MODE_NONE;
