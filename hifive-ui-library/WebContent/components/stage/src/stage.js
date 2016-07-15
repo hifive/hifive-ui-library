@@ -422,7 +422,7 @@
 						return;
 					}
 
-					this._moveToOriginalParent();
+					//this._moveToOriginalParent();
 
 					this._cleanUp();
 
@@ -583,8 +583,8 @@
 						//domRootを最前面レイヤーに移動させている。
 						//そのため、gposの値は元々のツリー位置上の値となる。
 						//そこで、親DUのx,yを引くことで意図した値になる。
-						gpos.x -= orgParentDU.x;
-						gpos.y -= orgParentDU.y;
+						//gpos.x -= orgParentDU.x;
+						//gpos.y -= orgParentDU.y;
 
 						var localPos = orgParentDU.globalToLocalPosition(gpos.x, gpos.y);
 						du.domRoot.parentNode.removeChild(du.domRoot);
@@ -4239,6 +4239,8 @@
 				delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this._dragSession._moveToOriginalParent();
 
 				this.trigger(delegatedJQueryEvent, {
 					dragSession: this._dragSession,
