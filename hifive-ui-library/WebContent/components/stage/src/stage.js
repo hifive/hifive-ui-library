@@ -1724,6 +1724,7 @@
 		return desc;
 	});
 
+	//重複を許さないセット
 	var SimpleSet = RootClass.extend(function() {
 		var desc = {
 			name: 'h5.ui.components.stage.SimpleSet',
@@ -2187,7 +2188,8 @@
 				_endpointFrom: null,
 				_endpointTo: null,
 				_fromSizeChangeHandler: null,
-				_toSizeChangeHandler: null
+				_toSizeChangeHandler: null,
+				_classSet: null
 			},
 
 			accessor: {
@@ -2217,6 +2219,8 @@
 						that.requestRender();
 					};
 
+					this._classSet = SimpleSet.create();
+
 					this._endpointFrom = EdgeEndpoint.create();
 					this._endpointTo = EdgeEndpoint.create();
 
@@ -2229,7 +2233,7 @@
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
-				_render: function() {
+				_render: function(du) {
 					//TODO 仮実装
 					//バインドされているDUの位置が変わったら再描画が必要
 					var fr = this._from.getRect();
@@ -2244,6 +2248,8 @@
 						this.domRoot.appendChild(this._svgLine);
 					}
 					var line = this._svgLine;
+
+					line.className.baseVal = du.getClassSet().toArray().join(' ');
 
 					var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
 					var toHAlign = this.endpointTo.junctionHorizontalAlign;
@@ -2379,6 +2385,22 @@
 					});
 				},
 
+				hasClass: function(cssClass) {
+					return this._classSet.has(cssClass);
+				},
+
+				addClass: function(cssClass) {
+					this._classSet.add(cssClass);
+				},
+
+				removeClass: function(cssClass) {
+					this._classSet.remove(cssClass);
+				},
+
+				getClassSet: function() {
+					return this._classSet;
+				},
+
 				//TODO BasicDUにも同じメソッドがある。クラス階層について要検討
 				requestRender: function() {
 					//TODO 正しくは次の再描画フレームで描画
@@ -2389,7 +2411,7 @@
 					//TODO rAFをここで直接使わない
 					var that = this;
 					requestAnimationFrame(function() {
-						that._render();
+						that._render(that);
 					});
 				},
 

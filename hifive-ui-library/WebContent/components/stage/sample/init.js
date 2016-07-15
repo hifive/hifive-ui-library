@@ -224,6 +224,9 @@
 			edge.endpointFrom.junctionHorizontalAlign = 'offset';
 			edge.endpointFrom.junctionOffsetX = 15;
 
+			edge.addClass('myEdge');
+			edge.addClass('edge-type-1');
+
 			return edge;
 		},
 
