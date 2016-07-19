@@ -497,13 +497,22 @@
 				},
 
 				setCursor: function(cursorStyle) {
+					if (cursorStyle == null) {
+						cursorStyle = '';
+					}
 					$(this._cursorRoot).css('cursor', cursorStyle);
 				},
 
 				/**
 				 * セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
+				 *
+				 * @private
 				 */
 				_saveInitialStates: function() {
+					if (!this._targets) {
+						return;
+					}
+
 					var parentDUs = [];
 					var positions = [];
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
@@ -516,11 +525,16 @@
 						positions.push(pos);
 						parentDUs.push(t.parentDisplayUnit);
 					}
+					//TODO オブジェクト化してまとめて保持
 					this._targetInitialPositions = positions;
 					this._targetInitialParentDU = parentDUs;
 				},
 
 				_moveToForeground: function() {
+					if (!this._targets) {
+						return;
+					}
+
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var t = targets[i]; //DU
@@ -570,6 +584,10 @@
 				},
 
 				_moveToOriginalParent: function() {
+					if (!this._targets) {
+						return;
+					}
+
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -594,6 +612,10 @@
 				},
 
 				_rollbackStates: function() {
+					if (!this._targets) {
+						return;
+					}
+
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -618,6 +640,10 @@
 				},
 
 				_setDraggingFlag: function(value) {
+					if (!this._targets) {
+						return;
+					}
+
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
