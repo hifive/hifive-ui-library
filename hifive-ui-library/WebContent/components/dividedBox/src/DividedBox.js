@@ -873,6 +873,7 @@
 			if (prevMaxSize) {
 				nextEnd = Math.min(nextEnd, this._lastPos[l_t] + (prevMaxSize - prevOuterSize));
 			}
+
 			this._trackingData = {
 				$dividerGroup: $dividerGroup,
 				$dividers: $dividers,
@@ -1323,7 +1324,7 @@
 
 			if ($prevDivider.length) {
 				var pos = $prevDivider.position();
-				dividerL_T = pos[l_t] + pos[w_h];
+				dividerL_T = pos[l_t] + $prevDivider[w_h]();
 			}
 
 			if (boxL_T !== dividerL_T) {
