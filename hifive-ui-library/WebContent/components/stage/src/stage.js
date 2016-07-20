@@ -4802,25 +4802,41 @@
 			}
 		},
 
-		'{rootElement} mousewheel': function(context, $el) {
+		'{rootElement} wheel': function(context, $el) {
 			var event = context.event;
+			var wheelEvent = event.originalEvent;
 
+			//画面のスクロールをキャンセル
 			event.preventDefault();
+
+			//順方向(下にホイールを回した)なら1(スクロール時：下にスクロール、スケール時：縮小)
+			var wheelDirection = 1;
+
+			if (wheelEvent.wheelDelta > 0 || wheelEvent.deltaY < 0) {
+				//wheelDeltaは非標準だが、Chrome(51で確認)ではwheelイベントにもwheelDeltaを含む。(IE11, FF47では含まれない。)
+				//Chromeの場合、shiftKeyを押しながらホイールを回すと
+				//X方向のスクロールとして扱われ、deltaYが0になりdeltaXが変化する。(IE11, FF47では、shiftを押してもdeltaYが変化する。)
+				//ブラウザの挙動に合わせるのも一つの考え方だが、この部品では現状スクロールバーは出しておらず
+				//(＝X方向にスクロールするということがUI的に想起されない)
+				//他ブラウザとの動作の一貫性から考えてもY方向にスクロールさせるのがよいと考える。
+				//そのため、wheelDeltaを先に調べ、これがある場合は
+				//その正負に基づきつつ常にY方向のスクロールとして扱うこととする。
+				//なお、wheelDeltaとdeltaYは正負の論理が逆なので注意。
+				wheelDirection = -1;
+			}
 
 			// TODO どの操作でどうするかは要検討
 			if (event.shiftKey) {
 				// シフトキーが押されていたら拡大縮小
-				var ds = 0.1;
-				if (event.originalEvent.wheelDelta < 0) {
-					ds *= -1;
-				}
 				if (this.isWheelScaleDirectionReversed) {
-					ds *= -1;
+					wheelDirection *= -1;
 				}
 
+				var ds = -0.1 * wheelDirection;
+
 				var rootOffset = $(this.rootElement).offset();
-				var offsetX = event.originalEvent.pageX - rootOffset.left;
-				var offsetY = event.originalEvent.pageY - rootOffset.top;
+				var offsetX = wheelEvent.pageX - rootOffset.left;
+				var offsetY = wheelEvent.pageY - rootOffset.top;
 
 				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds, offsetX,
 						offsetY);
@@ -4828,13 +4844,11 @@
 			}
 
 			//ステージをスクロールする
-			var dy = 40;
-			if (event.originalEvent.wheelDelta > 0) {
-				dy *= -1;
-			}
 			if (this.isWheelScrollDirectionReversed) {
-				dy *= -1;
+				wheelDirection *= -1;
 			}
+			var dy = 40 * wheelDirection;
+
 			this.scrollBy(0, dy);
 		},
 
