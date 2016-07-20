@@ -3797,7 +3797,7 @@
 		_processClick: function(event, triggerEventName) {
 			if (this._isDraggingStarted) {
 				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
-				//mouseupよりもclickイベントが後に発生するので、
+				//mouseupよりもclickイベントが後に発生するので、このタイミングでフラグをオフにする
 				this._isDraggingStarted = false;
 				return;
 			}
@@ -3805,7 +3805,14 @@
 			var du = this._getIncludingDisplayUnit(event.target);
 
 			var isExclusive = !event.shiftKey;
-			if (!du && event.type === 'click') {
+			if (!du) {
+				//ステージがクリックまたはダブルクリックされた場合
+
+				if (event.type !== 'click') {
+					//ダブルクリックの場合は何もしない
+					return;
+				}
+
 				var stageClickEventArg = {
 					stageController: this
 				};
@@ -3825,7 +3832,7 @@
 				return;
 			}
 
-			//以下はDUがクリック・ダブルクリックされた場合
+			//以下はDUがクリックまたはダブルクリックされた場合
 
 			//duClickイベントは、DUがselectableかどうかに関係なく発生させる
 			var evArg = {
