@@ -340,6 +340,7 @@
 			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
 					+ context.evArg.dragSession.getTarget().length + '</div>')[0];
 
+			//context.event.preventDefault();
 			context.evArg.dragSession.setProxyElement(elem);
 		},
 
@@ -367,8 +368,11 @@
 		'[name="scrollIntoView_glance"] click': function() {
 			var du = this._stageController.getDisplayUnitById('duid_5');
 			du.scrollIntoView();
-		}
+		},
 
+		'{rootElement} stageDragSelectStart': function(context) {
+			//context.event.preventDefault();
+		}
 	};
 
 	$(function() {

@@ -3965,8 +3965,6 @@
 						this._dragSession = DragSession.create(this.rootElement,
 								this._foremostLayer._rootG, context.event);
 						this._dragSession.setTarget(this._selectionLogic.getSelected());
-						this._currentDragMode = DRAG_MODE_DU;
-						setCursor('default');
 
 						//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 						var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
@@ -3974,10 +3972,33 @@
 						delegatedJQueryEvent.type = EVENT_DRAG_DU_START;
 						delegatedJQueryEvent.target = this.rootElement;
 						delegatedJQueryEvent.currentTarget = this.rootElement;
+						//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+						//defaultPreventedの値を引き継いで返してしまう。
+						//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+						//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+						//クロージャで持っているため外から変更できない。
+						//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+						//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+						var isDelegatedJQueryEventDefaultPrevented = false;
+						delegatedJQueryEvent.preventDefault = function() {
+							isDelegatedJQueryEventDefaultPrevented = true;
+						};
+						delegatedJQueryEvent.isDefaultPrevented = function() {
+							return isDelegatedJQueryEventDefaultPrevented;
+						};
 
-						this.trigger(delegatedJQueryEvent, {
+						var dragStartEvent = this.trigger(delegatedJQueryEvent, {
 							dragSession: this._dragSession
 						});
+
+						if (dragStartEvent.isDefaultPrevented()) {
+							//stageDragStartイベントでpreventDefault()された場合はドラッグを行わない。
+							//TODO DragSessionのクリーンアップを呼ぶようにする？
+							return;
+						}
+
+						this._currentDragMode = DRAG_MODE_DU;
+						setCursor('default');
 
 						this._dragSession.begin();
 
@@ -4002,13 +4023,18 @@
 					//DUを掴んでいない場合、Ctrlキーを押している場合はSELECTドラッグ、
 					//押していなくてかつスクロール方向がNONE以外ならSCREENドラッグを開始
 					if (event.shiftKey) {
+						var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_START, {
+							stageController: this
+						});
+
+						if (dragSelectStartEvent.isDefaultPrevented()) {
+							return;
+						}
+
+						setCursor('default');
 						this._currentDragMode = DRAG_MODE_SELECT;
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
-						this.trigger(EVENT_DRAG_SELECT_START, {
-							stageController: this
-						});
-						setCursor('default');
 
 						this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
 						this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
@@ -4021,6 +4047,8 @@
 						});
 						this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
+						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
+
 						this._currentDragMode = DRAG_MODE_SCREEN;
 						setCursor('move');
 					}
