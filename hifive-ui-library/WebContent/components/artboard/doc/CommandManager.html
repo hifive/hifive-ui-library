@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta charset="UTF-8">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<meta http-equiv="Expires" content="-1">
+	<title>JSDoc: Class: CommandManager</title>
+    <!--[if lt IE 9]>
+    <script src="js/modernizr.js"></script>
+    <![endif]-->
+
+    <link type="text/css" rel="stylesheet" href="styles/node-dark.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+
+	<script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
+    <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
+    <script src="js/jquery.js"> </script>
+    <script src="js/extension.js"> </script>
+</head>
+
+<body>
+
+<div id="container">
+    <nav>
+        <div class="h5-searchBox">
+        	<input type="text" placeholder="Search...">
+        	<button class="clear">×</button>
+        </div>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+    </nav>
+
+    <div id="main">
+
+        <h1 class="page-title">Class: CommandManager</h1>
+
+        
+
+        <section>
+
+        <header>
+            <h2>CommandManager</h2>
+            
+        </header>
+
+        <article>
+            <div class="container-overview">
+            <dt>
+    <h4 class="name" id="CommandManager"><span class="type-signature"></span>new CommandManager</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドマネージャ<p><a href="Command.html">Command</a>の管理を行うためのクラス</p><p><a href="CommandManager.html#append">CommandManager#append</a>で追加された順番でコマンドを管理し、 実行済みコマンドの取り消し、及び実行が取り消されたコマンドの実行を行うことができます。<p>このクラスは以下のタイミングでイベントをあげます</p><table> <thead><tr><th>イベント名</th><th>タイミング/th> </tr></thead><tbody><tr><td>disableUndo</td><td>取り消すコマンドが無くなった時(undoが呼ばれて一番最初にappendされたコマンドを取り消した時)</td></tr><tr><td>enableUndo</td><td>取り消すコマンドができた時(redoが呼ばれて、実行済みコマンドができた時)</td></tr><tr><td>enableRedo</td><td>実行するコマンドができた時(undoが呼ばれて、実行が取り消されたコマンドができた時)</td></tr><tr><td>disableRedo</td><td>実行するコマンドが無くなった時(redoが呼ばれて、一番最後にappendされたコマンドが実行された時)</td></tr></tbody></table>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 568</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+
+            </div>
+
+            
+
+            
+                <h3 class="subsection-title">Mixes In</h3>
+
+                <ul>
+                    <li><a href="EventDispatcher.html">EventDispatcher</a></li>
+                </ul>
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="append"><span class="type-signature"></span>append</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドを追加<p>コマンドが配列で渡された場合は一連のコマンドを一つのコマンドとして扱います</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>command</code></td>
+            
+            
+            <td class="type">
+            <a href="Command.html">Command</a> | <a href="Command.html">Command[]</a>
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 622</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="clearAll"><span class="type-signature"></span>clearAll</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        管理対象のコマンド(<a href="CommandManager.html#append">CommandManager#append</a>で追加したコマンド)を全て管理対象から外します
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 732</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="redo"><span class="type-signature"></span>redo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        一つ進む<p>最後に実行を取り消したコマンドの実行操作を行います</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 696</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    実行したコマンドのexecuteの戻り値
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="undo"><span class="type-signature"></span>undo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        一つ戻す<p>最後に実行したコマンドの取り消し操作を行います</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 655</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    取り消し操作を実行したコマンドのundo()実行時の戻り値
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr></dl>
+
+            
+
+            
+
+            
+        </article>
+
+        </section>
+        
+    </div>
+
+    <br clear="both">
+</div>
+
+<footer>
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 16:12:44 GMT+0900 (JST)<br />
+    <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
+</footer>
+
+<script> sh_highlightDocument(); </script>
+</body>
+</html>

@@ -33,10 +33,8 @@
 		var ew = $el.outerWidth();
 		var eh = $el.outerHeight();
 
-		var rangeX = getRange(pageX, [ ex, ex + borderWidth,
-				ex + ew - borderWidth, ex + ew ]);
-		var rangeY = getRange(pageY, [ ey, ey + borderWidth,
-				ey + eh - borderWidth, ey + eh ]);
+		var rangeX = getRange(pageX, [ex, ex + borderWidth, ex + ew - borderWidth, ex + ew]);
+		var rangeY = getRange(pageY, [ey, ey + borderWidth, ey + eh - borderWidth, ey + eh]);
 
 		if (isOutOfRange(rangeX) || isOutOfRange(rangeY)) {
 			return null;
@@ -117,7 +115,7 @@
 	var TMPL_DRAG_SELECT_OVERLAY = '<div class="dragSelectOverlay"></div>';
 
 	function wrapInArray(val) {
-		return $.isArray(val) ? val : [ val ];
+		return $.isArray(val) ? val : [val];
 	}
 
 	function isIncluded(containerRegion, containedRegion) {
@@ -138,7 +136,7 @@
 		this.rank = rank;
 
 		this.queues = [];
-		for ( var i = 0; i < rank; i++) {
+		for (var i = 0; i < rank; i++) {
 			this.queues[i] = [];
 		}
 	}
@@ -153,7 +151,7 @@
 	PriorityQueueBase.prototype.peek = function(rank) {
 		if (rank === undefined) {
 			// rankが指定されない場合、もっとも優先度の高い要素を返す
-			for ( var i = 0; i < this.rank; i++) {
+			for (var i = 0; i < this.rank; i++) {
 				if (this.queues[i].length == 0) {
 					continue;
 				}
@@ -172,7 +170,7 @@
 	PriorityQueueBase.prototype.poll = function(rank) {
 		if (rank === undefined) {
 			// rankが指定されない場合、もっとも優先度の高い要素を返す
-			for ( var i = 0; i < this.rank; i++) {
+			for (var i = 0; i < this.rank; i++) {
 				if (this.queues[i].length == 0) {
 					continue;
 				}
@@ -191,7 +189,7 @@
 	PriorityQueueBase.prototype.count = function(rank) {
 		if (rank === undefined) {
 			var count = 0;
-			for ( var i = 0; i < this.rank; i++) {
+			for (var i = 0; i < this.rank; i++) {
 				count += this.queues[i].length;
 			}
 			return count;
@@ -205,7 +203,7 @@
 
 	PriorityQueueBase.prototype.clear = function(rank) {
 		if (rank === undefined) {
-			for ( var i = 0; i < this.rank; i++) {
+			for (var i = 0; i < this.rank; i++) {
 				this.queues[i] = [];
 			}
 		} else {
@@ -232,8 +230,7 @@
 
 	/**
 	 * @memberOf RendererQueue
-	 * @param var_args
-	 *            「即時実行」優先度キューに入れる要素。可変長引数。
+	 * @param var_args 「即時実行」優先度キューに入れる要素。可変長引数。
 	 */
 	RendererQueue.prototype.addImmediate = function(var_args) {
 		var args = h5.u.obj.argsToArray(arguments);
@@ -243,8 +240,7 @@
 
 	/**
 	 * @memberOf RendererQueue
-	 * @param var_args
-	 *            「最高」優先度キューに入れる要素。可変長引数。
+	 * @param var_args 「最高」優先度キューに入れる要素。可変長引数。
 	 */
 	RendererQueue.prototype.addHighest = function(var_args) {
 		var args = h5.u.obj.argsToArray(arguments);
@@ -254,8 +250,7 @@
 
 	/**
 	 * @memberOf RendererQueue
-	 * @param var_args
-	 *            「高」優先度キューに入れる要素。可変長引数。
+	 * @param var_args 「高」優先度キューに入れる要素。可変長引数。
 	 */
 	RendererQueue.prototype.addHigh = function(var_args) {
 		var args = h5.u.obj.argsToArray(arguments);
@@ -265,8 +260,7 @@
 
 	/**
 	 * @memberOf RendererQueue
-	 * @param var_args
-	 *            「普通」優先度キューに入れる要素。可変長引数。
+	 * @param var_args 「普通」優先度キューに入れる要素。可変長引数。
 	 */
 	RendererQueue.prototype.addMedium = function(var_args) {
 		var args = h5.u.obj.argsToArray(arguments);
@@ -276,8 +270,7 @@
 
 	/**
 	 * @memberOf RendererQueue
-	 * @param var_args
-	 *            「低」優先度キューに入れる要素。可変長引数。
+	 * @param var_args 「低」優先度キューに入れる要素。可変長引数。
 	 */
 	RendererQueue.prototype.addLow = function(var_args) {
 		var args = h5.u.obj.argsToArray(arguments);
@@ -295,15 +288,14 @@
 	}
 
 	/**
-	 * プロパティを作成する。 ES5のObject.definePropertyが使用できない場合は 非標準の__defineGetter__,
-	 * __defineSetter__を使用する。 どちらも使用できない場合は例外を発生させる。 参考：
+	 * プロパティを作成する。 ES5のObject.definePropertyが使用できない場合は 非標準の__defineGetter__, __defineSetter__を使用する。
+	 * どちらも使用できない場合は例外を発生させる。 参考：
 	 * http://blogs.msdn.com/b/ie/archive/2010/09/07/transitioning-existing-code-to-the-es5-getter-setter-apis.aspx
 	 */
 	function defineProperty(obj, prop, desc) {
 		var ieVer = getIEVersion();
 		var isIE = ieVer == -1 ? false : true;
-		var isES5Compliant = Object.defineProperty
-				&& (!isIE || (isIE && (ieVer >= 9))); // TODO
+		var isES5Compliant = Object.defineProperty && (!isIE || (isIE && (ieVer >= 9))); // TODO
 		// Safari5.0も対応していないのではじく必要あり
 
 		if (isES5Compliant) {
@@ -324,14 +316,11 @@
 	}
 
 	/**
-	 * ノードを二つ引数にとり、その位置を比較する関数。 ノードのソート時に使用します
-	 * この関数を使ってソートすると、インデックスの小さい方がx座標が小さくなる。
+	 * ノードを二つ引数にとり、その位置を比較する関数。 ノードのソート時に使用します この関数を使ってソートすると、インデックスの小さい方がx座標が小さくなる。
 	 *
 	 * @private
-	 * @param {node}
-	 *            n1
-	 * @param {node}
-	 *            n2
+	 * @param {node} n1
+	 * @param {node} n2
 	 * @return {number} n1とn2のx座標の差。同じ場合はy座標の差を返します
 	 */
 	function nodePositionComparer(n1, n2) {
@@ -349,10 +338,10 @@
 		return def = n1.layoutPos.y - n2.layoutPos.y;
 	}
 
-	/***************************************************************************
+	/***********************************************************************************************
 	 * @class
 	 * @name h5.ui.components.graph.primitive.ObjectPool
-	 **************************************************************************/
+	 **********************************************************************************************/
 	function ObjectPool() {
 		this.instanceCreator = null;
 		this.preferredReserveSize = 30;
@@ -367,19 +356,15 @@
 	 * オブジェクトプールを作成します。
 	 *
 	 * @memberOf h5.ui.components.graph.primitive.ObjectPool
-	 * @param poolParam
-	 *            オブジェクトプールのパラメータ。preferredReserveSizeで予備インスタンスの保持数を指定可能
-	 * @param instanceCreatorFunction
-	 *            インスタンスを生成し返す関数。オブジェクトを返す必要があります。
-	 * @param instanceCreatorFunctionArgsArray
-	 *            instanceCreatorFunctionに渡す引数。配列で指定します。
+	 * @param poolParam オブジェクトプールのパラメータ。preferredReserveSizeで予備インスタンスの保持数を指定可能
+	 * @param instanceCreatorFunction インスタンスを生成し返す関数。オブジェクトを返す必要があります。
+	 * @param instanceCreatorFunctionArgsArray instanceCreatorFunctionに渡す引数。配列で指定します。
 	 * @returns {___pool0}
 	 */
 	ObjectPool.create = function(poolParam, instanceCreatorFunction,
 			instanceCreatorFunctionArgsArray) {
 		if ((poolParam != null) && !$.isPlainObject(poolParam)) {
-			throw new Error(
-					'poolParamがオブジェクトではありません。パラメータを指定する必要がない場合はnullを指定してください。');
+			throw new Error('poolParamがオブジェクトではありません。パラメータを指定する必要がない場合はnullを指定してください。');
 		}
 
 		if (!instanceCreatorFunction) {
@@ -412,11 +397,10 @@
 		if (this.reserved.length > 0) {
 			instance = this.reserved.pop();
 		} else {
-			instance = this.instanceCreator.apply(null,
-					this.instanceCreatorArgsArray);
+			instance = this.instanceCreator.apply(null, this.instanceCreatorArgsArray);
 			// TODO プロパティ名が固定
 			defineProperty(instance, '_piid', {
-				value : this.lastInstanceId++
+				value: this.lastInstanceId++
 			});
 		}
 
@@ -480,10 +464,10 @@
 		return this.activeSize;
 	};
 
-	/***************************************************************************
+	/***********************************************************************************************
 	 * @class
 	 * @name h5.ui.components.graph.primitive.EventDispatcher
-	 **************************************************************************/
+	 **********************************************************************************************/
 	function EventDispatcher(target) {
 		if (target) {
 			this._eventTarget = target;
@@ -519,7 +503,7 @@
 			return false;
 		}
 
-		for ( var i = 0, count = l.length; i < count; i++) {
+		for (var i = 0, count = l.length; i < count; i++) {
 			if (l[i] === listener) {
 				return true;
 			}
@@ -561,7 +545,7 @@
 
 		var l = this._eventListeners[type];
 
-		for ( var i = 0, count = l.length; i < count; i++) {
+		for (var i = 0, count = l.length; i < count; i++) {
 			if (l[i] === listener) {
 				l.splice(i, 1);
 				return;
@@ -587,7 +571,7 @@
 			event.target = this._eventTarget ? this._eventTarget : this;
 		}
 
-		for ( var i = 0, count = l.length; i < count; i++) {
+		for (var i = 0, count = l.length; i < count; i++) {
 			l[i].call(event.target, event);
 		}
 	};
@@ -607,8 +591,8 @@
 		var proxyValue = {};
 
 		return {
-			original : obj,
-			get : function() {
+			original: obj,
+			get: function() {
 				if (arguments.length === 0) {
 					var retValues = obj.get();
 					$.extend(retValues, proxyValue);
@@ -623,7 +607,7 @@
 				}
 			},
 
-			set : function() {
+			set: function() {
 				if (arguments.length === 2) {
 					var key = arguments[0];
 					var value = arguments[1];
@@ -679,14 +663,14 @@
 
 	GraphData.prototype = new EventDispatcher();
 	$.extend(GraphData.prototype, {
-		getNodeModel : function() {
+		getNodeModel: function() {
 			return this._nodeModel;
 		},
 
 		/**
 		 * @memberOf GraphData
 		 */
-		setNodeModel : function(nodeModel) {
+		setNodeModel: function(nodeModel) {
 			if (this._nodeModel) {
 				this._nodeModel.removeEventListener('itemsChange',
 						this._nodeModel_itemsChangeListener);
@@ -695,16 +679,15 @@
 			this._nodeModel = nodeModel;
 
 			if (nodeModel) {
-				nodeModel.addEventListener('itemsChange',
-						this._nodeModel_itemsChangeListener);
+				nodeModel.addEventListener('itemsChange', this._nodeModel_itemsChangeListener);
 			}
 		},
 
-		getEdgeModel : function() {
+		getEdgeModel: function() {
 			return this._edgeModel;
 		},
 
-		setEdgeModel : function(edgeModel) {
+		setEdgeModel: function(edgeModel) {
 			if (this._edgeModel) {
 				this._edgeModel.removeEventListener('itemsChange',
 						this._edgeModel_itemsChangeListener);
@@ -713,20 +696,19 @@
 			this._edgeModel = edgeModel;
 
 			if (edgeModel) {
-				edgeModel.addEventListener('itemsChange',
-						this._edgeModel_itemsChangeListener);
+				edgeModel.addEventListener('itemsChange', this._edgeModel_itemsChangeListener);
 			}
 		},
 
-		setFromNodeIdKey : function(key) {
+		setFromNodeIdKey: function(key) {
 			this._fromNodeIdKey = key;
 		},
 
-		setToNodeIdKey : function(key) {
+		setToNodeIdKey: function(key) {
 			this._toNodeIdKey = key;
 		},
 
-		getEndpointNodeId : function(edgeId) {
+		getEndpointNodeId: function(edgeId) {
 			var e = this._edgeModel.get(edgeId);
 
 			if (!e) {
@@ -734,19 +716,19 @@
 			}
 
 			return {
-				fromId : e.get(this._fromNodeIdKey),
-				toId : e.get(this._toNodeIdKey)
+				fromId: e.get(this._fromNodeIdKey),
+				toId: e.get(this._toNodeIdKey)
 			};
 		},
 
-		getRelatedEdges : function(nodeId) {
+		getRelatedEdges: function(nodeId) {
 			if (!(nodeId in this._relatedEdges)) {
 				return null;
 			}
 			return this._relatedEdges[nodeId];
 		},
 
-		removeRelatedEdges : function(nodeId) {
+		removeRelatedEdges: function(nodeId) {
 			var edges = this.getRelatedEdges(nodeId);
 			if (!edges) {
 				return;
@@ -761,66 +743,66 @@
 				edgeArray = edges.from.concat(edges.to);
 			}
 
-			for ( var i = edgeArray.length - 1; i >= 0; i--) {
+			for (var i = edgeArray.length - 1; i >= 0; i--) {
 				this._edgeModel.remove(edgeArray[i]);
 			}
 		},
 
-		_handleNodeItemsChange : function(event) {
+		_handleNodeItemsChange: function(event) {
 			var created = event.created;
-			for ( var i = 0, len = created.length; i < len; i++) {
+			for (var i = 0, len = created.length; i < len; i++) {
 				this._addNode(created[i]);
 			}
 
 			var changed = event.changed;
-			for ( var i = 0, len = changed.length; i < len; i++) {
+			for (var i = 0, len = changed.length; i < len; i++) {
 				this._changeNode(changed[i]);
 			}
 
 			var removed = event.removed;
-			for ( var i = 0, len = removed.length; i < len; i++) {
+			for (var i = 0, len = removed.length; i < len; i++) {
 				this._removeNode(removed[i]);
 			}
 		},
 
-		_handleEdgeItemsChange : function(event) {
+		_handleEdgeItemsChange: function(event) {
 			var created = event.created;
-			for ( var i = 0, len = created.length; i < len; i++) {
+			for (var i = 0, len = created.length; i < len; i++) {
 				this._addEdge(created[i]);
 			}
 
 			var removed = event.removed;
-			for ( var i = 0, len = removed.length; i < len; i++) {
+			for (var i = 0, len = removed.length; i < len; i++) {
 				this._removeEdge(removed[i]);
 			}
 		},
 
-		_addNode : function(node) {
+		_addNode: function(node) {
 			var ev = {
-				type : 'nodeAdd',
-				node : node
+				type: 'nodeAdd',
+				node: node
 			};
 			this.dispatchEvent(ev);
 		},
 
-		_changeNode : function(event) {
+		_changeNode: function(event) {
 			var ev = {
-				type : 'nodeChange',
-				node : event.target,
-				props : event.props
+				type: 'nodeChange',
+				node: event.target,
+				props: event.props
 			};
 			this.dispatchEvent(ev);
 		},
 
-		_removeNode : function(node) {
+		_removeNode: function(node) {
 			var ev = {
-				type : 'nodeRemove',
-				node : node
+				type: 'nodeRemove',
+				node: node
 			};
 			this.dispatchEvent(ev);
 		},
 
-		_addEdge : function(edge) {
+		_addEdge: function(edge) {
 			var fromNodeId = edge.get(this._fromNodeIdKey);
 			if (!this._relatedEdges[fromNodeId]) {
 				this._relatedEdges[fromNodeId] = {};
@@ -840,20 +822,20 @@
 			this._relatedEdges[toNodeId].to.push(edge);
 
 			var ev = {
-				type : 'edgeAdd',
-				edge : edge
+				type: 'edgeAdd',
+				edge: edge
 			};
 			this.dispatchEvent(ev);
 		},
 
-		_removeEdge : function(edge) {
+		_removeEdge: function(edge) {
 			var edgeIdKey = this._edgeModel._idKey;
 
 			var removingEdgeId = edge.get(edgeIdKey);
 
 			var fromNodeId = edge.get(this._fromNodeIdKey);
 			var fromEdges = this._relatedEdges[fromNodeId].from;
-			for ( var i = 0, count = fromEdges.length; i < count; i++) {
+			for (var i = 0, count = fromEdges.length; i < count; i++) {
 				if (fromEdges[i].get(edgeIdKey) == removingEdgeId) {
 					fromEdges.splice(i, 1);
 					break;
@@ -862,7 +844,7 @@
 
 			var toNodeId = edge.get(this._toNodeIdKey);
 			var toEdges = this._relatedEdges[toNodeId].to;
-			for ( var i = 0, count = toEdges.length; i < count; i++) {
+			for (var i = 0, count = toEdges.length; i < count; i++) {
 				if (toEdges[i].get(edgeIdKey) == removingEdgeId) {
 					toEdges.splice(i, 1);
 					break;
@@ -870,8 +852,8 @@
 			}
 
 			var ev = {
-				type : 'edgeRemove',
-				edge : edge
+				type: 'edgeRemove',
+				edge: edge
 			};
 			this.dispatchEvent(ev);
 		}
@@ -882,20 +864,19 @@
 	}
 
 	h5.u.obj.expose('h5.ui.components.graph.primitive', {
-		RendererQueue : RendererQueue
+		RendererQueue: RendererQueue
 	});
 
 	h5.u.obj.expose('h5.ui.components.graph.model', {
-		ObjectPool : ObjectPool,
-		createGraphData : createGraphData
+		ObjectPool: ObjectPool,
+		createGraphData: createGraphData
 	});
 
 	/* -------------------------------------------------------------------- */
 
 	// TODO jquery.svgを使う、あるいは汎用ヘルパー関数にする
 	function createSvgElement(tagName, attributes) {
-		var element = document.createElementNS('http://www.w3.org/2000/svg',
-				tagName);
+		var element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
 
 		if (attributes === undefined) {
 			return element;
@@ -956,10 +937,10 @@
 
 	var RENDERER_QUEUE_IMMEDIATE = h5.ui.components.graph.primitive.RendererQueue.IMMEDIATE;
 
-	var defaultLayerRenderer = [ {
-		name : 'div',
-		type : 'div'
-	} ];
+	var defaultLayerRenderer = [{
+		name: 'div',
+		type: 'div'
+	}];
 
 	var DEFAULT_TYPICAL_NODE_WIDTH = 50;
 	var DEFAULT_TYPICAL_NODE_HEIGHT = 100;
@@ -969,9 +950,9 @@
 		/**
 		 * デフォルトのノードのサイズ
 		 */
-		typicalSize : {
-			width : DEFAULT_TYPICAL_NODE_WIDTH,
-			height : DEFAULT_TYPICAL_NODE_HEIGHT
+		typicalSize: {
+			width: DEFAULT_TYPICAL_NODE_WIDTH,
+			height: DEFAULT_TYPICAL_NODE_HEIGHT
 		},
 
 		/**
@@ -979,7 +960,7 @@
 		 *
 		 * @returns "r" 右揃え、 "l" 左揃え、 "c" 中央揃え
 		 */
-		getAlignment : function(context) {
+		getAlignment: function(context) {
 			var nodeValue = context.vnode.get();
 			return nodeValue.alignment;
 		},
@@ -990,10 +971,10 @@
 		 * @param vnode
 		 * @returns {Object} x,yプロパティをからなるノードのレイアウト座標
 		 */
-		getLayoutPos : function(context) {
+		getLayoutPos: function(context) {
 			return {
-				x : context.node.get('x'),
-				y : context.node.get('y')
+				x: context.node.get('x'),
+				y: context.node.get('y')
 			};
 		},
 
@@ -1002,19 +983,19 @@
 		 *
 		 * @returns {Object} レイヤ名をキー名、DOM要素を値としたオブジェクト
 		 */
-		createView : function(context) {
+		createView: function(context) {
 			var div = document.createElement('div');
 			$(div).addClass(DEFAULT_NODE_CLASSNAME);
 			return {
-				div : div
+				div: div
 			};
 		},
 
 		/**
 		 * ノードの振る舞いを記述します。
 		 */
-		behavior : {
-			onbind : function(context) {
+		behavior: {
+			onbind: function(context) {
 				var nodeValue = context.vnode.get(); // ノードの値を一旦ただのオブジェクトとして取得
 				var view = context.view;
 				var str = nodeValue.id;
@@ -1024,30 +1005,29 @@
 				$(view.div).html(str);
 			},
 
-			onunbind : function(context) {
+			onunbind: function(context) {
 				$(context.view.div).html("");
 			},
 
-			ondataupdate : function(context) {
-			},
+			ondataupdate: function(context) {}
 		}
 	}
 
 	var DEFAULT_EDGE_STYRE_PROPERTY = {
-		round : {
-			radius : 5
+		round: {
+			radius: 5
 		},
-		arrow : {
-			lineLength : 10,
-			arrowStyle : 'nofilled'
+		arrow: {
+			lineLength: 10,
+			arrowStyle: 'nofilled'
 		}
 	};
 
 	var DEFAULT_ERROR_VALUE = 0.1;
 	var formatStr = h5.u.str.format;
-	/***************************************************************************
+	/***********************************************************************************************
 	 * @name DefaultEdgeRenderer
-	 **************************************************************************/
+	 **********************************************************************************************/
 	var defaultEdgeRenderer = {
 
 		/**
@@ -1057,74 +1037,74 @@
 		 * @param hasArrowhead
 		 * @returns エッジのビューノード
 		 */
-		createView : function(context) {
+		createView: function(context) {
 			var g = createSvgElement('g');
 
 			var mainLine = createSvgElement('path', {
-				class : 'edge',
-				d : "M 0 0"
+				'class': 'edge',
+				d: "M 0 0"
 			});
 			g.appendChild(mainLine);
 
 			var startArrow = createSvgElement('path', {
-				class : 'edge fromPointArrow',
-				display : 'none'
+				'class': 'edge fromPointArrow',
+				display: 'none'
 			});
 			g.appendChild(startArrow);
 			var endArrow = createSvgElement('path', {
-				class : 'edge endPointArrow',
-				display : 'none'
+				'class': 'edge endPointArrow',
+				display: 'none'
 			});
 			g.appendChild(endArrow);
 
 			var startRound = createSvgElement('circle', {
-				class : 'edge fromPointCircle',
-				cx : '0',
-				cy : '0',
-				r : DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
-				display : 'none'
+				'class': 'edge fromPointCircle',
+				cx: '0',
+				cy: '0',
+				r: DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
+				display: 'none'
 			});
 			g.appendChild(startRound);
 			var endRound = createSvgElement('circle', {
-				class : 'edge endPointCircle',
-				cx : '0',
-				cy : '0',
-				r : DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
-				display : 'none'
+				'class': 'edge endPointCircle',
+				cx: '0',
+				cy: '0',
+				r: DEFAULT_EDGE_STYRE_PROPERTY.round.radius,
+				display: 'none'
 			});
 			g.appendChild(endRound);
 
 			var startDiamond = createSvgElement('path', {
-				class : 'edge fromPointDiamond',
-				display : 'none'
+				'class': 'edge fromPointDiamond',
+				display: 'none'
 			});
 			g.appendChild(startDiamond);
 			var endDiamond = createSvgElement('path', {
-				class : 'edge endPointDiamond',
-				display : 'none'
+				'class': 'edge endPointDiamond',
+				display: 'none'
 			});
 			g.appendChild(endDiamond);
 
 			var startRect = createSvgElement('path', {
-				class : 'edge fromPointRect',
-				display : 'none'
+				'class': 'edge fromPointRect',
+				display: 'none'
 			});
 			g.appendChild(startRect);
 			var endRect = createSvgElement('path', {
-				class : 'edge endPointRect',
-				display : 'none'
+				'class': 'edge endPointRect',
+				display: 'none'
 			});
 			g.appendChild(endRect);
 
 			return g;
 		},
 
-		behavior : {
+		behavior: {
 			/**
 			 *
 			 */
-			_edgeTypeMap : {
-				circle : function(context) {
+			_edgeTypeMap: {
+				circle: function(context) {
 					var circle;
 					var center;
 					if (context.isFrom) {
@@ -1135,12 +1115,12 @@
 						center = context.through[context.through.length - 1];
 					}
 					$(circle).attr({
-						cx : center.x,
-						cy : center.y,
-						display : 'inline'
+						cx: center.x,
+						cy: center.y,
+						display: 'inline'
 					});
 				},
-				circleFill : function(context) {
+				circleFill: function(context) {
 					var circle;
 					if (context.isFrom) {
 						circle = context.view.childNodes[3];
@@ -1150,7 +1130,7 @@
 					this._edgeTypeMap['circle'].call(this, context);
 					this._addClass(circle, 'fill')
 				},
-				arrowhead : function(context) {
+				arrowhead: function(context) {
 					var endArrow;
 					if (context.isFrom) {
 						endArrow = context.view.childNodes[1];
@@ -1167,49 +1147,42 @@
 						} else {
 							var baseLen = 0;
 							if (context.isFrom) {
-								baseLen = this._calcEuclideanDist(path[0],
-										path[1]);
+								baseLen = this._calcEuclideanDist(path[0], path[1]);
 								sin = (path[1].y - path[0].y) / baseLen;
 								context.vx = path[1].x - path[0].x;
 							} else {
-								for ( var idx = path.length - 1; baseLen === 0
-										&& idx > 0; idx--) {
-									baseLen = this._calcEuclideanDist(
-											path[lastIndex], path[idx - 1]);
+								for (var idx = path.length - 1; baseLen === 0 && idx > 0; idx--) {
+									baseLen = this._calcEuclideanDist(path[lastIndex],
+											path[idx - 1]);
 								}
-								sin = (path[lastIndex].y - path[lastIndex - 1].y)
-										/ baseLen;
-								context.vx = path[lastIndex].x
-										- path[lastIndex - 1].x;
+								sin = (path[lastIndex].y - path[lastIndex - 1].y) / baseLen;
+								context.vx = path[lastIndex].x - path[lastIndex - 1].x;
 							}
 						}
 					} else {
 						sin = context.vy
-								/ this._calcEuclideanDist(
-										context.fromNode.layoutPos,
+								/ this._calcEuclideanDist(context.fromNode.layoutPos,
 										context.toNode.layoutPos);
 					}
-					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI
-							: -Math.asin(sin);
+					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI : -Math.asin(sin);
 
 					var arrowPoint;
-					if (path.length >= 2
-							|| context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
+					if (path.length >= 2 || context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
 						if (context.isFrom) {
 							arrowPoint = {
-								x : path[0].x,
-								y : path[0].y
+								x: path[0].x,
+								y: path[0].y
 							}
 						} else {
 							arrowPoint = {
-								x : path[lastIndex].x,
-								y : path[lastIndex].y
+								x: path[lastIndex].x,
+								y: path[lastIndex].y
 							}
 						}
 					} else {
 						arrowPoint = {
-							x : path[0].x,
-							y : path[0].y
+							x: path[0].x,
+							y: path[0].y
 						}
 						th = th - Math.PI;
 					}
@@ -1220,36 +1193,31 @@
 					if (context.isFrom) {
 						direction = -1;
 					}
-					var hx1 = arrowPoint.x + direction * len
-							* Math.cos(th - pi6);
-					var hy1 = arrowPoint.y + direction * len
-							* Math.sin(th - pi6);
-					var hx2 = arrowPoint.x + direction * len
-							* Math.cos(th + pi6);
-					var hy2 = arrowPoint.y + direction * len
-							* Math.sin(th + pi6);
+					var hx1 = arrowPoint.x + direction * len * Math.cos(th - pi6);
+					var hy1 = arrowPoint.y + direction * len * Math.sin(th - pi6);
+					var hx2 = arrowPoint.x + direction * len * Math.cos(th + pi6);
+					var hy2 = arrowPoint.y + direction * len * Math.sin(th + pi6);
 
 					var propArray = new Array();
 					propArray.push(formatStr('M {0} {1}', hx1, hy1));
-					propArray.push(formatStr('L {0} {1}', arrowPoint.x,
-							arrowPoint.y));
+					propArray.push(formatStr('L {0} {1}', arrowPoint.x, arrowPoint.y));
 					propArray.push(formatStr('L {0} {1}', hx2, hy2));
 					$(endArrow).attr({
-						d : propArray.join(" "),
-						display : 'inline'
+						d: propArray.join(" "),
+						display: 'inline'
 					});
 				},
-				arrowheadFill : function(context) {
+				arrowheadFill: function(context) {
 					this._edgeTypeMap['arrowhead'].call(this, context);
 					var endArrow;
-                    if (context.isFrom) {
-                        endArrow = context.view.childNodes[1];
-                    } else {
-                        endArrow = context.view.childNodes[2];
-                    }
+					if (context.isFrom) {
+						endArrow = context.view.childNodes[1];
+					} else {
+						endArrow = context.view.childNodes[2];
+					}
 					this._addClass(endArrow, 'fill')
 				},
-				diamond : function(context) {
+				diamond: function(context) {
 					var edgeDiamond;
 					if (context.isFrom) {
 						edgeDiamond = context.view.childNodes[5];
@@ -1265,43 +1233,36 @@
 							sin = context.vy / context.lineLen;
 						} else {
 							var baseLen = 0;
-							for ( var idx = path.length - 1; baseLen === 0
-									&& idx > 0; idx--) {
-								baseLen = this._calcEuclideanDist(
-										path[lastIndex], path[idx - 1]);
+							for (var idx = path.length - 1; baseLen === 0 && idx > 0; idx--) {
+								baseLen = this._calcEuclideanDist(path[lastIndex], path[idx - 1]);
 							}
-							sin = (path[lastIndex].y - path[lastIndex - 1].y)
-									/ baseLen;
-							context.vx = path[lastIndex].x
-									- path[lastIndex - 1].x;
+							sin = (path[lastIndex].y - path[lastIndex - 1].y) / baseLen;
+							context.vx = path[lastIndex].x - path[lastIndex - 1].x;
 						}
 					} else {
 						sin = context.vy
-								/ this._calcEuclideanDist(
-										context.fromNode.layoutPos,
+								/ this._calcEuclideanDist(context.fromNode.layoutPos,
 										context.toNode.layoutPos);
 					}
-					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI
-							: -Math.asin(sin);
+					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI : -Math.asin(sin);
 
 					var arrowPoint;
-					if (path.length >= 2
-							|| context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
+					if (path.length >= 2 || context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
 						if (context.isFrom) {
 							arrowPoint = {
-								x : path[0].x,
-								y : path[0].y
+								x: path[0].x,
+								y: path[0].y
 							}
 						} else {
 							arrowPoint = {
-								x : path[lastIndex].x,
-								y : path[lastIndex].y
+								x: path[lastIndex].x,
+								y: path[lastIndex].y
 							}
 						}
 					} else {
 						arrowPoint = {
-							x : path[0].x,
-							y : path[0].y
+							x: path[0].x,
+							y: path[0].y
 						}
 						th = th - Math.PI;
 					}
@@ -1312,36 +1273,31 @@
 					if (context.isFrom) {
 						direction = -1
 					}
-					var hx1 = arrowPoint.x + direction * len
-							* Math.cos(th - pi6);
-					var hy1 = arrowPoint.y + direction * len
-							* Math.sin(th - pi6);
-					var hx2 = arrowPoint.x + direction * len
-							* Math.cos(th + pi6);
-					var hy2 = arrowPoint.y + direction * len
-							* Math.sin(th + pi6);
+					var hx1 = arrowPoint.x + direction * len * Math.cos(th - pi6);
+					var hy1 = arrowPoint.y + direction * len * Math.sin(th - pi6);
+					var hx2 = arrowPoint.x + direction * len * Math.cos(th + pi6);
+					var hy2 = arrowPoint.y + direction * len * Math.sin(th + pi6);
 
 					var propArray = new Array();
 					propArray.push(formatStr('M {0} {1}', hx1, hy1));
-					propArray.push(formatStr('L {0} {1}', arrowPoint.x,
-							arrowPoint.y));
+					propArray.push(formatStr('L {0} {1}', arrowPoint.x, arrowPoint.y));
 					propArray.push(formatStr('L {0} {1}', hx2, hy2));
 					if (context.isFrom) {
-						propArray.push(formatStr('L {0} {1}', arrowPoint.x + 2
-								* len * Math.cos(th - Math.PI), arrowPoint.y
-								+ 2 * len * Math.sin(th - Math.PI)))
+						propArray.push(formatStr('L {0} {1}', arrowPoint.x + 2 * len
+								* Math.cos(th - Math.PI), arrowPoint.y + 2 * len
+								* Math.sin(th - Math.PI)))
 					} else {
-						propArray.push(formatStr('L {0} {1}', arrowPoint.x - 2
-								* len * Math.cos(th - Math.PI), arrowPoint.y
-								- 2 * len * Math.sin(th - Math.PI)))
+						propArray.push(formatStr('L {0} {1}', arrowPoint.x - 2 * len
+								* Math.cos(th - Math.PI), arrowPoint.y - 2 * len
+								* Math.sin(th - Math.PI)))
 					}
 					propArray.push(formatStr('Z'));
 					$(edgeDiamond).attr({
-						d : propArray.join(" "),
-						display : 'inline'
+						d: propArray.join(" "),
+						display: 'inline'
 					});
 				},
-				diamondFill : function(context) {
+				diamondFill: function(context) {
 					this._edgeTypeMap['diamond'].call(this, context);
 					var edgeDiamond;
 					if (context.isFrom) {
@@ -1351,7 +1307,7 @@
 					}
 					this._addClass(edgeDiamond, 'fill')
 				},
-				rect : function(context) {
+				rect: function(context) {
 					var edgeDiamond;
 					if (context.isFrom) {
 						edgeDiamond = context.view.childNodes[7];
@@ -1367,43 +1323,36 @@
 							sin = context.vy / context.lineLen;
 						} else {
 							var baseLen = 0;
-							for ( var idx = path.length - 1; baseLen === 0
-									&& idx > 0; idx--) {
-								baseLen = this._calcEuclideanDist(
-										path[lastIndex], path[idx - 1]);
+							for (var idx = path.length - 1; baseLen === 0 && idx > 0; idx--) {
+								baseLen = this._calcEuclideanDist(path[lastIndex], path[idx - 1]);
 							}
-							sin = (path[lastIndex].y - path[lastIndex - 1].y)
-									/ baseLen;
-							context.vx = path[lastIndex].x
-									- path[lastIndex - 1].x;
+							sin = (path[lastIndex].y - path[lastIndex - 1].y) / baseLen;
+							context.vx = path[lastIndex].x - path[lastIndex - 1].x;
 						}
 					} else {
 						sin = context.vy
-								/ this._calcEuclideanDist(
-										context.fromNode.layoutPos,
+								/ this._calcEuclideanDist(context.fromNode.layoutPos,
 										context.toNode.layoutPos);
 					}
-					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI
-							: -Math.asin(sin);
+					var th = (context.vx > 0) ? Math.asin(sin) + Math.PI : -Math.asin(sin);
 
 					var arrowPoint;
-					if (path.length >= 2
-							|| context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
+					if (path.length >= 2 || context.visibleEdgeLen < DEFAULT_ERROR_VALUE) {
 						if (context.isFrom) {
 							arrowPoint = {
-								x : path[0].x,
-								y : path[0].y
+								x: path[0].x,
+								y: path[0].y
 							}
 						} else {
 							arrowPoint = {
-								x : path[lastIndex].x,
-								y : path[lastIndex].y
+								x: path[lastIndex].x,
+								y: path[lastIndex].y
 							}
 						}
 					} else {
 						arrowPoint = {
-							x : path[0].x,
-							y : path[0].y
+							x: path[0].x,
+							y: path[0].y
 						}
 						th = th - Math.PI;
 					}
@@ -1416,28 +1365,24 @@
 					}
 
 					var v1 = {
-						x : arrowPoint.x + direction * (len / 2)
-								* Math.cos(th - pi2),
-						y : arrowPoint.y + direction * (len / 2)
-								* Math.sin(th - pi2)
+						x: arrowPoint.x + direction * (len / 2) * Math.cos(th - pi2),
+						y: arrowPoint.y + direction * (len / 2) * Math.sin(th - pi2)
 					};
 					var v2 = {
-						x : arrowPoint.x + direction * (len / 2)
-								* Math.cos(th + pi2),
-						y : arrowPoint.y + direction * (len / 2)
-								* Math.sin(th + pi2)
+						x: arrowPoint.x + direction * (len / 2) * Math.cos(th + pi2),
+						y: arrowPoint.y + direction * (len / 2) * Math.sin(th + pi2)
 					};
 					var v3 = {
-						x : arrowPoint.x + direction * len * Math.cos(th)
-								+ direction * (len / 2) * Math.cos(th + pi2),
-						y : arrowPoint.y + direction * len * Math.sin(th)
-								+ direction * (len / 2) * Math.sin(th + pi2)
+						x: arrowPoint.x + direction * len * Math.cos(th) + direction * (len / 2)
+								* Math.cos(th + pi2),
+						y: arrowPoint.y + direction * len * Math.sin(th) + direction * (len / 2)
+								* Math.sin(th + pi2)
 					};
 					var v4 = {
-						x : arrowPoint.x + direction * len * Math.cos(th)
-								+ direction * (len / 2) * Math.cos(th - pi2),
-						y : arrowPoint.y + direction * len * Math.sin(th)
-								+ direction * (len / 2) * Math.sin(th - pi2)
+						x: arrowPoint.x + direction * len * Math.cos(th) + direction * (len / 2)
+								* Math.cos(th - pi2),
+						y: arrowPoint.y + direction * len * Math.sin(th) + direction * (len / 2)
+								* Math.sin(th - pi2)
 					};
 
 					var propArray = new Array();
@@ -1447,11 +1392,11 @@
 					propArray.push(formatStr('L {0} {1}', v4.x, v4.y));
 					propArray.push(formatStr('Z'));
 					$(edgeDiamond).attr({
-						d : propArray.join(" "),
-						display : 'inline'
+						d: propArray.join(" "),
+						display: 'inline'
 					});
 				},
-				rectFill : function(context) {
+				rectFill: function(context) {
 					this._edgeTypeMap['rect'].call(this, context);
 					var edgeRect;
 					if (context.isFrom) {
@@ -1463,11 +1408,11 @@
 				}
 			},
 
-			_addClass : function(object, className) {
+			_addClass: function(object, className) {
 				var currentClass = $(object).attr('class');
 				var classArray = currentClass.split(" ");
 				var flag = true;
-				for ( var j = 0, len = classArray.length; j < len; j++) {
+				for (var j = 0, len = classArray.length; j < len; j++) {
 					if (classArray[j] === className) {
 						flag = false;
 						break;
@@ -1485,26 +1430,23 @@
 			 *
 			 * @returns エッジと端点ノードが交わる点
 			 */
-			_getCrossPos : function(focusNodeCenter, focusNodeSize,
-					oppositNodeCenter) {
+			_getCrossPos: function(focusNodeCenter, focusNodeSize, oppositNodeCenter) {
 				// エッジと座標軸との角度の計算
 				var vx = focusNodeCenter.x - oppositNodeCenter.x;
 				var vy = focusNodeCenter.y - oppositNodeCenter.y;
-				var lineLen = Math
-						.pow((Math.pow(vx, 2) + Math.pow(vy, 2)), 0.5);
+				var lineLen = Math.pow((Math.pow(vx, 2) + Math.pow(vy, 2)), 0.5);
 				var sin = vy / lineLen;
 
 				// ノードの対角線と座標軸との角度の計算
 				var diagonalHeight = focusNodeSize.height / 2;
-				var diagonalLen = Math.pow((Math.pow((focusNodeSize.width / 2),
-						2) + Math.pow(diagonalHeight, 2)), 0.5);
+				var diagonalLen = Math.pow((Math.pow((focusNodeSize.width / 2), 2) + Math.pow(
+						diagonalHeight, 2)), 0.5);
 				var diagonalSin = diagonalHeight / diagonalLen;
 
 				// ノードの外周とエッジとの交点の座標値の計算
 				var x;
 				var y;
-				var tan = Math.pow((Math.pow(sin, 2) / (1 - Math.pow(sin, 2))),
-						0.5);
+				var tan = Math.pow((Math.pow(sin, 2) / (1 - Math.pow(sin, 2))), 0.5);
 				if (Math.abs(sin) > diagonalSin) { // ノードの上面か下面に交点ができる
 					if (vy < 0) { // 下面に交点がある
 						y = focusNodeCenter.y + diagonalHeight;
@@ -1523,17 +1465,15 @@
 						x = focusNodeCenter.x + (focusNodeSize.width / 2);
 					}
 					if (vy < 0) {
-						y = focusNodeCenter.y
-								+ ((focusNodeSize.width / 2) * tan);
+						y = focusNodeCenter.y + ((focusNodeSize.width / 2) * tan);
 					} else {
-						y = focusNodeCenter.y
-								- ((focusNodeSize.width / 2) * tan);
+						y = focusNodeCenter.y - ((focusNodeSize.width / 2) * tan);
 					}
 				}
 
 				return {
-					x : x,
-					y : y
+					x: x,
+					y: y
 				}
 			},
 			/**
@@ -1541,9 +1481,9 @@
 			 *
 			 * @returns 指定した二つの座標のユークリッド距離
 			 */
-			_calcEuclideanDist : function(point1, point2) {
-				return Math.pow((Math.pow(point1.x - point2.x, 2) + Math.pow(
-						point1.y - point2.y, 2)), 0.5);
+			_calcEuclideanDist: function(point1, point2) {
+				return Math.pow((Math.pow(point1.x - point2.x, 2) + Math
+						.pow(point1.y - point2.y, 2)), 0.5);
 			},
 
 			/**
@@ -1551,14 +1491,14 @@
 			 *
 			 * @returns ノードの中心の座標
 			 */
-			_getNodeCenterPos : function(node, nodeSize) {
+			_getNodeCenterPos: function(node, nodeSize) {
 				return {
-					x : node.layoutPos.x + (nodeSize.width / 2),
-					y : node.layoutPos.y + (nodeSize.height / 2)
+					x: node.layoutPos.x + (nodeSize.width / 2),
+					y: node.layoutPos.y + (nodeSize.height / 2)
 				}
 			},
 
-			_getNodeSize : function(controller, nodeId) {
+			_getNodeSize: function(controller, nodeId) {
 				var nodeSize = controller.getNodeSize(nodeId);
 				if (!nodeSize) {
 					nodeSize = controller.getNodeRenderer().typicalSize;
@@ -1566,25 +1506,25 @@
 				return nodeSize;
 			},
 
-			_createLoopPath : function(node, nodeSize) {
+			_createLoopPath: function(node, nodeSize) {
 				var path = new Array();
 				path.push({
-					x : node.x + (nodeSize.width / 2) + 10,
-					y : node.y
+					x: node.x + (nodeSize.width / 2) + 10,
+					y: node.y
 				});
 				path.push({
-					x : node.x + (nodeSize.width / 2) + 10,
-					y : node.y - (nodeSize.height / 2) - 10
+					x: node.x + (nodeSize.width / 2) + 10,
+					y: node.y - (nodeSize.height / 2) - 10
 				});
 				path.push({
-					x : node.x,
-					y : node.y - (nodeSize.height / 2) - 10
+					x: node.x,
+					y: node.y - (nodeSize.height / 2) - 10
 				});
 
 				return path;
 			},
 
-			_getShiftSide : function (nodeSize, side) {
+			_getShiftSide: function(nodeSize, side) {
 				if (side === "left") {
 					return -(nodeSize.width / 2);
 				} else if (side === "right") {
@@ -1594,7 +1534,7 @@
 				}
 			},
 
-			_getShiftHeith : function (nodeSize, height) {
+			_getShiftHeith: function(nodeSize, height) {
 				if (height === "upper") {
 					return -(nodeSize.height / 2);
 				} else if (height === "bottom") {
@@ -1604,7 +1544,7 @@
 				}
 			},
 
-			_analyzeAlign : function (str) {
+			_analyzeAlign: function(str) {
 				var subStr = str.substring(0, 2);
 				var side;
 				if (subStr.indexOf('l') >= 0) {
@@ -1625,12 +1565,12 @@
 				}
 
 				return {
-					side : side,
-					height : height
+					side: side,
+					height: height
 				}
 			},
 
-			onbind : function(context) {
+			onbind: function(context) {
 				var renderController = context.controller;
 				var fromNode = context.fromVnode;
 				var toNode = context.toVnode;
@@ -1654,12 +1594,10 @@
 					path = new Array();
 				}
 
-				var fromNodeSize = this._getNodeSize(renderController,
-						fromNode.id);
+				var fromNodeSize = this._getNodeSize(renderController, fromNode.id);
 				var toNodeSize = this._getNodeSize(renderController, toNode.id);
 
-				var fromNodeCenter = this._getNodeCenterPos(fromNode,
-						fromNodeSize);
+				var fromNodeCenter = this._getNodeCenterPos(fromNode, fromNodeSize);
 				var toNodeCenter = this._getNodeCenterPos(toNode, toNodeSize);
 
 				// 違うノードで、座標が完全に一致している場合は、何も表示しない
@@ -1670,8 +1608,7 @@
 
 				if (path.length === 0) {
 					if (isSameNode) {
-						path = this._createLoopPath(fromNodeCenter,
-								fromNodeSize);
+						path = this._createLoopPath(fromNodeCenter, fromNodeSize);
 						var secondPoint = path[0];
 						var lastPoint = path[2];
 					} else {
@@ -1684,30 +1621,38 @@
 				}
 
 				var fromParam = vedge.get('paramFrom');
-				var start = {x:0, y:0};
+				var start = {
+					x: 0,
+					y: 0
+				};
 				if (!fromParam || !fromParam.position) {
-					start = this._getCrossPos(fromNodeCenter, fromNodeSize,
-								secondPoint);
+					start = this._getCrossPos(fromNodeCenter, fromNodeSize, secondPoint);
 				} else {
 					var fromPointPos;
 					if (fromParam.position) {
 						fromPointPos = this._analyzeAlign(fromParam.position);
 					}
 					if (fromPointPos.side) {
-						start.x = fromNodeCenter.x + this._getShiftSide(fromNodeSize, fromPointPos.side);
+						start.x = fromNodeCenter.x
+								+ this._getShiftSide(fromNodeSize, fromPointPos.side);
 						if (fromPointPos.height) {
-							start.y = fromNodeCenter.y + this._getShiftHeith(fromNodeSize, fromPointPos.height);
+							start.y = fromNodeCenter.y
+									+ this._getShiftHeith(fromNodeSize, fromPointPos.height);
 						} else {
 							start.y = fromNodeCenter.y;
 						}
 					} else if (fromPointPos.height) {
 						start.x = fromNodeCenter.x;
-						start.y = fromNodeCenter.y + this._getShiftHeith(fromNodeSize, fromPointPos.height);
+						start.y = fromNodeCenter.y
+								+ this._getShiftHeith(fromNodeSize, fromPointPos.height);
 					}
 				}
 
 				var toParam = vedge.get('paramTo');
-				var end = {x:0, y:0};
+				var end = {
+					x: 0,
+					y: 0
+				};
 				if (!toParam || !toParam.position) {
 					end = this._getCrossPos(toNodeCenter, toNodeSize, lastPoint);
 				} else {
@@ -1718,7 +1663,8 @@
 					if (toPointPos.side) {
 						end.x = toNodeCenter.x + this._getShiftSide(toNodeSize, toPointPos.side);
 						if (toPointPos.height) {
-							end.y = toNodeCenter.y + this._getShiftHeith(toNodeSize, toPointPos.height);
+							end.y = toNodeCenter.y
+									+ this._getShiftHeith(toNodeSize, toPointPos.height);
 						} else {
 							end.y = toNodeCenter.y;
 						}
@@ -1735,46 +1681,44 @@
 				var vy = end.y - start.y;
 
 				var lineLen = 0;
-				for ( var i = 0, len = path.length - 1; i < len; i++) {
+				for (var i = 0, len = path.length - 1; i < len; i++) {
 					lineLen += this._calcEuclideanDist(path[i + 1], path[i]);
 				}
 
-				var fromNodeInnerLen = this._calcEuclideanDist(fromNodeCenter,
-						start);
+				var fromNodeInnerLen = this._calcEuclideanDist(fromNodeCenter, start);
 				var toNodeInnerLen = this._calcEuclideanDist(end, toNodeCenter);
-				var nodeDist = this._calcEuclideanDist(fromNodeCenter,
-						toNodeCenter);
+				var nodeDist = this._calcEuclideanDist(fromNodeCenter, toNodeCenter);
 
-				var visibleEdgeLen = Math.abs(lineLen + fromNodeInnerLen
-						+ toNodeInnerLen - nodeDist);
+				var visibleEdgeLen = Math.abs(lineLen + fromNodeInnerLen + toNodeInnerLen
+						- nodeDist);
 
 				if (toParam) {
 					var shapeTo = toParam.shape;
 					if (shapeTo && this._edgeTypeMap[shapeTo]) {
 						// Mapから取り出して、指定されたものを実施
 						this._edgeTypeMap[shapeTo].call(this, {
-							view : view,
-							through : path,
-							isFrom : false,
-							visibleEdgeLen : visibleEdgeLen,
-							lineLen : lineLen,
-							vx : vx,
-							vy : vy,
-							fromNode : fromNode,
-							toNode : toNode
+							view: view,
+							through: path,
+							isFrom: false,
+							visibleEdgeLen: visibleEdgeLen,
+							lineLen: lineLen,
+							vx: vx,
+							vy: vy,
+							fromNode: fromNode,
+							toNode: toNode
 						});
 					} else {
 						// デフォルトの矢尻を設定
 						this._edgeTypeMap["arrowhead"].call(this, {
-							view : view,
-							through : path,
-							isFrom : false,
-							visibleEdgeLen : visibleEdgeLen,
-							lineLen : lineLen,
-							vx : vx,
-							vy : vy,
-							fromNode : fromNode,
-							toNode : toNode
+							view: view,
+							through: path,
+							isFrom: false,
+							visibleEdgeLen: visibleEdgeLen,
+							lineLen: lineLen,
+							vx: vx,
+							vy: vy,
+							fromNode: fromNode,
+							toNode: toNode
 						});
 					}
 				}
@@ -1784,37 +1728,32 @@
 					if (shapeFrom && this._edgeTypeMap[shapeFrom]) {
 						// Mapから取り出して、処理を行う
 						this._edgeTypeMap[shapeFrom].call(this, {
-							view : view,
-							through : path,
-							isFrom : true,
-							visibleEdgeLen : visibleEdgeLen,
-							lineLen : lineLen,
-							vx : vx,
-							vy : vy,
-							fromNode : fromNode,
-							toNode : toNode
+							view: view,
+							through: path,
+							isFrom: true,
+							visibleEdgeLen: visibleEdgeLen,
+							lineLen: lineLen,
+							vx: vx,
+							vy: vy,
+							fromNode: fromNode,
+							toNode: toNode
 						});
 					}// デフォルトではエッジの元は何もセットしない
 				}
 
 				// エッジのメイン部分を作成
 				var mainLine = view.childNodes[0];
-				if (path != null || visibleEdgeLen < DEFAULT_ERROR_VALUE
-						|| isSameNode) {
+				if (path != null || visibleEdgeLen < DEFAULT_ERROR_VALUE || isSameNode) {
 					var propArray = new Array();
 					propArray.push(formatStr('M {0} {1}', start.x, start.y));
 					if (path.length > 2) {
-						for ( var i = 1, len = path.length - 1; i < len; i++) {
-							propArray.push(formatStr('L {0} {1}', path[i].x,
-									path[i].y));
+						for (var i = 1, len = path.length - 1; i < len; i++) {
+							propArray.push(formatStr('L {0} {1}', path[i].x, path[i].y));
 						}
-						var point2end = this._calcEuclideanDist(path[i - 1],
-								end);
-						var point2center = this._calcEuclideanDist(path[i - 1],
-								toNodeCenter);
+						var point2end = this._calcEuclideanDist(path[i - 1], end);
+						var point2center = this._calcEuclideanDist(path[i - 1], toNodeCenter);
 						if ((toParam && toParam.position) || point2end <= point2center) {
-							propArray
-									.push(formatStr('L {0} {1}', end.x, end.y));
+							propArray.push(formatStr('L {0} {1}', end.x, end.y));
 						}
 					} else {
 						propArray.push(formatStr('L {0} {1}', end.x, end.y));
@@ -1826,13 +1765,13 @@
 
 				var customClass = vedge.get('customClass');
 				if (customClass) {
-					for ( var i = 0, len = context.view.childNodes.length; i < len; i++) {
+					for (var i = 0, len = context.view.childNodes.length; i < len; i++) {
 						this._addClass(context.view.childNodes[i], customClass)
 					}
 				}
 			},
 
-			onunbind : function(context) {
+			onunbind: function(context) {
 				var mainLine = context.view.childNodes[0];
 				mainLine.setAttribute('d', "M 0 0");
 				mainLine.setAttribute('class', 'edge');
@@ -1870,160 +1809,158 @@
 				endCircle.setAttribute('display', 'none');
 			},
 
-			onnodemove : function(context) {
+			onnodemove: function(context) {
 				this.onbind(context);
 			}
 
 		}
 	};
 
-	/***************************************************************************
+	/***********************************************************************************************
 	 * @name h5.ui.components.graph.GraphController
 	 * @namespace
-	 **************************************************************************/
+	 **********************************************************************************************/
 	var graphRenderController = {
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		__name : 'h5.ui.components.graph.GraphController',
+		__name: 'h5.ui.components.graph.GraphController',
 
 		/**
-		 * グラフの描画（可視）領域のサイズが変更されたときに発生するイベント。
-		 * 可視領域サイズベースなので、DOM要素の大きさが変わらなくても、setScale()等で 拡大率が変更された場合にもイベントが発生する。
-		 *
+		 * グラフの描画（可視）領域のサイズが変更されたときに発生するイベント。 可視領域サイズベースなので、DOM要素の大きさが変わらなくても、setScale()等で
+		 * 拡大率が変更された場合にもイベントが発生する。
 		 */
-		EVENT_RESIZE : 'graphResize',
+		EVENT_RESIZE: 'graphResize',
 
 		/**
-		 * 描画領域がスクロールした場合に発生するイベント。 ユーザー操作によるスクロールに加え、scrollTo, scrollBy,
-		 * setScaleなどのメソッド呼び出しによる スクロール処理の場合も発生する。
+		 * 描画領域がスクロールした場合に発生するイベント。 ユーザー操作によるスクロールに加え、scrollTo, scrollBy, setScaleなどのメソッド呼び出しによる
+		 * スクロール処理の場合も発生する。
 		 */
-		EVENT_SCROLL : 'graphScroll',
+		EVENT_SCROLL: 'graphScroll',
 
 		/**
 		 * setScale()によって拡大率が変更されたときに発生するイベント。
 		 */
-		EVENT_SCALE : 'graphScale',
+		EVENT_SCALE: 'graphScale',
 
 		/**
 		 * ノードの移動時に発生するイベント。
 		 */
-		EVENT_NODE_MOVE : 'nodeMove',
+		EVENT_NODE_MOVE: 'nodeMove',
 
-		EVENT_NODE_DRAG_BEGIN : 'nodeDragBegin',
+		EVENT_NODE_DRAG_BEGIN: 'nodeDragBegin',
 
-		EVENT_NODE_DRAG_END : 'nodeDragEnd',
+		EVENT_NODE_DRAG_END: 'nodeDragEnd',
 
 		/**
 		 * ノードをクリックした
 		 */
-		EVENT_NODE_CLICK : 'nodeClick',
+		EVENT_NODE_CLICK: 'nodeClick',
 
-		EVENT_NODE_DBLCLICK : 'nodeDblclick',
+		EVENT_NODE_DBLCLICK: 'nodeDblclick',
 
 		/**
 		 * エッジをクリックした
 		 */
-		EVENT_EDGE_CLICK : 'edgeClick',
+		EVENT_EDGE_CLICK: 'edgeClick',
 
-		EVENT_EDGE_DBLCLICK : 'edgeDblclick',
+		EVENT_EDGE_DBLCLICK: 'edgeDblclick',
 
-		EVENT_NODE_ENTER : 'nodeEnter',
+		EVENT_NODE_ENTER: 'nodeEnter',
 
-		EVENT_NODE_LEAVE : 'nodeLeave',
+		EVENT_NODE_LEAVE: 'nodeLeave',
 
-		EVENT_EDGE_ENTER : 'edgeEnter',
+		EVENT_EDGE_ENTER: 'edgeEnter',
 
-		EVENT_EDGE_LEAVE : 'edgeLeave',
+		EVENT_EDGE_LEAVE: 'edgeLeave',
 
-		EVENT_NODE_SELECT : 'nodeSelect',
+		EVENT_NODE_SELECT: 'nodeSelect',
 
-		EVENT_NODE_UNSELECT : 'nodeUnselect',
+		EVENT_NODE_UNSELECT: 'nodeUnselect',
 
-		_MAX_COMMAND_PER_LOOP : 200,
+		_MAX_COMMAND_PER_LOOP: 200,
 
-		_LAYER_SCROLL_MODE_NONE : 0,
-		_LAYER_SCROLL_MODE_X : 1,
-		_LAYER_SCROLL_MODE_Y : 2,
-		_LAYER_SCROLL_MODE_XY : 3,
+		_LAYER_SCROLL_MODE_NONE: 0,
+		_LAYER_SCROLL_MODE_X: 1,
+		_LAYER_SCROLL_MODE_Y: 2,
+		_LAYER_SCROLL_MODE_XY: 3,
 
-		_LAYER_NAME_EDGE : 'internalEdgeLayer',
+		_LAYER_NAME_EDGE: 'internalEdgeLayer',
 
-		_PREPROCESS_EVENT_NAMES : [ 'mousedown', 'mousemove', 'mouseup',
-				'mousewheel', 'touchstart', 'touchmove', 'touchend',
-				'touchcancel' ],
+		_PREPROCESS_EVENT_NAMES: ['mousedown', 'mousemove', 'mouseup', 'mousewheel', 'touchstart',
+				'touchmove', 'touchend', 'touchcancel'],
 
 		/**
 		 * trueにすると、ユーザー操作でグラフ全体がスクロールできるようになります。 デフォルトはtrueです。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		isEnableScreenDrag : true,
+		isEnableScreenDrag: true,
 
 		/**
 		 * trueにすると、ユーザー操作で特定のノードを選んでスクロールできるようになります。 デフォルトはtrueです。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		isEnableNodeDrag : true,
+		isEnableNodeDrag: true,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root : null,
+		_root: null,
 
 		/**
 		 * { (レイヤ名): (ルートエレメント) } が入っている
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_layerRootElementMap : {},
+		_layerRootElementMap: {},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_edgeLayerElement : null,
+		_edgeLayerElement: null,
 
-		_edgeLayerScrollMode : 3,
+		_edgeLayerScrollMode: 3,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_layerRenderers : null,
+		_layerRenderers: null,
 
 		/**
 		 * createView(Function), getLayoutPos(Function), behavior(Object)を持つ
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_nodeRenderer : null,
+		_nodeRenderer: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_nodeViewPool : null,
+		_nodeViewPool: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_nodeBehaviorPool : null,
+		_nodeBehaviorPool: null,
 
 		/**
 		 * createView(Function), behavior(Object)を持つ
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_edgeRenderer : null,
+		_edgeRenderer: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_edgeViewPool : null,
+		_edgeViewPool: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_edgeBehaviorPool : null,
+		_edgeBehaviorPool: null,
 
 		// TODO Node:Viewをm:n (m:1でよい？？)にできるようにする
 		// nodeToViewMappingFunction: null,
@@ -2031,160 +1968,155 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_rendererQueue : null,
+		_rendererQueue: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_vnodes : {},
+		_vnodes: {},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_vedges : {},
+		_vedges: {},
 
 		/**
 		 * 表示領域の物理サイズ
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_rootSize : null, // _setRootでセット
+		_rootSize: null, // _setRootでセット
 
 		/**
 		 * 表示領域の論理サイズ。 _rootSizeとは異なり、拡大率(scale)の影響を考慮する。
 		 */
-		_visibleLayoutRect : {
-			x : 0,
-			y : 0,
-			width : 0,
-			height : 0,
-			scale : 1
+		_visibleLayoutRect: {
+			x: 0,
+			y: 0,
+			width: 0,
+			height: 0,
+			scale: 1
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_nodeSortArray : null,
+		_nodeSortArray: null,
 
 		/**
 		 * キー：ノードID、値：{node: vnode, view: nodeView, behavior: behavior} なオブジェクト
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_visibleNodes : null,
+		_visibleNodes: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_visibleEdges : null,
+		_visibleEdges: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_showDirection : true,
+		_showDirection: true,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph : null,
+		_graph: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_delegateHandlerMap : {},
+		_delegateHandlerMap: {},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_requestAnimationFrame : null,
+		_requestAnimationFrame: null,
 
-		_nodeIdKey : null,
+		_nodeIdKey: null,
 
-		_edgeIdKey : null,
+		_edgeIdKey: null,
 
-		_callbackData : {},
+		_callbackData: {},
 
 		/**
-		 * UpdateViewの実処理を行う必要があるかどうか。
-		 * updateViewが呼ばれるとtrueになり、_updateViewで実際にアップデートされるとfalseになる。<br>
+		 * UpdateViewの実処理を行う必要があるかどうか。 updateViewが呼ばれるとtrueになり、_updateViewで実際にアップデートされるとfalseになる。<br>
 		 * TODO 処理キューの仕組みを入れるとキューの操作で解決できるかもしれないが、ひとまずこれで対応。
 		 */
-		_isUpdateViewPending : false,
+		_isUpdateViewPending: false,
 
-		_isDrawEdgesPending : false,
+		_isDrawEdgesPending: false,
 
-		_reservedFuncArray : [],
+		_reservedFuncArray: [],
 
-		_lastGestureScale : 1,
+		_lastGestureScale: 1,
 
-		_dragMode : DRAG_MODE_NONE,
+		_dragMode: DRAG_MODE_NONE,
 
 		/**
-		 * ドラッグ完了後のclickイベントでノードのselect/unselectの挙動を制御するためのフラグ
-		 * (clickハンドラ内で必ずfalseにセットされる)
+		 * ドラッグ完了後のclickイベントでノードのselect/unselectの挙動を制御するためのフラグ (clickハンドラ内で必ずfalseにセットされる)
 		 */
-		_isDragged : false,
+		_isDragged: false,
 
-		_dragTargetNode : null,
+		_dragTargetNode: null,
 
 		/**
-		 * 前回のマウスイベントでのマウスポジション。clientXY基準。
-		 * screenXYを使うと、WebDriverでのテスト時に値がゼロになってしまうので使用しない。
+		 * 前回のマウスイベントでのマウスポジション。clientXY基準。 screenXYを使うと、WebDriverでのテスト時に値がゼロになってしまうので使用しない。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_lastMousePosition : null,
+		_lastMousePosition: null,
 
 		/**
-		 * ドラッグ選択モード中、最後のドラッグで選択されたノードリスト。
-		 * ドラッグが完了するとクリアされる。これにより、エクスプローラでshiftを押しながら 選択した時のような挙動になる。
+		 * ドラッグ選択モード中、最後のドラッグで選択されたノードリスト。 ドラッグが完了するとクリアされる。これにより、エクスプローラでshiftを押しながら
+		 * 選択した時のような挙動になる。
 		 */
-		_lastSelectedNodes : [],
+		_lastSelectedNodes: [],
 
 		/**
 		 * ドラッグオーバーレイを削除します。
 		 */
-		_$dragSelectOverlay : null,
+		_$dragSelectOverlay: null,
 
 		/**
 		 * ドラッグ開始時の座標(クライアント座標)です。
 		 */
-		_dragStartMousePosition : null,
+		_dragStartMousePosition: null,
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_isDragging : false,
+		_isDragging: false,
 
 		/**
 		 * ドラッグ開始時点のノードのレイアウト座標を保持。 { x, y }
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_nodeDragBeginPos : null,
+		_nodeDragBeginPos: null,
 
 		/**
 		 * エッジ付近にカーソルがある場合の自動スクロールタイマー
 		 */
-		_dragNodeEdgeScrollTimerId : null,
+		_dragNodeEdgeScrollTimerId: null,
 
-		_isFirstDragMove : false,
+		_isFirstDragMove: false,
 
-		_inited : false,
+		_inited: false,
 
-		_getVnodeById : function(id) {
+		_getVnodeById: function(id) {
 			return this._vnodes[id];
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		__construct : function(context) {
+		__construct: function(context) {
 			this._requestAnimationFrame = (window.requestAnimationFrame
-					|| window.webkitRequestAnimationFrame
-					|| window.mozRequestAnimationFrame
-					|| window.msRequestAnimationFrame
-					|| window.oRequestAnimationFrame || (function(
+					|| window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame
+					|| window.msRequestAnimationFrame || window.oRequestAnimationFrame || (function(
 					timeoutCallback) {
 				window.setTimeout(timeoutCallback, 0);
 			}));
@@ -2201,17 +2133,17 @@
 
 			this._nodeViewPool = Pool.create(null, function() {
 				return that._nodeRenderer.createView({
-					data : that._callbackData
+					data: that._callbackData
 				});
 			});
 
 			this._edgeViewPool = Pool.create(null, function(showDirection) {
 				// TODO showDirectionをエッジのcreateViewのタイミングで渡されても困る？？
 				return that._edgeRenderer.createView({
-					showDirection : showDirection,
-					data : that._callbackData
+					showDirection: showDirection,
+					data: that._callbackData
 				});
-			}, [ this._showDirection ]);
+			}, [this._showDirection]);
 
 			if (!this._edgeRenderer) {
 				this._edgeRenderer = defaultEdgeRenderer;
@@ -2230,20 +2162,19 @@
 
 		},
 
-		__init : function(context) {
+		__init: function(context) {
 			this._setRoot(this.rootElement);
 			this.init();
 		},
 
-		__ready : function(context) {
+		__ready: function(context) {
 			this.init();
 		},
 
-		init : function() {
+		init: function() {
 			// 必要なパラメータが揃うまでは何もしない
-			if (this._inited || !this._graph || !this._nodeRenderer
-					|| !this._edgeRenderer || !this._layerRenderers
-					|| !this._root) {
+			if (this._inited || !this._graph || !this._nodeRenderer || !this._edgeRenderer
+					|| !this._layerRenderers || !this._root) {
 				return;
 			}
 
@@ -2264,7 +2195,7 @@
 			this._edgeIdKey = graph._edgeModel._idKey;
 
 			var nodeModel = graph._nodeModel;
-			for ( var keys = enumKeys(nodeModel.items), i = 0, count = keys.length; i < count; i++) {
+			for (var keys = enumKeys(nodeModel.items), i = 0, count = keys.length; i < count; i++) {
 				var vn = this._createVNode(nodeModel.items[keys[i]]);
 				this._nodeSortArray.push(vn);
 			}
@@ -2272,7 +2203,7 @@
 			this._nodeSortArray.sort(nodePositionComparer);
 
 			var edgeModel = graph._edgeModel;
-			for ( var keys = enumKeys(edgeModel.items), i = 0, len = keys.length; i < len; i++) {
+			for (var keys = enumKeys(edgeModel.items), i = 0, len = keys.length; i < len; i++) {
 				this._createVedge(edgeModel.items[keys[i]]);
 			}
 
@@ -2291,11 +2222,11 @@
 			this.updateView(true);
 		},
 
-		addCallbackData : function(key, value) {
+		addCallbackData: function(key, value) {
 			this._callbackData[key] = value;
 		},
 
-		removeCallbackData : function(key) {
+		removeCallbackData: function(key) {
 			if (key in this._callbackData) {
 				delete this._callbackData[key];
 			}
@@ -2307,7 +2238,7 @@
 		 * @memberOf h5.ui.components.graph.GraphController
 		 * @param graph
 		 */
-		setGraphData : function(graph) {
+		setGraphData: function(graph) {
 			this._graph = graph;
 			this.init();
 		},
@@ -2315,18 +2246,17 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setShowDirection : function(showDirection) {
+		setShowDirection: function(showDirection) {
 			this._showDirection = showDirection;
 		},
 
 		/**
-		 * 指定されたidを持つノードが画面に表示されるようにスクロールします。 ノードは画面中央に表示されます。
-		 * 指定されたノードが存在しない場合は何も行いません。
+		 * 指定されたidを持つノードが画面に表示されるようにスクロールします。 ノードは画面中央に表示されます。 指定されたノードが存在しない場合は何も行いません。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 * @param nodeId
 		 */
-		scrollIntoView : function(nodeId) {
+		scrollIntoView: function(nodeId) {
 			var vnode = this._vnodes[nodeId];
 			if (!vnode) {
 				return;
@@ -2340,8 +2270,7 @@
 
 			var nodeSize = this.getNodeSize(nodeId);
 
-			var cx = vnode.layoutPos.x + (nodeSize.width / 2)
-					- (this._visibleLayoutRect.width / 2);
+			var cx = vnode.layoutPos.x + (nodeSize.width / 2) - (this._visibleLayoutRect.width / 2);
 
 			var cy = vnode.layoutPos.y + (nodeSize.height / 2)
 					- (this._visibleLayoutRect.height / 2);
@@ -2352,7 +2281,7 @@
 		/**
 		 * ノードの表示上のサイズを返します。
 		 */
-		getNodeSize : function(nodeId) {
+		getNodeSize: function(nodeId) {
 			var visibleNode = this.getNodeView(nodeId);
 
 			if (!visibleNode) {
@@ -2364,7 +2293,7 @@
 			var maxW = 0, maxH = 0;
 
 			// TODO drawNodeとコード重複
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -2384,12 +2313,12 @@
 			var scale = this.getScale();
 
 			return {
-				width : maxW / scale,
-				height : maxH / scale
+				width: maxW / scale,
+				height: maxH / scale
 			};
 		},
 
-		getScale : function() {
+		getScale: function() {
 			return this._visibleLayoutRect.scale;
 		},
 
@@ -2397,20 +2326,18 @@
 		 * 指定された座標が原点（左上）の位置にくるようにグラフ全体をスクロールします。X軸は右が正、Y軸は下が正です。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
-		 * @param x
-		 *            {Number} X座標
-		 * @param y
-		 *            {Number} Y座標
+		 * @param x {Number} X座標
+		 * @param y {Number} Y座標
 		 */
-		scrollTo : function(layoutX, layoutY) {
+		scrollTo: function(layoutX, layoutY) {
 			var scrollArg = {
-				newScrollPos : {
-					x : layoutX,
-					y : layoutY
+				newScrollPos: {
+					x: layoutX,
+					y: layoutY
 				},
-				currentScrollPos : {
-					x : this._visibleLayoutRect.x,
-					y : this._visibleLayoutRect.y
+				currentScrollPos: {
+					x: this._visibleLayoutRect.x,
+					y: this._visibleLayoutRect.y
 				}
 			};
 			this.trigger(this.EVENT_SCROLL, scrollArg);
@@ -2419,24 +2346,24 @@
 			this._scrollTo(layoutX, layoutY);
 		},
 
-		_scrollTo : function(layoutX, layoutY) {
+		_scrollTo: function(layoutX, layoutY) {
 			var oldScrollPos = {
-				x : this._visibleLayoutRect.x,
-				y : this._visibleLayoutRect.y
+				x: this._visibleLayoutRect.x,
+				y: this._visibleLayoutRect.y
 			};
 
 			this._visibleLayoutRect.x = layoutX;
 			this._visibleLayoutRect.y = layoutY;
 
 			var scrollCtx = {
-				controller : this,
-				oldScrollPos : oldScrollPos,
-				newScrollPos : this._visibleLayoutRect,
-				data : this._callbackData,
-				size : this._rootSize
+				controller: this,
+				oldScrollPos: oldScrollPos,
+				newScrollPos: this._visibleLayoutRect,
+				data: this._callbackData,
+				size: this._rootSize
 			};
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -2447,13 +2374,13 @@
 				}
 
 				var layerOldScrollPos = {
-					x : oldScrollPos.x,
-					y : oldScrollPos.y
+					x: oldScrollPos.x,
+					y: oldScrollPos.y
 				};
 
 				var layerNewScrollPos = {
-					x : layoutX,
-					y : layoutY
+					x: layoutX,
+					y: layoutY
 				};
 
 				switch (layerScrMode) {
@@ -2489,8 +2416,8 @@
 						}
 					}
 					if (doDefault) {
-						this._setSvgTransform(layerElem.childNodes[0],
-								-layerNewScrollPos.x, -layerNewScrollPos.y);
+						this._setSvgTransform(layerElem.childNodes[0], -layerNewScrollPos.x,
+								-layerNewScrollPos.y);
 					}
 				} else {
 					if (hasOnscrollFunc) {
@@ -2501,8 +2428,9 @@
 						}
 					}
 					if (doDefault) {
-						this._setDivTransform(layerElem, -layerNewScrollPos.x,
-								-layerNewScrollPos.y);
+						this
+								._setDivTransform(layerElem, -layerNewScrollPos.x,
+										-layerNewScrollPos.y);
 					}
 				}
 			}
@@ -2522,8 +2450,7 @@
 				}
 
 				// TODO 仮処理
-				this._setSvgTransform(this._edgeLayerElement.childNodes[0], ex,
-						ey);
+				this._setSvgTransform(this._edgeLayerElement.childNodes[0], ex, ey);
 			}
 
 			this.updateView();
@@ -2533,14 +2460,11 @@
 		 * 指定された座標量分だけグラフ全体をスクロールします。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
-		 * @param x
-		 *            {Number} スクロールするX座標量
-		 * @param y
-		 *            {Number} スクロールするY座標量
+		 * @param x {Number} スクロールするX座標量
+		 * @param y {Number} スクロールするY座標量
 		 */
-		scrollBy : function(layoutX, layoutY) {
-			this.scrollTo(this._visibleLayoutRect.x + layoutX,
-					this._visibleLayoutRect.y + layoutY);
+		scrollBy: function(layoutX, layoutY) {
+			this.scrollTo(this._visibleLayoutRect.x + layoutX, this._visibleLayoutRect.y + layoutY);
 		},
 
 		/**
@@ -2549,17 +2473,17 @@
 		 * @memberOf h5.ui.components.graph.GraphController
 		 * @returns {Object} {x, y, width, height, scale}からなるオブジェクト
 		 */
-		getVisibleLayoutRect : function() {
+		getVisibleLayoutRect: function() {
 			return this._visibleLayoutRect;
 		},
 
-		_getLayoutPosFromScreenOffset : function(x, y) {
+		_getLayoutPosFromScreenOffset: function(x, y) {
 			var scale = this.getScale();
 			var lx = this._visibleLayoutRect.x + x / scale;
 			var ly = this._visibleLayoutRect.y + y / scale;
 			return {
-				x : lx,
-				y : ly
+				x: lx,
+				y: ly
 			};
 		},
 
@@ -2567,14 +2491,11 @@
 		 * グラフ全体の拡大率を設定します。1の場合に 座標値＝ピクセル座標 となります。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
-		 * @param scale
-		 *            {Number} 拡大率
-		 * @param layoutCenterX
-		 *            拡大の中心X座標(指定されなければ画面の中心)
-		 * @param layoutCenterY
-		 *            拡大の中心Y座標(指定されなければ画面の中心)
+		 * @param scale {Number} 拡大率
+		 * @param layoutCenterX 拡大の中心X座標(指定されなければ画面の中心)
+		 * @param layoutCenterY 拡大の中心Y座標(指定されなければ画面の中心)
 		 */
-		setScale : function(scale, layoutCenterX, layoutCenterY) {
+		setScale: function(scale, layoutCenterX, layoutCenterY) {
 			if (this._visibleLayoutRect.scale == scale) {
 				return;
 			}
@@ -2587,41 +2508,35 @@
 			}
 
 			if (layoutCenterX === undefined) {
-				layoutCenterX = this._visibleLayoutRect.width / 2
-						+ this._visibleLayoutRect.x;
+				layoutCenterX = this._visibleLayoutRect.width / 2 + this._visibleLayoutRect.x;
 			}
 			if (layoutCenterY === undefined) {
-				layoutCenterY = this._visibleLayoutRect.height / 2
-						+ this._visibleLayoutRect.y;
+				layoutCenterY = this._visibleLayoutRect.height / 2 + this._visibleLayoutRect.y;
 			}
 
 			var oldRect = {
-				width : this._visibleLayoutRect.width,
-				height : this._visibleLayoutRect.height
+				width: this._visibleLayoutRect.width,
+				height: this._visibleLayoutRect.height
 			};
 
 			this._visibleLayoutRect.scale = newScale;
 			this._visibleLayoutRect.width = this._rootSize.width / newScale;
 			this._visibleLayoutRect.height = this._rootSize.height / newScale;
 
-			var gapXRatio = (layoutCenterX - this._visibleLayoutRect.x)
-					/ oldRect.width;
-			var gapYRatio = (layoutCenterY - this._visibleLayoutRect.y)
-					/ oldRect.height;
+			var gapXRatio = (layoutCenterX - this._visibleLayoutRect.x) / oldRect.width;
+			var gapYRatio = (layoutCenterY - this._visibleLayoutRect.y) / oldRect.height;
 
-			var dx = (this._visibleLayoutRect.width - oldRect.width)
-					* gapXRatio;
-			var dy = (this._visibleLayoutRect.height - oldRect.height)
-					* gapYRatio;
+			var dx = (this._visibleLayoutRect.width - oldRect.width) * gapXRatio;
+			var dy = (this._visibleLayoutRect.height - oldRect.height) * gapYRatio;
 
 			this.scrollBy(-dx, -dy);
 
 			// TODO updateRootSizeとコード重複
 			var resizeArg = {
-				oldSize : oldRect,
-				newSize : {
-					width : this._visibleLayoutRect.width, // TODO 高速化
-					height : this._visibleLayoutRect.height
+				oldSize: oldRect,
+				newSize: {
+					width: this._visibleLayoutRect.width, // TODO 高速化
+					height: this._visibleLayoutRect.height
 				}
 			};
 			this.trigger(this.EVENT_RESIZE, resizeArg);
@@ -2629,9 +2544,9 @@
 			this._resizeLayers(oldRect, this._visibleLayoutRect);
 
 			var scaleArg = {
-				newScale : newScale,
-				oldScale : oldScale,
-				layoutVisibleRect : this._visibleLayoutRect
+				newScale: newScale,
+				oldScale: oldScale,
+				layoutVisibleRect: this._visibleLayoutRect
 			};
 			this.trigger(this.EVENT_SCALE, scaleArg);
 
@@ -2641,29 +2556,29 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_setRoot : function(element) {
+		_setRoot: function(element) {
 			this._root = element;
 			var $root = $(this._root);
 			$root.css({
-				overflow : 'hidden',
-				position : 'relative',
-				backgroundColor : '#ffffff'
+				overflow: 'hidden',
+				position: 'relative',
+				backgroundColor: '#ffffff'
 			});
 
 			this._rootSize = {};
 			this._visibleLayoutRect = {
-				x : 0,
-				y : 0,
-				width : 0,
-				height : 0,
-				scale : 1
+				x: 0,
+				y: 0,
+				width: 0,
+				height: 0,
+				scale: 1
 			};
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setLayerRenderers : function(renderer) {
+		setLayerRenderers: function(renderer) {
 			this._layerRenderers = renderer;
 			this.init();
 		},
@@ -2671,7 +2586,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setNodeRenderer : function(renderer) {
+		setNodeRenderer: function(renderer) {
 			this._nodeRenderer = renderer;
 			this.init();
 		},
@@ -2679,7 +2594,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setEdgeRenderer : function(renderer) {
+		setEdgeRenderer: function(renderer) {
 			this._edgeRenderer = renderer;
 			this.init();
 		},
@@ -2687,7 +2602,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setNodeVisible : function(nodeId, isVisible) {
+		setNodeVisible: function(nodeId, isVisible) {
 			var vnode = this._vnodes[nodeId];
 			if (!vnode) {
 				return;
@@ -2717,20 +2632,18 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		setEdgeVisible : function(edgeId, isVisible) {
-			// TODO エッジを個別に非表示
+		setEdgeVisible: function(edgeId, isVisible) {
+		// TODO エッジを個別に非表示
 		},
 
 		/**
-		 * 指定されたノードIDのビューオブジェクトを返します。
-		 * ノードが可視範囲に存在しない場合（＝ビューオブジェクトが存在しない場合）はnullを返します。
+		 * 指定されたノードIDのビューオブジェクトを返します。 ノードが可視範囲に存在しない場合（＝ビューオブジェクトが存在しない場合）はnullを返します。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
-		 * @param nodeId
-		 *            ノードID
+		 * @param nodeId ノードID
 		 * @returns ビューオブジェクト（{node, view, behavior} の3つの要素を持つオブジェクト）
 		 */
-		getNodeView : function(nodeId) {
+		getNodeView: function(nodeId) {
 			var r = this._visibleNodes[nodeId];
 			if (!r) {
 				return null;
@@ -2739,7 +2652,7 @@
 			return r;
 		},
 
-		getNodePosition : function(nodeId) {
+		getNodePosition: function(nodeId) {
 			var vnode = this._getVnodeById(nodeId);
 			if (!vnode) {
 				return null;
@@ -2755,22 +2668,21 @@
 			return vnode.layoutPos;
 		},
 
-		getNodeRenderer : function() {
+		getNodeRenderer: function() {
 			return this._nodeRenderer;
 		},
 
-		getEdgeRenderer : function() {
+		getEdgeRenderer: function() {
 			return this._edgeRenderer;
 		},
 
 		/**
-		 * ビューを更新します。通常はこのメソッドを呼ぶ必要はありません。
-		 * （ノードやエッジの追加・削除、ウィンドウのリサイズ時は、必要に応じて自動的にビューを更新します。）
+		 * ビューを更新します。通常はこのメソッドを呼ぶ必要はありません。 （ノードやエッジの追加・削除、ウィンドウのリサイズ時は、必要に応じて自動的にビューを更新します。）
 		 * 描画領域のサイズを内部的に変更した場合にのみ呼び出すようにしてください。
 		 *
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		updateView : function(immediate) {
+		updateView: function(immediate) {
 			if (immediate === true) {
 				this._isUpdateViewPending = true;
 				this._updateView();
@@ -2785,7 +2697,7 @@
 			this._doAtNextFrame(this._updateView);
 		},
 
-		_doAtNextFrame : function(func, args) {
+		_doAtNextFrame: function(func, args) {
 			if (this._reservedFuncArray.length == 0) {
 				var that = this;
 				this._requestAnimationFrame.call(window, function() {
@@ -2793,11 +2705,11 @@
 				});
 			}
 
-			this._reservedFuncArray.push([ func, args ]);
+			this._reservedFuncArray.push([func, args]);
 		},
 
-		_doReservedFunc : function() {
-			for ( var i = 0, count = this._reservedFuncArray.length; i < count; i++) {
+		_doReservedFunc: function() {
+			for (var i = 0, count = this._reservedFuncArray.length; i < count; i++) {
 				var reserved = this._reservedFuncArray.shift();
 				reserved[0].apply(this, reserved[1]);
 			}
@@ -2806,7 +2718,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_registerBehaviorEventDelegates : function() {
+		_registerBehaviorEventDelegates: function() {
 			var that = this;
 			var bindBehaviorHandlers = function(behavior, selectorPrefix) {
 				if (!behavior) {
@@ -2822,27 +2734,23 @@
 					var lastIndex = $.trim(prop).lastIndexOf(' ');
 
 					if (lastIndex != -1 && $.isFunction(func)) {
-						var selector = selectorPrefix
-								+ $.trim(prop.substring(0, lastIndex));
-						var eventName = $.trim(prop.substring(lastIndex + 1,
-								prop.length));
+						var selector = selectorPrefix + $.trim(prop.substring(0, lastIndex));
+						var eventName = $.trim(prop.substring(lastIndex + 1, prop.length));
 						that._registerEventDelegate(eventName, selector, func);
 					}
 				}
 			};
 
 			bindBehaviorHandlers(this._nodeRenderer.behavior);
-			bindBehaviorHandlers(this._edgeRenderer.behavior, '.'
-					+ this._LAYER_NAME_EDGE + ' ');
+			bindBehaviorHandlers(this._edgeRenderer.behavior, '.' + this._LAYER_NAME_EDGE + ' ');
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_registerEventDelegate : function(eventName, selector, func) {
+		_registerEventDelegate: function(eventName, selector, func) {
 			if (!this._delegateHandlerMap[eventName]) {
-				$(this._root).bind(eventName,
-						$.proxy(this._root_delegatedHandler, this));
+				$(this._root).bind(eventName, $.proxy(this._root_delegatedHandler, this));
 			}
 
 			// リスナーのマップに追加
@@ -2855,7 +2763,7 @@
 			this._delegateHandlerMap[eventName][selector] = func;
 		},
 
-		_containsNode : function(container, contained) {
+		_containsNode: function(container, contained) {
 			// SVGにネイティブ対応しているブラウザであればcompareDocumentPositionは利用可能と考えてよい
 			return !!(container.compareDocumentPosition(contained) & Node.DOCUMENT_POSITION_CONTAINED_BY);
 		},
@@ -2863,7 +2771,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root_delegatedHandler : function(event) {
+		_root_delegatedHandler: function(event) {
 			// 必ず、いずれか1つ以上のリスナーがこのイベントを監視している
 
 			var currentVisibility = [];
@@ -2872,29 +2780,28 @@
 
 			// エッジレイヤを含めたすべてのレイヤのルートエレメントを集める
 			// インデックスが若いほうが前にあるレイヤ（よってエッジレイヤが一番最初）
-			var layerRootElements = [ this._edgeLayerElement ];
-			var layerNames = [ this._LAYER_NAME_EDGE ];
-			for ( var i = this._layerRenderers.length - 1; i >= 0; i--) {
+			var layerRootElements = [this._edgeLayerElement];
+			var layerNames = [this._LAYER_NAME_EDGE];
+			for (var i = this._layerRenderers.length - 1; i >= 0; i--) {
 				layerRootElements
 						.push(this._layerRootElementMap[this._layerRenderers[i].name].rootElement);
 				layerNames.push(this._layerRenderers[i].name);
 			}
 
 			var eventCtx = {
-				controller : this,
-				event : event,
-				data : this._callbackData
+				controller: this,
+				event: event,
+				data: this._callbackData
 			};
 
 			var isFired = false;
-			for ( var i = 0, count = layerRootElements.length; i < count; i++) {
+			for (var i = 0, count = layerRootElements.length; i < count; i++) {
 				var layerElem = layerRootElements[i];
 				var layerName = layerNames[i];
 
 				currentVisibility.push(layerElem.style.visibility);
 
-				var target = document.elementFromPoint(event.clientX,
-						event.clientY);
+				var target = document.elementFromPoint(event.clientX, event.clientY);
 
 				// IEはレイヤーを重ねても（前のレイヤの透明部分の場合）マウスイベントが後ろのレイヤで発生する。
 				// また、IEはSVGノードでcontainsメソッドを持たないが、jQuery(Sizzle)のcontainsは
@@ -2904,8 +2811,7 @@
 				// Firefox, Chromeの場合は、レイヤーを重ねると前のレイヤでしかイベントが発生しないので、
 				// targetがレイヤ自身の場合（＝そのレイヤの透明部分をクリックした場合）は
 				// 結果がfalseとなり、直ちに次のレイヤの処理に移る。
-				var isTargetContainedByLayer = this._containsNode(layerElem,
-						target);
+				var isTargetContainedByLayer = this._containsNode(layerElem, target);
 
 				if (isTargetContainedByLayer) {
 					for ( var selector in this._delegateHandlerMap[event.type]) {
@@ -2925,8 +2831,7 @@
 								visibleObj = this._elementToVisibleEdge(target);
 								eventCtx.vedge = visibleObj.edge;
 							} else {
-								visibleObj = this._elementToVisibleNode(target,
-										layerName);
+								visibleObj = this._elementToVisibleNode(target, layerName);
 								eventCtx.vnode = visibleObj.node;
 							}
 							eventCtx.view = visibleObj.view;
@@ -2938,8 +2843,8 @@
 
 							// TODO
 							// ハンドラ実行中に例外が発生すると、途中まで行ったvisibility:hiddenが復帰しなくなる。try-catch等方法考える。
-							this._delegateHandlerMap[event.type][selector]
-									.call(this._nodeRenderer.behavior, eventCtx);
+							this._delegateHandlerMap[event.type][selector].call(
+									this._nodeRenderer.behavior, eventCtx);
 							isFired = true;
 							break;
 						}
@@ -2953,13 +2858,12 @@
 				}
 			}
 
-			for ( var i = 0, count = currentVisibility.length; i < count; i++) {
-				layerRootElements[i].style.visibility = currentVisibility
-						.shift();
+			for (var i = 0, count = currentVisibility.length; i < count; i++) {
+				layerRootElements[i].style.visibility = currentVisibility.shift();
 			}
 		},
 
-		_elementToVisibleNode : function(elem, layerName) {
+		_elementToVisibleNode: function(elem, layerName) {
 			var layerNames = [];
 			var targetLayerCount = 0;
 			if (layerName) {
@@ -2968,7 +2872,7 @@
 			} else {
 				var layerRenderer = this._layerRenderers;
 				targetLayerCount = layerRenderer.length;
-				for ( var i = targetLayerCount - 1; i >= 0; i--) {
+				for (var i = targetLayerCount - 1; i >= 0; i--) {
 					layerNames.push(layerRenderer[i].name);
 				}
 			}
@@ -2977,11 +2881,9 @@
 			for ( var key in visibles) {
 				var visible = visibles[key];
 
-				for ( var i = 0; i < targetLayerCount; i++) {
+				for (var i = 0; i < targetLayerCount; i++) {
 					var layerView = visible.view[layerNames[i]];
-					if (layerView
-							&& ((layerView === elem) || this._containsNode(
-									layerView, elem))) {
+					if (layerView && ((layerView === elem) || this._containsNode(layerView, elem))) {
 						return visible;
 					}
 				}
@@ -2989,13 +2891,12 @@
 			return null;
 		},
 
-		_elementToVisibleEdge : function(elem) {
+		_elementToVisibleEdge: function(elem) {
 			var visibles = this._visibleEdges;
 			for ( var key in visibles) {
 				var visible = visibles[key];
 				var visibleView = visible.view;
-				if ((visibleView === elem)
-						|| this._containsNode(visibleView, elem)) {
+				if ((visibleView === elem) || this._containsNode(visibleView, elem)) {
 					return visible;
 				}
 			}
@@ -3005,25 +2906,23 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_createVNode : function(node) {
+		_createVNode: function(node) {
 			var id = node.get(this._nodeIdKey);
 			var vnode = createDataItemProxy(node);
 
 			var ctx = {
-				controller : this,
-				node : node,
-				data : this._callbackData
+				controller: this,
+				node: node,
+				data: this._callbackData
 			};
 			var layoutPos = this._nodeRenderer.getLayoutPos(ctx);
 
 			if (!layoutPos) {
-				throw new Error(
-						'ノードレンダラのgetLayoutPos()でレイアウト座標オブジェクトが返されませんでした。');
+				throw new Error('ノードレンダラのgetLayoutPos()でレイアウト座標オブジェクトが返されませんでした。');
 			}
 
 			if (!isFinite(layoutPos.x) || !isFinite(layoutPos.y)) {
-				throw new Error(h5.u.str.format('ノードID = {0} のレイアウト座標が不正です。',
-						id));
+				throw new Error(h5.u.str.format('ノードID = {0} のレイアウト座標が不正です。', id));
 			}
 
 			// TODO vnodeにnodeのidをコピーする必要はない？？
@@ -3035,19 +2934,19 @@
 			return vnode;
 		},
 
-		_createVedge : function(edge) {
+		_createVedge: function(edge) {
 			var vedge = createDataItemProxy(edge);
 			this._vedges[edge.get(this._edgeIdKey)] = vedge;
 			return vedge;
 		},
 
-		_removeVedge : function(vedge) {
+		_removeVedge: function(vedge) {
 			var edgeId = vedge.get(this._edgeIdKey);
 			delete this._vedges[edgeId];
 			return vedge;
 		},
 
-		getLayoutRect : function() {
+		getLayoutRect: function() {
 			// nodeSortArrayは常にxの小さい順にソートされている
 			var xarray = this._nodeSortArray;
 			var yarray = xarray.slice(0);
@@ -3061,17 +2960,17 @@
 			var bottom = yarray[yarray.length - 1].layoutPos.y;
 
 			return {
-				x : left,
-				y : top,
-				width : right - left,
-				height : bottom - top
+				x: left,
+				y: top,
+				width: right - left,
+				height: bottom - top
 			};
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_bindRootHandlers : function() {
+		_bindRootHandlers: function() {
 			var $root = $(this._root);
 
 			// TODO windowへのバインドは一度だけでよい
@@ -3079,46 +2978,38 @@
 
 			$root.bind('mousedown', $.proxy(this._root_mousedownHandler, this));
 			$root.bind('mousemove', $.proxy(this._root_mousemoveHandler, this));
-			$(window).bind('mouseup',
-					$.proxy(this._window_mouseupHandler, this));
+			$(window).bind('mouseup', $.proxy(this._window_mouseupHandler, this));
 
 			$root.bind('click', $.proxy(this._root_clickHandler, this));
 
 			$root.bind('dblclick', $.proxy(this._root_dblclickHandler, this));
 
 			// TODO タッチサポートがある場合だけバインド
-			$root.bind('touchstart', $
-					.proxy(this._root_touchstartHandler, this));
+			$root.bind('touchstart', $.proxy(this._root_touchstartHandler, this));
 			$root.bind('touchmove', $.proxy(this._root_touchmoveHandler, this));
-			$(window).bind('touchend',
-					$.proxy(this._window_touchendHandler, this));
-			$(window).bind('touchcancel',
-					$.proxy(this._window_touchcancelHandler, this));
+			$(window).bind('touchend', $.proxy(this._window_touchendHandler, this));
+			$(window).bind('touchcancel', $.proxy(this._window_touchcancelHandler, this));
 
-			$root.bind('gesturestart', $.proxy(this._root_gesturestartHandler,
-					this));
-			$root.bind('gesturechange', $.proxy(
-					this._root_gesturechangeHandler, this));
+			$root.bind('gesturestart', $.proxy(this._root_gesturestartHandler, this));
+			$root.bind('gesturechange', $.proxy(this._root_gesturechangeHandler, this));
 
 			// TODO Firefox対応(DOMMouseScroll)
-			$root.bind('mousewheel', $
-					.proxy(this._root_mousewheelHandler, this));
+			$root.bind('mousewheel', $.proxy(this._root_mousewheelHandler, this));
 		},
 
-		_root_gesturestartHandler : function(event) {
+		_root_gesturestartHandler: function(event) {
 			event.preventDefault();
 			this._lastGestureScale = event.originalEvent.scale;
 		},
 
-		_root_gesturechangeHandler : function(event) {
+		_root_gesturechangeHandler: function(event) {
 			event.preventDefault();
-			var newScale = this.getScale()
-					+ (event.originalEvent.scale - this._lastGestureScale);
+			var newScale = this.getScale() + (event.originalEvent.scale - this._lastGestureScale);
 			this.setScale(newScale);
 			this._lastGestureScale = event.originalEvent.scale;
 		},
 
-		_root_mousewheelHandler : function(event) {
+		_root_mousewheelHandler: function(event) {
 			// 下に回すとwheelDeltaはマイナス
 
 			event.preventDefault();
@@ -3137,8 +3028,7 @@
 
 				var scaleCenter = this._getLayoutPosFromScreenOffset(cx, cy);
 
-				this.setScale(this._visibleLayoutRect.scale + ds,
-						scaleCenter.x, scaleCenter.y);
+				this.setScale(this._visibleLayoutRect.scale + ds, scaleCenter.x, scaleCenter.y);
 				return;
 			}
 
@@ -3153,7 +3043,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_window_resizeHandler : function(event) {
+		_window_resizeHandler: function(event) {
 			if (!this._root) {
 				return;
 			}
@@ -3170,7 +3060,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_isNode : function(event) {
+		_isNode: function(event) {
 			if (event.target !== this._root) {
 				return true;
 			}
@@ -3180,18 +3070,18 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_getActualTarget : function(event) {
+		_getActualTarget: function(event) {
 			return this._getActualTargetAt(event.clientX, event.clientY);
 		},
 
-		_getActualTargetAt : function(clientX, clientY) {
+		_getActualTargetAt: function(clientX, clientY) {
 			// TODO elementToVisibleで判定までやって、そのあとハンドラをクリックするようにするのがよさそう
 			// delegatedHandlerと処理を統合すべき
 
 			var currentVisibility = [];
 
-			var layerRootElements = [ this._edgeLayerElement ];
-			for ( var i = this._layerRenderers.length - 1; i >= 0; i--) {
+			var layerRootElements = [this._edgeLayerElement];
+			for (var i = this._layerRenderers.length - 1; i >= 0; i--) {
 				layerRootElements
 						.push(this._layerRootElementMap[this._layerRenderers[i].name].rootElement);
 			}
@@ -3199,7 +3089,7 @@
 			var layerName = null;
 			var isEdgeElement = false;
 			var actualTarget = null;
-			for ( var i = 0, count = layerRootElements.length; i < count; i++) {
+			for (var i = 0, count = layerRootElements.length; i < count; i++) {
 				var layerElem = layerRootElements[i];
 
 				var target = document.elementFromPoint(clientX, clientY);
@@ -3212,8 +3102,7 @@
 				// Firefox, Chromeの場合は、レイヤーを重ねると前のレイヤでしかイベントが発生しないので、
 				// targetがレイヤ自身の場合（＝そのレイヤの透明部分をクリックした場合）は
 				// 結果がfalseとなり、直ちに次のレイヤの処理に移る。
-				var isTargetContainedByLayer = this._containsNode(layerElem,
-						target);
+				var isTargetContainedByLayer = this._containsNode(layerElem, target);
 
 				if (!isTargetContainedByLayer) {
 					currentVisibility.push(layerElem.style.visibility);
@@ -3234,9 +3123,8 @@
 				break;
 			}
 
-			for ( var i = 0, count = currentVisibility.length; i < count; i++) {
-				layerRootElements[i].style.visibility = currentVisibility
-						.shift();
+			for (var i = 0, count = currentVisibility.length; i < count; i++) {
+				layerRootElements[i].style.visibility = currentVisibility.shift();
 			}
 
 			if (!actualTarget) {
@@ -3259,9 +3147,9 @@
 			}
 
 			var ret = {
-				targetElement : actualTarget,
-				isEdge : isEdgeElement, // エッジでなければ必ずノード(本当はtype等にすべきかもしれないが、現状ではノードかエッジのみ)
-				visible : visible
+				targetElement: actualTarget,
+				isEdge: isEdgeElement, // エッジでなければ必ずノード(本当はtype等にすべきかもしれないが、現状ではノードかエッジのみ)
+				visible: visible
 			};
 			return ret;
 		},
@@ -3269,7 +3157,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root_mousedownHandler : function(event) {
+		_root_mousedownHandler: function(event) {
 			if (!this.isEnableScreenDrag && !this.isEnableNodeDrag) {
 				return;
 			}
@@ -3282,7 +3170,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root_mousemoveHandler : function(event) {
+		_root_mousemoveHandler: function(event) {
 			if (!this._isDragging) {
 				this._handleEnterLeave(event);
 				return;
@@ -3296,14 +3184,14 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_window_mouseupHandler : function(event) {
+		_window_mouseupHandler: function(event) {
 			if (!this._isDragging) {
 				return;
 			}
 			this._endDrag(event);
 		},
 
-		_root_clickHandler : function(event) {
+		_root_clickHandler: function(event) {
 			if (this._isDragged) {
 				// ドラッグ直後のclickイベントは無視する
 				this._isDragged = false;
@@ -3329,16 +3217,16 @@
 			if (actual.isEdge) {
 				evName = this.EVENT_EDGE_CLICK;
 				arg = {
-					edge : actual.visible.edge,
-					view : actual.visible.view,
-					fromNode : actual.visible.fromNode, // from, toもvnode
-					toNode : actual.visible.toNode
+					edge: actual.visible.edge,
+					view: actual.visible.view,
+					fromNode: actual.visible.fromNode, // from, toもvnode
+					toNode: actual.visible.toNode
 				};
 			} else {
 				evName = this.EVENT_NODE_CLICK;
 				arg = {
-					vnode : actual.visible.node,
-					view : actual.visible.view
+					vnode: actual.visible.node,
+					view: actual.visible.view
 				};
 			}
 
@@ -3355,7 +3243,7 @@
 			}
 		},
 
-		_root_dblclickHandler : function(event) {
+		_root_dblclickHandler: function(event) {
 			var actual = this._getActualTarget(event);
 
 			if (!actual) {
@@ -3367,16 +3255,16 @@
 			if (actual.isEdge) {
 				evName = this.EVENT_EDGE_DBLCLICK;
 				arg = {
-					edge : actual.visible.edge,
-					view : actual.visible.view,
-					fromNode : actual.visible.fromNode, // from, toもvnode
-					toNode : actual.visible.toNode
+					edge: actual.visible.edge,
+					view: actual.visible.view,
+					fromNode: actual.visible.fromNode, // from, toもvnode
+					toNode: actual.visible.toNode
 				};
 			} else {
 				evName = this.EVENT_NODE_DBLCLICK;
 				arg = {
-					vnode : actual.visible.node,
-					view : actual.visible.view
+					vnode: actual.visible.node,
+					view: actual.visible.view
 				};
 			}
 
@@ -3386,7 +3274,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root_touchstartHandler : function(event) {
+		_root_touchstartHandler: function(event) {
 			if (!this.isEnableScreenDrag) { // TODO isEnableNodeDragも判定する必要あり
 				return;
 			}
@@ -3398,7 +3286,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_root_touchmoveHandler : function(event) {
+		_root_touchmoveHandler: function(event) {
 			if (!this._isDragging) {
 				return;
 			}
@@ -3410,7 +3298,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_window_touchendHandler : function(event) {
+		_window_touchendHandler: function(event) {
 			if (!this._isDragging) {
 				return;
 			}
@@ -3421,7 +3309,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_window_touchcancelHandler : function(event) {
+		_window_touchcancelHandler: function(event) {
 			if (!this._isDragging) {
 				return;
 			}
@@ -3429,13 +3317,13 @@
 			this._endDrag(event);
 		},
 
-		_lastEnterSrc : null,
+		_lastEnterSrc: null,
 
 		/**
-		 * ノードのホバーイベントを起こします。 (エッジも対応可能ですが、現時点ではノードのみを対象にしています。
-		 * エッジを対象にするとヒット判定を領域的に判定するのが難しくなるため、 将来的なAPI互換性のため対応を保留しています。)
+		 * ノードのホバーイベントを起こします。 (エッジも対応可能ですが、現時点ではノードのみを対象にしています。 エッジを対象にするとヒット判定を領域的に判定するのが難しくなるため、
+		 * 将来的なAPI互換性のため対応を保留しています。)
 		 */
-		_handleEnterLeave : function(event) {
+		_handleEnterLeave: function(event) {
 			var actual = this._getActualTarget(event);
 
 			if (actual && actual.isEdge) {
@@ -3445,13 +3333,10 @@
 
 			if (this._lastEnterSrc && !actual) {
 				// ノード上からノードのない位置に移動した
-				this._triggerNodeEnterLeaveEvent(this.EVENT_NODE_LEAVE,
-						this._lastEnterSrc);
-			} else if (this._lastEnterSrc
-					&& this._lastEnterSrc.visible !== actual.visible) {
+				this._triggerNodeEnterLeaveEvent(this.EVENT_NODE_LEAVE, this._lastEnterSrc);
+			} else if (this._lastEnterSrc && this._lastEnterSrc.visible !== actual.visible) {
 				// 別のノードに移動した
-				this._triggerNodeEnterLeaveEvent(this.EVENT_NODE_LEAVE,
-						this._lastEnterSrc);
+				this._triggerNodeEnterLeaveEvent(this.EVENT_NODE_LEAVE, this._lastEnterSrc);
 				this._triggerNodeEnterLeaveEvent(this.EVENT_NODE_ENTER, actual);
 			} else if (!this._lastEnterSrc && actual) {
 				// ノードのない位置からノード上に移動した
@@ -3462,15 +3347,15 @@
 			this._lastEnterSrc = actual;
 		},
 
-		_triggerNodeEnterLeaveEvent : function(evName, src) {
+		_triggerNodeEnterLeaveEvent: function(evName, src) {
 			arg = {
-				vnode : src.visible.node,
-				view : src.visible.view
+				vnode: src.visible.node,
+				view: src.visible.view
 			};
 			this.trigger(evName, arg);
 		},
 
-		moveNodeTo : function(nodeId, layoutX, layoutY, fix) {
+		moveNodeTo: function(nodeId, layoutX, layoutY, fix) {
 			var vnode = this._getVnodeById(nodeId);
 
 			var dx = layoutX - vnode.layoutPos.x;
@@ -3479,10 +3364,9 @@
 		},
 
 		/**
-		 * @param fix
-		 *            デフォルト：true
+		 * @param fix デフォルト：true
 		 */
-		moveNodeBy : function(nodeId, dLayoutX, dLayoutY, fix) {
+		moveNodeBy: function(nodeId, dLayoutX, dLayoutY, fix) {
 			var vnode = this._getVnodeById(nodeId);
 
 			var oldLayoutX = vnode.layoutPos.x;
@@ -3497,19 +3381,18 @@
 			this._updateVisibleEdgePos(relatedEdges);
 
 			if (fix !== false) {
-				this._nodeSortArray.splice($
-						.inArray(vnode, this._nodeSortArray), 1);
+				this._nodeSortArray.splice($.inArray(vnode, this._nodeSortArray), 1);
 				sortedInsert(this._nodeSortArray, vnode, nodePositionComparer);
 			}
 
 			var layoutPos = vnode.layoutPos;
 
 			var nodeMoveArg = {
-				vnode : vnode,
-				layoutX : layoutPos.x,
-				layoutY : layoutPos.y,
-				oldLayoutX : oldLayoutX,
-				oldLayoutY : oldLayoutY
+				vnode: vnode,
+				layoutX: layoutPos.x,
+				layoutY: layoutPos.y,
+				oldLayoutX: oldLayoutX,
+				oldLayoutY: oldLayoutY
 			};
 			this.trigger(this.EVENT_NODE_MOVE, nodeMoveArg);
 		},
@@ -3517,15 +3400,15 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_prepareDrag : function(event) {
+		_prepareDrag: function(event) {
 			this._lastMousePosition = {
-				x : event.clientX,
-				y : event.clientY
+				x: event.clientX,
+				y: event.clientY
 			};
 
 			this._dragStartMousePosition = {
-				x : event.clientX,
-				y : event.clientY
+				x: event.clientX,
+				y: event.clientY
 			};
 
 			this._isDragging = true;
@@ -3540,8 +3423,8 @@
 
 					this._dragMode = DRAG_MODE_NODE;
 					this._nodeDragBeginPos = {
-						x : dragTargetVnode.layoutPos.x,
-						y : dragTargetVnode.layoutPos.y
+						x: dragTargetVnode.layoutPos.x,
+						y: dragTargetVnode.layoutPos.y
 					};
 				}
 			} else if (event.shiftKey) {
@@ -3555,10 +3438,10 @@
 				var overlayLeft = event.pageX - rootOffset.left;
 
 				this._$dragSelectOverlay.css({
-					top : overlayTop,
-					left : overlayLeft,
-					width : 0,
-					height : 0
+					top: overlayTop,
+					left: overlayLeft,
+					width: 0,
+					height: 0
 				}).appendTo(this.rootElement);
 			} else {
 				this._dragMode = DRAG_MODE_SCROLL;
@@ -3568,12 +3451,10 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_drag : function(event) {
+		_drag: function(event) {
 			// マウス座標＝"見た目"での移動量が必要なので、ここでscaleを計算する
-			var dx = (event.clientX - this._lastMousePosition.x)
-					/ this._visibleLayoutRect.scale;
-			var dy = (event.clientY - this._lastMousePosition.y)
-					/ this._visibleLayoutRect.scale;
+			var dx = (event.clientX - this._lastMousePosition.x) / this._visibleLayoutRect.scale;
+			var dy = (event.clientY - this._lastMousePosition.y) / this._visibleLayoutRect.scale;
 
 			this._lastMousePosition.x = event.clientX;
 			this._lastMousePosition.y = event.clientY;
@@ -3590,21 +3471,20 @@
 			this._isDragged = true;
 		},
 
-		_dragNode : function(event, dx, dy) {
+		_dragNode: function(event, dx, dy) {
 			if (this._isFirstDragMove) {
 				// 最初のムーブが起きたときに初めてNODE_DRAG_BEGINイベントを出す
 				// mousedownのタイミングではBEGINしないようにする
 				this._isFirstDragMove = false;
 
 				var evArg = {
-					vnode : this._dragTargetNode.node,
-					beginLayoutPos : this._nodeDragBeginPos
+					vnode: this._dragTargetNode.node,
+					beginLayoutPos: this._nodeDragBeginPos
 				};
 				this.trigger(this.EVENT_NODE_DRAG_BEGIN, evArg);
 			}
 
-			var edgePos = getEdgePosition(this.rootElement, event.pageX,
-					event.pageY, 15);
+			var edgePos = getEdgePosition(this.rootElement, event.pageX, event.pageY, 15);
 
 			if (edgePos === RANGE_OUT) {
 				// 外部の場合は何もしない
@@ -3612,8 +3492,7 @@
 			}
 
 			// エッジ付近の場合も、マウス位置に追従するようにノードを動かす
-			this.moveNodeBy(this._dragTargetNode.node.get(this._nodeIdKey), dx,
-					dy, false);
+			this.moveNodeBy(this._dragTargetNode.node.get(this._nodeIdKey), dx, dy, false);
 
 			if (edgePos === RANGE_IN) {
 				// 内部＝自動エッジスクロール停止
@@ -3624,14 +3503,14 @@
 			}
 		},
 
-		_endContinuousEdgeScroll : function() {
+		_endContinuousEdgeScroll: function() {
 			if (this._dragNodeEdgeScrollTimerId) {
 				clearInterval(this._dragNodeEdgeScrollTimerId);
 				this._dragNodeEdgeScrollTimerId = null;
 			}
 		},
 
-		_beginContinuousEdgeScroll : function(edgePos) {
+		_beginContinuousEdgeScroll: function(edgePos) {
 			var dx = 0, dy = 0;
 
 			if (edgePos.indexOf('n') !== -1) {
@@ -3660,14 +3539,13 @@
 				clearInterval(this._dragNodeEdgeScrollTimerId);
 			}
 
-			this._dragNodeEdgeScrollTimerId = setInterval(edgeScroll,
-					EDGE_SCROLL_INTERVAL);
+			this._dragNodeEdgeScrollTimerId = setInterval(edgeScroll, EDGE_SCROLL_INTERVAL);
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_endDrag : function(context) {
+		_endDrag: function(context) {
 			if (this._dragMode === DRAG_MODE_NODE && !this._isFirstDragMove) {
 				// isFirstDragMoveがfalse ＝ 一度以上mousemoveが起きた
 				// ＝ドラッグ操作が起きた、ということ
@@ -3675,22 +3553,21 @@
 
 				// ノードのドラッグだったらノードの位置順のソートを再呼び出しする。
 				// nodeSortArrayドラッグしていたノードを外して、再挿入する。
-				this._nodeSortArray.splice($.inArray(this._dragTargetNode.node,
-						this._nodeSortArray), 1);
-				sortedInsert(this._nodeSortArray, this._dragTargetNode.node,
-						nodePositionComparer);
+				this._nodeSortArray.splice($
+						.inArray(this._dragTargetNode.node, this._nodeSortArray), 1);
+				sortedInsert(this._nodeSortArray, this._dragTargetNode.node, nodePositionComparer);
 
 				var dragTargetVnode = this._dragTargetNode.node;
 
 				var ev = {
-					vnode : dragTargetVnode,
-					beginLayoutPos : {
-						x : this._nodeDragBeginPos.x,
-						y : this._nodeDragBeginPos.y
+					vnode: dragTargetVnode,
+					beginLayoutPos: {
+						x: this._nodeDragBeginPos.x,
+						y: this._nodeDragBeginPos.y
 					},
-					endLayoutPos : {
-						x : dragTargetVnode.layoutPos.x,
-						y : dragTargetVnode.layoutPos.y
+					endLayoutPos: {
+						x: dragTargetVnode.layoutPos.x,
+						y: dragTargetVnode.layoutPos.y
 					}
 				};
 				this.trigger(this.EVENT_NODE_DRAG_END, ev);
@@ -3712,25 +3589,23 @@
 			this._lastMousePosition = null;
 		},
 
-		_dragSelect : function(event) {
+		_dragSelect: function(event) {
 			var region = this._getDragSelectRegion(event);
 
-			var layoutTopLeft = this._getLayoutPosFromScreenOffset(region.x,
-					region.y);
-			var layoutBottomRight = this._getLayoutPosFromScreenOffset(region.x
-					+ region.width, region.y + region.height);
+			var layoutTopLeft = this._getLayoutPosFromScreenOffset(region.x, region.y);
+			var layoutBottomRight = this._getLayoutPosFromScreenOffset(region.x + region.width,
+					region.y + region.height);
 
 			var x = layoutTopLeft.x;
 			var y = layoutTopLeft.y;
 			var width = layoutBottomRight.x - x;
 			var height = layoutBottomRight.y - y;
 
-			var selectedNodes = this._getNodesInRegion(x, y, width, height,
-					false);
+			var selectedNodes = this._getNodesInRegion(x, y, width, height, false);
 
 			var unselectNodes = this._lastSelectedNodes;
 
-			for ( var i = 0, len = selectedNodes.length; i < len; i++) {
+			for (var i = 0, len = selectedNodes.length; i < len; i++) {
 				var node = selectedNodes[i];
 
 				this.selectNode(node.get(this._nodeIdKey));
@@ -3741,7 +3616,7 @@
 				}
 			}
 
-			for ( var i = 0, len = unselectNodes.length; i < len; i++) {
+			for (var i = 0, len = unselectNodes.length; i < len; i++) {
 				var unselectNode = unselectNodes[i];
 				if (unselectNode) {
 					this.unselectNode(unselectNode.get(this._nodeIdKey));
@@ -3752,14 +3627,14 @@
 
 			// 内部処理でエラーが起きたときにオーバーレイ表示が更新されないよう、表示更新は最後に行う
 			this._$dragSelectOverlay.css({
-				top : region.y,
-				left : region.x,
-				width : region.width,
-				height : region.height
+				top: region.y,
+				left: region.x,
+				width: region.width,
+				height: region.height
 			});
 		},
 
-		_getDragSelectRegion : function(event) {
+		_getDragSelectRegion: function(event) {
 			var rootOffset = $(this.rootElement).offset();
 			var ry = event.pageY - rootOffset.top; // r = relative
 			var rx = event.pageX - rootOffset.left;
@@ -3786,14 +3661,14 @@
 			}
 
 			return {
-				x : x,
-				y : y,
-				width : w,
-				height : h
+				x: x,
+				y: y,
+				width: w,
+				height: h
 			};
 		},
 
-		_updateVisibleNodePos : function(visibleNode) {
+		_updateVisibleNodePos: function(visibleNode) {
 			if (!visibleNode) {
 				return;
 			}
@@ -3805,7 +3680,9 @@
 			var vnode = visibleNode.node;
 			var alignment;
 			if (this._nodeRenderer.getAlignment) {
-				var alignment = this._nodeRenderer.getAlignment({vnode: vnode});
+				var alignment = this._nodeRenderer.getAlignment({
+					vnode: vnode
+				});
 			}
 			var nodeSize;
 			if (alignment === 'r') {
@@ -3813,7 +3690,7 @@
 			}
 
 			// TODO drawNodeとコード重複
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -3829,15 +3706,15 @@
 					// divの場合
 					$(nodeView[layerName]).css({
 						// TODO このあたりの設定はどこに持たせるか再考
-						position : 'absolute',
-						left : layoutX,
-						top : layoutY
+						position: 'absolute',
+						left: layoutX,
+						top: layoutY
 					});
 				}
 			}
 		},
 
-		_updateVisibleEdgePos : function(edges) {
+		_updateVisibleEdgePos: function(edges) {
 			if (!edges || (!edges.from && !edges.to)) {
 				return;
 			}
@@ -3846,7 +3723,7 @@
 
 			// TODO 関数を外部に出すべきか
 			var fireNodeMove = function(edgeArray) {
-				for ( var i = 0, count = edgeArray.length; i < count; i++) {
+				for (var i = 0, count = edgeArray.length; i < count; i++) {
 					var edge = edgeArray[i];
 					var edgeId = edge.get(that._edgeIdKey);
 
@@ -3854,11 +3731,9 @@
 
 					endpoint.fromId;
 
-					var fromVnode = that._vnodes[edge
-							.get(that._graph._fromNodeIdKey)]; // that._vnodes[endpoint.fromId];
+					var fromVnode = that._vnodes[edge.get(that._graph._fromNodeIdKey)]; // that._vnodes[endpoint.fromId];
 					// //that._vnodes[edge.get(this._graph._fromNodeIdKey)];
-					var toVnode = that._vnodes[edge
-							.get(that._graph._toNodeIdKey)]; // that._vnodes[edge.get(this._graph._toNodeIdKey)];
+					var toVnode = that._vnodes[edge.get(that._graph._toNodeIdKey)]; // that._vnodes[edge.get(this._graph._toNodeIdKey)];
 					// //
 					// that._vnodes[endpoint.toId];
 
@@ -3866,16 +3741,15 @@
 						var visibleEdge = that._visibleEdges[edgeId];
 
 						var fromEdgeCtx = {
-							controller : that,
-							fromVnode : fromVnode,
-							toVnode : toVnode,
-							vedge : visibleEdge.edge,
-							view : visibleEdge.view,
-							data : that._callbackData
+							controller: that,
+							fromVnode: fromVnode,
+							toVnode: toVnode,
+							vedge: visibleEdge.edge,
+							view: visibleEdge.view,
+							data: that._callbackData
 						};
 
-						if (visibleEdge.behavior
-								&& visibleEdge.behavior.onnodemove) {
+						if (visibleEdge.behavior && visibleEdge.behavior.onnodemove) {
 							visibleEdge.behavior.onnodemove(fromEdgeCtx);
 						}
 					}
@@ -3894,7 +3768,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_bindGraphHandlers : function() {
+		_bindGraphHandlers: function() {
 			var that = this;
 
 			this._graph.addEventListener('nodeAdd', function(event) {
@@ -3920,7 +3794,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_nodeAddHandler : function(event) {
+		_graph_nodeAddHandler: function(event) {
 			var node = event.node;
 			var vn = this._createVNode(node);
 			sortedInsert(this._nodeSortArray, vn, nodePositionComparer);
@@ -3932,17 +3806,17 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_nodeChangeHandler : function(event) {
+		_graph_nodeChangeHandler: function(event) {
 			var nodeId = event.node.get(this._nodeIdKey);
 
 			if (nodeId in this._visibleNodes) {
 				var visibleNode = this._visibleNodes[nodeId];
 				if (visibleNode.behavior && visibleNode.behavior.ondataupdate) {
 					var ctx = {
-						controller : this,
-						vnode : visibleNode.node,
-						view : visibleNode.view,
-						data : this._callbackData
+						controller: this,
+						vnode: visibleNode.node,
+						view: visibleNode.view,
+						data: this._callbackData
 					};
 					visibleNode.behavior.ondataupdate(ctx);
 				}
@@ -3952,13 +3826,13 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_nodeRemoveHandler : function(event) {
+		_graph_nodeRemoveHandler: function(event) {
 			var nodeIdKey = this._nodeIdKey;
 
 			var nodeId = event.node.get(nodeIdKey);
 
 			// TODO 高速化の余地あり
-			for ( var i = 0, count = this._nodeSortArray.length; i < count; i++) {
+			for (var i = 0, count = this._nodeSortArray.length; i < count; i++) {
 				if (this._nodeSortArray[i][nodeIdKey] == nodeId) {
 					this._nodeSortArray.splice(i, 1);
 					break;
@@ -3974,7 +3848,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_edgeAddHandler : function(event) {
+		_graph_edgeAddHandler: function(event) {
 			var edge = event.edge;
 
 			var vedge = this._createVedge(edge);
@@ -3995,14 +3869,14 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_edgeChangeHandler : function(event) {
-			// 現状ではエッジの変更通知イベントはない
+		_graph_edgeChangeHandler: function(event) {
+		// 現状ではエッジの変更通知イベントはない
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_graph_edgeRemoveHandler : function(event) {
+		_graph_edgeRemoveHandler: function(event) {
 			var vedge = this._vedges[event.edge.get(this._edgeIdKey)];
 
 			if (!vedge) {
@@ -4016,7 +3890,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_createLayers : function() {
+		_createLayers: function() {
 			if (!this._layerRenderers) {
 				// TODO
 				// this.throwError()メソッド等あるとよいかもしれない(ControllerErrorクラスでエラーを投げる等)
@@ -4029,9 +3903,9 @@
 				switch (type) {
 				case 'svg':
 					var svg = createSvgElement('svg', {
-						width : '100%',
-						height : '100%',
-						class : name
+						width: '100%',
+						height: '100%',
+						'class': name
 					}); // TODO width, heightを100%にするべきか
 
 					svg.style.position = 'absolute';
@@ -4047,15 +3921,15 @@
 					$div = $(div);
 					// TODO このあたりの設定はどこに持たせるか再考
 					$div.css({
-						position : 'absolute',
-						top : 0,
-						left : 0,
-						width : '100%',
-						height : '100%',
-						'-webkit-transform-origin' : '0% 0%', // CSS3
+						position: 'absolute',
+						top: 0,
+						left: 0,
+						width: '100%',
+						height: '100%',
+						'-webkit-transform-origin': '0% 0%', // CSS3
 						// Transformのデフォルトは中心なのでSVGに合わせて左上にする
-						'-moz-transform-origin' : '0% 0%',
-						'-ms-transform-origin' : '0% 0%',
+						'-moz-transform-origin': '0% 0%',
+						'-ms-transform-origin': '0% 0%'
 					});
 					$div.addClass(name);
 					return div;
@@ -4078,20 +3952,20 @@
 			};
 
 			var initCtx = {
-				controller : this,
-				data : this._callbackData,
-				size : this._rootSize
+				controller: this,
+				data: this._callbackData,
+				size: this._rootSize
 			};
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var elem = createLayer(renderer.type, renderer.name);
 
 				var scrMode = scrModeToVal(renderer.scrollMode);
 
 				this._layerRootElementMap[renderer.name] = {
-					rootElement : elem,
-					scrollMode : scrMode
+					rootElement: elem,
+					scrollMode: scrMode
 				};
 				this._root.appendChild(elem);
 
@@ -4117,7 +3991,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_updateRootSize : function() {
+		_updateRootSize: function() {
 			var $root = $(this._root);
 
 			var w = $root.innerWidth();
@@ -4130,21 +4004,19 @@
 				this._rootSize.width = w;
 				this._rootSize.height = h;
 
-				this._visibleLayoutRect.width = w
-						/ this._visibleLayoutRect.scale;
-				this._visibleLayoutRect.height = h
-						/ this._visibleLayoutRect.scale;
+				this._visibleLayoutRect.width = w / this._visibleLayoutRect.scale;
+				this._visibleLayoutRect.height = h / this._visibleLayoutRect.scale;
 
 				var oldSize = {
-					width : oldW,
-					height : oldH
+					width: oldW,
+					height: oldH
 				};
 
 				var resizeArg = {
-					oldSize : oldSize,
-					newSize : {
-						width : this._visibleLayoutRect.width, // TODO 高速化
-						height : this._visibleLayoutRect.height
+					oldSize: oldSize,
+					newSize: {
+						width: this._visibleLayoutRect.width, // TODO 高速化
+						height: this._visibleLayoutRect.height
 					}
 				};
 				this.trigger(this.EVENT_RESIZE, resizeArg);
@@ -4153,7 +4025,7 @@
 			}
 		},
 
-		_resizeLayers : function(oldSize, newSize) {
+		_resizeLayers: function(oldSize, newSize) {
 			// TODO newSizeは、Rect（x,y,w,h）になる予定
 
 			var layerRenderers = this._layerRenderers;
@@ -4163,15 +4035,15 @@
 			}
 
 			var resizeCtx = {
-				controller : this,
-				oldSize : oldSize,
-				newSize : newSize,
-				data : this._callbackData
+				controller: this,
+				oldSize: oldSize,
+				newSize: newSize,
+				data: this._callbackData
 			};
 
 			// TODO scrollToとコード少し重複
 
-			for ( var i = 0, count = layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = layerRenderers.length; i < count; i++) {
 				var renderer = layerRenderers[i];
 				var layerElem = this._layerRootElementMap[renderer.name].rootElement;
 
@@ -4193,7 +4065,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_updateView : function() {
+		_updateView: function() {
 			// this.log.debug('_updateView called');
 
 			if (!this._isUpdateViewPending) {
@@ -4209,19 +4081,17 @@
 			var margin = this._rootSize.width / this._visibleLayoutRect.scale;
 
 			// 可視範囲を計算
-			var startLayoutX = this._visibleLayoutRect.x
-					- this._nodeRenderer.typicalSize.width
+			var startLayoutX = this._visibleLayoutRect.x - this._nodeRenderer.typicalSize.width
 					/ this._visibleLayoutRect.scale - margin;
-			var startLayoutY = this._visibleLayoutRect.y
-					- this._nodeRenderer.typicalSize.height
+			var startLayoutY = this._visibleLayoutRect.y - this._nodeRenderer.typicalSize.height
 					/ this._visibleLayoutRect.scale - margin;
 
 			var endLayoutX = startLayoutX + this._visibleLayoutRect.width
-					+ this._nodeRenderer.typicalSize.width
-					/ this._visibleLayoutRect.scale + margin * 2;
+					+ this._nodeRenderer.typicalSize.width / this._visibleLayoutRect.scale + margin
+					* 2;
 			var endLayoutY = startLayoutY + this._visibleLayoutRect.height
-					+ this._nodeRenderer.typicalSize.height
-					/ this._visibleLayoutRect.scale + margin * 2;
+					+ this._nodeRenderer.typicalSize.height / this._visibleLayoutRect.scale
+					+ margin * 2;
 
 			// this.log.debug('sx={0},sy={1},ex={2},ey={3}', startLayoutX,
 			// startLayoutY, endLayoutX,
@@ -4234,7 +4104,7 @@
 			var nodeIdKey = this._nodeIdKey;
 
 			// TODO 高速化の余地あり
-			for ( var i = 0, count = this._nodeSortArray.length; i < count; i++) {
+			for (var i = 0, count = this._nodeSortArray.length; i < count; i++) {
 				var node = this._nodeSortArray[i];
 				var viewPos = node.layoutPos;
 
@@ -4246,10 +4116,8 @@
 				}
 
 				var viewY = viewPos.y;
-				var isNodeVisible = (node.isVisible === undefined)
-						|| node.isVisible;
-				if ((startLayoutY <= viewY) && (viewY <= endLayoutY)
-						&& isNodeVisible) {
+				var isNodeVisible = (node.isVisible === undefined) || node.isVisible;
+				if ((startLayoutY <= viewY) && (viewY <= endLayoutY) && isNodeVisible) {
 					if (node.get(nodeIdKey) in this._visibleNodes) {
 						alreadyAddedNodeMap[node.get(nodeIdKey)] = null;
 					} else {
@@ -4269,23 +4137,20 @@
 				}
 			}
 
-			var actualRemoveCount = recyclingVisibleNodes.length
-					- addNodeArray.length;
+			var actualRemoveCount = recyclingVisibleNodes.length - addNodeArray.length;
 			if (actualRemoveCount > 0) {
-				for ( var i = 0; i < actualRemoveCount; i++) {
+				for (var i = 0; i < actualRemoveCount; i++) {
 					this._removeVisibleNode(recyclingVisibleNodes.shift());
 				}
 			}
 
-			for ( var i = 0, count = addNodeArray.length
-					- recyclingVisibleNodes.length; i < count; i++) {
+			for (var i = 0, count = addNodeArray.length - recyclingVisibleNodes.length; i < count; i++) {
 				recyclingVisibleNodes.push(this._createVisibleNode());
 				// this.log.debug('node created');
 			}
 
-			for ( var i = 0, count = addNodeArray.length; i < count; i++) {
-				this._addCommand(this._drawNode, addNodeArray[i],
-						recyclingVisibleNodes[i]);
+			for (var i = 0, count = addNodeArray.length; i < count; i++) {
+				this._addCommand(this._drawNode, addNodeArray[i], recyclingVisibleNodes[i]);
 			}
 
 			// TODO エッジを消す処理が必要（今はどんどんノードが増えていく）
@@ -4294,11 +4159,11 @@
 			this._doCommandLoop();
 		},
 
-		_createVisibleNode : function() {
+		_createVisibleNode: function() {
 			var view = this._nodeViewPool.borrowObject();
 			var behavior = this._nodeBehaviorPool.borrowObject();
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -4318,16 +4183,16 @@
 			}
 
 			return {
-				view : view,
-				behavior : behavior
+				view: view,
+				behavior: behavior
 			};
 		},
 
-		_removeVisibleNode : function(visibleNode) {
+		_removeVisibleNode: function(visibleNode) {
 			var nodeView = visibleNode.view;
 			var behavior = visibleNode.behavior;
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -4354,7 +4219,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_drawNode : function(vnode, visibleNode) {
+		_drawNode: function(vnode, visibleNode) {
 			var useRecycledVisibleNode = !!visibleNode;
 
 			var nodeView, behavior;
@@ -4370,14 +4235,14 @@
 			var nodeId = vnode[this._nodeIdKey];
 
 			this._visibleNodes[nodeId] = {
-				node : vnode,
-				view : nodeView,
-				behavior : behavior
+				node: vnode,
+				view: nodeView,
+				behavior: behavior
 			};
 
 			var layoutPos = vnode.layoutPos;
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 
@@ -4391,8 +4256,7 @@
 
 				if (renderer.type == 'svg') {
 					if (!useRecycledVisibleNode) {
-						layerElem.childNodes[0]
-								.appendChild(nodeView[layerName]);
+						layerElem.childNodes[0].appendChild(nodeView[layerName]);
 					}
 				} else {
 					// divの場合
@@ -4400,7 +4264,7 @@
 						layerElem.appendChild(nodeView[layerName]);
 					}
 					$(nodeView[layerName]).css({
-							position : 'absolute'
+						position: 'absolute'
 					});
 				}
 			}
@@ -4410,24 +4274,26 @@
 			// TODO 警告が出るが実際には問題なく動作する
 			if ($.isFunction(behavior.onbind)) {
 				var ctx = {
-					controller : this,
-					vnode : vnode,
-					view : nodeView,
-					data : this._callbackData
+					controller: this,
+					vnode: vnode,
+					view: nodeView,
+					data: this._callbackData
 				};
 				behavior.onbind(ctx);
 			}
 
 			var alignment;
 			if (this._nodeRenderer.getAlignment) {
-				alignment = this._nodeRenderer.getAlignment({vnode: vnode});
+				alignment = this._nodeRenderer.getAlignment({
+					vnode: vnode
+				});
 			}
 			var nodeSize;
 			if (alignment === 'r') {
 				nodeSize = this.getNodeSize(nodeId);
 			}
 
-			for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+			for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 				var renderer = this._layerRenderers[i];
 				var layerName = renderer.name;
 				if (!nodeView[layerName]) {
@@ -4439,12 +4305,10 @@
 				if (renderer.type == 'svg') {
 					if (alignment === 'r') {
 						layoutPos.x -= nodeSize.width
-						this._setTranslate(nodeView[layerName], layoutPos.x,
-								layoutPos.y);
+						this._setTranslate(nodeView[layerName], layoutPos.x, layoutPos.y);
 						vnode.layoutPos = layoutPos;
 					} else {
-						this._setTranslate(nodeView[layerName], layoutPos.x,
-								layoutPos.y);
+						this._setTranslate(nodeView[layerName], layoutPos.x, layoutPos.y);
 					}
 				} else {
 					if (alignment === 'r') {
@@ -4452,15 +4316,15 @@
 						layoutPos.x -= nodeSize.width
 						$(nodeView[layerName]).css({
 							// TODO このあたりの設定はどこに持たせるか再考
-							top : layoutPos.y,
-							left : layoutPos.x
+							top: layoutPos.y,
+							left: layoutPos.x
 						});
 						vnode.layoutPos = layoutPos;
 					} else {
 						$(nodeView[layerName]).css({
 							// TODO このあたりの設定はどこに持たせるか再考
-							top : layoutPos.y,
-							left : layoutPos.x
+							top: layoutPos.y,
+							left: layoutPos.x
 						});
 					}
 				}
@@ -4469,20 +4333,20 @@
 			if (this.isSelectedNode(nodeId)) {
 				if ($.isFunction(behavior.onselect)) {
 					var ctx = {
-						controller : this,
-						vnode : vnode,
-						view : nodeView,
-						data : this._callbackData
+						controller: this,
+						vnode: vnode,
+						view: nodeView,
+						data: this._callbackData
 					};
 					behavior.onselect(ctx);
 				}
 			} else {
 				if ($.isFunction(behavior.onunselect)) {
 					var ctx = {
-						controller : this,
-						vnode : vnode,
-						view : nodeView,
-						data : this._callbackData
+						controller: this,
+						vnode: vnode,
+						view: nodeView,
+						data: this._callbackData
 					};
 					behavior.onunselect(ctx);
 				}
@@ -4492,23 +4356,23 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_removeNode : function(vnode, isUnbindOnly) {
+		_removeNode: function(vnode, isUnbindOnly) {
 			var visibleNode = this._visibleNodes[vnode[this._nodeIdKey]];
 			var nodeView = visibleNode.view;
 			var behavior = visibleNode.behavior;
 
 			if ($.isFunction(behavior.onunbind)) {
 				var unbindCtx = {
-					controller : this,
-					vnode : vnode,
-					view : nodeView,
-					data : this._callbackData
+					controller: this,
+					vnode: vnode,
+					view: nodeView,
+					data: this._callbackData
 				};
 				behavior.onunbind(unbindCtx);
 			}
 
 			if (!isUnbindOnly) {
-				for ( var i = 0, count = this._layerRenderers.length; i < count; i++) {
+				for (var i = 0, count = this._layerRenderers.length; i < count; i++) {
 					var renderer = this._layerRenderers[i];
 					var layerName = renderer.name;
 
@@ -4521,8 +4385,7 @@
 					var layerElem = this._layerRootElementMap[layerName].rootElement;
 
 					if (renderer.type == 'svg') {
-						layerElem.childNodes[0]
-								.removeChild(nodeView[layerName]);
+						layerElem.childNodes[0].removeChild(nodeView[layerName]);
 					} else {
 						// divの場合
 						layerElem.removeChild(nodeView[layerName]);
@@ -4555,7 +4418,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_drawEdges : function() {
+		_drawEdges: function() {
 			// TODO これ自体を_addCommandLowで実行している
 
 			for ( var edgeKey in this._vedges) {
@@ -4580,7 +4443,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_drawEdge : function(edge) {
+		_drawEdge: function(edge) {
 			if (edge.get(this._edgeIdKey) in this._visibleEdges) {
 				// すでに指定されたエッジが描画されている場合は直ちに終了
 				return;
@@ -4592,26 +4455,25 @@
 
 			this._edgeLayerElement.childNodes[0].appendChild(view);
 
-			var endpoint = this._graph.getEndpointNodeId(edge
-					.get(this._edgeIdKey));
+			var endpoint = this._graph.getEndpointNodeId(edge.get(this._edgeIdKey));
 			var fromVnode = this._vnodes[endpoint.fromId];
 			var toVnode = this._vnodes[endpoint.toId];
 
 			this._visibleEdges[edge.get(this._edgeIdKey)] = {
-				edge : edge,
-				fromNode : fromVnode,
-				toNode : toVnode,
-				view : view,
-				behavior : behavior
+				edge: edge,
+				fromNode: fromVnode,
+				toNode: toVnode,
+				view: view,
+				behavior: behavior
 			};
 
 			var ctx = {
-				controller : this,
-				vedge : edge,
-				fromVnode : fromVnode,
-				toVnode : toVnode,
-				view : view,
-				data : this._callbackData
+				controller: this,
+				vedge: edge,
+				fromVnode: fromVnode,
+				toVnode: toVnode,
+				view: view,
+				data: this._callbackData
 			};
 			behavior.onbind(ctx);
 		},
@@ -4619,7 +4481,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_removeVisibleEdge : function(edge) {
+		_removeVisibleEdge: function(edge) {
 			var visibleEdge = this._visibleEdges[edge.get(this._edgeIdKey)];
 
 			if (visibleEdge === undefined) {
@@ -4632,12 +4494,12 @@
 
 			if (visibleEdge.behavior && visibleEdge.behavior.onunbind) {
 				var unbindCtx = {
-					controller : this,
-					edge : edge,
-					fromNode : fromNode,
-					toNode : toNode,
-					view : visibleEdge.view,
-					data : this._callbackData
+					controller: this,
+					edge: edge,
+					fromNode: fromNode,
+					toNode: toNode,
+					view: visibleEdge.view,
+					data: this._callbackData
 				};
 				visibleEdge.behavior.onunbind(unbindCtx);
 			}
@@ -4649,7 +4511,7 @@
 			delete this._visibleEdges[edge.get(this._edgeIdKey)];
 		},
 
-		_setSvgTransform : function(target, tx, ty, scale) {
+		_setSvgTransform: function(target, tx, ty, scale) {
 			var x = tx, y = ty, s = scale;
 			var scrollPos = this._visibleLayoutRect;
 			if (tx === null) {
@@ -4662,12 +4524,11 @@
 				s = this._visibleLayoutRect.scale;
 			}
 
-			var transform = h5.u.str.format('scale({0}) translate({1},{2})', s,
-					x, y);
+			var transform = h5.u.str.format('scale({0}) translate({1},{2})', s, x, y);
 			target.setAttribute('transform', transform);
 		},
 
-		_setDivTransform : function(target, tx, ty, scale) {
+		_setDivTransform: function(target, tx, ty, scale) {
 			var x = tx, y = ty, s = scale;
 			var scrollPos = this._visibleLayoutRect;
 			if (tx === null) {
@@ -4680,8 +4541,7 @@
 				s = this._visibleLayoutRect.scale;
 			}
 
-			var transform = h5.u.str.format(
-					'scale({0}) translate({1}px,{2}px)', s, x, y);
+			var transform = h5.u.str.format('scale({0}) translate({1}px,{2}px)', s, x, y);
 			target.style.webkitTransform = transform;
 			target.style.MozTransform = transform;
 			target.style.msTransform = transform;
@@ -4691,7 +4551,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_setTranslate : function(target, tx, ty, scale) {
+		_setTranslate: function(target, tx, ty, scale) {
 			var translate = h5.u.str.format('translate({0},{1}) ', tx, ty);
 			target.setAttribute('transform', translate);
 		},
@@ -4699,28 +4559,28 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_addCommandHigh : function(cmd) {
+		_addCommandHigh: function(cmd) {
 			this._rendererQueue.addHigh(h5.u.obj.argsToArray(arguments));
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_addCommand : function(cmd) {
+		_addCommand: function(cmd) {
 			this._rendererQueue.addMedium(h5.u.obj.argsToArray(arguments));
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_addCommandLow : function(cmd) {
+		_addCommandLow: function(cmd) {
 			this._rendererQueue.addLow(h5.u.obj.argsToArray(arguments));
 		},
 
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_executeCommand : function(cmd) {
+		_executeCommand: function(cmd) {
 			// FIXME cmdがundefinedの場合がある。根本原因の調査の必要あり
 			if (!cmd) {
 				return;
@@ -4733,10 +4593,9 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_executeImmediateCommands : function() {
-			var immediateCount = this._rendererQueue
-					.count(RENDERER_QUEUE_IMMEDIATE);
-			for ( var i = 0; i < immediateCount; i++) {
+		_executeImmediateCommands: function() {
+			var immediateCount = this._rendererQueue.count(RENDERER_QUEUE_IMMEDIATE);
+			for (var i = 0; i < immediateCount; i++) {
 				var cmd = this._rendererQueue.queues[RENDERER_QUEUE_IMMEDIATE][i];
 				this._executeCommand(cmd);
 			}
@@ -4746,7 +4605,7 @@
 		/**
 		 * @memberOf h5.ui.components.graph.GraphController
 		 */
-		_doCommandLoop : function() {
+		_doCommandLoop: function() {
 			// 即時実行レベルのコマンドはすべて実行
 			this._executeImmediateCommands();
 
@@ -4755,7 +4614,7 @@
 				count = this._MAX_COMMAND_PER_LOOP;
 			}
 
-			for ( var i = 0; i < count; i++) {
+			for (var i = 0; i < count; i++) {
 				var cmd = this._rendererQueue.poll();
 				this._executeCommand(cmd);
 			}
@@ -4775,7 +4634,7 @@
 			}
 		},
 
-		getNodeAt : function(clientX, clientY) {
+		getNodeAt: function(clientX, clientY) {
 			var actual = this._getActualTargetAt(clientX, clientY);
 
 			if (!actual || actual.isEdge) {
@@ -4784,12 +4643,12 @@
 			}
 
 			return {
-				vnode : actual.visible.node,
-				view : actual.visible.view
+				vnode: actual.visible.node,
+				view: actual.visible.view
 			};
 		},
 
-		getEdgeAt : function(clientX, clientY) {
+		getEdgeAt: function(clientX, clientY) {
 			var actual = this._getActualTargetAt(clientX, clientY);
 
 			if (!actual || !actual.isEdge) {
@@ -4798,29 +4657,29 @@
 			}
 
 			return {
-				edge : actual.visible.edge,
-				fromNode : actual.visible.fromNode,
-				toNode : actual.visible.toNode,
-				view : actual.visible.view
+				edge: actual.visible.edge,
+				fromNode: actual.visible.fromNode,
+				toNode: actual.visible.toNode,
+				view: actual.visible.view
 			};
 		},
 
-		_selectedNodeIds : [],
+		_selectedNodeIds: [],
 
-		getSelectedNodes : function() {
+		getSelectedNodes: function() {
 			var ret = [];
 			var ids = this._selectedNodeIds;
-			for ( var i = 0, len = ids.length; i < len; i++) {
+			for (var i = 0, len = ids.length; i < len; i++) {
 				ret.push(this._getVnodeById(ids[i]));
 			}
 			return ret;
 		},
 
-		isSelectedNode : function(nodeId) {
+		isSelectedNode: function(nodeId) {
 			return $.inArray(nodeId, this._selectedNodeIds) !== -1;
 		},
 
-		toggleSelectNode : function(nodeId) {
+		toggleSelectNode: function(nodeId) {
 			if (this.isSelectedNode(nodeId)) {
 				this.unselectNode(nodeId);
 			} else {
@@ -4829,16 +4688,15 @@
 		},
 
 		/**
-		 * @param isExclusive
-		 *            デフォルトはfalse
+		 * @param isExclusive デフォルトはfalse
 		 */
-		selectNode : function(nodeId, isExclusive) {
+		selectNode: function(nodeId, isExclusive) {
 			if (this.isSelectedNode(nodeId)) {
 				if (isExclusive) {
 					var selIds = this._selectedNodeIds.slice(0);
 					var idx = $.inArray(nodeId, selIds);
 					selIds.splice(idx, 1);
-					for ( var i = 0, len = selIds.length; i < len; i++) {
+					for (var i = 0, len = selIds.length; i < len; i++) {
 						this.unselectNode(selIds[i]);
 					}
 				}
@@ -4862,20 +4720,20 @@
 			var visibleNode = this._visibleNodes[nodeId];
 			if (visibleNode.behavior && visibleNode.behavior.onselect) {
 				var ctx = {
-					controller : this,
-					vnode : visibleNode.node,
-					view : visibleNode.view,
-					data : this._callbackData
+					controller: this,
+					vnode: visibleNode.node,
+					view: visibleNode.view,
+					data: this._callbackData
 				};
 				visibleNode.behavior.onselect(ctx);
 			}
 
 			this.trigger(this.EVENT_NODE_SELECT, {
-				vnodes : [ vnode ]
+				vnodes: [vnode]
 			});
 		},
 
-		unselectNode : function(nodeId) {
+		unselectNode: function(nodeId) {
 			var idx = $.inArray(nodeId, this._selectedNodeIds);
 
 			if (idx === -1) {
@@ -4887,23 +4745,22 @@
 			var vnode = this._getVnodeById(nodeId);
 
 			var visibleNode = this._visibleNodes[nodeId];
-			if (visibleNode && visibleNode.behavior
-					&& visibleNode.behavior.onunselect) {
+			if (visibleNode && visibleNode.behavior && visibleNode.behavior.onunselect) {
 				var ctx = {
-					controller : this,
-					vnode : visibleNode.node,
-					view : visibleNode.view,
-					data : this._callbackData
+					controller: this,
+					vnode: visibleNode.node,
+					view: visibleNode.view,
+					data: this._callbackData
 				};
 				visibleNode.behavior.onunselect(ctx);
 			}
 
 			this.trigger(this.EVENT_NODE_UNSELECT, {
-				vnodes : [ vnode ]
+				vnodes: [vnode]
 			});
 		},
 
-		unselectNodeAll : function() {
+		unselectNodeAll: function() {
 			var unselectedNodes = this.getSelectedNodes();
 
 			if (unselectedNodes.length === 0) {
@@ -4914,28 +4771,26 @@
 
 			this._selectedNodeIds = [];
 
-			for ( var i = 0, len = unselectedNodeIds.length; i < len; i++) {
+			for (var i = 0, len = unselectedNodeIds.length; i < len; i++) {
 				var nodeId = unselectedNodeIds[i];
 				var visibleNode = this._visibleNodes[nodeId];
-				if (visibleNode && visibleNode.behavior
-						&& visibleNode.behavior.onunselect) {
+				if (visibleNode && visibleNode.behavior && visibleNode.behavior.onunselect) {
 					var ctx = {
-						controller : this,
-						vnode : visibleNode.node,
-						view : visibleNode.view,
-						data : this._callbackData
+						controller: this,
+						vnode: visibleNode.node,
+						view: visibleNode.view,
+						data: this._callbackData
 					};
 					visibleNode.behavior.onunselect(ctx);
 				}
 			}
 
 			this.trigger(this.EVENT_NODE_UNSELECT, {
-				vnodes : unselectedNodes
+				vnodes: unselectedNodes
 			});
 		},
 
-		_getNodesInRegion : function(layoutX, layoutY, width, height,
-				includeHidden) {
+		_getNodesInRegion: function(layoutX, layoutY, width, height, includeHidden) {
 
 			// 可視範囲を計算
 			var startLayoutX = layoutX;
@@ -4944,10 +4799,10 @@
 			var endLayoutY = startLayoutY + height;
 
 			var containerRegion = {
-				left : startLayoutX,
-				top : startLayoutY,
-				right : endLayoutX,
-				bottom : endLayoutY
+				left: startLayoutX,
+				top: startLayoutY,
+				right: endLayoutX,
+				bottom: endLayoutY
 			};
 
 			var nodeIdKey = this._nodeIdKey;
@@ -4955,14 +4810,14 @@
 			var ret = [];
 
 			var nodeRegion = {
-				left : 0,
-				top : 0,
-				right : 0,
-				bottom : 0
+				left: 0,
+				top: 0,
+				right: 0,
+				bottom: 0
 			};
 
 			// TODO 高速化の余地あり(y軸方向で事前にソートしておいて二分検索)
-			for ( var i = 0, count = this._nodeSortArray.length; i < count; i++) {
+			for (var i = 0, count = this._nodeSortArray.length; i < count; i++) {
 				var node = this._nodeSortArray[i];
 				var viewPos = node.layoutPos;
 

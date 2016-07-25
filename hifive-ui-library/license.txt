@@ -73,19 +73,20 @@ Local Modifications: None.
 
 -----
 Files:
-WebContent/components/drawing/res/img/stamp/check.png
-WebContent/components/drawing/res/img/stamp/close.png
-WebContent/components/drawing/res/img/stamp/home.png
-WebContent/components/drawing/res/img/toolicon/delete.png
-WebContent/components/drawing/res/img/toolicon/export.png
-WebContent/components/drawing/res/img/toolicon/pen.png
-WebContent/components/drawing/res/img/toolicon/redo.png
-WebContent/components/drawing/res/img/toolicon/remove.png
-WebContent/components/drawing/res/img/toolicon/save.png
-WebContent/components/drawing/res/img/toolicon/select.png
-WebContent/components/drawing/res/img/toolicon/stamp.png
-WebContent/components/drawing/res/img/toolicon/undo.png
-WebContent/components/drawing/res/img/toolicon/up.png
+WebContent/components/artboard/res/img/stamp/check.png
+WebContent/components/artboard/res/img/stamp/close.png
+WebContent/components/artboard/res/img/stamp/home.png
+WebContent/components/artboard/res/img/toolicon/delete.png
+WebContent/components/artboard/res/img/toolicon/export.png
+WebContent/components/artboard/res/img/toolicon/pen.png
+WebContent/components/artboard/res/img/toolicon/redo.png
+WebContent/components/artboard/res/img/toolicon/remove.png
+WebContent/components/artboard/res/img/toolicon/save.png
+WebContent/components/artboard/res/img/toolicon/select.png
+WebContent/components/artboard/res/img/toolicon/stamp.png
+WebContent/components/artboard/res/img/toolicon/undo.png
+WebContent/components/artboard/res/img/toolicon/up.png
+WebContent/components/artboard/res/img/toolicon/magnifier.png
 
 Typeicons by Stephen Hutchings
 URL: http://typicons.com/

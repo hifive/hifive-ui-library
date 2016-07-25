@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta charset="UTF-8">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<meta http-equiv="Expires" content="-1">
+	<title>JSDoc: Class: ArtShape</title>
+    <!--[if lt IE 9]>
+    <script src="js/modernizr.js"></script>
+    <![endif]-->
+
+    <link type="text/css" rel="stylesheet" href="styles/node-dark.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-custom.css">
+
+	<script src="http://shjs.sourceforge.net/sh_main.min.js"> </script>
+    <script src="http://shjs.sourceforge.net/lang/sh_javascript.min.js"> </script>
+    <script src="js/jquery.js"> </script>
+    <script src="js/extension.js"> </script>
+</head>
+
+<body>
+
+<div id="container">
+    <nav>
+        <div class="h5-searchBox">
+        	<input type="text" placeholder="Search...">
+        	<button class="clear">×</button>
+        </div>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
+    </nav>
+
+    <div id="main">
+
+        <h1 class="page-title">Class: ArtShape</h1>
+
+        
+
+        <section>
+
+        <header>
+            <h2>ArtShape</h2>
+            
+        </header>
+
+        <article>
+            <div class="container-overview">
+            <dt>
+    <h4 class="name" id="ArtShape"><span class="type-signature">&lt;virtual> </span>new ArtShape</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形クラス(抽象クラス)<p><a href="ArtRect.html">ArtRect</a>や<a href="ArtPath.html">ArtPath</a>など、各図形クラスがこのクラスを継承しています。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 308</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+
+            </div>
+
+            
+
+            
+
+            
+
+            
+
+            
+
+            
+
+                <h3 class="subsection-title">Members</h3>
+
+                <dl>
+<dt>
+    <h4 class="name" id="type"><span class="type-signature"></span>type<span class="type-signature"> :string</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        図形のタイプ<p>各図形クラスのタイプを表す文字列です。ArtRectなら'rect'、ArtPathなら'path'などの値を持ちます。</p><p>読み取り専用属性です。</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 611</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr>
+<dt>
+    <h4 class="name" id="userData"><span class="type-signature"></span>userData<span class="type-signature"> :Any</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <p class="description">
+        任意のユーザデータを持たせることができるプロパティ<p>図形個別に何か値を持たせたい場合はこのプロパティに自由に値を持たせることができます。</p><p>デフォルト値はnullです</p>
+    </p>
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 550</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+</dd>
+<hr></dl>
+
+            
+
+            
+
+                <h3 class="subsection-title">Methods</h3>
+
+                <dl><dt>
+    <h4 class="name" id="beginDrag"><span class="type-signature"></span>beginDrag</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        ドラッグセッションの開始<p>図形のドラッグ操作を行うための<a href="DragSession.html">DragSession</a>オブジェクトを生成して返します。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 416</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="DragSession.html">DragSession</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getBounds"><span class="type-signature"></span>getBounds</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形の位置とサイズを取得
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 427</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    x,y,width,heightを持つオブジェクト
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Object</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getElement"><span class="type-signature"></span>getElement</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形要素を取得<p>図形を表現している要素を返します。</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 402</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">DOM</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="hitTest"><span class="type-signature"></span>hitTest</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形が指定された座標と重なるかどうかを返します<p>指定された座標と重ならない場合、または描画されていない図形ならfalseを返します</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">x座標位置</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">y座標位置</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 454</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    図形が指定された座標と重なるかどうか
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">boolean</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="isAlone"><span class="type-signature"></span>isAlone</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        レイヤ上に描画されていない図形ならisAloneはtrue、そうでないならfalseを返します
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 438</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">boolean</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="isInRect"><span class="type-signature"></span>isInRect</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形が指定された矩形(x,y,w,h)に含まれるかどうかを返します(交わるだけではなく完全に含まれるかどうかを判定します)<p>指定された矩形に含まれない場合、または描画されていない図形ならfalseを返します</p>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">矩形の左上のx座標位置</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">矩形の左上のy座標位置</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>w</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">矩形の幅</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>h</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">矩形の高さ</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 479</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    図形が指定された矩形に含まれるかどうか
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">boolean</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="moveBy"><span class="type-signature"></span>moveBy</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形の移動を相対座標指定で行います
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">x座標位置</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">y座標位置</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 515</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="moveTo"><span class="type-signature"></span>moveTo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形の移動を絶対座標指定で行います
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">x座標位置</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+            
+            <td class="type">
+            number
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">y座標位置</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 500</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="serialize"><span class="type-signature"></span>serialize</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        図形をシリアライズ可能なオブジェクトに変換します<p>このメソッドで生成したオブジェクトは<a href="ArtShape.html#deserialize">ArtShape.deserialize</a>で元の図形クラスに復元することができます</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 532</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    図形情報を格納したシリアライズ可能なプレーンオブジェクト
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Object</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="deserialize"><span class="type-signature">&lt;static> </span>deserialize</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        シリアライズされた図形からArtShapeクラス(の子クラス)を生成して返します<p>各図形クラスはserializeメソッドを用意しており、シリアライズ可能なオブジェクトを生成することができます。</p><p>以下は、ArtRectクラスの要素をシリアライズして復元するサンプルコードです。</p><pre class="sh_javascript"><code>// ArtRectクラスを生成var rect = new h5.ui.components.artboard.ArtShapeConstructor.ArtRect(element);// ArtRectクラスをシリアライズ(プレーンオブジェクトに変換)var obj = rect.serialize();// デシリアライズ(復元) 戻り値はArtRectクラスh5.ui.components.artboard.ArtShapeConstructor.ArtShape.deserialize(rect);</code></pre>
+    </p>
+    
+    
+    
+    
+    <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		<th>Argument</th>
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>shapeData</code></td>
+            
+            
+            <td class="type">
+            Object
+            </td>
+            
+            
+                <td class="attributes">
+                
+                </td>
+            
+            
+            
+            
+            <td class="description last">あるArtShapeについてのセーブデータ。DrawingSaveData#saveData.shapes配列の要素がshapeDataに該当します。</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>commandManagerWrapper</code></td>
+            
+            
+            <td class="type">
+            Logic
+            </td>
+            
+            
+                <td class="attributes">
+                &lt;optional><br>
+                </td>
+            
+            
+            
+            
+            <td class="description last">コマンド生成時にappendCommandを行うロジックやクラス</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>ArtShape.js, line 348</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    復元した図形クラス(ArtShapeを継承する具象クラス)
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type"><a href="ArtShape.html">ArtShape</a></span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr></dl>
+
+            
+
+            
+
+            
+        </article>
+
+        </section>
+        
+    </div>
+
+    <br clear="both">
+</div>
+
+<footer>
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 16:12:44 GMT+0900 (JST)<br />
+    <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
+</footer>
+
+<script> sh_highlightDocument(); </script>
+</body>
+</html>

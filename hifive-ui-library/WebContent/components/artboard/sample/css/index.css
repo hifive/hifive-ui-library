@@ -1,0 +1,517 @@
+@charset 'utf-8';
+/*
+ * Copyright (C) 2012-2014 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+html,body {
+	margin: 0
+}
+
+h1 {
+	margin: 0
+}
+
+.clear-both {
+	clear: both;
+}
+
+.pull-right {
+	float: right;
+}
+
+.pull-left {
+	float: left;
+}
+
+.border1 {
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+input[type="text"].num-input {
+	width: 4em;
+	margin: 0 1em;
+}
+
+/** カンバスの設定 **/
+.artboard {
+	box-sizing: border-box;
+}
+
+.artboard .h5-artboard-canvas-wrapper {
+	border: 1px solid #ccc;
+}
+
+.artboard .mode-text-input {
+	cursor: text
+}
+
+/** ポップアップ **/
+.h5Popup {
+	display: none;
+}
+
+.h5Popup.current {
+	display: block;
+}
+
+.popupContents {
+	padding: 5px 5px 10px 5px;
+	box-sizing: border-box;
+	overflow: auto;
+}
+
+.popupBtn-wrapper {
+	padding-top: 10px;
+	padding-right: 20px;
+	height: 26px;
+	text-align: right;
+}
+
+.popupBtn-wrapper>* {
+	cursor: pointer;
+	display: inline-block;
+	padding: 5px;
+	width: 80px;
+	text-align: center;
+	padding: 5px;
+}
+
+/** 背景画像設定ポップアップ **/
+.background-popup {
+	width: 700px;
+	padding-bottom: 20px;
+}
+.background-popup>* {
+	font-size: 1.1em;
+}
+
+.background-popup select {
+	font-size: 100%;
+}
+
+.background-popup .background-color-palette {
+	clear: both;
+	min-height: 32px;
+}
+
+.background-popup .background-color-opacity {
+	clear: both;
+}
+
+.background-popup .background-color-selected-wrapper {
+	margin-top: 1em;
+	width: 80px;
+	height: 20px;
+	display: inline-block;
+	background-color: #fff;
+}
+
+.background-popup .background-image-list {
+	width: 90%;
+	margin: auto;
+}
+
+.background-popup .background-color-selected {
+	width: 100%;
+	height: 100%;
+}
+
+.background-popup .background-color-slidebar {
+	margin: 5px 40px 0px 0px;
+}
+
+.background-popup .thumbnail {
+	display: inline-block;
+	width: auto;
+	max-width: 76px;
+	height: auto;
+	max-height: 76px;
+	text-align: center;
+	box-shadow: 2px 2px 4px;
+	border: 1px solid #fff;
+	text-align: center;
+	vertical-align: bottom;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.background-popup .drawing-image:hover,.background-popup .thumbnail.none:hover
+	{
+	position: relative;
+	top: -2px;
+	left: -2px;
+}
+
+.background-popup .selected-bg {
+	padding-left: 1em;
+	font-weight: bold;
+}
+
+.background-popup .thumbnail.selected {
+	border: 2px solid #f8e;
+}
+
+.background-popup .thumbnail.none {
+	height: 60px;
+	width: 60px;
+	line-height: 60px;
+	box-shadow: 0 0 0;
+}
+
+/* 背景を写真から読み込む部分 */
+.background-popup .thumbnail.img-input-wrap {
+	position: relative;
+	height: 70px;
+	box-shadow: 0 0 0;
+	border: 0;
+	font-size: 0.8em;
+	line-height: 1em;
+}
+
+.background-popup .img-input-wrap input[type="file"] {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	opacity: 0.01;
+	margin: 0;
+	top: 0;
+	left: 0;
+	cursor: pointer;
+}
+
+.background-popup .img-input-wrap img {
+	margin: auto;
+}
+
+.sample-picture-wrapper {
+	border-top: 1px solid #ccc;
+	padding-top: 10px;
+	margin-top: 10px;
+}
+/** ツールバー設定 **/
+.drawing-toolbar .icon48 {
+	width: 48px;
+	height: 48px;
+}
+
+.load-data-list {
+	width: 150px;
+}
+/** メニュー **/
+.drawing-toolbar .menu-wrapper {
+	position: relative;
+	overflow: visible;
+}
+
+.drawing-toolbar .menu-list {
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	padding: 0;
+	width: 150px;
+	list-style: none;
+}
+
+.drawing-toolbar .menu-list>* {
+	padding: 10px;
+	border-top: 1px solid #fff;
+	cursor: pointer;
+}
+
+.drawing-toolbar .menu-list>.disabled {
+	color: rgba(0, 0, 0, 0.7);
+	cursor: not-allowed;
+}
+
+.display-none {
+	display: none !important;
+}
+
+.drawing-toolbar .disabled {
+	opacity: 0.3;
+}
+
+.toolbar-operation>* {
+	display: inline-block;
+}
+
+.toolbar-operation .disabled {
+	background-color: #ccc;
+	opacity: 0.2;
+}
+
+.drawing-toolbar {
+	padding: 10px 0;
+}
+
+.toolbar-operation,.toolbar-drawing-tool,.color-pallete {
+	display: inline-block;
+	float: left;
+}
+
+.toolbar-drawing-tool {
+	margin-left: 20px;
+}
+
+.toolbar-drawing-tool .toolbar-icon {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
+
+.selected-color-wrapper.selected .selected-color {
+	border: 2px solid #f8e;
+}
+
+.drawing-toolbar .border1.selected {
+	border-color: #f8e;
+}
+
+.color-pallete {
+	width: 476px;
+	padding-top: 10px;
+	clear: both;
+}
+
+.pallete-color {
+	float: left;
+	height: 32px;
+	width: 32px;
+	margin: 1px;
+	cursor: pointer;
+}
+
+.selected-color-wrapper {
+	position: relative;
+}
+
+.selected-color {
+	float: left;
+	margin: 1px;
+	width: 64px;
+	height: 64px;
+	width: 64px;
+	overflow: visible;
+}
+
+.stamp-list {
+	position: absolute;
+	padding: 4px;
+	background-color: #fff;
+}
+
+.stamp-img {
+	display: inline-block;
+	border: 2px solid #fff;
+}
+
+.dragging {
+	display: block;
+	z-index: 101;
+	cursor: default;
+	white-space: nowrap;
+}
+
+/** テキスト入力 **/
+.text-input-box {
+	position: absolute;
+}
+
+.text-input-box .set-text {
+	text-align: center;
+	width: 2em;
+	background-color: #fff;
+}
+/** テキスト設定 **/
+.text-settings-box {
+	padding: 4px;
+	background-color: #fff;
+}
+
+.set-text-style {
+	cursor: pointer;
+	min-width: 1.2em;
+	display: inline-block;
+	padding: 3px;
+	box-sizing: border-box;
+}
+
+.font-family-select {
+	margin-top: 3px;
+	position: relative;
+}
+
+.font-family-select input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 105px;
+	height: 20px;
+	box-sizing: border-box;
+}
+
+.font-family-select select {
+	width: 120px;
+	height: 20px;
+	box-sizing: border-box;
+}
+
+/* 透明度設定スライドバー */
+.opacity-slidebar-wrapper {
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.9);
+	height: 170px;
+	width: 64px;
+	text-align: center;
+}
+
+.slidebar-label {
+	display: block;
+	text-align: center;
+}
+
+.opacity-slidebar {
+	position: relative;
+	top: 15px;
+	height: 130px;
+	display: inline-block;
+}
+
+/* 線の幅スライドバー */
+.stroke-width-slider-wrapper {
+	width: 200px;
+	display: inline-block;
+	margin: 20px;
+	float: left;
+}
+
+.stroke-width-slider-wrapper .slider-label {
+	display: inline-block;
+	padding-bottom: 10px;
+}
+
+.stroke-width-slider-wrapper .slider-value {
+	padding-left: 7px;
+}
+
+.load-select-wrapper {
+	position: relative;
+	top: -20px;
+}
+
+.toolbar-file-operation>* {
+	display: inline-block;
+	border: 2px solid #ccc;
+}
+
+/* 保存したイメージ */
+.saved-img-wrapper {
+	float: left;
+	clear: both;
+}
+
+.saved-img-wrapper>* {
+	position: relative;
+	display: inline-block;
+	margin: 4px;
+	box-shadow: 2px 2px 4px;
+	border: 1px solid #ccc;
+	box-sizing: border-box;
+}
+
+.saved-img-wrapper .saved-img {
+	width: 320px;
+	float: left;
+}
+
+.saved-img-wrapper label {
+	font-size: 14px;
+	font-weight: bold;
+	padding: 1px 2px;
+}
+
+.saved-img-wrapper .info {
+	float: left;
+	height: 100%;
+}
+
+.saved-img-wrapper .btn {
+	color: #fff;
+	background-color: #c0c0c0;
+	font-size: 18px;
+	line-height: 25px;
+	text-align: center;
+	padding: 6px 18px;
+	min-width: 90px;
+	cursor: pointer;
+	position: absolute;
+	bottom: -1px;
+	right: -1px;
+	display: block;
+}
+
+.saved-img-wrapper .btn:hover {
+	font-weight: bold;
+}
+
+.previewContainer {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 99999;
+	margin: auto;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(256, 256, 256, 0.5);
+	width: 100%;
+}
+
+.previewContainer .canvasContainer {
+	width: 600px;
+	margin: auto;
+	background-color: #fff;
+	padding: 5px 0 10px 0;
+	text-align: center;
+	box-shadow: 2px 2px 4px #fff;
+}
+
+.previewContainer .canvasContainer canvas {
+	border: 1px solid #000;
+	max-height: 300px;
+}
+
+.previewContainer .angle-btn-wrap {
+	display: -webkit-box;
+	-webkit-box-pack: center;
+	margin: 20px auto;
+}
+
+.previewContainer .handle-btn-wrap {
+	display: -webkit-box;
+	-webkit-box-pack: center;
+}
+
+.previewContainer button {
+	cursor: pointer;
+	display: inline-block;
+	padding: 5px;
+	width: 80px;
+	text-align: center;
+	padding: 5px;
+	box-sizing: border-box;
+	border: 1px solid #ccc;
+	background-color: #eee;
+	color: #000;
+}

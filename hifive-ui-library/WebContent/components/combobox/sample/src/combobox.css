@@ -1,0 +1,112 @@
+@charset "utf-8";
+
+.combobox-root {
+	border-spacing: 0;
+	border-collapse: separate;
+	position: relative;
+	display: table;
+}
+
+.combobox-input {
+	position: relative;
+}
+
+.combobox-menu-wrapper {
+	position: relative;
+	display: table-cell;
+}
+
+.combobox-menu {
+	margin: 0;
+	position: absolute;
+	overflow-x: hidden;
+	overflow-y: hidden;
+	height: 150px;
+	background-color: white;
+	border: 1px solid gray;
+	box-sizing:content-box;
+}
+
+.combobox-dropdown-btn-wrapper {
+	width: 1px;
+	text-align: center;
+	position: relative;
+	white-space: nowrap;
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.combobox-dropdown-btn {
+	cursor: pointer;
+	width: 18px;
+	padding: 0;
+	position: relative;
+	box-sizing: border-box;
+	background: #e3e3e3;
+	border: #707070 1px solid;
+	background-image: -webkit-linear-gradient(top, #fcfcfc, #cfcfcf);
+	background-image: -moz-linear-gradient(top, #fcfcfc, #cfcfcf);
+	background-image: -ms-linear-gradient(top, #fcfcfc, #cfcfcf);
+	background-image: -o-linear-gradient(top, #fcfcfc, #cfcfcf);
+	background-image: linear-gradient(to bottom, #fcfcfc, #cfcfcf);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fcfcfc, endColorstr=#cfcfcf);
+}
+
+.combobox-dropdown-btn:hover {
+	background: #c4c4c4;
+	background-image: -webkit-linear-gradient(top, #cfcfcf, #9c9c9c);
+	background-image: -moz-linear-gradient(top, #cfcfcf, #9c9c9c);
+	background-image: -ms-linear-gradient(top, #cfcfcf, #9c9c9c);
+	background-image: -o-linear-gradient(top, #cfcfcf, #9c9c9c);
+	background-image: linear-gradient(to bottom, #cfcfcf, #9c9c9c);
+}
+
+.combobox-dropdown-btn.disabled {
+	cursor: default;
+	background: #f4f4f4;
+	border: #adb2b5 1px solid;
+	filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
+}
+
+.combobox-dropdown-btn-icon {
+	display: inline-block;
+	width: 0;
+	height: 0;
+	color: #000;
+	vertical-align: middle;
+	border-color: #333;
+	border-top: 4px solid;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+}
+
+.combobox-dropdown-btn.disabled .combobox-dropdown-btn-icon {
+	border-color: #afafaf;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+}
+
+.combobox-dropdown-menu-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: white;
+	opacity: 0;
+	filter: alpha(opacity=0);
+}
+
+.combobox-dropdown-menu-visibility-hidden {
+	visibility: hidden
+}
+
+.combobox-dropdown-menu-visibility-visible {
+	visibility: visible;
+}
+
+.combobox-dropdown-menu-highlight {
+	background-color: #39f; /* システムカラー */
+}
+.combobox-menu-wrapper .virtual-scroll-box-render-target{
+	width : 100%; /* 3bchi-scrollで生成されるdiv */
+	text-align: left;
+}
