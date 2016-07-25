@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<script src="/hifive-res/ext/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<script>
+	$(function() {
+		$(window).resize(function() {
+		//$(".horizontal").css("width", ($(window).width() - 60) + "px");
+		//$(".vertical").css("height", ($(window).height() - 550) + "px");
+		});
+	});
+</script>
+
+<script src="/hifive-res/ext/pdfjs/pdf.js"></script>
+<script src="../src/PdfController.js"></script>
+<script src="sample.js"></script>
+<script>
+	$(function() {
+		h5.core.controller($(document.body), sample.PageController);
+	});
+</script>
+<style>
+.controll-form {
+	position: relative;
+}
+</style>
+<title>pdf</title>
+</head>
+<body>
+	<h3>PdfController</h3>
+	<div class="controll-form">
+		<button class="btn btn-default prevpage">
+			<span class="glyphicon glyphicon-chevron-left"></span>
+		</button>
+		<button class="btn btn-default nextpage">
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</button>
+		<button class="btn btn-default zoom-plus">
+			<span class="glyphicon glyphicon-plus"></span>
+		</button>
+		<button class="btn btn-default zoom-minus">
+			<span class="glyphicon glyphicon-minus"></span>
+		</button>
+	</div>
+	<div class="pdf-view" data-url="HelloWorld.pdf"
+		data-prefer-viewr="browserplugin" data-scale="1.0"
+		 style="height:500px; width:100%"></div>
+</body>
+</html>

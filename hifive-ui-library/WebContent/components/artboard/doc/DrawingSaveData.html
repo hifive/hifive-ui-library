@@ -25,11 +25,11 @@
 
 <div id="container">
     <nav>
-    	<div class="h5-searchBox">
+        <div class="h5-searchBox">
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboadCommandLogic.html">h5.ui.components.artboard.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
@@ -90,7 +90,7 @@
             
             
             <td class="type">
-            <a href="DRShape.html">DRShape[]</a>
+            <a href="ArtShape.html">ArtShape[]</a>
             </td>
             
             
@@ -142,7 +142,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 987</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 339</li></ul></dd>
 	
 	-->
 
@@ -189,7 +189,7 @@
 <dd>
     
     <p class="description">
-        セーブされたデータ<p>以下のようなデータを持つオブジェクトです<pre>{	version: セーブデータのバージョン,	shapes: [shapeデータの配列]}</pre>shapeデータは、以下のようなデータです<pre>{	type: ['path' | 'rect' | 'ellipse' | 'image'],	data: (typeごとに異なります)}</pre></p>
+        セーブされたデータ<p>以下のようなデータを持つオブジェクトです<pre class="sh_javascript"><code>{	version: セーブデータのバージョン,	shapes: [shapeデータの配列]}</code></pre>shapeデータは、以下のようなデータです<pre class="sh_javascript"><code>{	type: ['path' | 'rect' | 'ellipse' | 'image' | 'text'],	data: (typeごとに異なります)}</code></pre></p>
     </p>
     
     
@@ -213,7 +213,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 1000</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 352</li></ul></dd>
 	
 	-->
 
@@ -229,7 +229,7 @@
 </dd>
 <hr>
 <dt>
-    <h4 class="name" id="version"><span class="type-signature">&lt;static> </span>version<span class="type-signature"></span></h4>
+    <h4 class="name" id="version"><span class="type-signature">&lt;static> </span>version<span class="type-signature"> :string</span></h4>
     
     
 </dt>
@@ -260,7 +260,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 1039</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>DrawingLogic.js, line 392</li></ul></dd>
 	
 	-->
 
@@ -293,7 +293,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Dec 19 2014 17:36:56 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 16:12:44 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

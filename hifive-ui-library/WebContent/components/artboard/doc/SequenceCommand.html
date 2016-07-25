@@ -25,11 +25,11 @@
 
 <div id="container">
     <nav>
-    	<div class="h5-searchBox">
+        <div class="h5-searchBox">
         	<input type="text" placeholder="Search...">
         	<button class="clear">×</button>
         </div>
-        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="DREllipse.html">DREllipse</a></li><li><a href="DRImage.html">DRImage</a></li><li><a href="DRPath.html">DRPath</a></li><li><a href="DRRect.html">DRRect</a></li><li><a href="DRShape.html">DRShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboadCommandLogic.html">h5.ui.components.artboard.logic.ArtboadCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="DRFillShape.html">DRFillShape</a></li><li><a href="DRStrokeShape.html">DRStrokeShape</a></li></ul>
+        <h3>Classes</h3><ul><li><a href="AppendCommand.html">AppendCommand</a></li><li><a href="ArtEllipse.html">ArtEllipse</a></li><li><a href="ArtImage.html">ArtImage</a></li><li><a href="ArtPath.html">ArtPath</a></li><li><a href="ArtRect.html">ArtRect</a></li><li><a href="ArtShape.html">ArtShape</a></li><li><a href="ArtShapeCommand.html">ArtShapeCommand</a></li><li><a href="ArtText.html">ArtText</a></li><li><a href="AttrCommand.html">AttrCommand</a></li><li><a href="Command.html">Command</a></li><li><a href="CommandManager.html">CommandManager</a></li><li><a href="DragSession.html">DragSession</a></li><li><a href="DrawingSaveData.html">DrawingSaveData</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardController.html">h5.ui.components.artboard.controller.ArtboardController</a></li><li><a href="h5.ui.components.artboard.controller.ArtboardViewerController.html">h5.ui.components.artboard.controller.ArtboardViewerController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierController.html">h5.ui.components.artboard.controller.MagnifierController</a></li><li><a href="h5.ui.components.artboard.controller.MagnifierMouseoverController.html">h5.ui.components.artboard.controller.MagnifierMouseoverController</a></li><li><a href="h5.ui.components.artboard.logic.ArtboardCommandLogic.html">h5.ui.components.artboard.logic.ArtboardCommandLogic</a></li><li><a href="h5.ui.components.artboard.logic.CanvasConvertLogic.html">h5.ui.components.artboard.logic.CanvasConvertLogic</a></li><li><a href="h5.ui.components.artboard.logic.DrawingLogic.html">h5.ui.components.artboard.logic.DrawingLogic</a></li><li><a href="h5.ui.components.SelectionLogic.html">h5.ui.components.SelectionLogic</a></li><li><a href="Magnifier.html">Magnifier</a></li><li><a href="RemoveCommand.html">RemoveCommand</a></li><li><a href="SequenceCommand.html">SequenceCommand</a></li><li><a href="StyleCommand.html">StyleCommand</a></li></ul><h3>Mixins</h3><ul><li><a href="ArtFillShape.html">ArtFillShape</a></li><li><a href="ArtStrokeShape.html">ArtStrokeShape</a></li><li><a href="ArtTextShape.html">ArtTextShape</a></li><li><a href="EventDispatcher.html">EventDispatcher</a></li></ul>
     </nav>
 
     <div id="main">
@@ -56,7 +56,7 @@
     
     
     <p class="description">
-        複数のCommandを一つのコマンドとして扱うコマンド
+        複数のCommandを一つのコマンドとして扱うコマンド<p>SequenceCommandは複数のコマンドを包括するためのコマンドです。</p><p>execute()及びundo()時に、登録されたコマンド全ての実行及び取り消しを行います。</p>
     </p>
     
     
@@ -136,7 +136,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 493</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 491</li></ul></dd>
 	
 	-->
 
@@ -161,6 +161,12 @@
             </div>
 
             
+                <h3 class="subsection-title">Extends</h3>
+
+                <ul>
+                    <li><a href="Command.html">Command</a></li>
+                </ul>
+            
 
             
 
@@ -177,7 +183,7 @@
                 <h3 class="subsection-title">Methods</h3>
 
                 <dl><dt>
-    <h4 class="name" id="getInnerCommands"><span class="type-signature">&lt;static> </span>getInnerCommands</h4>
+    <h4 class="name" id="execute"><span class="type-signature"></span>execute</h4>
     
     
 </dt>
@@ -185,7 +191,7 @@
     
     
     <p class="description">
-        内部コマンドの取得
+        コマンドの実行
     </p>
     
     
@@ -213,7 +219,163 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 541</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 46</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドの実行結果
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getCommandData"><span class="type-signature"></span>getCommandData</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コンストラクタで指定したコマンドデータオブジェクトを返します
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 78</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドデータオブジェクト
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Object</span> 
+		
+	</dd>
+</dl>
+
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="getInnerCommands"><span class="type-signature"></span>getInnerCommands</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        内部コマンドの取得<p>一括で実行及び取り消しを行うコマンドのリスト(配列)を返します</p>
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 563</li></ul></dd>
 	
 	-->
 
@@ -251,7 +413,7 @@
 
 </dd>
 <hr><dt>
-    <h4 class="name" id="mergeCommand"><span class="type-signature">&lt;static> </span>mergeCommand</h4>
+    <h4 class="name" id="push"><span class="type-signature"></span>push</h4>
     
     
 </dt>
@@ -259,70 +421,7 @@
     
     
     <p class="description">
-        引数にSequenceCommandが渡された場合にコマンドをマージします
-    </p>
-    
-    
-    
-    
-    
-    
-    <dl class="details">
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	<!--
-	
-	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 551</li></ul></dd>
-	
-	-->
-
-    
-
-	
-	<dt class="tag-see">See:</dt>
-	<dd class="tag-see">
-        <ul><li><a href="Command.html#mergeCommand">Command.mergeCommand</a></li></ul>
-	</dd>
-	
-
-	
-</dl>
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-</dd>
-<hr><dt>
-    <h4 class="name" id="push"><span class="type-signature">&lt;static> </span>push</h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <p class="description">
-        コマンドの追加
+        コマンドの追加<p>一括で実行及び取り消しを行うコマンドを追加します</p>
     </p>
     
     
@@ -390,7 +489,7 @@
 	<!--
 	
 	<dt class="tag-source">Source:</dt>
-	<dd class="tag-source"><ul class="dummy"><li>../../../src/DrawingLogic.js, line 531</li></ul></dd>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 549</li></ul></dd>
 	
 	-->
 
@@ -407,6 +506,84 @@
     
     
     
+    
+    
+
+</dd>
+<hr><dt>
+    <h4 class="name" id="undo"><span class="type-signature"></span>undo</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <p class="description">
+        コマンドの取り消し
+    </p>
+    
+    
+    
+    
+    
+    
+    <dl class="details">
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	<!--
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source"><ul class="dummy"><li>Command.js, line 62</li></ul></dd>
+	
+	-->
+
+    
+
+	
+
+	
+</dl>
+
+    
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+<div class="param-desc">
+    コマンドの実行結果
+</div>
+
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+		<span class="param-type">Any</span> 
+		
+	</dd>
+</dl>
+
     
     
 
@@ -428,7 +605,7 @@
 </div>
 
 <footer>
-    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Dec 19 2014 17:36:57 GMT+0900 (JST)<br />
+    Documentation generated by <a href="https://github.com/micmath/jsdoc">JSDoc 3</a> on Fri Jul 24 2015 16:12:45 GMT+0900 (JST)<br />
     <small class="footerCopyright">Copyright (C) 2012-2014 NS Solutions Corporation, All Rights Reserved.</small>
 </footer>
 

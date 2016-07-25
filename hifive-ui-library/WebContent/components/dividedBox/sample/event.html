@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="../src/DividedBox.css" rel="stylesheet">
+<link href="sample.css" rel="stylesheet">
+
+<style type="text/css">
+.dividedBox>.dividedBox {
+	height: 100%;
+	min-width: 50px;
+}
+
+.event-log {
+	height: 200px;
+	overflow-x: auto;
+	overflow-y: scroll;
+	border: 1px solid #ccc;
+}
+
+.log-event-name {
+	color: #DA5019
+}
+
+.log-obj {
+	color: #3261AB
+}
+
+.translucent {
+	-ms-filter: "alpha(opacity=50)";
+	filter: alpha(opacity = 50);
+	opacity: 0.5;
+}
+</style>
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<script src="../src/DividedBox.js"></script>
+<script src="sample-event.js"></script>
+
+<script type="text/ejs" id="event-log">
+	<p>
+	<span class="log-event-name">[%= eventName %]</span> ターゲット：<span class="log-obj">[%= target %]</span> イベント引数：<span class="log-obj">[%= evArg %]</span>
+	</p>
+</script>
+<title>DividedBoxの上げるイベント</title>
+</head>
+<body class="container">
+	<h3>DividedBoxの上げるイベント</h3>
+	<div class="row">
+		<div class="col-xs-12">
+			<h4>boxSizeChange</h4>
+			<p>トラック操作やメソッド呼び出しなどでボックスのサイズが変更された場合、そのボックス要素からboxSizeChangeイベントが上がります。</p>
+			<p>ボックスのサイズ変更時に何かしたい場合はこのboxSizeChangeイベントハンドラを記述するのがよいでしょう。</p>
+			<h4>dividerTrackstart/dividerTrackmove/dividerTrackend</h4>
+			<p>dividerをマウス(またはタッチ)でトラック操作を行ったときに以下のイベントが上がります。</p>
+			<dl>
+				<dt>dividerTrackstart</dt>
+				<dd>dividerトラック操作開始時に上がるイベント</dd>
+				<dt>dividerTrackmove</dt>
+				<dd>dividerトラック操作中、dividerが移動した時に上がるイベント</dd>
+				<dt>dividerTrackend</dt>
+				<dd>dividerトラック操作終了時に上がるイベント</dd>
+			</dl>
+			<p>いずれのイベントもイベント引数には以下のようなオブジェクトが渡されます。</p>
+			<pre>{
+prev: トラック操作によってサイズが変更される、dividerの前にあるボックス要素,
+next: トラック操作によってサイズが変更される、dividerの後ろにあるボックス要素,,
+$divider: トラック操作によって動くdivider要素全て。fixedSize指定のボックスがある場合に複数のdividerが同時に動く。
+move: dividerTrackmoveイベントの場合のみ。移動したピクセル数
+}</pre>
+			<p>fixedSize指定などで同時に動くdividerがある場合でも、トラック操作中のdivider要素からのみイベントが上がります。</p>
+			<p>同時に動いているdivider要素全てを取得したい場合はイベント引数の$dividerから取得してください。</p>
+
+			<h3>サンプル</h3>
+			<div class="sample" data-controller-name="Sample1Controller">
+				<div class="dividedBox horizontal">
+					<div class="box yellow"></div>
+					<div class="box dividedBox vertical">
+						<div class="box green"></div>
+						<div class="box purple"></div>
+					</div>
+					<div class="box red fixedSize">
+						<p>固定ボックス</p>
+					</div>
+					<div class="box blue"></div>
+					<div class="box orange"></div>
+				</div>
+				<div>
+					<p>
+						イベントログ
+						<button class="btn btn-sm log-clear">クリア</button>
+					</p>
+					<div class="event-log"></div>
+				</div>
+			</div>
+
+			<h3>応用サンプル</h3>
+			<h4>トラック操作完了時のサイズ変更検知</h4>
+			<p>ボックスのサイズが変更された時に行いたい処理があって、その処理が重い場合、トラック操作中はその処理は行わずトラック終了時にその処理を行うのがよいでしょう。</p>
+			<p>以下はそのような状況を想定したサンプルです。</p>
+			<p>ボックスサイズ変更時にそのボックスに現在のボックスのサイズを表示するようにしています。</p>
+			<p>トラック操作中は該当のボックスに半透明にするスタイルを当てています。</p>
+
+			<div class="sample" data-controller-name="Sample2Controller">
+				<div class="dividedBox horizontal">
+					<div class="box yellow"></div>
+					<div class="box dividedBox vertical">
+						<div class="box green"></div>
+						<div class="box purple"></div>
+					</div>
+					<div class="box red fixedSize">
+						<p>固定ボックス</p>
+					</div>
+					<div class="box blue"></div>
+					<div class="box orange"></div>
+				</div>
+				<div>
+					<p>
+						イベントログ
+						<button class="btn btn-sm log-clear">クリア</button>
+					</p>
+					<div class="event-log"></div>
+				</div>
+			</div>
+
+			<p>コントローラ実装例</p>
+			<pre>var controller = {
+	__name: &#039;sample.controller.Sample2Controller&#039;,
+	// DividedBoxを子コントローラとしてバインド
+	verticalDBController: h5.ui.components.DividedBox.DividedBox,
+	horizontalDBController: h5.ui.components.DividedBox.DividedBox,
+	eventLogController: sample.controller.EventLogController,
+	__meta: {
+		verticalDBController: {
+			rootElement: '.dividedBox.vertical'
+		},
+		horizontalDBController: {
+			rootElement: '.dividedBox.horizontal'
+		}
+	},
+	/**
+	 * トラック中かどうかのフラグ
+	 */
+	_isTracking: false,
+
+	&#039;{rootElement} boxSizeChange&#039;: function(ctx) {
+		// トラック操作中なら何もしない
+		if (this._isTracking) {
+			return;
+		}
+		this._showSize(ctx.event.target);
+	},
+
+	&#039;{rootElement} dividerTrackstart&#039;: function(ctx) {
+		// トラック中のフラグを建てる
+		this._isTracking = true;
+		// 両サイドのボックスを半透明にする
+		$(ctx.evArg.prev).addClass(&#039;translucent&#039;);
+		$(ctx.evArg.next).addClass(&#039;translucent&#039;);
+	},
+
+	&#039;{rootElement} dividerTrackend&#039;: function(ctx) {
+		this._isTracking = false;
+		// 半透明解除
+		this.$find(&#039;.translucent&#039;).removeClass(&#039;translucent&#039;);
+		this._showSize(ctx.evArg.prev);
+		this._showSize(ctx.evArg.next);
+	},
+
+	_showSize: function(box) {
+		var $box = $(box);
+		if ($box.hasClass(&#039;dividedBox&#039;)) {
+			// 入れ子にしているボックスは中のボックスについてサイズを表示
+			$box.find(&#039;.box&#039;).each(this.ownWithOrg(function(innerBox) {
+				this._showSize(innerBox);
+			}));
+			return;
+		}
+		var size = $box.width() + &#039;×&#039; + $box.height();
+		$box.find(&#039;.size&#039;).text(size);
+	}
+};</pre>
+		</div>
+	</div>
+</body>
+</html>

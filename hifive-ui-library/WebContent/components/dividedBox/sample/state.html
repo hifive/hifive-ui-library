@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="pragma" content="no-cache" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="viewport" content="width=device-width">
+
+<link href="/hifive-res/fw/current/h5.css" rel="stylesheet">
+
+
+<link href="/hifive-res/ext/bootstrap/3.3.0/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="../src/DividedBox.css" rel="stylesheet">
+<link href="sample.css" rel="stylesheet">
+
+<style type="text/css">
+body {
+	padding: 1em;
+}
+
+.sample>.dividedBox {
+	margin: 10px 0;
+	height: 300px;
+}
+
+.box,.box>* {
+	box-sizing: border-box;
+}
+
+.mini-height {
+	height: 30px;
+}
+
+.middle-height {
+	height: 150px;
+}
+
+.large-height {
+	height: 270px;
+}
+
+.mini-width {
+	width: 50px;
+	height: 100%;
+}
+
+.middle-width {
+	width: 250px;
+	height: 100%;
+}
+
+.large-width {
+	width: 400px;
+	height: 100%;
+}
+
+.box {
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.horizontal>.box {
+	height: 300px;
+	width: 250px;
+}
+
+.vertical>.box {
+	height: 150px;
+	width: 200px;
+}
+
+.state-container>div {
+	border: 3px solid #000;
+}
+</style>
+
+<!--[if lt IE 9]>
+		<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+		<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+<script src="/hifive-res/fw/current/h5.dev.js"></script>
+
+<script src="../src/DividedBox.js"></script>
+<script src="sample-state.js"></script>
+
+<title>ボックス区切り移動サンプル(StateBox使用)</title>
+</head>
+<body class="container">
+	<div class="row">
+		<h3>ボックス区切り移動サンプル(StateBox使用)</h3>
+		<p>DividedBoxのボックスサイズ変更やdividerの表示/非表示を行うメソッド、及び、StateBoxのサンプルです。</p>
+		<p>StateBoxは、ある要素の状態(State)を管理するためのコンポーネントです。</p>
+		<p>以下のように要素を定義します。</p>
+		<p>
+		<pre>
+&lt;div class=&quot;stateBox&quot;&gt;
+  &lt;div data-state=&quot;middle&quot;&gt;middle state&lt;/div&gt;
+  &lt;div data-state=&quot;mini&quot;&gt;mini state&lt;/div&gt;
+  &lt;div data-state=&quot;large&quot;&gt;large state&lt;/div&gt;
+&lt;/div&gt;
+</pre>
+		</p>
+		<p>
+			state名を<strong>data-state</strong>に指定します。state名は任意です。StateBoxは現在設定されているstate要素のみを表示してその他を非表示にします。またstateを切り替えることが出来ます。
+		</p>
+		<p>StateBoxControllerを上記のような要素にバインドして使用します。</p>
+		<p>
+		<pre>var stateBoxController = h5.core.controller('.stateBox', h5.ui.components.DividedBox.StateBox);</pre>
+		</p>
+		<p>デフォルトでは、一番上に定義されたstate(上記例の場合はmiddle)が設定されます。</p>
+		<p>stateの切り替えは以下のようにして行います。</p>
+		<p>
+		<pre>stateBoxController.setState('mini');</pre>
+		</p>
+		<p>下のサンプルは、各ボックスにStateBoxをバインドしてあります。</p>
+		<div class="sample">
+			<!-- 			<label><input type="checkbox" name="auto-adjust" checked>state-changeイベントを拾って自動でsetWidth|setHeightする</label> -->
+			<div class="control-group">
+				<label>stateの設定 <select name="target"><option
+							value="yellow">yellow</option>
+						<option value="green">green</option>
+						<option value="purple">purple</option>
+						<option value="blue">blue</option>
+						<option value="orange">orange</option></select> <select name="state">
+						<option value="mini">mini</option>
+						<option value="middle">middle</option>
+						<option value="large">large</option>
+				</select>
+					<button class="btn btn-default set-state">StateBoxController.setState()</button>
+				</label>
+			</div>
+			<div class="control-group">
+				<label>hideしたものを再表示 <select name="target"><option
+							value="yellow">yellow</option>
+						<option value="green">green</option>
+						<option value="purple">purple</option>
+						<option value="blue">blue</option>
+						<option value="orange">orange</option></select>
+					<button class="btn btn-default show-box">DividedBox.show(index)</button></label>
+			</div>
+			<div class="control-group">
+				<label>dividerの非表示・表示<select name="target"><option
+							value="vertical">vertical</option>
+						<option value="horizontal">horizontal</option></select> <span>index</span><input
+					type="text" name=index " size="2" value="0">
+					<button class="btn btn-default hide-divider">DividedBox.hideDivider(index)</button>
+					<button class="btn btn-default show-divider">DividedBox.showDivider(index)</button></label>
+				<label style="margin-left: 3em">第２引数にtrueを指定
+					<button class="btn btn-default hide-divider" data-fix-prev="true">DividedBox.hideDivider(index,
+						true)</button>
+					<button class="btn btn-default show-divider" data-fix-prev="true">DividedBox.showDivider(index,
+						true)</button>
+				</label>
+			</div>
+			<div class="dividedBox horizontal">
+				<div class="box yellow state-container">
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
+				</div>
+				<div class="dividedBox fill vertical">
+					<div class="box fill green state-container">
+						<div data-state="middle" class="middle-height">middle state</div>
+						<div data-state="mini" class="mini-height">mini state</div>
+						<div data-state="large" class="large-height">large state</div>
+					</div>
+					<div class="box fill purple state-container">
+						<div data-state="middle" class="middle-height">middle state</div>
+						<div data-state="mini" class="mini-height">mini state</div>
+						<div data-state="large" class="large-height">large state</div>
+					</div>
+				</div>
+				<div class="box blue state-container">
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
+				</div>
+				<div class="box orange state-container">
+					<div data-state="middle" class="middle-width">middle state</div>
+					<div data-state="mini" class="mini-width">mini state</div>
+					<div data-state="large" class="large-width">large state</div>
+				</div>
+			</div>
+			<div class="control-group">
+				<h4>partition</h4>
+				<div>
+					<label><input type="radio" name="partition" value="0"
+						checked>0.0</label> <label><input type="radio"
+						name="partition" value="0.2">0.2</label> <label><input
+						type="radio" name="partition" value="0.5">0.5</label> <label><input
+						type="radio" name="partition" value="0.7">0.7</label> <label><input
+						type="radio" name="partition" value="1">1.0</label>
+				</div>
+				<p>左右(上下)にdividerがある場合、resize時に左右(上下)のdividerが動く割合を0.0～1.0を指定します。</p>
+				<p>0.0を指定した場合(デフォルト)は左(上)のdividerを固定して右(下)のdividerの位置が変更されます。</p>
+				<p>左右(上下)のどちらかにしかdividerが無い場合はこのオプションは無視されてresize時に位置が変更されるdividerは自動で決定されます。</p>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

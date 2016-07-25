@@ -24,7 +24,7 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		__templates: ['../src/drawing.ejs', 'src/sample.ejs'],
+		__templates: ['../src/artboard.ejs', 'src/sample.ejs'],
 
 		/**
 		 * 子コントローラ設定
@@ -42,11 +42,10 @@
 		},
 
 		/**
-		 * SVGCanvasController
+		 * ArtboardController
 		 *
 		 * @memberOf sample.PageController
 		 */
-
 		_artboardController: h5.ui.components.artboard.controller.ArtboardController,
 
 		/**
@@ -87,6 +86,11 @@
 		_saveDataSequence: h5.core.data.createSequence(),
 
 		/**
+		 * イメージマップの採番用シーケンス
+		 */
+		_imageSourceMapSeq: h5.core.data.createSequence(),
+
+		/**
 		 * __initイベント
 		 *
 		 * @memberOf sample.PageController
@@ -98,11 +102,8 @@
 			var size = context.args.canvasSize;
 
 			// カンバス(svg,canvas)の配置
-			this.view.append(this.rootElement, 'h5drawing-canvas-wrapper', size);
-			this._$canvasWrapper = this.$find('.h5drawing-canvas-wrapper');
-
-			// ラッパーのサイズ指定
-			this._$canvasWrapper.css(size);
+			this.view.append('.artboard', 'h5-artboard-canvas-wrapper', size);
+			this._$canvasWrapper = this.$find('.h5-artboard-canvas-wrapper');
 
 			// Toolbarの配置
 			this.view.append(this.rootElement, 'toolbar', {
@@ -113,8 +114,11 @@
 			});
 			this._$toolbar = this.$find('.drawing-toolbar');
 
+			// ツール下部分の配置
+			this.view.append(this._$toolbar, 'tool-footer');
+
 			// 保存画像表示領域の配置
-			this.view.append(this.rootElement, 'saved-img-wrapper');
+			this.view.append(this._$toolbar, 'saved-img-wrapper');
 			this._$savedImgWrapper = this.$find('.saved-img-wrapper');
 
 			// 子コントローラのメタ設定
@@ -125,6 +129,10 @@
 			// デフォルトはフリーハンド描画モード
 			this._artboardController.setMode(this._artboardController.MODE_PEN);
 			this._artboardController.setStrokeWidth(5);
+
+			// ツールバーコントローラにArtboardControllerを持たせる
+			// (スタンプの配置、背景画像、背景色の設定ははToolbarから直接行うため)
+			this._toolbarController.targetArtboard = this._artboardController;
 		},
 
 		/**
@@ -135,21 +143,9 @@
 		 * @param {Object} context コンテキスト
 		 */
 		__ready: function() {
-			// 画像にIDを振り、ソースファイルとの対応付けを行う
-			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
-			var srcMap = this._artboardController.imageSourceMap;
-			var seq = h5.core.data.createSequence();
-			this.$find('.drawing-image').each(function() {
-				var id = seq.next();
-				var $this = $(this);
-				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
-				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
-				srcMap[id] = $this.attr('src');
-			});
-
-			// ツールバーコントローラにArtboardControllerを持たせる
-			// (スタンプの配置、背景画像、背景色の設定ははToolbarから直接行うため)
-			this._toolbarController.targetArtboard = this._artboardController;
+			// imageSourceMapにdrawing-imageクラス要素の画像を登録
+			// ページ全体のdrawing-imageを扱うため、this.$findではなく$()を使用している
+			this._registImageSourceMap($('.drawing-image'));
 		},
 
 		//---------------------------------------------------------------
@@ -157,6 +153,10 @@
 		//---------------------------------------------------------------
 		'{window} keydown': function(context) {
 			var event = context.event;
+			if (event.target.tagName.toLowerCase() === 'input') {
+				// input要素のキーイベントなら何もしない
+				return;
+			}
 			var keyCode = event.keyCode;
 			var ctrlKey = event.ctrlKey;
 			switch (keyCode) {
@@ -177,12 +177,17 @@
 		//-------------------------------------------------------------------------------
 		// ツールバーの上げるイベント
 		//-------------------------------------------------------------------------------
-		'{this._$toolbar} shape-select': function() {
+		'{this._$toolbar} selectMode': function() {
 			this._artboardController.unselectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
 		},
 
-		'{this._$toolbar} tool-select': function(context) {
+		'{this._$toolbar} magnifierMode': function() {
+			this._artboardController.unselectAll();
+			this._artboardController.setMode(this._artboardController.MODE_DISABLE);
+		},
+
+		'{this._$toolbar} drawMode': function(context) {
 			this._artboardController.unselectAll();
 			var toolName = context.evArg;
 			switch (toolName) {
@@ -207,17 +212,20 @@
 			case 'stamp':
 				this._artboardController.setMode(this._artboardController.MODE_NODRAW);
 				break;
+			case 'text':
+				this._artboardController.setMode(this._artboardController.MODE_TEXT);
+				break;
 			}
 		},
 
-		'{this._$toolbar} stroke-change': function(context) {
+		'{this._$toolbar} strokeChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
 				this._artboardController.setStrokeColor(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -225,18 +233,21 @@
 				var shape = shapes[i];
 				if (shape.strokeColor !== undefined) {
 					shape.strokeColor = val;
+				} else if (shape.textColor !== undefined) {
+					// strokeColor設定時にtextColorも変更する
+					shape.textColor = val;
 				}
 			}
 		},
 
-		'{this._$toolbar} stroke-opacity-change': function(context) {
+		'{this._$toolbar} strokeOpacityChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setStrokeOpacity(val);
+				artboardCtrl.setStrokeOpacity(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -244,18 +255,21 @@
 				var shape = shapes[i];
 				if (shape.strokeOpacity !== undefined) {
 					shape.strokeOpacity = val;
+				} else if (shape.textColor !== undefined) {
+					// strokeOpacity設定時にtextOpacityも変更する
+					shape.textOpacity = val;
 				}
 			}
 		},
 
-		'{this._$toolbar} fill-change': function(context) {
+		'{this._$toolbar} fillChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setFillColor(val);
+				artboardCtrl.setFillColor(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -267,14 +281,14 @@
 			}
 		},
 
-		'{this._$toolbar} fill-opacity-change': function(context) {
+		'{this._$toolbar} fillOpacityChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setFillOpacity(val);
+				artboardCtrl.setFillOpacity(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -286,14 +300,14 @@
 			}
 		},
 
-		'{this._$toolbar} stroke-width-change': function(context) {
+		'{this._$toolbar} strokeWidthChange': function(context) {
 			var val = context.evArg;
-			var artboadCtrl = this._artboardController;
+			var artboardCtrl = this._artboardController;
 			if (!this._existSelectedShape) {
-				artboadCtrl.setStrokeWidth(val);
+				artboardCtrl.setStrokeWidth(val);
 				return;
 			}
-			var shapes = artboadCtrl.getSelectedShapes();
+			var shapes = artboardCtrl.getSelectedShapes();
 			if (!shapes.length) {
 				return;
 			}
@@ -305,67 +319,84 @@
 			}
 		},
 
+		'{this._$toolbar} textSettingsChange': function(context) {
+			var textSettings = context.evArg;
+			var shapes = this._artboardController.getSelectedShapes();
+			if (!shapes.length) {
+				return;
+			}
+			var fontSize = textSettings.fontSize;
+			var fontStyle = textSettings.fontStyle;
+			var fontFamily = textSettings.fontFamily;
+			var textContent = textSettings.textContent;
+			for (var i = 0, l = shapes.length; i < l; i++) {
+				var shape = shapes[i];
+				if (shape.textContent === undefined) {
+					continue;
+				}
+				shape.fontSize = fontSize;
+				shape.textContent = textContent;
+				shape.fontStyle = fontStyle;
+				shape.fontFamily = fontFamily;
+			}
+		},
+
 		/**
 		 * 選択中の図形を消去
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} remove-selected-shape': function() {
+		'{this._$toolbar} removeSelectedShape': function() {
 			this._removeSelectedShape();
 		},
 		_removeSelectedShape: function() {
-			var artboadCtrl = this._artboardController;
-			var selectedShapes = artboadCtrl.getSelectedShapes();
+			var artboardCtrl = this._artboardController;
+			var selectedShapes = artboardCtrl.getSelectedShapes();
 			if (!selectedShapes.length) {
 				return;
 			}
 			for (var i = 0, l = selectedShapes.length; i < l; i++) {
-				artboadCtrl.remove(selectedShapes[i]);
+				artboardCtrl.remove(selectedShapes[i]);
 			}
-			artboadCtrl.unselectAll();
+			artboardCtrl.unselectAll();
 		},
 
 		/**
-		 * img要素に画像としてエクスポート
+		 * カンバスサイズ変更
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} export': function() {
-			this._artboardController.getImage().done(
-					this.own(function(dataUrl) {
-						this._$savedImgWrapper
-								.prepend('<div><label>' + sample.util.dateFormat(new Date())
-										+ '</label><br><img class="saved-img" src="' + dataUrl
-										+ '"></div>');
-					}));
+		'{this._$toolbar} setSize': function(ctx) {
+			var size = ctx.evArg;
+			this._artboardController.setSize(size.width, size.height);
 		},
 
 		/**
-		 * セーブ
+		 * 保存
+		 * <p>
+		 * 作業内容を保存してかつimgとして出力も行う
+		 * </p>
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} save': function() {
+		'{this._$toolbar} save': function(ctx) {
+			var option = ctx.evArg;
+			// 保存
 			this._artboardController.unselectAll();
-			var artboardSaveData = this._artboardController.save();
+			var artboardSaveData = this._artboardController.save(true);
 			var saveNo = this._saveDataSequence.next();
 			this._saveDataMap[saveNo] = artboardSaveData;
-			this._saveDataMap = h5.u.obj.serialize(this._saveDataMap);
-			this._saveDataMap = h5.u.obj.deserialize(this._saveDataMap);
-			this._toolbarController.appendSaveDataList(saveNo);
-		},
 
-		/**
-		 * ロード
-		 *
-		 * @memberOf sample.PageController
-		 * @param context.evArg saveNo
-		 */
-		'{this._$toolbar} load': function(context) {
-			this._artboardController.unselectAll();
-			var saveNo = context.evArg;
-			var artboardSaveData = this._saveDataMap[saveNo];
-			this._artboardController.load(artboardSaveData);
+			// imgとしてエクスポート
+			var label = sample.util.dateFormat(new Date());
+			this._artboardController.getImage('imgage/png', option).done(
+					this.own(function(dataUrl) {
+						this.view.prepend(this._$savedImgWrapper, 'saved-img', {
+							dateStr: label,
+							dataUrl: dataUrl,
+							saveNo: saveNo
+						});
+					}));
 		},
 
 		/**
@@ -373,59 +404,94 @@
 		 *
 		 * @memberOf sample.PageController
 		 */
-		'{this._$toolbar} remove-all': function() {
+		'{this._$toolbar} removeAll': function() {
 			if (!confirm('描画されている図形をすべて削除します')) {
 				return;
 			}
-			var artboadCtrl = this._artboardController;
-			var shapes = artboadCtrl.getAllShapes(true);
+			var artboardCtrl = this._artboardController;
+			var shapes = artboardCtrl.getAllShapes(true);
 			if (!shapes.length) {
 				return;
 			}
 			// アップデートセッション内で削除(undo/redoで実行される操作を一つにまとめるため)
 			for (var i = 0, l = shapes.length; i < l; i++) {
-				artboadCtrl.remove(shapes[i]);
+				artboardCtrl.remove(shapes[i]);
 			}
-			artboadCtrl.unselectAll();
+			artboardCtrl.unselectAll();
 		},
 
 		/**
 		 * 全ての図形を選択
 		 */
-		'{this._$toolbar} select-all': function() {
+		'{this._$toolbar} selectAll': function() {
 			this._selectAll();
 		},
 
 		/**
 		 * 全ての図形の選択を解除
 		 */
-		'{this._$toolbar} unselect-all': function() {
+		'{this._$toolbar} unselectAll': function() {
 			this._artboardController.unselectAll();
 		},
 
-		'{this._$canvasWrapper} enable-undo': function() {
+		/**
+		 * セーブデータを表示
+		 */
+		'{this._$toolbar} showSaveData': function(ctx) {
+			var index = ctx.evArg;
+			var saveData = this._saveDataMap[index];
+			var $saveDataText = $('.saveDataText');
+			$saveDataText.val(h5.u.obj.serialize(saveData));
+			setTimeout(function() {
+				$saveDataText.focus().select();
+			}, 0);
+		},
+
+		/**
+		 * テキストエリアのキー操作が有効になるようにする
+		 */
+		'{.saveDataText} keydown': function(ctx) {
+			ctx.event.stopPropagation();
+		},
+
+		/**
+		 * ロードボタン
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'.saved-img-wrapper .load-btn click': function(ctx, $el) {
+			if (!confirm('ボードに保存したデータを読み込みます')) {
+				return;
+			}
+			this._artboardController.unselectAll();
+			var saveNo = $el.data('save-no');
+			this._load(saveNo);
+		},
+
+		'{this._$canvasWrapper} enableUndo': function() {
 			this.$find('.undo').removeClass('disabled');
 		},
-		'{this._$canvasWrapper} disable-undo': function() {
+		'{this._$canvasWrapper} disableUndo': function() {
 			this.$find('.undo').addClass('disabled');
 		},
-		'{this._$canvasWrapper} enable-redo': function() {
+		'{this._$canvasWrapper} enableRedo': function() {
 			this.$find('.redo').removeClass('disabled');
 
 		},
-		'{this._$canvasWrapper} disable-redo': function() {
+		'{this._$canvasWrapper} disableRedo': function() {
 			this.$find('.redo').addClass('disabled');
 		},
 		'{this._$canvasWrapper} drawstart': function() {
 			this._toolbarController.hideOptionView();
 		},
-		'{this._$canvasWrapper} drawend': function() {
+		'{this._$canvasWrapper} drawEnd': function() {
 		// 何もしない
 		},
-		'{this._$canvasWrapper} select-shape': function(context) {
+		'{this._$canvasWrapper} selectShape': function(context) {
 			this._setToolbarForSelectedShape();
 		},
-		'{this._$canvasWrapper} unselect-shape': function(context) {
+		'{this._$canvasWrapper} unselectShape': function(context) {
 			var shapes = this._artboardController.getSelectedShapes();
 			if (shapes.length) {
 				this._setToolbarForSelectedShape();
@@ -440,6 +506,35 @@
 			this._existSelectedShape = false;
 		},
 
+		/**
+		 * 画像の追加。動的に画像をimageSourceMapに登録したい時に呼ぶイベント
+		 *
+		 * @memberOf sample.PageController
+		 * @param context.evArg saveNo
+		 */
+		'{rootElement} registDrawingImage': function(ctx) {
+			var $img = $(ctx.evArg.img);
+			this._registImageSourceMap($img);
+		},
+
+		/**
+		 * 画像をimageSourceMapに登録
+		 *
+		 * @param $img
+		 */
+		_registImageSourceMap: function($img) {// 画像にIDを振り、ソースファイルとの対応付けを行う
+			// (子コントローラのビューの準備(画像の配置)が終わった後に実行したいので__initではなく__readyで行う)
+			var srcMap = this._artboardController.imageSourceMap;
+			var seq = this._imageSourceMapSeq;
+			$img.each(function() {
+				var id = seq.next();
+				var $this = $(this);
+				// data()で設定するとcloneした要素にはコピーされないため、属性(attr)で設定
+				$this.attr('data-' + DATA_DRAWING_IMAGE_ID, id);
+				srcMap[id] = $this.attr('src');
+			});
+		},
+
 		_setToolbarForSelectedShape: function() {
 			var shapes = this._artboardController.getSelectedShapes();
 			var toolCtrl = this._toolbarController;
@@ -447,30 +542,48 @@
 			if (!this._existSelectedShape) {
 				toolCtrl.saveSettings();
 			}
+			this._existSelectedShape = true;
 			// 削除ボタンを有効
 			toolCtrl.enableRemove();
 
 			// shapeには図形によってstrokeColorやfillColorを設定できる
 			// 選択された図形(複数)のtypeをみて判定し、一つでも設定できるものがあれば有効にする
-			var isFillShape = false;
-			var isStrokeShape = false;
-			var firstFillShape = null;
-			var firstStrokeShape = null;
+			var strokeColor, strokeOpacity, fillColor, fillOpacity, strokeWidth, textSettings;
 			for (var i = 0, l = shapes.length; i < l; i++) {
 				var shape = shapes[i];
-				if (shape.fillColor !== undefined) {
-					isFillShape = true;
-					firstFillShape = shape;
+				if (fillColor == null && shape.fillColor !== undefined) {
+					fillColor = shape.fillColor;
+					fillOpacity = shape.fillOpacity;
 				}
-				if (shape.strokeColor !== undefined) {
-					isStrokeShape = true;
-					firstStrokeShape = shape;
+				if (strokeColor == null && shape.strokeColor !== undefined) {
+					strokeColor = shape.strokeColor;
+					strokeOpacity = shape.strokeOpacity;
+				}
+
+				// strokeColorの設定でtextColorも設定
+				if (strokeColor == null && shape.textColor !== undefined) {
+					strokeColor = shape.textColor;
+					strokeOpacity = shape.textOpacity
+				}
+
+				if (strokeWidth == null && shape.strokeWidth !== undefined) {
+					strokeWidth = shape.strokeWidth;
+				}
+
+				if (!textSettings && shape.textContent !== undefined) {
+					textSettings = {
+						textContent: shape.textContent,
+						fontFamily: shape.fontFamily,
+						fontSize: shape.fontSize,
+						fontStyle: shape.fontStyle
+					};
 				}
 			}
+
 			// Fillの設定
-			if (isFillShape) {
+			if (fillColor != null) {
 				// 最初にヒットしたfillShapeの色をパレットに適用する
-				toolCtrl.setFillColor(firstFillShape.fillColor, firstFillShape.fillOpacity);
+				toolCtrl.setFillColor(fillColor, fillOpacity);
 				toolCtrl.enableFillColor();
 			} else {
 				// Fill設定不可
@@ -478,20 +591,31 @@
 				toolCtrl.disableFillColor();
 			}
 			// Strokeの設定
-			if (isStrokeShape) {
+			if (strokeColor != null) {
 				// 最初にヒットしたstrokeShapeの色、幅をパレットに適用する
-				toolCtrl.setStrokeColor(firstStrokeShape.strokeColor,
-						firstStrokeShape.strokeOpacity);
-				toolCtrl.setStrokeWidth(firstStrokeShape.strokeWidth);
+				toolCtrl.setStrokeColor(strokeColor, strokeOpacity);
 				toolCtrl.enableStrokeColor();
 			} else {
 				// Stroke設定不可
 				toolCtrl.setStrokeColor('#fff', 0);
 				toolCtrl.disableStrokeColor();
-				toolCtrl.disableStrokeWidth();
-				toolCtrl.enableStrokeWidth();
 			}
-			this._existSelectedShape = true;
+
+			// StrokeWidthの設定
+			if (strokeWidth != null) {
+				toolCtrl.setStrokeWidth(strokeWidth);
+				toolCtrl.enableStrokeWidth();
+			} else {
+				toolCtrl.disableStrokeWidth();
+			}
+
+			// textの設定
+			if (textSettings != null) {
+				toolCtrl.setTextSettings(textSettings);
+				toolCtrl.enableTextSettings();
+			} else {
+				toolCtrl.disableTextSettings();
+			}
 		},
 
 		/**
@@ -500,7 +624,19 @@
 		_selectAll: function() {
 			this._artboardController.selectAll();
 			this._artboardController.setMode(this._artboardController.MODE_SELECT);
+			this._toolbarController.hideOptionView();
+			this._toolbarController.setSelectMode();
 		},
+
+		/**
+		 * ロード
+		 *
+		 * @param saveNo
+		 */
+		_load: function(saveNo) {
+			this._artboardController.clearBackgroundImage();
+			this._artboardController.load(this._saveDataMap[saveNo]);
+		}
 	};
 	h5.core.expose(controller);
 })();

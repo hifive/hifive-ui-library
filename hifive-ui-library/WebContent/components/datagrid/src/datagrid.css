@@ -1,0 +1,241 @@
+@charset "UTF-8";
+/*
+ * Copyright (C) 2014-2016 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+.scrollBar {
+	background-color: #EEE;
+}
+
+.scrollBarArrow {
+	background-color: #EEE;
+}
+
+.scrollBarArrow:hover {
+	background-color: #DDD;
+}
+
+.scrollBarArrow.pressed {
+	background-color: #888;
+}
+
+.scrollBarArrow.disabled {
+	background-color: #EEE;
+}
+
+.scrollBarArrowIcon {
+	border-color: #888;
+}
+
+.scrollBarArrowIcon {
+	border-color: #444;
+}
+
+.scrollBarArrow.pressed>.scrollBarArrowIcon {
+	border-color: #EEE;
+}
+
+.scrollBarArrow.disabled>.scrollBarArrowIcon {
+	border-color: #CCC;
+}
+
+.scrollBarKnob {
+	background-color: #AAA;
+}
+
+.scrollBarKnob:hover {
+	background-color: #888;
+}
+
+.scrollBarKnob.tracking {
+	background-color: #666;
+}
+
+.gridSortArrow {
+	border-color: #AAA;
+}
+
+.gridSortArrow.enableSort {
+	border-color: #444;
+}
+.gridBorder {
+	background-color: #888;
+}
+
+.gridSelectedRangeEdge {
+	background-color: #88F;
+}
+
+.gridResizeColumnMarker {
+	cursor: col-resize;
+}
+
+.gridResizeColumnPreview {
+	background-color: #888;
+}
+
+.gridSelectedCell {
+	background-color: #EEF;
+}
+
+.gridMainBox > .virtualScrollBoxLoading:after {
+	content: "Loading..."
+}
+
+.gridSortAndFilterMenu {
+	border: solid 1px #888;
+	border-radius: 4px;
+	box-shadow: 1px 1px 2px 1px #888;
+	padding: 10px 0;
+	background-color: #F8F8F8;
+	outline: 0;
+}
+
+.gridSortAndFilterMenuList {
+	padding-left: 0;
+	margin: 0;
+}
+
+.gridSortAndFilterMenuList > li {
+	list-style-type: none;
+}
+
+.gridSortAndFilterMenuItem {
+	position: relative;
+	height: 24px;
+	padding: 0;
+	cursor: default;
+}
+
+.gridSortIcon {
+	display: inline-block;
+	vertical-align: middle;
+	height: 100%;
+	width: 30px;
+}
+
+.gridSortText {
+	display: inline-block;
+	vertical-align: middle;
+	line-height: 24px;
+	height: 100%;
+	width: calc(100% - 30px);
+	padding-left: 5px;
+	padding-right: 15px;
+	box-sizing: border-box;
+}
+
+.gridSortItem:hover {
+	background-color: #FDF2A0;
+}
+
+.gridSortItem.selected {
+	background-color: #FDD6A0;
+	font-weight: bold;
+	border-style: solid;
+	border-color: #F88;
+	border-width: 1px 0;
+}
+
+.gridSortClearItem.disabled {
+	color: #888;
+	background-color: #FFF;
+}
+
+.gridSortItemBorder {
+	border-bottom: dashed 1px #CCC;
+	background: #999;
+	margin: 5px 0;
+}
+
+.gridPartialMatchFilterInput {
+	margin: 0 10px;
+	line-height: 16px;
+}
+
+.gridPartialMatchTypeSelect {
+	margin: 0 10px;
+	box-sizing: border-box;
+	width: calc(100% - 20px);
+	border-radius: 5px;
+}
+
+.gridPartialMatchTypeSelect:focus {
+	outline: 0;
+}
+
+.gridFilterOptionsItem {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+.gridFilterOptionsList {
+	list-style-type: none;
+	padding-left: 20px;
+	border: solid 1px #444;
+	overflow-y: auto;
+	max-height: 150px;
+	width: 150px;
+}
+
+.gridFilterOptionsList > li {
+	white-space: nowrap;
+}
+
+.gridFilterOptionsList > li > label {
+	padding-right: 10px;
+}
+
+.filterOptionCheckbox {
+	margin-right: 10px;
+}
+
+.gridFilterButtons {
+	line-height: 24px;
+	text-align: right;
+	margin-right: 10px;
+}
+
+.gridFilterButtons > button {
+	line-height: 16px;
+}
+
+.gridColumnSortAndFilterButton {
+	position: absolute;
+	top: 0;
+	right: 0;
+	height: 100%;
+	width: 20px;
+}
+
+.gridColumnSortAndFilterButtonIcon {
+	box-sizing: content-box;
+	height: 0;
+	width: 0;
+	border-style: solid;
+	border-width: 5px;
+	border-color: #444;
+	border-bottom-color: transparent;
+	border-left-color: transparent;
+	border-right-color: transparent;
+	position: absolute;
+	top: calc((100% - 5px) / 2);
+	left: calc((100% - 10px) / 2);
+}
+
+.gridFilterMenuOverlay {
+	background-color: rgba(0, 0, 0, 0.1);
+}

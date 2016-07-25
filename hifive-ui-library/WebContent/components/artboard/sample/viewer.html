@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport"
+	content="width = device-width, user-scalable = yes">
+
+<!-- ライブラリCSS・JS -->
+<!--[if lt IE 9]>
+<script src="/hifive-res/ext/jquery/jquery-1.js"></script>
+<![endif]-->
+<!--[if gte IE 9]><!-->
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<!--<![endif]-->
+
+<!-- TODO manageChildをサンプルで使用しているため、NIGHTLY使用。リリースされたらhifive-resのものにする -->
+<link href="res/h5/h5.css" rel="stylesheet">
+<script src="res/h5/ejs-h5mod.js"></script>
+<script src="res/h5/h5.dev.js"></script>
+
+
+<!-- artboard部品 -->
+<link href="../src/artboard.css" rel="stylesheet">
+<script src="../src/consts.js"></script>
+<script src="../src/ArtShape.js"></script>
+<script src="../src/ArtboardViewerController.js"></script>
+<script src="../src/MagnifierController.js"></script>
+
+<script>
+	$(function() {
+		// コントローラのバインド
+		var pageController = {
+			__name: 'sample.PageController',
+			artboardViewerController: h5.ui.components.artboard.controller.ArtboardViewerController,
+			_magnifierController: h5.ui.components.artboard.controller.MagnifierController,
+			__meta: {
+				artboardViewerController: {
+					rootElement: '.loadView'
+				}
+			},
+			_isStretch: null,
+			__init: function() {
+				this._isStretch = this.$find('.loadView').hasClass('fixSize');
+			},
+			'.load click': function() {
+				this.artboardViewerController.load(this.$find('.saveData').val(), this._isStretch);
+			}
+		};
+		$('.viewer').each(function() {
+			h5.core.controller(this, pageController);
+		})
+	});
+</script>
+<style>
+.fixSize {
+	height: 200px;
+	width: 250px;
+	border: 1px solid #ccc;
+}
+</style>
+<title>お絵かきボード 表示機能(ArtboardViewer)</title>
+</head>
+<body>
+	<h1>お絵かきボード 表示機能(ArtboardViewer)</h1>
+	<div class="exprain">
+		<h3>使用方法</h3>
+		<ul>
+			<li><a href="index.html">お絵かきボード</a>で絵を描いて、保存を選択します。</li>
+			<li>ページ下部に作成した保存データが表示されます。</li>
+			<li>保存データの[保存データをテキストで表示]を選択するとテキストボックスが表示されます。</li>
+			<li>表示されたテキストボックスの中身をコピーします。</li>
+			<li>コピーした文字列をこのページのテキストボックスに張り付けて、[読み込み]ボタンをクリックします。</li>
+		</ul>
+	</div>
+	<div class="viewer">
+		<h2>保存データの大きさで表示</h2>
+		<div class="controls">
+			<textarea class="saveData" placeholder="ここに保存データを貼り付け"></textarea>
+			<input class="load" type="button" value="読み込み" />
+		</div>
+		<div class="loadView"></div>
+	</div>
+	<div class="viewer">
+		<h2>表示先要素のサイズで固定表示</h2>
+		<div class="controls">
+			<textarea class="saveData" placeholder="ここに保存データを貼り付け"></textarea>
+			<input class="load" type="button" value="読み込み" />
+		</div>
+		<div class="loadView fixSize"></div>
+	</div>
+</body>
+</html>

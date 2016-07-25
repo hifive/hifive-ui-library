@@ -2,10 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="pragma" content="no-cache" />
-<meta http-equiv="cache-control" content="no-cache" />
-<meta name="viewport" content="width = device-width, user-scalable = yes">
-<link href="/hifive-res/fw/current/h5.css" rel="stylesheet" >
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport"
+	content="width = device-width, user-scalable = yes">
 
 <!-- ライブラリCSS・JS -->
 <!--[if lt IE 9]>
@@ -14,24 +13,35 @@
 <!--[if gte IE 9]><!-->
 <script src="/hifive-res/ext/jquery/jquery-2.js"></script>
 <!--<![endif]-->
-<link rel="stylesheet" href="/hifive-res/ext/jqplugins/nouislider/7.0.9/jquery.nouislider.css">
-<script src="/hifive-res/ext/jqplugins/nouislider/7.0.9/jquery.nouislider.min.js"></script>
+<link rel="stylesheet"
+	href="/hifive-res/ext/jqplugins/nouislider/7.0.9/jquery.nouislider.css">
+<script
+	src="/hifive-res/ext/jqplugins/nouislider/7.0.9/jquery.nouislider.min.js"></script>
 
-<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
-<script src="/hifive-res/fw/current/h5.dev.js"></script>
+<!-- TODO manageChildをサンプルで使用しているため、NIGHTLY使用。リリースされたらhifive-resのものにする -->
+<link href="res/h5/h5.css" rel="stylesheet">
+<script src="res/h5/ejs-h5mod.js"></script>
+<script src="res/h5/h5.dev.js"></script>
 
 <!-- popup部品 -->
 <link rel="stylesheet" href="../../popup/src/popup.css">
 <script src="../../popup/src/popup.js"></script>
 
-<!-- drawing部品 -->
-<link rel="stylesheet" href="../src/drawing.css">
+<!-- artboard部品 -->
+<link rel="stylesheet" href="../src/artboard.css">
+<script src="../src/consts.js"></script>
+<script src="../src/Command.js"></script>
+<script src="../src/ArtShape.js"></script>
 <script src="../src/DrawingLogic.js"></script>
 <script src="../src/ArtboardController.js"></script>
+<script src="../src/MagnifierController.js"></script>
 
 <!-- ユーザCSS・JS -->
 <link rel="stylesheet" href="css/index.css" />
 <script src="src/common.js"></script>
+<script src="src/PictureController.js"></script>
+<script src="src/SaveController.js"></script>
+<script src="src/SizeChangeController.js"></script>
 <script src="src/ToolbarController.js"></script>
 <script src="src/PageController.js"></script>
 
@@ -42,16 +52,18 @@
 		h5.core.controller($root, sample.PageController, {
 			canvasSize: {
 				height: 300,
-				width: $root.innerWidth()
+				width: $('.artboard').innerWidth() - 2 // borderの分引いている
 			}
 		});
 	});
 </script>
 
-<title>Artboard</title>
+<title>お絵かきボード</title>
 </head>
 <body>
-	<h1>Artboard</h1>
-	<div class="sketch-canvas"></div>
+	<h1>お絵かきボード</h1>
+	<div class="sketch-canvas">
+		<div class="artboard"></div>
+	</div>
 </body>
 </html>

@@ -1,0 +1,79 @@
+body {
+	padding: 1em;
+}
+
+.dividedBox {
+	background-color: #eee;
+}
+
+.dividedBox.horizontal {
+	height: 300px;
+}
+
+.dividedBox.vertical {
+	height: 500px;
+}
+
+.box {
+	overflow: hidden;
+}
+
+.yellow {
+	background-color: #FFF280;
+}
+
+.green {
+	background-color: #B2CF3E;
+}
+
+.purple {
+	background-color: #B492CC;
+}
+
+.blue {
+	background-color: #6EB7DB;
+}
+
+.orange {
+	background-color: #EDAD0B;
+}
+
+.red {
+	background-color: #D45D87;
+}
+
+.fixedSize>* {
+	margin-right: 5px;
+}
+
+.state-fixed {
+	display: none;
+}
+
+.state-unfixed {
+	display: inline;
+}
+
+.fixSize {
+	display: inline;
+}
+
+.unfixSize {
+	display: none;
+}
+
+.fixedSize .fixSize {
+	display: none;
+}
+
+.fixedSize .unfixSize {
+	display: inline;
+}
+
+.fixedSize .state-fixed {
+	display: inline;
+}
+
+.fixedSize .state-unfixed {
+	display: none;
+}
