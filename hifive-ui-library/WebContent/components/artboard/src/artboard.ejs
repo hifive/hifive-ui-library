@@ -1,0 +1,15 @@
+<script type="text/ejs" id="h5-artboard-canvas-wrapper">
+<div class="h5-artboard-canvas-wrapper" style="width:[%= width %]px; height: [%= height %]px">
+	<div class="h5-artboard-layers">
+		<div class="background-layer"></div>
+		<svg class="svg-layer" version="1.1" viewBox="0 0 [%= width %] [%= height %]"
+			baseProfile="full"
+			xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink"
+			xmlns:ev="http://www.w3.org/2001/xml-events">
+			<g id="[%= 'h5-artboard-id-' + new Date().getTime() + '-' + parseInt(Math.random()*10000) %]"></g>
+		</svg>
+	</div>
+	<canvas width="[%= width %]" height="[%= height %]"></canvas>
+</div>
+</script>

@@ -193,7 +193,7 @@
 		getArrowBoxFromElement: function(elm) {
 			var $elm = $(elm);
 			if ($elm.length > 1) {
-				fwLogger('getArrowBoxFromElementには一つの要素または、一つの要素にマッチするセレクタを渡してください。');
+				fwLogger.error('getArrowBoxFromElementには一つの要素または、一つの要素にマッチするセレクタを渡してください。');
 			}
 			return $elm.data('h5arrowbox');
 		}
