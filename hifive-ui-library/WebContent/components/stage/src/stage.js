@@ -871,6 +871,21 @@
 		return desc;
 	});
 
+	var SVGPoint = Point.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGPoint',
+			method: {
+				constructor: function SVGPoint(x, y) {
+					SVGPoint._super.call(this, x, y);
+				},
+				toString: function() {
+					return this.x + ',' + this.y;
+				}
+			}
+		};
+		return desc;
+	});
+
 	function createSvgElement(name) {
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
 	}
@@ -1522,6 +1537,63 @@
 		return desc;
 	});
 
+	var SVGPolyline = SVGDrawElement.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGPolyline',
+			field: {
+				_points: null
+			},
+			accessor: {
+				points: {
+					get: function() {
+						return this._points;
+					}
+				}
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGPolyline
+				 */
+				constructor: function SVGPolyline(graphics, element) {
+					SVGPolyline._super.call(this, graphics, element);
+					this._points = PointArray.create();
+					this._points.addEventListener('pointArrayChanged', this._pointArrayChanged
+							.bind(this));
+				},
+				render: function() {
+					this._renderChangedAttributes();
+					this._renderPolyline();
+				},
+				_renderPolyline: function() {
+					this._setAttribute('points', this._points.join(' '), true);
+				},
+				_pointArrayChanged: function() {
+					this.requestRender();
+				}
+			}
+		};
+
+		addSimpleSVGAccessor(desc.accessor, ['stroke', 'stroke-width', 'fill']);
+		return desc;
+	});
+
+	// polylineとpolygonは同じI/F
+	var SVGPolygon = SVGPolyline.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.SVGPolygon',
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGPolygon
+				 */
+				constructor: function SVGPolygon(graphics, element) {
+					SVGPolygon._super.call(this, graphics, element);
+				}
+			}
+		};
+		return desc;
+	});
+
+
 	var SVGDefinitions = SVGElementWrapper.extend(function() {
 		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
 		var desc = {
@@ -1822,6 +1894,18 @@
 					this._rootSvg.appendChild(path);
 					var de = SVGTriangle.create(this, path);
 					return de;
+				},
+				drawPolygon: function() {
+					var polygon = createSvgElement('polygon');
+					this._rootSvg.appendChild(polygon);
+					var de = SVGPolygon.create(this, polygon);
+					return de;
+				},
+				drawPolyline: function() {
+					var polyline = createSvgElement('polyline');
+					this._rootSvg.appendChild(polyline);
+					var de = SVGPolyline.create(this, polyline);
+					return de;
 				}
 			}
 		};
@@ -1869,6 +1953,69 @@
 				toArray: function() {
 					return this._keys.slice(0);
 				},
+			}
+		};
+		return desc;
+	});
+
+	var PointArray = EventDispatcher.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.PointArray',
+			field: {
+				_points: null
+			},
+			accessor: {
+				length: {
+					get: function() {
+						return this._points.length;
+					}
+				}
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.PointArray
+				 */
+				constructor: function() {
+					PointArray._super.call(this);
+					this._points = [];
+				},
+				add: function(x, y) {
+					var point = SVGPoint.create(x, y);
+					this._points.push(point);
+					this._dispatchEvent();
+				},
+				remove: function(i) {
+					this._points.splice(i, 1);
+					this._dispatchEvent();
+				},
+				get: function(i) {
+					return this._points[i];
+				},
+				set: function(i, x, y) {
+					var point = SVGPoint.create(x, y);
+					this._points.splice(i, 1, point);
+					this._dispatchEvent();
+				},
+				indexOf: function(x, y) {
+					for (var i = 0, len = this.length; i < len; i++) {
+						var point = this._points[i];
+						if (poinx.x === x && point.y === y) {
+							return i;
+						}
+					}
+					return -1;
+				},
+				join: function(connector) {
+					return this._points.join(connector);
+				},
+				clear: function() {
+					this._points.length = 0;
+					this._dispatchEvent();
+				},
+				_dispatchEvent: function() {
+					var event = Event.create('pointArrayChanged');
+					this.dispatchEvent(event);
+				}
 			}
 		};
 		return desc;
