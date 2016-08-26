@@ -2388,7 +2388,7 @@
 					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
 
 					//TODO エッジが切れる問題対応。引かれた線に合わせてRectを調整する方法とどちらが良いか
-					this.domRoot.setAttribute('overflow', 'visible');
+					this.domRoot.style.overflow = "visible";
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
@@ -2702,7 +2702,7 @@
 
 					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
 					//width, heightの指定との整合性について検討
-					this.domRoot.setAttribute('overflow', 'visible');
+					this.domRoot.style.overflow = "visible";
 
 					//rootGは<g>要素。transformを一括してかけるため、
 					//子要素は全てこの<g>の下に追加する。
