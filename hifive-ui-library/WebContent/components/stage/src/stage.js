@@ -264,6 +264,9 @@
 			field: {
 				canDrop: null,
 
+				//このドラッグセッションを非同期で行うかのフラグ
+				async: null,
+
 				/**
 				 * ドラッグ操作対象オブジェクト
 				 */
@@ -309,6 +312,7 @@
 				//移動関数。移動対象のDUごとに呼ばれる
 				_moveFunction: null,
 
+
 				//du.id -> 当該DU用のdataオブジェクト へのマップ
 				_moveFunctionDataMap: null
 			},
@@ -329,6 +333,7 @@
 					DragSession._super.call(this);
 
 					this.canDrop = true;
+					this.async = false;
 
 					this._isCompleted = false;
 					this._moveFunction = defaultMoveFunction;
@@ -3597,6 +3602,7 @@
 	var EVENT_DRAG_DU_START = 'stageDragStart';
 	var EVENT_DRAG_DU_MOVE = 'stageDragMove';
 	var EVENT_DRAG_DU_END = 'stageDragEnd';
+	var EVENT_DRAG_DU_DROP = 'stageDragDrop';
 	var EVENT_DRAG_DU_DONE = 'stageDragDone';
 	var EVENT_DRAG_DU_FAIL = 'stageDragFail';
 	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
@@ -4037,6 +4043,10 @@
 		_dragSelectOverlayRect: null,
 
 		_startDrag: function(context) {
+			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
+			if(this._dragSession){
+				return;
+			}
 			var event = context.event;
 			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
 
@@ -4088,6 +4098,8 @@
 				if (du && du.isDraggable) {
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
+					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
 					this._dragSession.setTarget(targetDU);
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -4138,6 +4150,8 @@
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
+					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
 
 					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
 					var targetDU = this.getSelectedDisplayUnits();
@@ -4466,7 +4480,7 @@
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
 				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-				delegatedJQueryEvent.type = EVENT_DRAG_DU_END;
+				delegatedJQueryEvent.type = EVENT_DRAG_DU_DROP;
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
 
@@ -4478,20 +4492,22 @@
 				});
 			}
 
-			if (this._dragSession && !this._dragSession.isCompleted) {
-				//end(), cancel()を呼ぶと、プロキシは自動的に削除される
-				if (this._dragSession.canDrop) {
-					this._dragSession.end();
-				} else {
+			// 同期なら直ちにendまたはcancelに遷移
+			if (this._dragSession && this._dragSession.isCompleted && !this.async) {
+				if (!this.canDrop) {
 					this._dragSession.cancel();
+				} else {
+					this._dragSession.end();
 				}
 			}
-
+			// 範囲選択の矩形を消す
 			if (this._dragSelectOverlayRect) {
 				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
 				this._dragSelectOverlayRect = null;
 			}
+		},
 
+		_disposeDragSession: function() {
 			this._isMousedown = false;
 			this._dragStartRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
@@ -4879,6 +4895,16 @@
 		},
 
 		_lastEnteredDU: null,
+
+		_dragSessionEndHandler: function(){
+			this.trigger(EVENT_DRAG_DU_END);
+			this._disposeDragSession();
+		},
+
+		_dragSessionCancelHandler: function() {
+			this.trigger(EVENT_DRAG_DU_CANCEL);
+			this._disposeDragSession();
+		},
 
 		'{rootElement} click': function(context) {
 			this._processClick(context.event, EVENT_DU_CLICK);
