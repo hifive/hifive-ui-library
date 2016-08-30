@@ -379,6 +379,7 @@
 				 */
 				setTarget: function(target) {
 					this._targets = target;
+					this._saveInitialStates();
 				},
 
 				getTarget: function() {
@@ -398,7 +399,6 @@
 				},
 
 				begin: function() {
-					this._saveInitialStates();
 					this._moveToForeground();
 					this._setDraggingFlag(true);
 				},
