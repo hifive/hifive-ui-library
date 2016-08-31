@@ -4493,8 +4493,8 @@
 			}
 
 			// 同期なら直ちにendまたはcancelに遷移
-			if (this._dragSession && this._dragSession.isCompleted && !this.async) {
-				if (!this.canDrop) {
+			if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
+				if (!this._dragSession.canDrop) {
 					this._dragSession.cancel();
 				} else {
 					this._dragSession.end();
