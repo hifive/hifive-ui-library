@@ -4187,7 +4187,7 @@
 
 					if (dragStartEvent.isDefaultPrevented()) {
 						//stageDragStartイベントでpreventDefault()された場合はドラッグを行わない。
-						//TODO DragSessionのクリーンアップを呼ぶようにする？
+						this._dragSession.cancel();
 						return;
 					}
 
