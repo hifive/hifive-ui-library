@@ -4044,7 +4044,7 @@
 
 		_startDrag: function(context) {
 			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
-			if(this._dragSession){
+			if (this._dragSession) {
 				return;
 			}
 			var event = context.event;
@@ -4098,8 +4098,10 @@
 				if (du && du.isDraggable) {
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
-					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
-					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
+					this._dragSession.addEventListener('dragSessionEnd', this
+							.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this
+							.own(this._dragSessionCancelHandler));
 					this._dragSession.setTarget(targetDU);
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -4150,8 +4152,10 @@
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
-					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
-					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
+					this._dragSession.addEventListener('dragSessionEnd', this
+							.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this
+							.own(this._dragSessionCancelHandler));
 
 					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
 					var targetDU = this.getSelectedDisplayUnits();
@@ -4186,8 +4190,7 @@
 					});
 
 					if (dragStartEvent.isDefaultPrevented()) {
-						//stageDragStartイベントでpreventDefault()された場合はドラッグを行わない。
-						this._dragSession.cancel();
+						//TODO:stageDragStartイベントでpreventDefault()された場合の挙動
 						return;
 					}
 
@@ -4464,7 +4467,14 @@
 		},
 
 		'{document} mouseup': function(context) {
+			// （同期、非同期に関わらず）マウスを離した瞬間にすべき終了処理
 			this._isMousedown = false;
+			this._endBoundaryScroll();
+
+			if (this._dragSelectOverlayRect) {
+				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
+				this._dragSelectOverlayRect = null;
+			}
 
 			if (this._currentDragMode === DRAG_MODE_NONE) {
 				return;
@@ -4490,35 +4500,37 @@
 					dragSession: this._dragSession,
 					dragOverDisplayUnit: dragOverDU
 				});
-			}
 
-			// 同期なら直ちにendまたはcancelに遷移
-			if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
-				if (!this._dragSession.canDrop) {
-					this._dragSession.cancel();
-				} else {
-					this._dragSession.end();
+				// 同期なら直ちにendまたはcancelに遷移
+				// dragSessionのイベント経由で最終的にdisposeが走る
+				if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
+					if (!this._dragSession.canDrop) {
+						this._dragSession.cancel();
+					} else {
+						this._dragSession.end();
+					}
 				}
 			}
-			// 範囲選択の矩形を消す
-			if (this._dragSelectOverlayRect) {
-				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
-				this._dragSelectOverlayRect = null;
+			if (this._dragSession && this._dragSession.async) {
+				// 非同期の場合はdisposeしない
+				// return
 			}
+			this._disposeDragSession();
 		},
 
 		_disposeDragSession: function() {
 			this._isMousedown = false;
 			this._dragStartRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
+			// this._currentDragMode = DRAG_MODE_NONE;
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
 			this._dragSelectStartSelectedDU = null;
 			//			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
-			this._endBoundaryScroll();
 			$(this.rootElement).css('cursor', 'auto');
 		},
+
 
 		_getDragOverDisplayUnit: function(event) {
 			//ドラッグ中、ドラッグ対象のDUはpointer-events=noneの
@@ -4896,7 +4908,7 @@
 
 		_lastEnteredDU: null,
 
-		_dragSessionEndHandler: function(){
+		_dragSessionEndHandler: function() {
 			this.trigger(EVENT_DRAG_DU_END);
 			this._disposeDragSession();
 		},
