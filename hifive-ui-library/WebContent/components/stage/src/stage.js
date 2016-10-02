@@ -4216,8 +4216,7 @@
 					});
 
 					if (dragStartEvent.isDefaultPrevented()) {
-						//stageDragStartイベントでpreventDefault()された場合はドラッグを行わない。
-						this._dragSession.cancel();
+						//TODO:stageDragStartイベントでpreventDefault()された場合の挙動
 						return;
 					}
 
@@ -4521,7 +4520,14 @@
 		},
 
 		'{document} mouseup': function(context) {
+			// （同期、非同期に関わらず）マウスを離した瞬間にすべき終了処理
 			this._isMousedown = false;
+			this._endBoundaryScroll();
+
+			if (this._dragSelectOverlayRect) {
+				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
+				this._dragSelectOverlayRect = null;
+			}
 
 			if (this._currentDragMode === DRAG_MODE_NONE) {
 				return;
@@ -4566,35 +4572,37 @@
 					dragSession: this._dragSession,
 					dragOverDisplayUnit: dragOverDU
 				});
-			}
 
-			// 同期なら直ちにendまたはcancelに遷移
-			if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
-				if (!this._dragSession.canDrop) {
-					this._dragSession.cancel();
-				} else {
-					this._dragSession.end();
+				// 同期なら直ちにendまたはcancelに遷移
+				// dragSessionのイベント経由で最終的にdisposeが走る
+				if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
+					if (!this._dragSession.canDrop) {
+						this._dragSession.cancel();
+					} else {
+						this._dragSession.end();
+					}
 				}
 			}
-			// 範囲選択の矩形を消す
-			if (this._dragSelectOverlayRect) {
-				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
-				this._dragSelectOverlayRect = null;
+			if (this._dragSession && this._dragSession.async) {
+				// 非同期の場合はdisposeしない
+				// return
 			}
+			this._disposeDragSession();
 		},
 
 		_disposeDragSession: function() {
 			this._isMousedown = false;
 			this._dragStartRootOffset = null;
 			this._dragSession = null; //TODO dragSessionをdisposeする
+			// this._currentDragMode = DRAG_MODE_NONE;
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
 			this._dragSelectStartSelectedDU = null;
 			//			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
-			this._endBoundaryScroll();
 			$(this.rootElement).css('cursor', 'auto');
 		},
+
 
 		_getDragOverDisplayUnit: function(event) {
 			//ドラッグ中、ドラッグ対象のDUはpointer-events=noneの
