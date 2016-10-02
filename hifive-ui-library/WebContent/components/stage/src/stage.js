@@ -176,7 +176,8 @@
 		AUTO: 1,
 		SCREEN: 2,
 		DU: 3,
-		SELECT: 4
+		SELECT: 4,
+		REGION: 5
 	};
 
 	var ScrollDirection = {
@@ -3570,6 +3571,7 @@
 	var DRAG_MODE_SCREEN = stageModule.DragMode.SCREEN;
 	var DRAG_MODE_DU = stageModule.DragMode.DU;
 	var DRAG_MODE_SELECT = stageModule.DragMode.SELECT;
+	var DRAG_MODE_REGION = stageModule.DragMode.REGION;
 
 	var SCROLL_DIRECTION_NONE = stageModule.ScrollDirection.NONE;
 	var SCROLL_DIRECTION_X = stageModule.ScrollDirection.X;
@@ -3593,6 +3595,9 @@
 
 	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
 	var EVENT_DRAG_SELECT_END = 'stageDragSelectEnd';
+
+	var EVENT_DRAG_REGION_START = 'stageDragRegionStart';
+	var EVENT_DRAG_REGION_END = 'stageDragRegionEnd';
 
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
@@ -4044,7 +4049,7 @@
 
 		_startDrag: function(context) {
 			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
-			if(this._dragSession){
+			if (this._dragSession) {
 				return;
 			}
 			var event = context.event;
@@ -4098,8 +4103,10 @@
 				if (du && du.isDraggable) {
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
-					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
-					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
+					this._dragSession.addEventListener('dragSessionEnd', this
+							.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this
+							.own(this._dragSessionCancelHandler));
 					this._dragSession.setTarget(targetDU);
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
@@ -4143,6 +4150,27 @@
 				});
 				this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
 				break;
+			case DRAG_MODE_REGION:
+				this.trigger(EVENT_DRAG_REGION_START, {
+					stageController: this
+				});
+
+				setCursor('default');
+				this._currentDragMode = DRAG_MODE_REGION;
+				saveDragSelectStartPos.call(this);
+
+				this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
+				this._dragSelectOverlayRect.className.baseVal = ('stageDragRegionOverlay');
+				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+					x: this._dragSelectStartPos.x,
+					y: this._dragSelectStartPos.y,
+					width: 0,
+					height: 0,
+					'pointer-events': 'none'
+				});
+				this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
+
+				break;
 			case DRAG_MODE_AUTO:
 			default:
 				//UIDragModeがAUTOの場合
@@ -4150,8 +4178,10 @@
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 					this._dragSession = DragSession.create(this.rootElement,
 							this._foremostLayer._rootG, context.event);
-					this._dragSession.addEventListener('dragSessionEnd', this.own(this._dragSessionEndHandler));
-					this._dragSession.addEventListener('dragSessionCancel', this.own(this._dragSessionCancelHandler));
+					this._dragSession.addEventListener('dragSessionEnd', this
+							.own(this._dragSessionEndHandler));
+					this._dragSession.addEventListener('dragSessionCancel', this
+							.own(this._dragSessionCancelHandler));
 
 					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
 					var targetDU = this.getSelectedDisplayUnits();
@@ -4365,12 +4395,22 @@
 
 				this._dragSession.doMove(context.event);
 				break;
-			case DRAG_MODE_SELECT:
-				this._dragLastPagePos = {
-					x: event.pageX,
-					y: event.pageY
-				};
+			case DRAG_MODE_REGION:
+				toggleBoundaryScroll.call(this, function() {
+					var dragPos = that._getCurrentDragPosition();
 
+					//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
+					that._updateDragOverlay(dragPos.dispActualX, dragPos.dispActualY,
+							dragPos.dispW, dragPos.dispH);
+				});
+
+				var dragPos = this._getCurrentDragPosition();
+
+				//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
+				this._updateDragOverlay(dragPos.dispActualX, dragPos.dispActualY, dragPos.dispW,
+						dragPos.dispH);
+				break;
+			case DRAG_MODE_SELECT:
 				toggleBoundaryScroll.call(this, function() {
 					var dragSelectedDU = dragSelect.call(that);
 					var tempSelection = that._dragSelectStartSelectedDU.concat(dragSelectedDU);
@@ -4409,45 +4449,14 @@
 			}
 
 			function dragSelect() {
-				var rootOffset = $(this.rootElement).offset();
+				var pos = this._getCurrentDragPosition();
 
-				var dispLastOffX = this._dragLastPagePos.x - rootOffset.left;
-				var dispLastOffY = this._dragLastPagePos.y - rootOffset.top;
-
-				var dispStartPos = this._dragSelectStartPos;
-				var dispLastPos = this._viewport.getDisplayPositionFromDisplayOffset(dispLastOffX,
-						dispLastOffY);
-
-				var dispW = dispLastPos.x - dispStartPos.x;
-				var dispActualX;
-				if (dispW < 0) {
-					dispActualX = dispLastPos.x;
-					dispW *= -1;
-				} else {
-					dispActualX = dispStartPos.x;
-				}
-
-				var dispH = dispLastPos.y - dispStartPos.y;
-				var dispActualY;
-				if (dispH < 0) {
-					dispActualY = dispLastPos.y;
-					dispH *= -1;
-				} else {
-					dispActualY = dispStartPos.y;
-				}
-
-				var worldPos = this._viewport.getWorldPosition(dispActualX, dispActualY);
-				var ww = this._viewport.getXLengthOfWorld(dispW);
-				var wh = this._viewport.getYLengthOfWorld(dispH);
-				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-					x: worldPos.x,
-					y: worldPos.y,
-					width: ww,
-					height: wh
-				});
+				//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
+				this._updateDragOverlay(pos.dispActualX, pos.dispActualY, pos.dispW, pos.dispH);
 
 				//TODO isSelectableがfalseなものを除く
-				return this.getDisplayUnitsInRect(dispActualX, dispActualY, dispW, dispH, true);
+				return this.getDisplayUnitsInRect(pos.dispActualX, pos.dispActualY, pos.dispW,
+						pos.dispH, true);
 			}
 
 			function toggleBoundaryScroll(callback) {
@@ -4463,6 +4472,54 @@
 			}
 		},
 
+		_updateDragOverlay: function(dispActualX, dispActualY, dispW, dispH) {
+			var worldPos = this._viewport.getWorldPosition(dispActualX, dispActualY);
+			var ww = this._viewport.getXLengthOfWorld(dispW);
+			var wh = this._viewport.getYLengthOfWorld(dispH);
+			stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+				x: worldPos.x,
+				y: worldPos.y,
+				width: ww,
+				height: wh
+			});
+		},
+
+		_getCurrentDragPosition: function() {
+			var rootOffset = $(this.rootElement).offset();
+
+			var dispLastOffX = this._dragLastPagePos.x - rootOffset.left;
+			var dispLastOffY = this._dragLastPagePos.y - rootOffset.top;
+
+			var dispStartPos = this._dragSelectStartPos;
+			var dispLastPos = this._viewport.getDisplayPositionFromDisplayOffset(dispLastOffX,
+					dispLastOffY);
+
+			var dispW = dispLastPos.x - dispStartPos.x;
+			var dispActualX;
+			if (dispW < 0) {
+				dispActualX = dispLastPos.x;
+				dispW *= -1;
+			} else {
+				dispActualX = dispStartPos.x;
+			}
+
+			var dispH = dispLastPos.y - dispStartPos.y;
+			var dispActualY;
+			if (dispH < 0) {
+				dispActualY = dispLastPos.y;
+				dispH *= -1;
+			} else {
+				dispActualY = dispStartPos.y;
+			}
+
+			return {
+				dispActualX: dispActualX,
+				dispActualY: dispActualY,
+				dispW: dispW,
+				dispH: dispH
+			};
+		},
+
 		'{document} mouseup': function(context) {
 			this._isMousedown = false;
 
@@ -4473,6 +4530,25 @@
 			if (this._currentDragMode === DRAG_MODE_SELECT) {
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
+				});
+			}
+
+			if (this._currentDragMode === DRAG_MODE_REGION) {
+				var lastDragPos = this._getCurrentDragPosition();
+
+				var worldPos = this._viewport.getWorldPosition(lastDragPos.dispActualX,
+						lastDragPos.dispActualY);
+				var ww = this._viewport.getXLengthOfWorld(lastDragPos.dispW);
+				var wh = this._viewport.getYLengthOfWorld(lastDragPos.dispH);
+
+				var dispRect = stageModule.Rect.create(lastDragPos.dispActualX,
+						lastDragPos.dispActualY, lastDragPos.dispW, lastDragPos.dispH);
+				var worldRect = stageModule.Rect.create(worldPos.x, worldPos.y, ww, wh);
+
+				this.trigger(EVENT_DRAG_REGION_END, {
+					stageController: this,
+					displayRect: dispRect,
+					worldRect: worldRect
 				});
 			}
 
@@ -4896,7 +4972,7 @@
 
 		_lastEnteredDU: null,
 
-		_dragSessionEndHandler: function(){
+		_dragSessionEndHandler: function() {
 			this.trigger(EVENT_DRAG_DU_END);
 			this._disposeDragSession();
 		},

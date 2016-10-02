@@ -116,7 +116,10 @@
 		},
 
 		'[name="moveBy"] click': function(context, $el) {
-			this._units[1].moveBy(50, 50);
+			//this._units[1].moveBy(50, 50);
+			var du = this._stageController.getFocusedDisplayUnit();
+			du.isDraggable = !du.isDraggable;
+			du.requestRender();
 		},
 
 		'[name="stageScrollTo"] click': function(context) {
@@ -186,6 +189,8 @@
 					rect2._element.style.fill = 'blue';
 				} else if (du.isSelected) {
 					rect2._element.style.fill = 'red';
+				} else if (!du.isDraggable) {
+					rect2._element.style.fill = 'green';
 				} else {
 					rect2._element.style.fill = 'black';
 				}
@@ -371,8 +376,27 @@
 		},
 
 		'{rootElement} stageDragSelectStart': function(context) {
-			//context.event.preventDefault();
+		//context.event.preventDefault();
+		},
+
+		'{rootElement} stageDragStarting': function(context) {
+		//context.event.preventDefault();
+		},
+
+		'[name="dragRegion"] click': function() {
+			this._stageController.UIDragMode = 5; //
+		},
+
+		'{rootElement} stageDragRegionStart': function(context) {
+			console.log(context.event.type);
+		},
+
+		'{rootElement} stageDragRegionEnd': function(context) {
+			console.log(context.event.type);
+			console.log(context.evArg);
 		}
+
+
 	};
 
 	$(function() {
