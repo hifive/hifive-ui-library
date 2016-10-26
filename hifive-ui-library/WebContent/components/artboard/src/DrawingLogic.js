@@ -124,8 +124,8 @@
 					var preY = firstY;
 					// x,yのデータを同時に取り出すので２つずつカウント
 					for (var index = 2, l = pathDataArray.length; index < l; index += 2) {
-						var x = preX + parseInt(pathDataArray[index]);
-						var y = preY + parseInt(pathDataArray[index + 1]);
+						var x = preX + parseFloat(pathDataArray[index]);
+						var y = preY + parseFloat(pathDataArray[index + 1]);
 						ctx.lineTo(x, y);
 						preX = x;
 						preY = y;
