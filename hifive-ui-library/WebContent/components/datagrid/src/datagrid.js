@@ -6383,6 +6383,11 @@
 				v.nullable();
 				validateFilterUIParam(v);
 			});
+			
+			v.property('lockable', function(v) {
+				v.nullable();
+				v.type('boolean');
+			});
 		});
 	}
 
@@ -6501,6 +6506,22 @@
 				});
 			});
 			v.property('sortClearIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function(v) {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('lockIconClasses', function(v) {
+				v.notNull();
+				v.array();
+				v.values(function(v) {
+					v.notNull();
+					v.type('string');
+				});
+			});
+			v.property('unlockIconClasses', function(v) {
 				v.notNull();
 				v.array();
 				v.values(function(v) {
@@ -16739,6 +16760,9 @@
 		 * @returns {DisplayRange}
 		 */
 		calcHorizontalDisplayRange: function(displayAreaWidth, horizontalPos) {
+			// FIX列調整後、スクロールバーが正しく動作するために、_headerCellsをリセットする
+			var cellSizeSet = this._horizontalScrollCalculator.getCellSizeSet();
+			cellSizeSet.setHeaderCells(this.getHeaderColumns());
 			var range = this._horizontalScrollCalculator.calcDisplayRange(displayAreaWidth,
 					horizontalPos);
 			range.index += this.getHeaderColumns();
@@ -17416,6 +17440,14 @@
 	var COLUMN_SORT_AND_FILTER_MENU_CLASS = 'gridSortAndFilterMenu';
 	var COLUMN_SORT_AND_FILTER_OWNER_DATA_NAME = 'gridSortAndFilterMenuOwnerController';
 	var COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME = 'gridSortProperty';
+	var COLUMN_ID = 'gridColumnId';
+	var PROPERTY_NAME = 'gridPropertyName';
+
+
+	// --- MoveColumnUI --- //
+
+	var TRACKING_COLUMN_CLASS = 'trackingColumn';
+	var INSERT_ICON_CLASS = 'columnInsertIcon';
 
 
 	// --- Table Grid View  --- //
@@ -17469,6 +17501,7 @@
 		var defaultFormatter = param.defaultFormatter;
 		var formatterSet = param.formatterSet;
 		var sortSet = param.sortSet;
+		var lockSet = param.lockSet;
 		var filterSet = param.filterSet;
 		var cellClassDefinition = param.cellClassDefinition;
 		var disableInput = param.disableInput;
@@ -17631,12 +17664,14 @@
 					// sortAndFilter ボタン の追加
 					if (cell.isHeaderRow && cell.isPropertyHeader) {
 						var sortSetting = sortSet[cell.propertyName];
+						var lockSetting = lockSet[cell.propertyName];
 						var filterSetting = filterSet[cell.propertyName];
 
 						var sortEnable = sortSetting != null && sortSetting.enable;
+						var lockEnable = lockSetting != null && lockSetting.enable;
 						var filterEnable = filterSetting != null && filterSetting.enable;
 
-						if (sortEnable || filterEnable) {
+						if (sortEnable || filterEnable || lockEnable) {
 							html += columnSortAndFilterUI.makeButtonHtml();
 						}
 					}
@@ -19193,6 +19228,10 @@
 			this._sortPropertySet = sortPropertySet;
 		},
 
+		setLockPropertySet: function(lockPropertySet) {
+			this._lockPropertySet = lockPropertySet;
+		},
+
 		setFilterPropertySet: function(filterPropertySet) {
 			this._filterPropertySet = filterPropertySet;
 		},
@@ -19218,6 +19257,24 @@
 			});
 			util.forEach(param.clear, function(iconClass) {
 				$menu.find('.gridSortClearIcon > span').addClass(iconClass);
+			});
+		},
+
+		// カラムLockとUnlockのアイコンクラスを設定する
+		setLockIconClasses: function(param) {
+			this._lockIconClasses = param.lock;
+			this._unlockIconClasses = param.unlock;
+
+			if (!this.isInit) {
+				return;
+			}
+
+			var $menu = this._findMenu();
+			util.forEach(param.lock, function(iconClass) {
+				$menu.find('.gridLockIcon > span').addClass(iconClass);
+			});
+			util.forEach(param.unlock, function(iconClass) {
+				$menu.find('.gridUnlockIcon > span').addClass(iconClass);
 			});
 		},
 
@@ -19278,7 +19335,8 @@
 			var frameOffset = $frame.offset();
 			var topPosition = frameOffset.top + $frame.outerHeight();
 			var rightPosition = frameOffset.left + $frame.outerWidth(); // 右端が左から何px目か
-
+			// 最後のUnlockカラムかどうか判断する
+			this._checkIsLastUnlockItem(cell);
 			this._showMenu(cell, topPosition, rightPosition);
 		},
 
@@ -19396,6 +19454,68 @@
 
 			this._currentSearchParam = searchParam;
 			searcher.changeSearchParam(searchParam);
+
+			this._hideMenu();
+		},
+
+		// Lockをクリック
+		'{.gridLockItem} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// disabled の場合は無視する
+			if ($el.is('.disabled')) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
+			this._lockFlag = true;
+
+			var $menu = this._findMenu();
+			var property = $menu.data(PROPERTY_NAME);
+			var selectedColumnId = $menu.data(COLUMN_ID);
+
+			// Lockがクリックされた場合、trueに設定
+			this._lockStatus[property] = true;
+
+			this._moveAndLockColumn(selectedColumnId);
+
+			this._hideMenu();
+		},
+
+		// Unlockをクリック
+		'{.gridUnlockItem} click': function(context, $el) {
+			// メニューの owner でなければ無視する
+			if (!this._isOwner()) {
+				return;
+			}
+
+			// disabled の場合は無視する
+			if ($el.is('.disabled')) {
+				return;
+			}
+
+			// isReady でなければ無視する
+			if (!this._gridLogic.isReady()) {
+				return;
+			}
+
+			this._lockFlag = true;
+
+			var $menu = this._findMenu();
+			var property = $menu.data(PROPERTY_NAME);
+			var selectedColumnId = $menu.data(COLUMN_ID);
+
+			// Unlockがクリックされた場合、falseに設定
+			this._lockStatus[property] = false;
+
+			this._moveAndLockColumn(selectedColumnId);
 
 			this._hideMenu();
 		},
@@ -19546,9 +19666,22 @@
 		},
 
 
+		'{rootElement} gridRender': function() {
+
+			if (!this._lockFlag) {
+				this._defaultLeftColumns = this.$find('.gridHeaderTopLeftBox tr td').length;
+			} else {
+				this._appendLockIcons();
+			}
+
+		},
+
+
 		// --- Private Property --- //
 
 		_sortPropertySet: null,
+
+		_lockPropertySet: null,
 
 		_filterPropertySet: null,
 
@@ -19563,6 +19696,18 @@
 		_currentFilter: null,
 
 		_currentSearchParam: null,
+
+		// カラムのLock、UnLockクリック後の状態記載用
+		_lockStatus: {},
+
+		// Icon表示用のフラグ
+		_lockFlag: false,
+
+		// デフォルトFIX列の数（visibleProperties：headerの初期設定のカラム数）
+		_defaultLeftColumns: null,
+
+		// 最後のUnlockカラム判断用
+		_lastUnlockItem: null,
 
 
 		// --- Private Method --- //
@@ -19616,163 +19761,14 @@
 			$menuList.addClass('gridSortAndFilterMenuList');
 			$menu.append($menuList);
 
-			// 昇順ソート
-			var $sortAscItem = $('<li></li>');
-			$sortAscItem.addClass(ITEM_CLASS);
-			$sortAscItem.addClass('gridSortItem');
-			$sortAscItem.addClass('gridSortAscItem');
-			$menuList.append($sortAscItem);
+			// ソートメニュー作成
+			this._makeSortMenu(ITEM_CLASS, $menuList);
 
-			var $sortAscIcon = $('<div></div>');
-			$sortAscIcon.addClass('gridSortIcon');
-			$sortAscIcon.addClass('gridSortAscIcon');
-			$sortAscItem.append($sortAscIcon);
+			// ロックメニュー作成
+			this._makeLockMenu(ITEM_CLASS, $menuList);
 
-			var $sortAscIconSpan = $('<span></span>');
-			util.forEach(this._ascIconClasses, function(iconClass) {
-				$sortAscIconSpan.addClass(iconClass);
-			});
-			$sortAscIcon.append($sortAscIconSpan);
-
-			var $sortAscText = $('<div></div>');
-			$sortAscText.addClass('gridSortText');
-			$sortAscText.addClass('gridSortAscText');
-			$sortAscText.text('Sort Ascending');
-			$sortAscItem.append($sortAscText);
-
-			// 降順ソート
-			var $sortDescItem = $('<li></li>');
-			$sortDescItem.addClass(ITEM_CLASS);
-			$sortDescItem.addClass('gridSortItem');
-			$sortDescItem.addClass('gridSortDescItem');
-			$menuList.append($sortDescItem);
-
-			var $sortDescIcon = $('<div></div>');
-			$sortDescIcon.addClass('gridSortIcon');
-			$sortDescIcon.addClass('gridSortDescIcon');
-			$sortDescItem.append($sortDescIcon);
-
-			var $sortDescIconSpan = $('<span></span>');
-			util.forEach(this._descIconClasses, function(iconClass) {
-				$sortDescIconSpan.addClass(iconClass);
-			});
-			$sortDescIcon.append($sortDescIconSpan);
-
-			var $sortDescText = $('<div></div>');
-			$sortDescText.addClass('gridSortText');
-			$sortDescText.addClass('gridSortDescText');
-			$sortDescText.text('Sort Descending');
-			$sortDescItem.append($sortDescText);
-
-			// ソートのクリア
-			var $sortClearItem = $('<li></li>');
-			$sortClearItem.addClass(ITEM_CLASS);
-			$sortClearItem.addClass('gridSortItem');
-			$sortClearItem.addClass('gridSortClearItem');
-			$menuList.append($sortClearItem);
-
-			var $sortClearIcon = $('<div></div>');
-			$sortClearIcon.addClass('gridSortIcon');
-			$sortClearIcon.addClass('gridSortClearIcon');
-			$sortClearItem.append($sortClearIcon);
-
-			var $sortClearIconSpan = $('<span></span>');
-			util.forEach(this._clearIconClasses, function(iconClass) {
-				$sortClearIconSpan.addClass(iconClass);
-			});
-			$sortClearIcon.append($sortClearIconSpan);
-
-
-			var $sortClearText = $('<div></div>');
-			$sortClearText.addClass('gridSortText');
-			$sortClearText.addClass('gridSortClearText');
-			$sortClearText.text('Clear Sort');
-			$sortClearItem.append($sortClearText);
-
-			// ソートとフィルタの境界線
-			var $itemBorder = $('<li></li>');
-			$itemBorder.addClass('gridSortItemBorder');
-			$menuList.append($itemBorder);
-
-			// フィルタ条件選択セレクトボックス
-			var $partialMatchTypeSelectItem = $('<li></li>');
-			$partialMatchTypeSelectItem.addClass(ITEM_CLASS);
-			$partialMatchTypeSelectItem.addClass('gridFilterItem');
-			$partialMatchTypeSelectItem.addClass('gridFilterMatchItem');
-			$partialMatchTypeSelectItem.addClass('gridPartialMatchTypeSelectItem');
-			$menuList.append($partialMatchTypeSelectItem);
-
-			var $partialMatchTypeSelect = $('<select></select>');
-			$partialMatchTypeSelect.addClass('gridPartialMatchTypeSelect');
-			$partialMatchTypeSelectItem.append($partialMatchTypeSelect);
-
-			// 条件1: テキストとして含む
-			var $includeTextOption = $('<option></option>');
-			$includeTextOption.attr('value', 'includeText');
-			$includeTextOption.text('Include');
-			$partialMatchTypeSelect.append($includeTextOption);
-
-			// 条件2: テキストとして含まない
-			var $excludeTextOption = $('<option></option>');
-			$excludeTextOption.attr('value', 'excludeText');
-			$excludeTextOption.text('Exclude');
-			$partialMatchTypeSelect.append($excludeTextOption);
-
-			// フィルタ用入力フォーム
-			var $partialMatchFilterItem = $('<li></li>');
-			$partialMatchFilterItem.addClass(ITEM_CLASS);
-			$partialMatchFilterItem.addClass('gridFilterItem');
-			$partialMatchFilterItem.addClass('gridFilterMatchItem');
-			$partialMatchFilterItem.addClass('gridPartialMatchFilterItem');
-			$menuList.append($partialMatchFilterItem);
-
-			var $partialMatchFilterInput = $('<input type="text">');
-			$partialMatchFilterInput.addClass('gridPartialMatchFilterInput');
-			$partialMatchFilterInput.attr('placeholder', 'Search');
-			$partialMatchFilterItem.append($partialMatchFilterInput);
-
-			// フィルタ要素選択
-			var $filterOptionsItem = $('<li></li>');
-			$filterOptionsItem.addClass('gridFilterItem');
-			$filterOptionsItem.addClass('gridFilterOptionsItem');
-			$menuList.append($filterOptionsItem);
-
-			var $filterOptionsList = $('<ul></ul>');
-			$filterOptionsList.addClass('gridFilterOptionsList');
-			$filterOptionsItem.append($filterOptionsList);
-
-			var $selectAllOptionItem = $('<li></li>');
-			$filterOptionsList.append($selectAllOptionItem);
-
-			// 全選択オプション
-			var $selectAllCheckBox = $('<input type="checkbox">');
-			$selectAllCheckBox.attr('id', 'gridFilterOptionCheckbox_all');
-			$selectAllCheckBox.addClass('filterOptionCheckbox');
-			$selectAllCheckBox.attr('value', h5.u.obj.serialize('(Select All)'));
-			$selectAllCheckBox.attr('checked');
-			$selectAllOptionItem.append($selectAllCheckBox);
-
-			var $selectAllLabel = $('<label></label>');
-			$selectAllLabel.attr('for', 'gridFilterOptionCheckbox_all');
-			$selectAllLabel.text('(Select All)');
-			$selectAllOptionItem.append($selectAllLabel);
-
-			// フィルタ適用ボタン、フィルタクリアボタン
-			var $filterButtonsItem = $('<li></li>');
-			$filterButtonsItem.addClass(ITEM_CLASS);
-			$filterButtonsItem.addClass('gridFilterItem');
-			$filterButtonsItem.addClass('gridFilterButtons');
-			$menuList.append($filterButtonsItem);
-
-			var $filterButton = $('<button></button>');
-			$filterButton.addClass('gridFilterButton');
-			$filterButton.text('Filter');
-			$filterButtonsItem.append($filterButton);
-
-			var $filterClearButton = $('<button></button>');
-			$filterClearButton.addClass('gridFilterClearButton');
-			$filterClearButton.text('Clear Filter');
-			$filterButtonsItem.append($filterClearButton);
+			// フィルタメニュー作成
+			this._makeFilterMenu(ITEM_CLASS, $menuList);
 		},
 
 		_showMenu: function(cell, topPosition, rightPosition) {
@@ -19786,10 +19782,15 @@
 
 			var propertyName = cell.propertyName;
 			var sortSetting = this._sortPropertySet[propertyName];
+			var columnId = cell.column;
+			var lockSetting = this._lockPropertySet[propertyName];
 			var filterSetting = this._filterPropertySet[propertyName];
 
 			// sort する property 名を $menu の data 属性に入れておく
 			$menu.data(COLUMN_SORT_AND_FILTER_SORT_PROPERTY_DATA_NAME, sortSetting.property);
+			// Lock、unlock するカラムIDとカラム 名を $menu の data 属性に入れておく
+			$menu.data(COLUMN_ID, columnId);
+			$menu.data(PROPERTY_NAME, propertyName);
 
 			// sort されている場合はそこをハイライト
 			var sortOrder = null;
@@ -19814,6 +19815,20 @@
 			// sort がひとつでもあれば clear を無効にする
 			$menu.find('.gridSortClearItem').toggleClass('disabled', $.isEmptyObject(sortParam));
 
+			// 最後のUnlockカラムの場合、lock、unlockメニューを無効にする
+			if (this._lastUnlockItem) {
+				$menu.find('.gridLockItem').addClass('disabled');
+				$menu.find('.gridUnlockItem').addClass('disabled');
+			} else {
+				// _lockStatusに各カラムのロック状態によって、アイテムの有効、無効を決める
+				var lockStatus = false;
+				if (this._lockStatus[propertyName] !== undefined) {
+					lockStatus = this._lockStatus[propertyName];
+				}
+
+				$menu.find('.gridLockItem').toggleClass('disabled', lockStatus);
+				$menu.find('.gridUnlockItem').toggleClass('disabled', !lockStatus);
+			}
 			var filterType = filterSetting.type;
 
 			if (filterType === 'distinctValues') {
@@ -19849,8 +19864,15 @@
 
 			// 条件にあわせてメニューの表示を切り替える
 			$menu.find('.gridSortItem').toggle(sortSetting.enable);
+			$menu.find('.gridLockItems').toggle(lockSetting.enable);
 			$menu.find('.gridFilterItem').toggle(filterSetting.enable);
-			$menu.find('.gridSortItemBorder').toggle(sortSetting.enable && filterSetting.enable);
+			if (sortSetting.enable && lockSetting.enable || sortSetting.enable
+					&& filterSetting.enable) {
+				$menu.find('.gridSortItemBorder').show();
+			} else {
+				$menu.find('.gridSortItemBorder').hide();
+			}
+			$menu.find('.gridLockItemBorder').toggle(lockSetting.enable && filterSetting.enable);
 
 			// filter type にあわせて表示する要素を切り替える
 			if (filterSetting.enable) {
@@ -19953,7 +19975,429 @@
 		_isOwner: function() {
 			var $overlay = this._findOverlay();
 			return $overlay.data(COLUMN_SORT_AND_FILTER_OWNER_DATA_NAME) === this;
+		},
+
+		_moveAndLockColumn: function(selectedColumnId) {
+			this.trigger('h5gridMoveColumn', {
+				from: selectedColumnId
+			});
+		},
+
+		_appendIcon: function($target) {
+			var $icon = $('<div></div>');
+			$icon.addClass('column-locked-icon').css({
+				display: 'inline-block',
+				float: 'left',
+			});
+
+			$target.append($icon);
+		},
+
+		_appendLockIcons: function() {
+			var $headerLeftCells = this.$find('.gridHeaderTopLeftBox');
+			$headerLeftCells.find('tr td').each(this.own(function(index, elem) {
+				if (index >= this._defaultLeftColumns) {
+					var $target = $(elem).find('div.gridCell');
+					this._appendIcon($target);
+				}
+			}));
+		},
+
+		_makeSortMenu: function(itemClass, $menuList) {
+			// 昇順ソート
+			var $sortAscItem = $('<li></li>');
+			$sortAscItem.addClass(itemClass);
+			$sortAscItem.addClass('gridSortItem');
+			$sortAscItem.addClass('gridSortAscItem');
+			$menuList.append($sortAscItem);
+
+			var $sortAscIcon = $('<div></div>');
+			$sortAscIcon.addClass('gridSortIcon');
+			$sortAscIcon.addClass('gridSortAscIcon');
+			$sortAscItem.append($sortAscIcon);
+
+			var $sortAscIconSpan = $('<span></span>');
+			util.forEach(this._ascIconClasses, function(iconClass) {
+				$sortAscIconSpan.addClass(iconClass);
+			});
+			$sortAscIcon.append($sortAscIconSpan);
+
+			var $sortAscText = $('<div></div>');
+			$sortAscText.addClass('gridSortText');
+			$sortAscText.addClass('gridSortAscText');
+			$sortAscText.text('Sort Ascending');
+			$sortAscItem.append($sortAscText);
+
+			// 降順ソート
+			var $sortDescItem = $('<li></li>');
+			$sortDescItem.addClass(itemClass);
+			$sortDescItem.addClass('gridSortItem');
+			$sortDescItem.addClass('gridSortDescItem');
+			$menuList.append($sortDescItem);
+
+			var $sortDescIcon = $('<div></div>');
+			$sortDescIcon.addClass('gridSortIcon');
+			$sortDescIcon.addClass('gridSortDescIcon');
+			$sortDescItem.append($sortDescIcon);
+
+			var $sortDescIconSpan = $('<span></span>');
+			util.forEach(this._descIconClasses, function(iconClass) {
+				$sortDescIconSpan.addClass(iconClass);
+			});
+			$sortDescIcon.append($sortDescIconSpan);
+
+			var $sortDescText = $('<div></div>');
+			$sortDescText.addClass('gridSortText');
+			$sortDescText.addClass('gridSortDescText');
+			$sortDescText.text('Sort Descending');
+			$sortDescItem.append($sortDescText);
+
+			// ソートのクリア
+			var $sortClearItem = $('<li></li>');
+			$sortClearItem.addClass(itemClass);
+			$sortClearItem.addClass('gridSortItem');
+			$sortClearItem.addClass('gridSortClearItem');
+			$menuList.append($sortClearItem);
+
+			var $sortClearIcon = $('<div></div>');
+			$sortClearIcon.addClass('gridSortIcon');
+			$sortClearIcon.addClass('gridSortClearIcon');
+			$sortClearItem.append($sortClearIcon);
+
+			var $sortClearIconSpan = $('<span></span>');
+			util.forEach(this._clearIconClasses, function(iconClass) {
+				$sortClearIconSpan.addClass(iconClass);
+			});
+			$sortClearIcon.append($sortClearIconSpan);
+
+
+			var $sortClearText = $('<div></div>');
+			$sortClearText.addClass('gridSortText');
+			$sortClearText.addClass('gridSortClearText');
+			$sortClearText.text('Clear Sort');
+			$sortClearItem.append($sortClearText);
+
+			// ソートとロックの境界線
+			var $itemBorder = $('<li></li>');
+			$itemBorder.addClass('gridSortItemBorder');
+			$menuList.append($itemBorder);
+		},
+
+		_makeLockMenu: function(itemClass, $menuList) {
+			// ロック(Lock)
+			var $lockItem = $('<li></li>');
+			$lockItem.addClass(itemClass);
+			$lockItem.addClass('gridLockItems');
+			$lockItem.addClass('gridLockItem');
+			$menuList.append($lockItem);
+
+			var $lockIcon = $('<div></div>');
+			$lockIcon.addClass('gridLockIcons');
+			$lockIcon.addClass('gridLockIcon');
+			$lockItem.append($lockIcon);
+
+			var $lockIconSpan = $('<span></span>');
+			util.forEach(this._lockClasses, function(iconClass) {
+				$lockIconSpan.addClass(iconClass);
+			});
+			$lockIcon.append($lockIconSpan);
+
+			var $lockText = $('<div></div>');
+			$lockText.addClass('gridLockTexts');
+			$lockText.addClass('gridLockText');
+			$lockText.text('Lock');
+			$lockItem.append($lockText);
+
+			// ロック解除（Unlock）
+			var $unlockItem = $('<li></li>');
+			$unlockItem.addClass(itemClass);
+			$unlockItem.addClass('gridLockItems');
+			$unlockItem.addClass('gridUnlockItem');
+			$menuList.append($unlockItem);
+
+			var $unlockIcon = $('<div></div>');
+			$unlockIcon.addClass('gridLockIcons');
+			$unlockIcon.addClass('gridUnlockIcon');
+			$unlockItem.append($unlockIcon);
+
+			var $unlockIconSpan = $('<span></span>');
+			util.forEach(this._unlockClasses, function(iconClass) {
+				$unlockIconSpan.addClass(iconClass);
+			});
+			$unlockIcon.append($unlockIconSpan);
+
+			var $unlockText = $('<div></div>');
+			$unlockText.addClass('gridLockTexts');
+			$unlockText.addClass('gridUnlockText');
+			$unlockText.text('Unlock');
+			$unlockItem.append($unlockText);
+
+			// ロックとフィルタの境界線
+			var $itemBorder = $('<li></li>');
+			$itemBorder.addClass('gridLockItemBorder');
+			$menuList.append($itemBorder);
+		},
+
+		_makeFilterMenu: function(itemClass, $menuList) {
+			// フィルタ条件選択セレクトボックス
+			var $partialMatchTypeSelectItem = $('<li></li>');
+			$partialMatchTypeSelectItem.addClass(itemClass);
+			$partialMatchTypeSelectItem.addClass('gridFilterItem');
+			$partialMatchTypeSelectItem.addClass('gridFilterMatchItem');
+			$partialMatchTypeSelectItem.addClass('gridPartialMatchTypeSelectItem');
+			$menuList.append($partialMatchTypeSelectItem);
+
+			var $partialMatchTypeSelect = $('<select></select>');
+			$partialMatchTypeSelect.addClass('gridPartialMatchTypeSelect');
+			$partialMatchTypeSelectItem.append($partialMatchTypeSelect);
+
+			// 条件1: テキストとして含む
+			var $includeTextOption = $('<option></option>');
+			$includeTextOption.attr('value', 'includeText');
+			$includeTextOption.text('Include');
+			$partialMatchTypeSelect.append($includeTextOption);
+
+			// 条件2: テキストとして含まない
+			var $excludeTextOption = $('<option></option>');
+			$excludeTextOption.attr('value', 'excludeText');
+			$excludeTextOption.text('Exclude');
+			$partialMatchTypeSelect.append($excludeTextOption);
+
+			// フィルタ用入力フォーム
+			var $partialMatchFilterItem = $('<li></li>');
+			$partialMatchFilterItem.addClass(itemClass);
+			$partialMatchFilterItem.addClass('gridFilterItem');
+			$partialMatchFilterItem.addClass('gridFilterMatchItem');
+			$partialMatchFilterItem.addClass('gridPartialMatchFilterItem');
+			$menuList.append($partialMatchFilterItem);
+
+			var $partialMatchFilterInput = $('<input type="text">');
+			$partialMatchFilterInput.addClass('gridPartialMatchFilterInput');
+			$partialMatchFilterInput.attr('placeholder', 'Search');
+			$partialMatchFilterItem.append($partialMatchFilterInput);
+
+			// フィルタ要素選択
+			var $filterOptionsItem = $('<li></li>');
+			$filterOptionsItem.addClass('gridFilterItem');
+			$filterOptionsItem.addClass('gridFilterOptionsItem');
+			$menuList.append($filterOptionsItem);
+
+			var $filterOptionsList = $('<ul></ul>');
+			$filterOptionsList.addClass('gridFilterOptionsList');
+			$filterOptionsItem.append($filterOptionsList);
+
+			var $selectAllOptionItem = $('<li></li>');
+			$filterOptionsList.append($selectAllOptionItem);
+
+			// 全選択オプション
+			var $selectAllCheckBox = $('<input type="checkbox">');
+			$selectAllCheckBox.attr('id', 'gridFilterOptionCheckbox_all');
+			$selectAllCheckBox.addClass('filterOptionCheckbox');
+			$selectAllCheckBox.attr('value', h5.u.obj.serialize('(Select All)'));
+			$selectAllCheckBox.attr('checked');
+			$selectAllOptionItem.append($selectAllCheckBox);
+
+			var $selectAllLabel = $('<label></label>');
+			$selectAllLabel.attr('for', 'gridFilterOptionCheckbox_all');
+			$selectAllLabel.text('(Select All)');
+			$selectAllOptionItem.append($selectAllLabel);
+
+			// フィルタ適用ボタン、フィルタクリアボタン
+			var $filterButtonsItem = $('<li></li>');
+			$filterButtonsItem.addClass(itemClass);
+			$filterButtonsItem.addClass('gridFilterItem');
+			$filterButtonsItem.addClass('gridFilterButtons');
+			$menuList.append($filterButtonsItem);
+
+			var $filterButton = $('<button></button>');
+			$filterButton.addClass('gridFilterButton');
+			$filterButton.text('Filter');
+			$filterButtonsItem.append($filterButton);
+
+			var $filterClearButton = $('<button></button>');
+			$filterClearButton.addClass('gridFilterClearButton');
+			$filterClearButton.text('Clear Filter');
+			$filterButtonsItem.append($filterClearButton);
+		},
+
+		// visiblePropertiesのmainが空になるを防ぐために、最後のUnlockカラムかどうか判断する
+		_checkIsLastUnlockItem: function(cell) {
+			this._lastUnlockItem = false;
+			var column = cell.column;
+
+			var visibleProperties = this._gridLogic.getVisibleProperties();
+			var headerColumns = visibleProperties.header;
+			var mainColumns = visibleProperties.main;
+			var endPosition = headerColumns.length + mainColumns.length - 1;
+
+			if (mainColumns.length == 1 && column == endPosition) {
+				this._lastUnlockItem = true;
+			}
 		}
+
+	};
+
+
+	//=============================
+	// MoveColumnUIController
+	//=============================
+
+	var moveColumnUIController = {
+
+		// --- Metadata --- //
+
+		/**
+		 * @memberOf MoveColumnUIController
+		 */
+		__name: 'h5.ui.components.datagrid.view.dom.MoveColumnUIController',
+
+		// --- Life Cycle Method --- //
+
+		__init: function() {
+			if (this._findInsertIcon().length !== 0) {
+				return;
+			}
+
+			var $insertIcon = $('<div></div>');
+			$insertIcon.addClass(INSERT_ICON_CLASS).css({
+				display: 'none'
+			});
+
+			$insertIcon.appendTo(document.body);
+		},
+
+		// --- Event Handler --- //
+
+		'.gridHeaderRow h5trackstart': function(context, $el) {
+			if ($el.closest('.gridHeaderTopLeftBox').length !== 0) {
+				return;
+			}
+			this._selectedColumnId = $el.data('h5DynGridColumn');
+			this._trackmoveColumnId = null;
+			this._updateColumnsPosArray();
+		},
+
+		'.gridHeaderRow h5trackmove': function(context, $el) {
+			if ($el.closest('.gridHeaderTopLeftBox').length !== 0) {
+				return;
+			}
+			this._isMoving = true;
+			this._findCellFrame(this._selectedColumnId).addClass(TRACKING_COLUMN_CLASS);
+
+			var targetColumnId = this._getClosestColumnId(context.event.pageX);
+
+			if (this._trackmoveColumnId !== null && targetColumnId === this._trackmoveColumnId) {
+				return;
+			}
+
+			this._trackmoveColumnId = targetColumnId;
+
+			var $target = this._findColumnHeader(targetColumnId);
+			var offset = $target.offset();
+
+
+
+			if ($target.length === 0) {
+				// 最後列にカラムを移動させるケース
+				$target = this._findColumnHeader(targetColumnId - 1);
+
+				offset = $target.offset();
+				offset.left += $target.width();
+			}
+
+			this._findInsertIcon().offset({
+				left: offset.left - 6,
+				top: offset.top - 6
+			}).show();
+		},
+
+		'.gridHeaderRow h5trackend': function(context) {
+			this._findInsertIcon().offset({
+				left: 0,
+				top: 0
+			}).hide();
+
+			this._findCellFrame(this._selectedColumnId).removeClass(TRACKING_COLUMN_CLASS);
+
+			if (this._selectedColumnId === null) {
+				return;
+			}
+
+			if (!this._isMoving) {
+				return;
+			}
+			this._isMoving = false;
+
+			var columnId = this._getClosestColumnId(context.event.pageX);
+			this._moveColumn(columnId);
+		},
+
+		'{rootElement} gridRender': function() {
+			this._findInsertIcon().hide();
+			this._findCellFrame(this._selectedColumnId).removeClass(TRACKING_COLUMN_CLASS);
+			this._isMoving = false;
+			this._trackmoveColumnId = null;
+		},
+
+		// --- Property --- //
+
+		_isMoving: false,
+
+		_selectedColumnId: null,
+
+		_columnsPosArray: null,
+
+		_trackmoveColumnId: null,
+
+
+		// --- Private Method --- //
+
+		_updateColumnsPosArray: function() {
+			var $td = this.$find('.gridHeaderRowsBox tr td');
+
+			this._columnsPosArray = $td.map(function(i, elem) {
+				return {
+					id: $(elem.firstChild).data('h5DynGridColumn'),
+					left: $(elem).offset().left,
+					width: $(elem).width()
+				};
+			}).get();
+		},
+
+		_getClosestColumnId: function(pageX) {
+			var posArray = this._columnsPosArray;
+
+			for (var i = 0, len = posArray.length; i < len; i++) {
+				var pos = posArray[i];
+
+				if (pageX < pos.left + pos.width / 2) {
+					return pos.id;
+				}
+			}
+
+			return posArray[posArray.length - 1].id + 1;
+		},
+
+		_findInsertIcon: function() {
+			return $('.' + INSERT_ICON_CLASS);
+		},
+
+		_findColumnHeader: function(columnId) {
+			var selector = '.gridHeaderRow[data-h5-dyn-grid-column=' + columnId + ']';
+			return this.$find(selector);
+		},
+
+		_findCellFrame: function(columnId) {
+			var selector = '.gridCellFrame[data-h5-dyn-grid-column=' + columnId + ']';
+			return this.$find(selector);
+		},
+
+		_moveColumn: function(targetColumnId) {
+			this.trigger('h5gridMoveColumn', {
+				from: this._selectedColumnId,
+				to: targetColumnId
+			});
+		},
 	};
 
 
@@ -20011,6 +20455,8 @@
 		_columnSortUIController: columnSortUIController,
 
 		_columnSortAndFilterUIController: columnSortAndFilterUIController,
+
+		_moveColumnUIController: moveColumnUIController,
 
 
 		// --- Logic --- //
@@ -20161,6 +20607,7 @@
 
 			this._formatterSet = this._makeFormatterSet(param);
 			this._sortSet = this._makeSortSet(param);
+			this._lockSet = this._makeLockSet(param);
 			this._filterSet = this._makeFilterSet(param);
 
 
@@ -20185,11 +20632,16 @@
 				// ColumnSortAndFilterUI
 				this._columnSortAndFilterUIController.setGridLogic(this._gridLogic);
 				this._columnSortAndFilterUIController.setSortPropertySet(this._sortSet);
+				this._columnSortAndFilterUIController.setLockPropertySet(this._lockSet);
 				this._columnSortAndFilterUIController.setFilterPropertySet(this._filterSet);
 				this._columnSortAndFilterUIController.setSortIconClasses({
 					asc: param.sortAscIconClasses,
 					desc: param.sortDescIconClasses,
 					clear: param.sortClearIconClasses
+				});
+				this._columnSortAndFilterUIController.setLockIconClasses({
+					lock: param.lockIconClasses,
+					unlock: param.unlockIconClasses
 				});
 
 
@@ -20206,6 +20658,7 @@
 					defaultFormatter: this._param.defaultFormatter,
 					formatterSet: this._formatterSet,
 					sortSet: this._sortSet,
+					lockSet: this._lockSet,
 					filterSet: this._filterSet,
 					cellClassDefinition: this._param.cellClassDefinition,
 					disableInput: this._param.disableInput,
@@ -20506,6 +20959,10 @@
 		'.gridCellFrame mousedown': function(context, $el) {
 			var event = context.event;
 
+			if ($el.hasClass('gridHeaderRow')) {
+				return;
+			}
+
 			// 現在の位置を記憶する
 			this._pageX = event.pageX;
 			this._pageY = event.pageY;
@@ -20670,6 +21127,60 @@
 			this.refresh();
 		},
 
+		/**
+		 * カラム表示位置を調整します。
+		 * 
+		 * @param context
+		 * @param $el
+		 * @memberOf h5.ui.components.datagrid.TableGridViewController
+		 */
+		'{rootElement} h5gridMoveColumn': function(context) {
+			context.event.stopPropagation();
+
+			// 移動する前のカラム表示順番を取得する
+			var visibleProperties = this._gridLogic.getVisibleProperties();
+			var headerColumns = visibleProperties.header;
+			var mainColumns = visibleProperties.main;
+
+			var evArg = context.evArg;
+
+			// 列をLock、Unlockクリックした場合
+			if (evArg.to === undefined) {
+				// Unlockの場合
+				if (evArg.from < headerColumns.length) {
+					var from = evArg.from;
+					var to = headerColumns.length - 1;
+					var fromColumn = headerColumns.splice(from, 1)[0];
+					mainColumns.splice(0, 0, fromColumn);
+				} else {
+					// Lockの場合
+					var from = evArg.from - headerColumns.length;
+					var to = headerColumns.length;
+					var fromColumn = mainColumns.splice(from, 1)[0];
+					headerColumns.splice(to, 0, fromColumn);
+				}
+			} else {
+				// カラムをドラッグ、ドロップをした場合
+				var from = evArg.from - headerColumns.length;
+				var to = evArg.to - headerColumns.length;
+				var fromColumn = mainColumns.splice(from, 1)[0];
+
+				if (from < to) {
+					to -= 1;
+				}
+
+				mainColumns.splice(to, 0, fromColumn);
+			}
+
+			// カラム表示順番を調整する
+			var newVisibleProperties = {
+				header: headerColumns,
+				main: mainColumns
+			};
+			this._gridLogic.resetVisibleProperties(newVisibleProperties);
+
+		},
+
 		// --- Private Property --- //
 
 		_param: null,
@@ -20677,6 +21188,8 @@
 		_formatterSet: null,
 
 		_sortSet: null,
+
+		_lockSet: null,
 
 		_filterSet: null,
 
@@ -21365,6 +21878,24 @@
 				};
 			});
 		},
+		
+		_makeLockSet: function(param) {
+			var propertySet = param.propertyUI;
+
+			return util.mapObject(propertySet, function(propertyParam, property) {
+				var lockable = false;
+				if (propertyParam.lockable != null) {
+					lockable = propertyParam.lockable;
+				}
+
+				return {
+					key: property,
+					value: {
+						enable: lockable
+					}
+				};
+			});
+		},
 
 		_makeFilterSet: function(param) {
 			var propertySet = param.propertyUI;
@@ -21429,6 +21960,7 @@
 				defaultFormatter: this._param.defaultFormatter,
 				formatterSet: this._formatterSet,
 				sortSet: this._sortSet,
+				lockSet: this._lockSet,
 				filterSet: this._filterSet,
 				cellClassDefinition: this._param.cellClassDefinition,
 				disableInput: this._param.disableInput,
