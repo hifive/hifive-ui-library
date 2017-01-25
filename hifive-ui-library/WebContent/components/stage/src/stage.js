@@ -5003,6 +5003,12 @@
 		'{rootElement} contextmenu': function(context) {
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
+			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
+			if(Edge.isClassOf(du)){
+				this._temporarilyProcessEdgeContextmenu(context, du);
+				return;
+			}
+
 			var orgEvent = context.event.originalEvent;
 
 			//new Event(orgEvent)では、offsetXなどがコピーされないので
@@ -5036,6 +5042,22 @@
 
 			fixedEvent.type = EVENT_DU_CONTEXTMENU;
 
+			var duEv = this.trigger(fixedEvent, {
+				stageController: this,
+				displayUnit: du
+			});
+			if (duEv.isDefaultPrevented()) {
+				context.event.preventDefault();
+			}
+		},
+
+		/*
+		 * TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
+		 */
+		_temporarilyProcessEdgeContextmenu: function(context, du) {
+			var orgEvent = context.event.originalEvent;
+			var fixedEvent = $.event.fix(orgEvent);
+			fixedEvent.type = EVENT_DU_CONTEXTMENU;
 			var duEv = this.trigger(fixedEvent, {
 				stageController: this,
 				displayUnit: du
