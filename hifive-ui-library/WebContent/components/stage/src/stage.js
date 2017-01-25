@@ -2539,6 +2539,7 @@
 
 					this.domRoot = createSvgElement('svg');
 					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+					this.domRoot.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
 
 					//TODO エッジが切れる問題対応。引かれた線に合わせてRectを調整する方法とどちらが良いか
 					this.domRoot.style.overflow = "visible";
@@ -3515,6 +3516,7 @@
 
 	var DisplayPoint = stageModule.DisplayPoint;
 	var BasicDisplayUnit = h5.cls.manager.getClass('h5.ui.components.stage.BasicDisplayUnit');
+	var Edge = h5.cls.manager.getClass('h5.ui.components.stage.Edge');
 
 	/**
 	 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
@@ -3939,7 +3941,7 @@
 				}
 				var duId = elem.getAttribute('data-h5-dyn-du-id');
 				var du = this.getDisplayUnitById(duId);
-				if (BasicDisplayUnit.isClassOf(du)) {
+				if (BasicDisplayUnit.isClassOf(du) || Edge.isClassOf(du)) {
 					return du;
 				}
 				return getIncludingDUInner.call(this, elem.parentNode);
