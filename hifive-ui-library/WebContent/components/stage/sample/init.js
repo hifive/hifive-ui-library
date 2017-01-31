@@ -28,7 +28,8 @@
 
 	var stageInitParam = {
 		layers: [{
-			id: LAYER_ID_MAIN
+			id: LAYER_ID_MAIN,
+			isDefault: true
 		}, {
 			id: LAYER_ID_EDGE
 		}]

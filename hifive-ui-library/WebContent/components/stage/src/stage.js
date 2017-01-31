@@ -3638,6 +3638,8 @@
 		//ルートとなるSVG要素(直接の子は_layerRootGのg要素のみ)
 		_duRoot: null,
 
+		_layers: null,
+
 		//全てのレイヤーの親となるg要素。実質的に全てのDUはこのg要素の下に入る。
 		_layerRootG: null,
 
@@ -4681,8 +4683,9 @@
 
 			if (initData.layers) {
 				for (var i = 0, len = initData.layers.length; i < len; i++) {
-					var layer = stageModule.Layer.create(initData.layers[i].id);
-					this.addLayer(layer);
+					var layerDef = initData.layers[i];
+					var layer = stageModule.Layer.create(layerDef.id);
+					this.addLayer(layer, null, layerDef.isDefault);
 				}
 			}
 		},
@@ -4690,31 +4693,43 @@
 		//TODO layerRootGに直接ではなくデフォルト（背景）レイヤーにaddする
 		addDisplayUnit: function(displayUnit) {
 			this._units.set(displayUnit.id, displayUnit);
-			this._layerRootG.appendChild(displayUnit.domRoot);
+			//this._layerRootG.appendChild(displayUnit.domRoot);
 
-			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
-			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
+			this._defaultLayer.addDisplayUnit(displayUnit);
 
-			if (displayUnit._renderer) {
-				displayUnit._renderer();
-			}
+//			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
+//			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
+
+//			if (displayUnit._renderer) {
+//				displayUnit._renderer();
+//			}
 
 		},
 
 		removeDisplayUnit: function(displayUnit) {
-			this.removeById(displayUnit.id);
+			this.removeDisplayUnitById(displayUnit.id);
 		},
 
 		removeDisplayUnitById: function(id) {
 			this._unit["delete"](id);
-			this._layerRootG.removeChild(displayUnit.domRoot);
+
+			var duToBeRemoved = this.getDisplayUnitById(id);
+			duToBeRemoved.remove();
+
+			//this._layerRootG.removeChild(displayUnit.domRoot);
 		},
 
 		removeDisplayUnitAll: function() {
 		//TODO
 		},
 
-		addLayer: function(layer, index) {
+		_defaultLayer: null,
+
+		addLayer: function(layer, index, isDefault) {
+			if (this._layers.length === 0 || isDefault === true) {
+				this._defaultLayer = layer;
+			}
+
 			if (index != null) {
 				this._layers.splice(index, 0, layer);
 			} else {
@@ -5004,7 +5019,7 @@
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
 			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
-			if(Edge.isClassOf(du)){
+			if (Edge.isClassOf(du)) {
 				this._temporarilyProcessEdgeContextmenu(context, du);
 				return;
 			}
