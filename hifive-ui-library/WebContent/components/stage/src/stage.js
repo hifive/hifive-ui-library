@@ -2806,6 +2806,156 @@
 		return desc;
 	});
 
+	var ZIndexList = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.ZIndexList',
+
+			field: {
+				/**
+				 * @private キーのソート済み配列。昇順（値が小さい順）にソートされている。
+				 */
+				_keyArray: null,
+
+				/**
+				 * @private key -> valueの配列 のマップ。 zIndex -> DU配列 のマップとして使用。
+				 *          DU配列の中では、後から追加したものほど後ろに存在する。
+				 */
+				_map: null,
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ZIndexList
+				 */
+				constructor: function ZIndexList() {
+					ZIndexList._super.call(this);
+					this._keyArray = [];
+					this._map = {};
+				},
+
+				add: function(key, value) {
+					if (!(key in this._map)) {
+						this._map[key] = [];
+						//keyArrayに新しいkeyを追加する
+						this._addToKeyArray(key);
+					}
+					this._map[key].push(value);
+				},
+
+				remove: function(key, value) {
+					if (!(key in this._map)) {
+						return;
+					}
+
+					var array = this._map[key];
+
+					var idx = array.indexOf(value);
+					if (idx === -1) {
+						//当該データは存在しない
+						return;
+					}
+
+					//当該Valueを取り除く
+					array.splice(idx, 1);
+					if (array.length === 0) {
+						//このkeyに対応するValueがなくなったら、マップのエントリごと削除
+						delete this._map[key];
+						//keyArrayからもエントリを削除
+						var keyArrayIdx = this._keyArray.indexOf(key);
+						this._keyArray.splice(keyArrayIdx, 1);
+					}
+				},
+
+				getFirst: function(key) {
+					if (!(key in this._map)) {
+						return null;
+					}
+					//addの仕様により、mapに当該keyがあれば
+					//必ず1つ以上のエントリが配列中に存在する
+					return this._map[key][0];
+				},
+
+				getLast: function(key) {
+					if (!(key in this._map)) {
+						return null;
+					}
+					var array = this._map[key];
+					var lastIndex = array.length;
+					return array[lastIndex - 1];
+				},
+
+				getIndexInKey: function(key, value) {
+					if (!(key in this._map)) {
+						return null;
+					}
+
+					var idx = this._map[key].indexOf(value);
+					return idx;
+				},
+
+				has: function(key, value) {
+					var ret = this.getIndexInKey(key, value) !== -1;
+					return ret;
+				},
+
+				getAppendTarget: function(key) {
+					//TODO 今はコンテナにDUを追加すると即時にDUのDOMが追加され常に存在する前提になっているので
+					//単純にgetLast()を取ればよいが、仮想化を行うとDUとしては存在しているがDOMとしては存在しなくなるので
+					// foreach(key in keyArray)でループしながら、「実際表示中の要素」を探すように変更する必要がある。
+
+					var len = this._keyArray.length;
+
+					if (len === 0) {
+						//先頭に追加せよ
+						return null;
+					}
+
+					for (var i = 0; i < len; i++) {
+						//keyArrayはkeyの値の昇順でソートされている
+						var val = this._keyArray[i];
+						if (key === val) {
+							//すでにこのkeyを持つValueが存在
+							return this.getLast(key);
+						} else if (key < val) {
+							//このkeyを持つValueはないが、
+							//このkeyはキー配列のこの位置よりも大きいので
+							//valのキー値の最後の要素の後に追加すればよい
+							if (i === 0) {
+								//先頭に追加せよ
+								return null;
+							}
+							return this.getLast(i - 1);
+						}
+					}
+					//一番最後に追加
+					return this.getLast(val);
+				},
+
+				_addToKeyArray: function(key) {
+					var len = this._keyArray.length;
+					for (var i = 0; i < len; i++) {
+						var val = this._keyArray[i];
+
+						if (key === val) {
+							//既にこのkeyは配列に存在する
+							return;
+						}
+
+						if (key > val) {
+							//降順でソート済みになるように追加
+							//TODO 数が多くなるならバイナリサーチ等で検索するのも良いかも
+							this._keyArray.splice(i, 0, key);
+						}
+					}
+
+					//このkeyは一番小さい値だった→末尾に追加
+					this._keyArray.push(key);
+				},
+			}
+		};
+		return desc;
+	});
+
 	var DisplayUnitContainer = DisplayUnit.extend(function() {
 		function getDisplayUnitByIdInner(container, id) {
 			var children = container._children;
@@ -2841,7 +2991,8 @@
 				_minScaleY: null,
 				_maxScaleX: null,
 				_maxScaleY: null,
-				_isUpdateTransformReserved: null
+				_isUpdateTransformReserved: null,
+				_zIndexList: null
 			},
 			method: {
 				/**
@@ -2855,6 +3006,8 @@
 					this.y = 0;
 					this.width = 0;
 					this.height = 0;
+
+					this._zIndexList = ZIndexList.create();
 
 					this._scaleX = 1;
 					this._scaleY = 1;
@@ -2887,9 +3040,18 @@
 				},
 
 				addDisplayUnit: function(du) {
-					this._children.push(du);
-					this._rootG.appendChild(du.domRoot);
 					du._parentDU = this;
+
+					this._children.push(du);
+
+					var appendTargetDU = this._zIndexList.getAppendTarget(du.zIndex);
+
+					this._zIndexList.add(du.zIndex, du);
+
+					var appendTargetDOM = appendTargetDU ? appendTargetDU.domRoot.nextSibling
+							: this._rootG.firstChild;
+
+					this._rootG.insertBefore(du.domRoot, appendTargetDOM);
 
 					if (this._rootStage) {
 						du._onAddedToRoot(this._rootStage);
@@ -2904,6 +3066,8 @@
 						if (typeof du._onRemove === 'function') {
 							du._onRemove();
 						}
+
+						this._zIndexList.remove(du.zIndex, du);
 
 						this._children.splice(idx, 1);
 						this._rootG.removeChild(du.domRoot);

@@ -255,6 +255,7 @@
 			for (var i = 0, len = 20; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._createDU(rect);
+				unit.zIndex = 20 - i;
 				container.addDisplayUnit(unit);
 				this._units.push(unit);
 			}
