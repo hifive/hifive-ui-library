@@ -239,6 +239,7 @@
 
 	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
 	var Event = h5.cls.manager.getClass('h5.event.Event');
+	var PropertyChangeEvent = h5.cls.manager.getClass('h5.event.PropertyChangeEvent');
 
 	/**
 	 * DragSession
@@ -2043,6 +2044,9 @@
 
 				_x: null,
 				_y: null,
+
+				_zIndex: null,
+
 				_width: null,
 				_height: null,
 
@@ -2081,6 +2085,23 @@
 						this.dispatchEvent(ev);
 					}
 				},
+
+				zIndex: {
+					get: function() {
+						return this._zIndex;
+					},
+					set: function(value) {
+						if (value === this._zIndex) {
+							return;
+						}
+						var oldValue = this._zIndex;
+						this._zIndex = value;
+
+						var ev = PropertyChangeEvent.create('zIndex', oldValue, this._zIndex);
+						this.dispatchEvent(ev);
+					}
+				},
+
 				width: {
 					get: function() {
 						return this._width;
@@ -2144,6 +2165,7 @@
 					//再レンダリングなどを起こすフックが含まれる場合があるため。
 					this._x = 0;
 					this._y = 0;
+					this._zIndex = 0;
 					this._width = 0;
 					this._height = 0;
 
@@ -4697,12 +4719,12 @@
 
 			this._defaultLayer.addDisplayUnit(displayUnit);
 
-//			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
-//			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
+			//			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
+			//			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
 
-//			if (displayUnit._renderer) {
-//				displayUnit._renderer();
-//			}
+			//			if (displayUnit._renderer) {
+			//				displayUnit._renderer();
+			//			}
 
 		},
 
