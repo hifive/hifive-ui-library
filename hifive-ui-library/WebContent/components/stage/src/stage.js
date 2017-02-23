@@ -5582,13 +5582,33 @@
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
 			} else {
-				this._t_splitHeight = horizontalSplitDefinitions[0].height;
+				var hDef = horizontalSplitDefinitions[0];
+				this._t_splitHeight = hDef.height;
+
+				var rxMin = null;
+				var rxMax = null;
+				if (hDef.scrollRangeX) {
+					rxMin = hDef.scrollRangeX.min != null ? hDef.scrollRangeX.min : null;
+					rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
+				}
+
+				this.setScrollRangeX(rxMin, rxMax);
 			}
 
 			if (verticalSplitDefinitions == null) {
 				this._t_splitWidth = null;
 			} else {
-				this._t_splitWidth = verticalSplitDefinitions[0].width;
+				var vDef = verticalSplitDefinitions[0];
+				this._t_splitWidth = vDef.width;
+
+				var ryMin = null;
+				var ryMax = null;
+				if (hDef.scrollRangeX) {
+					ryMin = hDef.scrollRangeY.min != null ? hDef.scrollRangeY.min : null;
+					ryMax = hDef.scrollRangeY.max != null ? hDef.scrollRangeY.max : null;
+				}
+
+				this.setScrollRangeY(ryMin, ryMax);
 			}
 
 			this.refresh(true);
