@@ -2806,7 +2806,7 @@
 		return desc;
 	});
 
-	var ZIndexList = RootClass.extend(function() {
+	var ZIndexList = RootClass.extend(function(_super) {
 		var desc = {
 			name: 'h5.ui.components.stage.ZIndexList',
 
@@ -2828,7 +2828,7 @@
 				 * @memberOf h5.ui.components.stage.ZIndexList
 				 */
 				constructor: function ZIndexList() {
-					ZIndexList._super.call(this);
+					_super.call(this);
 					this._keyArray = [];
 					this._map = {};
 				},
@@ -3698,6 +3698,148 @@
 		return desc;
 	});
 
+	var StageView = RootClass.extend(function() {
+		var desc = {
+			name: 'h5.ui.components.stage.StageView',
+
+			field: {
+				_stage: null,
+
+				_roomDom: null,
+				_foremostLayer: null,
+				_viewport: null,
+
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StageView
+				 */
+				constructor: function StageView(stage) {
+					StageView._super.call(this);
+					this._stage = stage;
+				},
+
+				getScrollPosition: function() {
+					return this._stage.getScrollPosition();
+				},
+
+				scrollBy: function(displayDx, displayDy) {
+					return this._stage.scrollBy(displayDx, displayDy);
+				},
+
+				scrollTo: function(displayX, displayY) {
+					return this._stage.scrollTo(displayX, displayY);
+				},
+
+				scrollWorldBy: function(worldDx, worldDy) {
+					return this._stage.scrollWorldBy(worldDx, worldDy);
+				},
+
+				scrollWorldTo: function(worldX, worldY) {
+					return this._stage.scrollWorldTo(worldX, worldY);
+				},
+
+				setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
+					return this._stage.setScale(scaleX, scaleY, displayOffsetX, displayOffsetY);
+				},
+
+				setScaleRangeX: function(min, max) {
+					return this._stage.setScaleRangeX(min, max);
+				},
+
+				setScaleRangeY: function(min, max) {
+					return this._stage.setScaleRangeY(min, max);
+				},
+
+				setScrollRangeX: function(minDisplayX, maxDisplayX) {
+					//TODO 同じ列のものは全て同じ設定を適用させる？
+					//それとも、このメソッドはStageViewでは直接提供せず Collection側で定義させる？
+					//TODO 仮実装
+					return this._stage.setScrollRangeX(minDisplayX, maxDisplayX);
+				},
+
+				setScrollRangeY: function(minDisplayY, maxDisplayY) {
+					//TODO 仮実装
+					return this._stage.setScrollRangeY(minDisplayY, maxDisplayY);
+				}
+			}
+		};
+		return desc;
+	});
+
+	var GridStageViewCollection = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.GridStageViewCollection',
+
+			field: {
+				/**
+				 * このコレクションが所属するStage
+				 */
+				_stage: null,
+
+				/**
+				 * @private setActiveView()で設定したビューを、UI操作に関係なく常にアクティブなビューとするかどうか。
+				 */
+				_isForceActive: null,
+
+				/**
+				 * @private ビューの集合。行番号 -> 列番号 の二次元配列
+				 */
+				_views: null,
+
+				//TODO 仮実装
+				_defaultView: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.GridStageViewCollection
+				 */
+				constructor: function GridStageViewCollection(stage) {
+					super_.call(this);
+					this._stage = stage;
+					this._views = [];
+
+					this._defaultView = StageView.create(stage);
+				},
+
+				/**
+				 * 指定された位置のStageViewを取得します。不正な位置を指定した場合は例外が発生します。一番左上は(0, 0)になります。
+				 *
+				 * @param rowIndex 行番号（画面上から順に連番、0オリジン）
+				 * @param columnIndex 列番号（画面左から順に連番、0オリジン）
+				 */
+				getView: function(rowIndex, columnIndex) {
+					this._defaultView;
+				},
+
+				/**
+				 * 現在アクティブなStageViewを取得します。
+				 */
+				getActiveView: function() {
+					this._defaultView;
+				},
+
+				/**
+				 * アクティブなStageViewを設定します。
+				 *
+				 * @param stageView アクティブにするStageView
+				 * @param force 指定されたビューをUI操作に関係なく常にアクティブなビューとするかどうか。デフォルト：false。
+				 */
+				setActiveView: function(stageView, force) {
+					stageView.isActive = true;
+					this._isForceActive = force === true;
+				},
+
+				_addView: function(stageView, rowIndex, columnIndex) {
+
+				}
+			}
+		};
+		return desc;
+	});
+
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var DisplayPoint = stageModule.DisplayPoint;
@@ -4046,6 +4188,8 @@
 			this._viewport = Viewport.create();
 			this.UIDragMode = DRAG_MODE_AUTO;
 			this.coordinateConverter = CoordinateConverter.create(this._viewport);
+
+			this._stageViewCollection = GridStageViewCollection.create(this);
 		},
 
 		__ready: function() {
@@ -4837,6 +4981,14 @@
 		},
 
 		_updateRootSize: function(width, height) {
+			//TODO 仮実装。Viewの分割に対応。
+			if (this._t_splitHeight != null) {
+				height = this._t_splitHeight;
+			}
+			if (this._t_splitWidth != null) {
+				width = this._t_splitWidth;
+			}
+
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
@@ -5418,7 +5570,33 @@
 				min: minDisplayY,
 				max: maxDisplayY
 			};
-		}
+		},
+
+		_stageViewCollection: null,
+
+		getStageViewCollection: function() {
+			return this._stageViewCollection;
+		},
+
+		splitView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
+			if (horizontalSplitDefinitions == null) {
+				this._t_splitHeight = null;
+			} else {
+				this._t_splitHeight = horizontalSplitDefinitions[0].height;
+			}
+
+			if (verticalSplitDefinitions == null) {
+				this._t_splitWidth = null;
+			} else {
+				this._t_splitWidth = verticalSplitDefinitions[0].width;
+			}
+
+			this.refresh(true);
+		},
+
+		_t_splitWidth: null,
+		_t_splitHeight: null
+
 
 	};
 

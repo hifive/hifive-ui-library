@@ -396,8 +396,14 @@
 		'{rootElement} stageDragRegionEnd': function(context) {
 			console.log(context.event.type);
 			console.log(context.evArg);
-		}
+		},
 
+		'input[name="splitView"] click': function(context) {
+			var hDef = [{ height: 300 }];
+			var vDef = [{ width: 200}];
+
+			this._stageController.splitView(hDef, vDef);
+		}
 
 	};
 
