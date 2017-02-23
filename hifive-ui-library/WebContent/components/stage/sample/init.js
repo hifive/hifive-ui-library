@@ -403,7 +403,10 @@
 		'input[name="splitView"] click': function(context) {
 			var hDef = [{
 				height: 300
-			}];
+			},
+			{ type: 'separator' },
+			{ height: 300 }
+			];
 			var vDef = [{
 				width: 200
 			}];

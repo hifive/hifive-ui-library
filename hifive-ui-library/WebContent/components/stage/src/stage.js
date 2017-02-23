@@ -3732,17 +3732,38 @@
 		return desc;
 	});
 
-	var StageView = RootClass.extend(function() {
+	var StageView = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.StageView',
 
 			field: {
 				_stage: null,
 
-				_roomDom: null,
+				_rootElement: null,
 				_foremostLayer: null,
 				_viewport: null,
 
+			},
+
+			accessor: {
+				width: {
+					get: function() {
+						return this._stage._t_splitWidth;
+					},
+					set: function(value) {
+						this._stage._t_splitWidth = value;
+						this._stage.refresh();
+					}
+				},
+				height: {
+					get: function() {
+						return this._stage._t_splitHeight;
+					},
+					set: function(value) {
+						this._stage._t_splitHeight = value;
+						this._stage.refresh();
+					}
+				}
 			},
 
 			method: {
@@ -3750,8 +3771,13 @@
 				 * @memberOf h5.ui.components.stage.StageView
 				 */
 				constructor: function StageView(stage) {
-					StageView._super.call(this);
+					super_.call(this);
 					this._stage = stage;
+				},
+
+				setSize: function(displayWidth, displayHeight) {
+					this.width = displayWidth;
+					this.height = displayHeight;
 				},
 
 				getScrollPosition: function() {
@@ -3802,6 +3828,141 @@
 		return desc;
 	});
 
+	RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.Separator',
+
+			field: {
+				rowIndex: null,
+				columnIndex: null,
+				overallRowIndex: null,
+				overallColumnIndex: null,
+				_isHorizontal: null
+			},
+
+			accessor: {
+				isHorizontal: {
+					get: function() {
+						return this._isHorizontal;
+					}
+				},
+				isVertical: {
+					get: function() {
+						return !this._isHorizontal;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.Separator
+				 */
+				constructor: function Separator(isHorizontal) {
+					super_.call(this);
+					this.rowIndex = 0;
+					this.columnIndex = 0;
+					this.overallRowIndex = 0;
+					this.overallColumnIndex = 0;
+
+					this._isHorizontal = isHorizontal;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var GRID_TYPE_CONTENTS = 'contents';
+	var GRID_TYPE_SEPARATOR = 'separator';
+
+	var StageGridRow = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.StageGridRow',
+
+			field: {
+				_type: null,
+				_height: null
+			},
+
+			accessor: {
+				height: {
+					get: function() {
+						return this._height;
+					}
+				},
+				type: {
+					get: function() {
+						return this._type;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StageGridRow
+				 */
+				constructor: function(type) {
+					super_.call(this);
+					this._type = type;
+					this._height = 0;
+				},
+
+				getView: function(columnIndex) {
+					if (this._type === GRID_TYPE_SEPARATOR) {
+						return null; //TODO 例外を出す方が良い？
+					}
+
+					//TODO
+					return null;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var StageGridColumn = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.StageGridColumn',
+
+			field: {
+				_type: null,
+				_width: null
+			},
+
+			accessor: {
+				type: {
+					get: function() {
+						return this._type;
+					}
+				},
+				width: {
+					get: function() {
+						return this._width;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StageGridColumn
+				 */
+				constructor: function(type) {
+					super_.call(this);
+					this._type = type;
+					this._width = 0;
+				},
+
+				getView: function(rowIndex) {
+					if (this._type === GRID_TYPE_SEPARATOR) {
+						return null; //TODO 例外が良い？Row側と合わせる
+					}
+
+					return null; //TODO
+				}
+			}
+		};
+		return desc;
+	});
+
 	var GridStageViewCollection = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.GridStageViewCollection',
@@ -3822,8 +3983,51 @@
 				 */
 				_views: null,
 
+				_numberOfOverallRows: null,
+				_numberOfOverallColumns: null,
+
+				_numberOfRows: null,
+				_numberOfColumns: null,
+
+				_numberOfRowSeparators: null,
+				_numberOfColumnSeparators: null,
+
 				//TODO 仮実装
 				_defaultView: null
+			},
+
+			accessor: {
+				numberOfOverallRows: {
+					get: function() {
+						return this._numberOfOverallRows;
+					}
+				},
+				numberOfOverallColumns: {
+					get: function() {
+						return this._numberOfOverallColumns;
+					}
+				},
+
+				numberOfRows: {
+					get: function() {
+						return this._numberOfRows;
+					}
+				},
+				numberOfColumns: {
+					get: function() {
+						return this._numberOfColumns;
+					}
+				},
+				numberOfRowSeparators: {
+					get: function() {
+						return this._numberOfRowSeparators;
+					}
+				},
+				numberOfColumnSeparators: {
+					get: function() {
+						return this._numberOfColumnSeparators;
+					}
+				}
 			},
 
 			method: {
@@ -3835,6 +4039,9 @@
 					this._stage = stage;
 					this._views = [];
 
+					this._numberOfRows = 1;
+					this._numberOfColumns = 1;
+
 					this._defaultView = StageView.create(stage);
 				},
 
@@ -3845,14 +4052,14 @@
 				 * @param columnIndex 列番号（画面左から順に連番、0オリジン）
 				 */
 				getView: function(rowIndex, columnIndex) {
-					this._defaultView;
+					return this._defaultView;
 				},
 
 				/**
 				 * 現在アクティブなStageViewを取得します。
 				 */
 				getActiveView: function() {
-					this._defaultView;
+					return this._defaultView;
 				},
 
 				/**
@@ -3862,9 +4069,25 @@
 				 * @param force 指定されたビューをUI操作に関係なく常にアクティブなビューとするかどうか。デフォルト：false。
 				 */
 				setActiveView: function(stageView, force) {
-					stageView.isActive = true;
+					//stageView.isActive = true;
 					this._isForceActive = force === true;
 				},
+
+				getRows: function(includesSeparators) {
+
+				},
+
+				getColumns: function() {
+
+				},
+
+				//				getSeparators: function() {
+				//
+				//				},
+				//
+				//				getAllViews: function(includesSeparator) {
+				//					return [this._defaultView];
+				//				},
 
 				_addView: function(stageView, rowIndex, columnIndex) {
 
@@ -4670,9 +4893,23 @@
 
 		_isMousedown: false,
 
-		'{rootElement} mousedown': function(context) {
+		'{rootElement} mousedown': function(context, $el) {
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
+
+			var event = context.event;
+
+			if ($(event.target).hasClass('stageGridSeparator')) {
+				//ドラッグ対象がグリッドセパレータの場合は
+				//グリッドのサイズ変更とみなす
+				this._startGridSeparatorDrag(context);
+			}
+
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
+
 			//TODO 初回のmousemoveのタイミングで
 			//動作対象を決めると、DUの端の方にカーソルがあったときに
 			//mousedown時にはDUの上にカーソルがあったのに
@@ -4682,7 +4919,7 @@
 			//mousedownのタイミングで決定しつつ、
 			//実際にdragStartとみなす（イベントを発生させる）のは
 			//moveのタイミングにするのがよい。
-			context.event.preventDefault();
+			event.preventDefault();
 		},
 
 		_processDragMove: function(context) {
@@ -4692,6 +4929,11 @@
 			}
 
 			context.event.preventDefault();
+
+			if (this._isGridSeparatorDragging) {
+				this._processGridSeparatorDragMove(context);
+				return;
+			}
 
 			if (!this._isDraggingStarted) {
 				this._startDrag(context);
@@ -4893,6 +5135,14 @@
 		'{document} mouseup': function(context) {
 			// （同期、非同期に関わらず）マウスを離した瞬間にすべき終了処理
 			this._isMousedown = false;
+
+			if (this._isGridSeparatorDragging) {
+				//グリッドセパレータのドラッグの場合は
+				//処理を委譲して終了
+				this._endGridSeparatorDrag(context);
+				return;
+			}
+
 			this._endBoundaryScroll();
 
 			if (this._dragSelectOverlayRect) {
@@ -5611,7 +5861,7 @@
 
 		_stageViewCollection: null,
 
-		getStageViewCollection: function() {
+		getViewCollection: function() {
 			return this._stageViewCollection;
 		},
 
@@ -5625,6 +5875,41 @@
 		},
 
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
+
+			var numOfRowSeps = 0;
+			var numOfRows = 0;
+
+			var hDefsLen = horizontalSplitDefinitions.length;
+			for (var hi = 0; hi < hDefsLen; hi++) {
+				var def = horizontalSplitDefinitions[hi];
+				if (def.type === GRID_TYPE_SEPARATOR) {
+					numOfRowSeps++;
+				} else {
+					numOfRows++;
+				}
+			}
+
+			this._stageViewCollection._numberOfOverallRows = hDefsLen;
+			this._stageViewCollection._numberOfRows = numOfRows;
+			this._stageViewCollection._numberOfRowSeparators = numOfRowSeps;
+
+			var numOfColSeps = 0;
+			var numOfCols = 0;
+
+			var vDefsLen = verticalSplitDefinitions.length;
+			for (var vi = 0; vi < vDefsLen; vi++) {
+				var def = verticalSplitDefinitions[vi];
+				if (def.type === GRID_TYPE_SEPARATOR) {
+					numOfColSeps++;
+				} else {
+					numOfCols++;
+				}
+			}
+
+			this._stageViewCollection._numberOfOverallColumns = vDefsLen;
+			this._stageViewCollection._numberOfColumns = numOfRows;
+			this._stageViewCollection._numberOfColumnSeparators = numOfColSeps;
+
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
 				$(this.rootElement).find('.stageGridSeparator').remove();
@@ -5639,7 +5924,7 @@
 					rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
 				}
 
-				var $separator = this._$createGridSeparator(true, 2, hDef.height);
+				var $separator = this._$createGridSeparator(0, 0, true, 2, hDef.height);
 				$(this.rootElement).append($separator);
 
 				this.setScrollRangeX(rxMin, rxMax);
@@ -5662,9 +5947,12 @@
 			}
 		},
 
-		_$createGridSeparator: function(isHorizontal, thickness, pos) {
-			var $sep = $('<div class="stageGridSeparator"></div>');
+		_$createGridSeparator: function(rowIndex, columnIndex, isHorizontal, thickness, pos) {
+			var $sep = $('<div data-stage-dyn-row="' + rowIndex + '" data-stage-dyn-col="'
+					+ columnIndex + '" class="stageGridSeparator"></div>');
+
 			if (isHorizontal) {
+				$sep.addClass('horizontal'); //TODO 効率化
 				$sep.css({
 					position: 'absolute',
 					width: '100%',
@@ -5672,6 +5960,7 @@
 					top: pos
 				});
 			} else {
+				$sep.addClass('vertical');
 				$sep.css({
 					position: 'absolute',
 					width: thickness,
@@ -5689,7 +5978,95 @@
 		},
 
 		_t_splitWidth: null,
-		_t_splitHeight: null
+		_t_splitHeight: null,
+
+		_isGridSeparatorDragging: false,
+
+		_gridSeparatorDragInfo: null,
+
+		_startGridSeparatorDrag: function(context) {
+			var $el = $(context.event.target);
+
+			var rowIndex = parseInt($el.data('stageDynRow'));
+			var columnIndex = parseInt($el.data('stageDynCol'));
+			var isHorizontal = $el.hasClass('horizontal');
+
+			this._gridSeparatorDragInfo = {
+				$target: $el,
+				rowIndex: rowIndex,
+				columnIndex: columnIndex,
+				isHorizontal: isHorizontal
+			};
+			this._isGridSeparatorDragging = true;
+		},
+
+		_processGridSeparatorDragMove: function(context) {
+			var event = context.event;
+
+			var dispDx = event.pageX - this._dragLastPagePos.x;
+			var dispDy = event.pageY - this._dragLastPagePos.y;
+
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
+
+			var info = this._gridSeparatorDragInfo;
+
+			if (info.isHorizontal) {
+				//水平分割(上下に分割)しているので、横方向には動かさない
+				dispDx = 0;
+			} else {
+				dispDy = 0;
+			}
+
+			if (dispDx === 0 && dispDy === 0) {
+				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
+				return;
+			}
+
+			if (info.isHorizontal) {
+				var currTop = info.$target.position().top;
+				var newTop = currTop + dispDy;
+				info.$target.css({
+					top: newTop
+				});
+				var view = this._stageViewCollection.getActiveView();
+				//TODO topの値でなく、高さを計算する必要がある
+				view.height = newTop;
+			} else {
+				var currLeft = info.$target.position().left;
+				var newLeft = currLeft + dispDx;
+				info.$target.css({
+					left: newLeft
+				});
+				var view = this._stageViewCollection.getActiveView();
+				//TODO leftの値でなく、幅を計算する必要がある
+				view.width = newLeft;
+			}
+
+			this._isDraggingStarted = true;
+
+			var evArg = {
+				isLive: true
+			//				rowIndices: [0, 2],
+			//				columnIndices: null,
+			//
+			//				rowSeparatorIndices: null,
+			//				columnSeparatorIndices: null,
+			};
+			this.trigger(EVENT_VIEW_SIZE_CHANGE, evArg);
+		},
+
+		_endGridSeparatorDrag: function(context, $el) {
+			this._isGridSeparatorDragging = false;
+			this._gridSeparatorDragInfo = null;
+
+			var evArg = {
+				isLive: false
+			};
+			this.trigger(EVENT_VIEW_SIZE_CHANGE, evArg);
+		}
 	};
 
 
