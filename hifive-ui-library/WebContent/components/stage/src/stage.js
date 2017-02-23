@@ -5940,10 +5940,12 @@
 					if (def.type === GRID_TYPE_SEPARATOR) {
 						stageGridRow = StageGridRow.create(this._stageViewCollection,
 								GRID_TYPE_SEPARATOR, numOfRowSeps, hi);
+						stageGridRow._height = def.height;
 						numOfRowSeps++;
 					} else {
 						stageGridRow = StageGridRow.create(this._stageViewCollection,
 								GRID_TYPE_CONTENTS, numOfRows, hi);
+						stageGridRow._height = def.height;
 						numOfRows++;
 					}
 					stageGridRows.push(stageGridRow);
