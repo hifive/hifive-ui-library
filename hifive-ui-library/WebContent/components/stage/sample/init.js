@@ -173,7 +173,9 @@
 			};
 
 			//TODO 引数はsvgではなくこのUnitインスタンス
-			unit.setRenderer(function(graphics, du) {
+			unit.setRenderer(function(context, graphics) {
+				var du = context.displayUnit;
+
 				graphics.clear();
 
 				var rect2 = graphics.drawRect();
@@ -399,8 +401,12 @@
 		},
 
 		'input[name="splitView"] click': function(context) {
-			var hDef = [{ height: 300 }];
-			var vDef = [{ width: 200}];
+			var hDef = [{
+				height: 300
+			}];
+			var vDef = [{
+				width: 200
+			}];
 
 			this._stageController.splitView(hDef, vDef);
 		}

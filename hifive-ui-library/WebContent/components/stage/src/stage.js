@@ -546,8 +546,8 @@
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var t = targets[i]; //DU
 						var gpos = t.getWorldGlobalPosition();
-						t.domRoot.parentNode.removeChild(t.domRoot);
-						this._foregroundRootElement.appendChild(t.domRoot);
+						t._domRoot.parentNode.removeChild(t._domRoot);
+						this._foregroundRootElement.appendChild(t._domRoot);
 						t.moveTo(gpos.x, gpos.y);
 					}
 				},
@@ -612,8 +612,8 @@
 						//gpos.y -= orgParentDU.y;
 
 						var localPos = orgParentDU.globalToLocalPosition(gpos.x, gpos.y);
-						du.domRoot.parentNode.removeChild(du.domRoot);
-						orgParentDU._rootG.appendChild(du.domRoot);
+						du._domRoot.parentNode.removeChild(du._domRoot);
+						orgParentDU._rootG.appendChild(du._domRoot);
 						du.moveTo(localPos.x, localPos.y);
 					}
 				},
@@ -2054,6 +2054,9 @@
 
 				_rootStage: null,
 
+				//TODO 仮想化対応に伴い削除予定
+				_domRoot: null,
+
 				_groupTag: null
 			},
 			accessor: {
@@ -2130,7 +2133,6 @@
 						this.dispatchEvent(ev);
 					}
 				},
-				domRoot: null,
 				extraData: null,
 				groupTag: {
 					get: function() {
@@ -2179,7 +2181,7 @@
 					this.height = rect.height;
 
 					//TODO 仮想化対応
-					setSvgAttributes(this.domRoot, {
+					setSvgAttributes(this._domRoot, {
 						x: rect.x,
 						y: rect.y,
 						width: rect.width,
@@ -2197,7 +2199,7 @@
 					this.height = height;
 
 					//TODO 仮想化対応
-					setSvgAttributes(this.domRoot, {
+					setSvgAttributes(this._domRoot, {
 						width: width,
 						height: height
 					});
@@ -2214,7 +2216,7 @@
 					this.y = y;
 
 					//TODO 仮想化対応
-					setSvgAttributes(this.domRoot, {
+					setSvgAttributes(this._domRoot, {
 						x: x,
 						y: y
 					});
@@ -2225,7 +2227,7 @@
 					this.y += y;
 
 					//TODO 仮想化対応
-					setSvgAttributes(this.domRoot, {
+					setSvgAttributes(this._domRoot, {
 						x: this.x,
 						y: this.y
 					});
@@ -2328,185 +2330,196 @@
 	});
 
 	var BasicDisplayUnit = DisplayUnit
-			.extend({
-				name: 'h5.ui.components.stage.BasicDisplayUnit',
-				field: {
-					/**
-					 * この要素を現在ドラッグ可能かどうか
-					 */
-					isDraggable: null,
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.BasicDisplayUnit',
+					field: {
+						/**
+						 * この要素を現在ドラッグ可能かどうか
+						 */
+						isDraggable: null,
 
-					/**
-					 * 現在この要素をドラッグ中かどうか。
-					 */
-					_isDragging: null,
+						/**
+						 * 現在この要素をドラッグ中かどうか。
+						 */
+						_isDragging: null,
 
-					_graphics: null,
-					_renderer: null,
-					_isSelected: null,
-					_isFocused: null,
-					_rootSvg: null,
+						_graphics: null,
+						_renderer: null,
+						_isSelected: null,
+						_isFocused: null,
+						_rootSvg: null,
 
-					_isRenderRequested: null,
+						_isRenderRequested: null,
 
-					/**
-					 * この要素を現在選択可能かどうか
-					 */
-					_isSelectable: null
-				},
-				accessor: {
-					isSelectable: {
-						get: function() {
-							return this._isSelectable;
+						/**
+						 * この要素を現在選択可能かどうか
+						 */
+						_isSelectable: null
+					},
+					accessor: {
+						isSelectable: {
+							get: function() {
+								return this._isSelectable;
+							},
+							set: function(value) {
+								if (this._isSelectable === value) {
+									return;
+								}
+								this._isSelectable = value;
+								if (value === false) {
+									//選択不能になったので、選択状態を解除
+									this.unselect();
+								}
+							}
 						},
-						set: function(value) {
-							if (this._isSelectable === value) {
+						isSelected: {
+							get: function() {
+								return this._isSelected;
+							}
+						},
+						isFocused: {
+							get: function() {
+								return this._isFocused;
+							}
+						},
+						width: {
+							get: function() {
+								return Object.getOwnPropertyDescriptor(
+										BasicDisplayUnit._super.prototype, 'width').get.call(this);
+							},
+							set: function(value) {
+								//TODO getter/setterの呼び出し方を(superメソッドの呼び出しと含めて)改善できないか
+								Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+										'width').set.call(this, value);
+								this.requestRender();
+							}
+						},
+						height: {
+							get: function() {
+								return Object.getOwnPropertyDescriptor(
+										BasicDisplayUnit._super.prototype, 'height').get.call(this);
+							},
+							set: function(value) {
+								Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+										'height').set.call(this, value);
+								this.requestRender();
+							}
+						},
+						isDragging: {
+							get: function() {
+								return this._isDragging;
+							}
+						}
+					},
+					method: {
+						constructor: function BasicDisplayUnit(id) {
+							super_.call(this, id);
+
+							this._isSelectable = true;
+							this.isDraggable = true;
+							this._isDragging = false;
+
+							this._isSelected = false;
+							this._isFocused = false;
+
+							this._isRenderRequested = false;
+
+							//TODO 仮想化
+							this._domRoot = createSvgElement('svg');
+							this._domRoot.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
+							this._domRoot.setAttribute('data-h5-dyn-du-id', this.id);
+							//this.domRoot = this._graphics._rootSvg; //TODO domRoot -> rootDom, rootElement
+						},
+						/**
+						 * rendererのシグネチャ：function(graphics, du)
+						 *
+						 * @memberOf h5.ui.components.stage.BasicDisplayUnit
+						 */
+						setRenderer: function(renderer) {
+							if (this._renderer === renderer) {
 								return;
 							}
-							this._isSelectable = value;
-							if (value === false) {
-								//選択不能になったので、選択状態を解除
-								this.unselect();
+							this._renderer = renderer;
+							if (renderer != null) {
+								//レンダラが変更かつセットされたら再描画
+								this.requestRender();
 							}
-						}
-					},
-					isSelected: {
-						get: function() {
-							return this._isSelected;
-						}
-					},
-					isFocused: {
-						get: function() {
-							return this._isFocused;
-						}
-					},
-					width: {
-						get: function() {
-							return Object.getOwnPropertyDescriptor(
-									BasicDisplayUnit._super.prototype, 'width').get.call(this);
 						},
-						set: function(value) {
-							//TODO getter/setterの呼び出し方を(superメソッドの呼び出しと含めて)改善できないか
-							Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-									'width').set.call(this, value);
-							this.requestRender();
-						}
-					},
-					height: {
-						get: function() {
-							return Object.getOwnPropertyDescriptor(
-									BasicDisplayUnit._super.prototype, 'height').get.call(this);
-						},
-						set: function(value) {
-							Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-									'height').set.call(this, value);
-							this.requestRender();
-						}
-					},
-					isDragging: {
-						get: function() {
-							return this._isDragging;
-						}
-					}
-				},
-				method: {
-					constructor: function BasicDisplayUnit(id) {
-						BasicDisplayUnit._super.call(this, id);
 
-						this._isSelectable = true;
-						this.isDraggable = true;
-						this._isDragging = false;
-
-						this._isSelected = false;
-						this._isFocused = false;
-
-						this._isRenderRequested = false;
-
-						//TODO 仮想化
-						this.domRoot = createSvgElement('svg');
-						this._rootSvg = this.domRoot;
-						this.domRoot.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
-						this.domRoot.setAttribute('data-h5-dyn-du-id', this.id);
-						//this.domRoot = this._graphics._rootSvg; //TODO domRoot -> rootDom, rootElement
-					},
-					/**
-					 * rendererのシグネチャ：function(graphics, du)
-					 *
-					 * @memberOf h5.ui.components.stage.BasicDisplayUnit
-					 */
-					setRenderer: function(renderer) {
-						if (this._renderer === renderer) {
-							return;
-						}
-						this._renderer = renderer;
-						if (renderer != null) {
-							//レンダラが変更かつセットされたら再描画
-							this.requestRender();
-						}
-					},
-
-					requestRender: function() {
-						if (!this._graphics) {
-							return;
-						}
-
-						if (this._isRenderRequested) {
-							return;
-						}
-						this._isRenderRequested = true;
-
-						var that = this;
-
-						//TODO rAFをここで直接使わない
-						requestAnimationFrame(function() {
-							that._isRenderRequested = false;
-							that._renderer(that._graphics, that);
-
-							if (!that._graphics.isDirty) {
+						requestRender: function() {
+							if (!this._graphics) {
 								return;
 							}
 
-							that._graphics.render();
-						}, 0);
-					},
+							if (this._isRenderRequested) {
+								return;
+							}
+							this._isRenderRequested = true;
 
-					select: function(isExclusive) {
-						if (!this._rootStage) {
-							return;
+							//TODO コンテキストオブジェクトを毎回作らないようにする
+							var context = {
+								displayUnit: this,
+								rootElement: this._domRoot,
+								rowIndex: 0, //TODO 正しい値を与える
+								columnIndex: 0
+							//TODO 正しい値を与える
+							};
+
+							var that = this;
+
+							//TODO rAFをここで直接使わない
+							requestAnimationFrame(function() {
+								that._isRenderRequested = false;
+								that._renderer(context, that._graphics);
+
+								if (!that._graphics.isDirty) {
+									return;
+								}
+
+								that._graphics.render();
+							}, 0);
+						},
+
+						select: function(isExclusive) {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.select(this, isExclusive);
+						},
+
+						unselect: function() {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.unselect(this);
+						},
+
+						focus: function() {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.focus(this);
+						},
+
+						unfocus: function(andUnselect) {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.unfocus(andUnselect);
+						},
+
+						_onAddedToRoot: function(stage) {
+							//TODO _superでなくgetParentClass()を
+							BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
+							this._rootStage = stage;
+
+							this._graphics = stage._createGraphics(this._domRoot);
+							this.requestRender();
 						}
-						this._rootStage.select(this, isExclusive);
-					},
-
-					unselect: function() {
-						if (!this._rootStage) {
-							return;
-						}
-						this._rootStage.unselect(this);
-					},
-
-					focus: function() {
-						if (!this._rootStage) {
-							return;
-						}
-						this._rootStage.focus(this);
-					},
-
-					unfocus: function(andUnselect) {
-						if (!this._rootStage) {
-							return;
-						}
-						this._rootStage.unfocus(andUnselect);
-					},
-
-					_onAddedToRoot: function(stage) {
-						//TODO _superでなくgetParentClass()を
-						BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
-						this._rootStage = stage;
-
-						this._graphics = stage._createGraphics(this.domRoot);
-						this.requestRender();
 					}
-				}
+				};
+				return desc;
 			});
 
 	//TODO Path <- Edge などとする
@@ -2559,12 +2572,12 @@
 					this._endpointFrom = EdgeEndpoint.create();
 					this._endpointTo = EdgeEndpoint.create();
 
-					this.domRoot = createSvgElement('svg');
-					this.domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
-					this.domRoot.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
+					this._domRoot = createSvgElement('svg');
+					this._domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+					this._domRoot.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
 
 					//TODO エッジが切れる問題対応。引かれた線に合わせてRectを調整する方法とどちらが良いか
-					this.domRoot.style.overflow = "visible";
+					this._domRoot.style.overflow = "visible";
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
@@ -2581,7 +2594,7 @@
 					//初回のみlineを生成
 					if (!this._svgLine) {
 						this._svgLine = createSvgElement('line');
-						this.domRoot.appendChild(this._svgLine);
+						this._domRoot.appendChild(this._svgLine);
 					}
 					var line = this._svgLine;
 
@@ -3026,17 +3039,17 @@
 					this._children = [];
 
 					//TODO ここではsvgは作らない。
-					this.domRoot = createSvgElement('svg');
-					this.domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
+					this._domRoot = createSvgElement('svg');
+					this._domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
 
 					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
 					//width, heightの指定との整合性について検討
-					this.domRoot.style.overflow = "visible";
+					this._domRoot.style.overflow = "visible";
 
 					//rootGは<g>要素。transformを一括してかけるため、
 					//子要素は全てこの<g>の下に追加する。
 					this._rootG = createSvgElement('g');
-					this.domRoot.appendChild(this._rootG);
+					this._domRoot.appendChild(this._rootG);
 				},
 
 				addDisplayUnit: function(du) {
@@ -3048,10 +3061,12 @@
 
 					this._zIndexList.add(du.zIndex, du);
 
-					var appendTargetDOM = appendTargetDU ? appendTargetDU.domRoot.nextSibling
+					//TODO 仮想化対応
+					var appendTargetDOM = appendTargetDU ? appendTargetDU._domRoot.nextSibling
 							: this._rootG.firstChild;
 
-					this._rootG.insertBefore(du.domRoot, appendTargetDOM);
+					//TODO 仮想化対応
+					this._rootG.insertBefore(du._domRoot, appendTargetDOM);
 
 					if (this._rootStage) {
 						du._onAddedToRoot(this._rootStage);
@@ -3070,7 +3085,9 @@
 						this._zIndexList.remove(du.zIndex, du);
 
 						this._children.splice(idx, 1);
-						this._rootG.removeChild(du.domRoot);
+
+						//TODO 仮想化対応
+						this._rootG.removeChild(du._domRoot);
 						du._parentDU = null;
 
 						//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
@@ -3195,7 +3212,7 @@
 					this.id = id;
 
 					//TODO ここではsvgは作らない。
-					this.domRoot.setAttribute('data-stage-role', 'layer');
+					this._domRoot.setAttribute('data-stage-role', 'layer');
 
 					this.UIDragScreenScrollDirection = ScrollDirection.XY;
 				},
@@ -3339,7 +3356,7 @@
 
 					//TODO 完全に最前面にするためには、foremostLayerに移動させる必要がある
 					for (var i = 0, len = this._targets.length; i < len; i++) {
-						var dom = this._targets[i].domRoot;
+						var dom = this._targets[i]._domRoot;
 						if (dom) {
 							var parent = dom.parentNode;
 							parent.removeChild(dom);
@@ -4201,8 +4218,8 @@
 
 				//常にForegroundに表示されるレイヤーを追加
 				this._foremostLayer = stageModule.Layer.create(LAYER_ID_FOREMOST);
-				this._layerRootG.appendChild(this._foremostLayer.domRoot);
-				stageModule.SvgUtil.setAttribute(this._foremostLayer.domRoot, 'pointer-events',
+				this._layerRootG.appendChild(this._foremostLayer._domRoot);
+				stageModule.SvgUtil.setAttribute(this._foremostLayer._domRoot, 'pointer-events',
 						'none');
 				this._foremostLayer._onAddedToRoot(this);
 			}
@@ -4238,7 +4255,7 @@
 			var focused = ev.focused;
 			if (focused) {
 				focused._isFocused = true;
-				this._focusController.setFocusedElement(focused.domRoot);
+				this._focusController.setFocusedElement(focused._domRoot);
 				focused.requestRender();
 			}
 
@@ -4338,9 +4355,9 @@
 			};
 			var bizEvent = $.event.fix(event.originalEvent);
 			bizEvent.type = triggerEventName;
-			bizEvent.target = du.domRoot;
-			bizEvent.currentTarget = du.domRoot;
-			$(du.domRoot).trigger(bizEvent, evArg);
+			bizEvent.target = du._domRoot; //TODO 仮想化対応
+			bizEvent.currentTarget = du._domRoot;
+			$(du._domRoot).trigger(bizEvent, evArg);
 
 			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
 				//DUがselectableでない場合は選択処理はしない。
@@ -5075,7 +5092,7 @@
 			}
 			//先にaddしたレイヤーの方が手前に来るようにする
 			//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
-			this._layerRootG.insertBefore(layer.domRoot, this._layerRootG.firstChild);
+			this._layerRootG.insertBefore(layer._domRoot, this._layerRootG.firstChild);
 			layer._onAddedToRoot(this);
 		},
 
@@ -5538,7 +5555,7 @@
 			}
 
 			//TODO domRootがスクロールしても消えないことを保証する
-			var eventSource = du.domRoot;
+			var eventSource = du._domRoot;
 
 			var ev = $.event.fix(event.originalEvent);
 			ev.type = eventName;
