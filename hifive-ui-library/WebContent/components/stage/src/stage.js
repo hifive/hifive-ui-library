@@ -2057,7 +2057,8 @@
 				//TODO 仮想化対応に伴い削除予定
 				_domRoot: null,
 
-				_groupTag: null
+				_groupTag: null,
+				_isVisible: null
 			},
 			accessor: {
 				x: {
