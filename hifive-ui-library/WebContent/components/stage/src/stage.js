@@ -2153,6 +2153,7 @@
 					},
 					set: function(value) {
 						this._isVisible = value;
+						this._domRoot.style.display = this._isVisible ? '' : 'none';
 					}
 				}
 			},
@@ -2181,6 +2182,8 @@
 					this._zIndex = 0;
 					this._width = 0;
 					this._height = 0;
+
+					this._isVisible = true;
 
 					this._groupTag = SimpleSet.create();
 				},
@@ -3957,6 +3960,9 @@
 	var EVENT_DRAG_REGION_START = 'stageDragRegionStart';
 	var EVENT_DRAG_REGION_END = 'stageDragRegionEnd';
 
+	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
+	var EVENT_VIEW_SIZE_CHANGE = 'stageViewSizeChange';
+
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
 	 */
@@ -5639,7 +5645,15 @@
 				this.setScrollRangeY(ryMin, ryMax);
 			}
 
+			var evArg = this._createViewStructureChangeEventArg();
+			this.trigger(EVENT_VIEW_STRUCTURE_CHANGE, evArg);
+
 			this.refresh(true);
+		},
+
+		_createViewStructureChangeEventArg: function() {
+			//TODO 変更前の値のオブジェクトを作る
+			return {};
 		},
 
 		_t_splitWidth: null,
