@@ -409,6 +409,10 @@
 			}];
 
 			this._stageController.splitView(hDef, vDef);
+		},
+
+		'input[name="clearSplitView"] click': function(context) {
+			this._stageController.splitView(null, null);
 		}
 
 	};

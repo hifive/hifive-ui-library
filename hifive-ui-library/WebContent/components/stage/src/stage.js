@@ -5616,8 +5616,18 @@
 		},
 
 		splitView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
+			this._resetGridView(horizontalSplitDefinitions, verticalSplitDefinitions);
+
+			var evArg = this._createViewStructureChangeEventArg();
+			this.trigger(EVENT_VIEW_STRUCTURE_CHANGE, evArg);
+
+			this.refresh(true);
+		},
+
+		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
+				$(this.rootElement).find('.stageGridSeparator').remove();
 			} else {
 				var hDef = horizontalSplitDefinitions[0];
 				this._t_splitHeight = hDef.height;
@@ -5628,6 +5638,9 @@
 					rxMin = hDef.scrollRangeX.min != null ? hDef.scrollRangeX.min : null;
 					rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
 				}
+
+				var $separator = this._$createGridSeparator(true, 2, hDef.height);
+				$(this.rootElement).append($separator);
 
 				this.setScrollRangeX(rxMin, rxMax);
 			}
@@ -5647,11 +5660,27 @@
 
 				this.setScrollRangeY(ryMin, ryMax);
 			}
+		},
 
-			var evArg = this._createViewStructureChangeEventArg();
-			this.trigger(EVENT_VIEW_STRUCTURE_CHANGE, evArg);
+		_$createGridSeparator: function(isHorizontal, thickness, pos) {
+			var $sep = $('<div class="stageGridSeparator"></div>');
+			if (isHorizontal) {
+				$sep.css({
+					position: 'absolute',
+					width: '100%',
+					height: thickness,
+					top: pos
+				});
+			} else {
+				$sep.css({
+					position: 'absolute',
+					width: thickness,
+					height: '100%',
+					left: pos
+				});
+			}
 
-			this.refresh(true);
+			return $sep;
 		},
 
 		_createViewStructureChangeEventArg: function() {
@@ -5661,8 +5690,6 @@
 
 		_t_splitWidth: null,
 		_t_splitHeight: null
-
-
 	};
 
 
