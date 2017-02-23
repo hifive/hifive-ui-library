@@ -2143,6 +2143,16 @@
 					get: function() {
 						return this._parentDU;
 					}
+				},
+				//TODO isVisibleがfalseになったら、DOMごと消す。
+				//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
+				isVisible: {
+					get: function() {
+						return this._isVisible;
+					},
+					set: function(value) {
+						this._isVisible = value;
+					}
 				}
 			},
 			method: {
