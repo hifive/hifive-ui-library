@@ -404,7 +404,7 @@
 			var hDef = [{
 				height: 300
 			},
-			{ type: 'separator' },
+			{ type: 'separator', height: 5 },
 			{ height: 300 }
 			];
 			var vDef = [{

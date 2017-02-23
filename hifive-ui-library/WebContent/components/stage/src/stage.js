@@ -5966,7 +5966,8 @@
 					rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
 				}
 
-				var $separator = this._$createGridSeparator(0, 0, true, 2, hDef.height);
+				var $separator = this._$createGridSeparator(0, 0, true,
+						horizontalSplitDefinitions[1].height, hDef.height);
 				$(this.rootElement).append($separator);
 
 				this.setScrollRangeX(rxMin, rxMax);
