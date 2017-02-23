@@ -4039,8 +4039,12 @@
 					this._stage = stage;
 					this._views = [];
 
+					this._numberOfOverallRows = 1;
+					this._numberOfOverallColumns = 1;
 					this._numberOfRows = 1;
 					this._numberOfColumns = 1;
+					this._numberOfRowSeparators = 0;
+					this._numberOfColumnSeparators = 0;
 
 					this._defaultView = StageView.create(stage);
 				},
