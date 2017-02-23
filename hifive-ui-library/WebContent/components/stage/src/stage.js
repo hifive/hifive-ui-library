@@ -3879,8 +3879,11 @@
 			name: 'h5.ui.components.stage.StageGridRow',
 
 			field: {
+				_viewCollection: null,
 				_type: null,
-				_height: null
+				_height: null,
+				_index: null,
+				_overallIndex: null
 			},
 
 			accessor: {
@@ -3893,6 +3896,16 @@
 					get: function() {
 						return this._type;
 					}
+				},
+				index: {
+					get: function() {
+						return this._index;
+					}
+				},
+				overallIndex: {
+					get: function() {
+						return this._overallIndex;
+					}
 				}
 			},
 
@@ -3900,10 +3913,13 @@
 				/**
 				 * @memberOf h5.ui.components.stage.StageGridRow
 				 */
-				constructor: function(type) {
+				constructor: function StageGridRow(viewCollection, type, index, overallIndex) {
 					super_.call(this);
+					this._viewCollection = viewCollection;
 					this._type = type;
 					this._height = 0;
+					this._index = index;
+					this._overallIndex = overallIndex;
 				},
 
 				getView: function(columnIndex) {
@@ -3924,8 +3940,11 @@
 			name: 'h5.ui.components.stage.StageGridColumn',
 
 			field: {
+				_viewCollection: null,
 				_type: null,
-				_width: null
+				_width: null,
+				_index: null,
+				_overallIndex: null
 			},
 
 			accessor: {
@@ -3938,6 +3957,16 @@
 					get: function() {
 						return this._width;
 					}
+				},
+				index: {
+					get: function() {
+						return this._index;
+					}
+				},
+				overallIndex: {
+					get: function() {
+						return this._overallIndex;
+					}
 				}
 			},
 
@@ -3945,10 +3974,13 @@
 				/**
 				 * @memberOf h5.ui.components.stage.StageGridColumn
 				 */
-				constructor: function(type) {
+				constructor: function StageGridColumn(viewCollection, type, index, overallIndex) {
 					super_.call(this);
 					this._type = type;
 					this._width = 0;
+					this._viewCollection = viewCollection;
+					this._index = index;
+					this._overallIndex = overallIndex;
 				},
 
 				getView: function(rowIndex) {
@@ -3991,6 +4023,8 @@
 
 				_numberOfRowSeparators: null,
 				_numberOfColumnSeparators: null,
+
+				_rows: null,
 
 				//TODO 仮実装
 				_defaultView: null
@@ -4077,8 +4111,12 @@
 					this._isForceActive = force === true;
 				},
 
-				getRows: function(includesSeparators) {
+				getRows: function() {
 
+				},
+
+				getRowsOfAllTypes: function() {
+					return this._rows;
 				},
 
 				getColumns: function() {
@@ -5879,45 +5917,43 @@
 		},
 
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
-
-			var numOfRowSeps = 0;
-			var numOfRows = 0;
-
-			var hDefsLen = horizontalSplitDefinitions.length;
-			for (var hi = 0; hi < hDefsLen; hi++) {
-				var def = horizontalSplitDefinitions[hi];
-				if (def.type === GRID_TYPE_SEPARATOR) {
-					numOfRowSeps++;
-				} else {
-					numOfRows++;
-				}
-			}
-
-			this._stageViewCollection._numberOfOverallRows = hDefsLen;
-			this._stageViewCollection._numberOfRows = numOfRows;
-			this._stageViewCollection._numberOfRowSeparators = numOfRowSeps;
-
-			var numOfColSeps = 0;
-			var numOfCols = 0;
-
-			var vDefsLen = verticalSplitDefinitions.length;
-			for (var vi = 0; vi < vDefsLen; vi++) {
-				var def = verticalSplitDefinitions[vi];
-				if (def.type === GRID_TYPE_SEPARATOR) {
-					numOfColSeps++;
-				} else {
-					numOfCols++;
-				}
-			}
-
-			this._stageViewCollection._numberOfOverallColumns = vDefsLen;
-			this._stageViewCollection._numberOfColumns = numOfRows;
-			this._stageViewCollection._numberOfColumnSeparators = numOfColSeps;
-
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
 				$(this.rootElement).find('.stageGridSeparator').remove();
+
+				this._stageViewCollection._numberOfOverallRows = 1;
+				this._stageViewCollection._numberOfRows = 1;
+				this._stageViewCollection._numberOfRowSeparators = 0;
+				this._stageViewCollection._rows = [StageGridRow.create(this._stageViewCollection,
+						GRID_TYPE_CONTENTS, 0, 0)];
+
 			} else {
+				var numOfRowSeps = 0;
+				var numOfRows = 0;
+
+				var stageGridRows = [];
+
+				var hDefsLen = horizontalSplitDefinitions.length;
+				for (var hi = 0; hi < hDefsLen; hi++) {
+					var def = horizontalSplitDefinitions[hi];
+					var stageGridRow;
+					if (def.type === GRID_TYPE_SEPARATOR) {
+						stageGridRow = StageGridRow.create(this._stageViewCollection,
+								GRID_TYPE_SEPARATOR, numOfRowSeps, hi);
+						numOfRowSeps++;
+					} else {
+						stageGridRow = StageGridRow.create(this._stageViewCollection,
+								GRID_TYPE_CONTENTS, numOfRows, hi);
+						numOfRows++;
+					}
+					stageGridRows.push(stageGridRow);
+				}
+
+				this._stageViewCollection._numberOfOverallRows = hDefsLen;
+				this._stageViewCollection._numberOfRows = numOfRows;
+				this._stageViewCollection._numberOfRowSeparators = numOfRowSeps;
+				this._stageViewCollection._rows = stageGridRows;
+
 				var hDef = horizontalSplitDefinitions[0];
 				this._t_splitHeight = hDef.height;
 
@@ -5936,7 +5972,27 @@
 
 			if (verticalSplitDefinitions == null) {
 				this._t_splitWidth = null;
+				this._stageViewCollection._numberOfOverallColumns = 1;
+				this._stageViewCollection._numberOfColumns = 1;
+				this._stageViewCollection._numberOfColumnSeparators = 0;
 			} else {
+				var numOfColSeps = 0;
+				var numOfCols = 0;
+
+				var vDefsLen = verticalSplitDefinitions.length;
+				for (var vi = 0; vi < vDefsLen; vi++) {
+					var def = verticalSplitDefinitions[vi];
+					if (def.type === GRID_TYPE_SEPARATOR) {
+						numOfColSeps++;
+					} else {
+						numOfCols++;
+					}
+				}
+
+				this._stageViewCollection._numberOfOverallColumns = vDefsLen;
+				this._stageViewCollection._numberOfColumns = numOfRows;
+				this._stageViewCollection._numberOfColumnSeparators = numOfColSeps;
+
 				var vDef = verticalSplitDefinitions[0];
 				this._t_splitWidth = vDef.width;
 
