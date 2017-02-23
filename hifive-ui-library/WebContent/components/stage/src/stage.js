@@ -2152,6 +2152,9 @@
 						return this._isVisible;
 					},
 					set: function(value) {
+						if (value === this._isVisible) {
+							return;
+						}
 						this._isVisible = value;
 						this._domRoot.style.display = this._isVisible ? '' : 'none';
 					}
