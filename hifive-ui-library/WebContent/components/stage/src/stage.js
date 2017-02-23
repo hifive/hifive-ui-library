@@ -2153,6 +2153,7 @@
 					},
 					set: function(value) {
 						this._isVisible = value;
+			            this._domRoot.style.display = this._isVisible ? '' : 'none';
 					}
 				}
 			},
