@@ -6094,6 +6094,9 @@
 				var view = this._stageViewCollection.getActiveView();
 				//TODO topの値でなく、高さを計算する必要がある
 				view.height = newTop;
+
+				//TODO 対応するStageGridRowの高さを正しくセットする必要がある
+				this._stageViewCollection._rows[0]._height = newTop;
 			} else {
 				var currLeft = info.$target.position().left;
 				var newLeft = currLeft + dispDx;
