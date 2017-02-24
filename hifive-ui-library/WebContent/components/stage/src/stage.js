@@ -2566,7 +2566,7 @@
 					this._renderer(context, graphics);
 
 					if (!graphics.isDirty) {
-						return;
+						return root;
 					}
 
 					graphics.render();

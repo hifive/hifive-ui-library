@@ -408,14 +408,32 @@
 				height: 5
 			}, {}];
 
+			hDef = [{
+				"height": 369,
+				"scrollRangeY": {
+					"min": 0,
+					"max": 369
+				},
+				"scrollBarMode": "always"
+			}, {
+				"type": "separator",
+				"height": 2
+			}, {
+				"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
+				"scrollRangeY": {
+					"min": 369,
+					"max": 2000
+				}
+			}];
+
 			var vDef = null; //[{}];
 
-			vDef = [{
-				width: 300
-			}, {
-				type: 'separator',
-				width: 5
-			}, {}];
+			//			vDef = [{
+			//				width: 300
+			//			}, {
+			//				type: 'separator',
+			//				width: 5
+			//			}, {}];
 
 			this._stageController.splitView(hDef, vDef);
 		},
