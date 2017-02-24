@@ -272,7 +272,7 @@
 
 			this._stageController.getLayer(LAYER_ID_EDGE).UIDragScreenScrollDirection = h5.ui.components.stage.ScrollDirection.XY;
 
-			var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
+			//var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
 
 			this._stageController.setScrollRangeY(-200, 200);
 		},
@@ -403,10 +403,12 @@
 		'input[name="splitView"] click': function(context) {
 			var hDef = [{
 				height: 300
-			},
-			{ type: 'separator', height: 5 },
-			{ height: 300 }
-			];
+			}, {
+				type: 'separator',
+				height: 5
+			}, {
+				height: 300
+			}];
 			var vDef = [{
 				width: 200
 			}];

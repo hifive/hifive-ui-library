@@ -844,6 +844,9 @@
 				y: null
 			},
 			method: {
+				/**
+				 * @memberOf 'h5.ui.components.stage.Point
+				 */
 				constructor: function Point(x, y) {
 					Point._super.call(this);
 					this.x = x;
@@ -858,6 +861,9 @@
 		var desc = {
 			name: 'h5.ui.components.stage.WorldPoint',
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.WorldPoint
+				 */
 				constructor: function WorldPoint(x, y) {
 					WorldPoint._super.call(this, x, y);
 				}
@@ -870,6 +876,9 @@
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayPoint',
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayPoint
+				 */
 				constructor: function DisplayPoint(x, y) {
 					DisplayPoint._super.call(this, x, y);
 				}
@@ -2054,11 +2063,10 @@
 
 				_rootStage: null,
 
-				//TODO 仮想化対応に伴い削除予定
-				_domRoot: null,
-
 				_groupTag: null,
-				_isVisible: null
+				_isVisible: null,
+
+				_belongingLayer: null
 			},
 			accessor: {
 				x: {
@@ -2071,8 +2079,10 @@
 						}
 						this._x = value;
 
-						var ev = Event.create('positionChange');
-						this.dispatchEvent(ev);
+						this._setDirty();
+
+						//						var ev = Event.create('positionChange');
+						//						this.dispatchEvent(ev);
 					}
 				},
 				y: {
@@ -2085,8 +2095,10 @@
 						}
 						this._y = value;
 
-						var ev = Event.create('positionChange');
-						this.dispatchEvent(ev);
+						this._setDirty();
+
+						//						var ev = Event.create('positionChange');
+						//						this.dispatchEvent(ev);
 					}
 				},
 
@@ -2100,6 +2112,8 @@
 						}
 						var oldValue = this._zIndex;
 						this._zIndex = value;
+
+						this._setDirty();
 
 						var ev = PropertyChangeEvent.create('zIndex', oldValue, this._zIndex);
 						this.dispatchEvent(ev);
@@ -2116,8 +2130,10 @@
 						}
 						this._width = value;
 
-						var ev = Event.create('sizeChange');
-						this.dispatchEvent(ev);
+						this._setDirty();
+
+						//						var ev = Event.create('sizeChange');
+						//						this.dispatchEvent(ev);
 					}
 				},
 				height: {
@@ -2130,8 +2146,10 @@
 						}
 						this._height = value;
 
-						var ev = Event.create('sizeChange');
-						this.dispatchEvent(ev);
+						this._setDirty();
+
+						//						var ev = Event.create('sizeChange');
+						//						this.dispatchEvent(ev);
 					}
 				},
 				extraData: null,
@@ -2189,21 +2207,16 @@
 					this._isVisible = true;
 
 					this._groupTag = SimpleSet.create();
+
+					this._belongingLayer = null;
 				},
 
 				setRect: function(rect) {
+					//TODO イベントをあげる回数を減らす（今はセッター側で個別に起きてしまう）。他のAPIも同様
 					this.x = rect.x;
 					this.y = rect.y;
 					this.width = rect.width;
 					this.height = rect.height;
-
-					//TODO 仮想化対応
-					setSvgAttributes(this._domRoot, {
-						x: rect.x,
-						y: rect.y,
-						width: rect.width,
-						height: rect.height
-					});
 				},
 
 				getRect: function() {
@@ -2214,12 +2227,6 @@
 				setSize: function(width, height) {
 					this.width = width;
 					this.height = height;
-
-					//TODO 仮想化対応
-					setSvgAttributes(this._domRoot, {
-						width: width,
-						height: height
-					});
 				},
 
 				remove: function() {
@@ -2231,23 +2238,11 @@
 				moveTo: function(x, y) {
 					this.x = x;
 					this.y = y;
-
-					//TODO 仮想化対応
-					setSvgAttributes(this._domRoot, {
-						x: x,
-						y: y
-					});
 				},
 
 				moveBy: function(x, y) {
 					this.x += x;
 					this.y += y;
-
-					//TODO 仮想化対応
-					setSvgAttributes(this._domRoot, {
-						x: this.x,
-						y: this.y
-					});
 				},
 
 				moveDisplayTo: function(x, y) {
@@ -2337,8 +2332,50 @@
 					return wpos;
 				},
 
-				_onAddedToRoot: function(stage) {
+				_setDirty: function() {
+					if (this._parentDU) {
+						this._parentDU.__onDirtyNotify(this);
+					}
+				},
+
+				_onAddedToRoot: function(stage, belongingLayer) {
 					this._rootStage = stage;
+					this._belongingLayer = belongingLayer;
+				},
+
+				__updateDOM: function(stageView, element) {
+					setSvgAttributes(element, {
+						x: this.x,
+						y: this.y,
+						width: this.width,
+						height: this.height
+					});
+				},
+
+				__renderDOM: function() {
+					throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
+				},
+
+				/**
+				 * 子孫の要素がdirtyになった場合に子→親に向かって呼び出されるコールバック
+				 *
+				 * @param du
+				 */
+				__onDirtyNotify: function(du) {
+					if (this._parentDU) {
+						this._parentDU.__onDirtyNotify(du);
+					}
+				},
+
+				/**
+				 * 子孫に要素が追加されたときに子⇒親に向かって呼び出されるコールバック
+				 *
+				 * @param targetDU
+				 */
+				__onDescendantAdded: function(targetDU) {
+					if (this._parentDU) {
+						this._parentDU.__onDescendantAdded(targetDU);
+					}
 				}
 			}
 		};
@@ -2346,202 +2383,204 @@
 		return classDesc;
 	});
 
-	var BasicDisplayUnit = DisplayUnit
-			.extend(function(super_) {
-				var desc = {
-					name: 'h5.ui.components.stage.BasicDisplayUnit',
-					field: {
-						/**
-						 * この要素を現在ドラッグ可能かどうか
-						 */
-						isDraggable: null,
+	var BasicDisplayUnit = DisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.BasicDisplayUnit',
+			field: {
+				/**
+				 * この要素を現在ドラッグ可能かどうか
+				 */
+				isDraggable: null,
 
-						/**
-						 * 現在この要素をドラッグ中かどうか。
-						 */
-						_isDragging: null,
+				/**
+				 * 現在この要素をドラッグ中かどうか。
+				 */
+				_isDragging: null,
 
-						_graphics: null,
-						_renderer: null,
-						_isSelected: null,
-						_isFocused: null,
-						_rootSvg: null,
+				_renderer: null,
+				_isSelected: null,
+				_isFocused: null,
 
-						_isRenderRequested: null,
-
-						/**
-						 * この要素を現在選択可能かどうか
-						 */
-						_isSelectable: null
+				/**
+				 * この要素を現在選択可能かどうか
+				 */
+				_isSelectable: null
+			},
+			accessor: {
+				isSelectable: {
+					get: function() {
+						return this._isSelectable;
 					},
-					accessor: {
-						isSelectable: {
-							get: function() {
-								return this._isSelectable;
-							},
-							set: function(value) {
-								if (this._isSelectable === value) {
-									return;
-								}
-								this._isSelectable = value;
-								if (value === false) {
-									//選択不能になったので、選択状態を解除
-									this.unselect();
-								}
-							}
-						},
-						isSelected: {
-							get: function() {
-								return this._isSelected;
-							}
-						},
-						isFocused: {
-							get: function() {
-								return this._isFocused;
-							}
-						},
-						width: {
-							get: function() {
-								return Object.getOwnPropertyDescriptor(
-										BasicDisplayUnit._super.prototype, 'width').get.call(this);
-							},
-							set: function(value) {
-								//TODO getter/setterの呼び出し方を(superメソッドの呼び出しと含めて)改善できないか
-								Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-										'width').set.call(this, value);
-								this.requestRender();
-							}
-						},
-						height: {
-							get: function() {
-								return Object.getOwnPropertyDescriptor(
-										BasicDisplayUnit._super.prototype, 'height').get.call(this);
-							},
-							set: function(value) {
-								Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-										'height').set.call(this, value);
-								this.requestRender();
-							}
-						},
-						isDragging: {
-							get: function() {
-								return this._isDragging;
-							}
+					set: function(value) {
+						if (this._isSelectable === value) {
+							return;
 						}
-					},
-					method: {
-						constructor: function BasicDisplayUnit(id) {
-							super_.call(this, id);
-
-							this._isSelectable = true;
-							this.isDraggable = true;
-							this._isDragging = false;
-
-							this._isSelected = false;
-							this._isFocused = false;
-
-							this._isRenderRequested = false;
-
-							//TODO 仮想化
-							this._domRoot = createSvgElement('svg');
-							this._domRoot.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
-							this._domRoot.setAttribute('data-h5-dyn-du-id', this.id);
-							//this.domRoot = this._graphics._rootSvg; //TODO domRoot -> rootDom, rootElement
-						},
-						/**
-						 * rendererのシグネチャ：function(graphics, du)
-						 *
-						 * @memberOf h5.ui.components.stage.BasicDisplayUnit
-						 */
-						setRenderer: function(renderer) {
-							if (this._renderer === renderer) {
-								return;
-							}
-							this._renderer = renderer;
-							if (renderer != null) {
-								//レンダラが変更かつセットされたら再描画
-								this.requestRender();
-							}
-						},
-
-						requestRender: function() {
-							if (!this._graphics) {
-								return;
-							}
-
-							if (this._isRenderRequested) {
-								return;
-							}
-							this._isRenderRequested = true;
-
-							//TODO コンテキストオブジェクトを毎回作らないようにする
-							var context = {
-								displayUnit: this,
-								rootElement: this._domRoot,
-								rowIndex: 0, //TODO 正しい値を与える
-								columnIndex: 0
-							//TODO 正しい値を与える
-							};
-
-							var that = this;
-
-							//TODO rAFをここで直接使わない
-							requestAnimationFrame(function() {
-								that._isRenderRequested = false;
-								that._renderer(context, that._graphics);
-
-								if (!that._graphics.isDirty) {
-									return;
-								}
-
-								that._graphics.render();
-							}, 0);
-						},
-
-						select: function(isExclusive) {
-							if (!this._rootStage) {
-								return;
-							}
-							this._rootStage.select(this, isExclusive);
-						},
-
-						unselect: function() {
-							if (!this._rootStage) {
-								return;
-							}
-							this._rootStage.unselect(this);
-						},
-
-						focus: function() {
-							if (!this._rootStage) {
-								return;
-							}
-							this._rootStage.focus(this);
-						},
-
-						unfocus: function(andUnselect) {
-							if (!this._rootStage) {
-								return;
-							}
-							this._rootStage.unfocus(andUnselect);
-						},
-
-						_onAddedToRoot: function(stage) {
-							//TODO _superでなくgetParentClass()を
-							BasicDisplayUnit._super.prototype._onAddedToRoot.call(this, stage);
-							this._rootStage = stage;
-
-							this._graphics = stage._createGraphics(this._domRoot);
-							this.requestRender();
+						this._isSelectable = value;
+						if (value === false) {
+							//選択不能になったので、選択状態を解除
+							this.unselect();
 						}
 					}
-				};
-				return desc;
-			});
+				},
+				isSelected: {
+					get: function() {
+						return this._isSelected;
+					}
+				},
+				isFocused: {
+					get: function() {
+						return this._isFocused;
+					}
+				},
+				width: {
+					get: function() {
+						//return super_.width.get.call(this);
+						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+								'width').get.call(this);
+					},
+					set: function(value) {
+						//						super_.width.set.call(this, value);
+						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+								'width').set.call(this, value);
+						this.requestRender();
+					}
+				},
+				height: {
+					get: function() {
+						//return super_.height.get.call(this);
+						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+								'height').get.call(this);
+					},
+					set: function(value) {
+						//super_.height.set.call(this, value);
+						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
+								'height').set.call(this, value);
+
+						this.requestRender();
+					}
+				},
+				isDragging: {
+					get: function() {
+						return this._isDragging;
+					}
+				}
+			},
+			method: {
+				constructor: function BasicDisplayUnit(id) {
+					super_.call(this, id);
+
+					this._isSelectable = true;
+					this.isDraggable = true;
+					this._isDragging = false;
+
+					this._isSelected = false;
+					this._isFocused = false;
+				},
+				/**
+				 * rendererのシグネチャ：function(graphics, du)
+				 *
+				 * @memberOf h5.ui.components.stage.BasicDisplayUnit
+				 */
+				setRenderer: function(renderer) {
+					if (this._renderer === renderer) {
+						return;
+					}
+					this._renderer = renderer;
+					if (renderer != null) {
+						//レンダラが変更かつセットされたら再描画
+						this.requestRender();
+					}
+				},
+
+				requestRender: function() {
+					if (!this._rootStage) {
+						return;
+					}
+
+					var event = Event.create('renderRequest');
+					this.dispatchEvent(event);
+				},
+
+				select: function(isExclusive) {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.select(this, isExclusive);
+				},
+
+				unselect: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.unselect(this);
+				},
+
+				focus: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.focus(this);
+				},
+
+				unfocus: function(andUnselect) {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.unfocus(andUnselect);
+				},
+
+				_onAddedToRoot: function(stage, belongingLayer) {
+					super_._onAddedToRoot.call(this, stage, belongingLayer);
+				},
+
+				__createGraphics: function(view, svgElement) {
+					var graphics = this._belongingLayer.__createGraphics(view, svgElement);
+					return graphics;
+				},
+
+				/**
+				 * @overrides オーバーライド
+				 */
+				__renderDOM: function(stageView) {
+					var root = createSvgElement('svg');
+					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
+					root.setAttribute('data-h5-dyn-du-id', this.id);
+
+					this.__updateDOM(stageView, root);
+
+					if (!this._renderer) {
+						//レンダラがセットされていない場合は空の要素を返す
+						return root;
+					}
+
+					var context = {
+						displayUnit: this,
+						rootElement: root,
+						rowIndex: 0, //TODO 正しい値を与える
+						columnIndex: 0
+					//TODO 正しい値を与える
+					};
+
+					var graphics = this.__createGraphics(stageView, root);
+
+					this._renderer(context, graphics);
+
+					if (!graphics.isDirty) {
+						return;
+					}
+
+					graphics.render();
+
+					return root;
+				}
+			}
+		};
+		return desc;
+	});
 
 	//TODO Path <- Edge などとする
 	//TODO DUからrect系をはずすか
-	var Edge = DisplayUnit.extend(function() {
+	var Edge = DisplayUnit.extend(function(super_) {
 		var ERR_CANNOT_USE_RECT_METHOD = 'EdgeではsetRectは使えません';
 
 		var desc = {
@@ -2575,7 +2614,7 @@
 				 * @memberOf h5.ui.components.stage.Edge
 				 */
 				constructor: function Edge(duFrom, duTo) {
-					Edge._super.call(this);
+					super_.call(this);
 					this._from = duFrom;
 					this._to = duTo;
 
@@ -2588,18 +2627,11 @@
 
 					this._endpointFrom = EdgeEndpoint.create();
 					this._endpointTo = EdgeEndpoint.create();
-
-					this._domRoot = createSvgElement('svg');
-					this._domRoot.setAttribute('data-stage-role', 'edge'); //TODO for debugging
-					this._domRoot.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
-
-					//TODO エッジが切れる問題対応。引かれた線に合わせてRectを調整する方法とどちらが良いか
-					this._domRoot.style.overflow = "visible";
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
-				_render: function(du) {
+				_render: function(rootSvg) {
 					//TODO 仮実装
 					//バインドされているDUの位置が変わったら再描画が必要
 					var fr = this._from.getRect();
@@ -2608,14 +2640,10 @@
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
 
-					//初回のみlineを生成
-					if (!this._svgLine) {
-						this._svgLine = createSvgElement('line');
-						this._domRoot.appendChild(this._svgLine);
-					}
-					var line = this._svgLine;
+					var line = createSvgElement('line');
+					rootSvg.appendChild(line);
 
-					line.className.baseVal = du.getClassSet().toArray().join(' ');
+					line.className.baseVal = this.getClassSet().toArray().join(' ');
 
 					var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
 					var toHAlign = this.endpointTo.junctionHorizontalAlign;
@@ -2779,14 +2807,15 @@
 					}
 
 					//TODO rAFをここで直接使わない
-					var that = this;
-					requestAnimationFrame(function() {
-						that._render(that);
-					});
+					//					var that = this;
+					//					requestAnimationFrame(function() {
+					//						that._render(that);
+					//					});
 				},
 
-				_onAddedToRoot: function(stage) {
+				_onAddedToRoot: function(stage, belongingLayer) {
 					this._rootStage = stage;
+					this._belongingLayer = belongingLayer;
 
 					this._from.addEventListener('sizeChange', this._fromSizeChangeHandler);
 					this._to.addEventListener('sizeChange', this._fromSizeChangeHandler);
@@ -2801,6 +2830,19 @@
 					this._to.removeEventListener('sizeChange', this._fromSizeChangeHandler);
 					this._from.removeEventListener('positionChange', this._fromSizeChangeHandler);
 					this._to.removeEventListener('positionChange', this._fromSizeChangeHandler);
+				},
+
+				__renderDOM: function() {
+					var rootSvg = createSvgElement('svg');
+					rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+					rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
+
+					//エッジの表示が切れないようにvisibleにする
+					rootSvg.style.overflow = "visible";
+
+					this._render(rootSvg);
+
+					return rootSvg;
 				}
 			}
 		};
@@ -2836,7 +2878,7 @@
 		return desc;
 	});
 
-	var ZIndexList = RootClass.extend(function(_super) {
+	var ZIndexList = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.ZIndexList',
 
@@ -2858,7 +2900,7 @@
 				 * @memberOf h5.ui.components.stage.ZIndexList
 				 */
 				constructor: function ZIndexList() {
-					_super.call(this);
+					super_.call(this);
 					this._keyArray = [];
 					this._map = {};
 				},
@@ -2912,6 +2954,25 @@
 					var array = this._map[key];
 					var lastIndex = array.length;
 					return array[lastIndex - 1];
+				},
+
+				/**
+				 * 現在このリストで保持している全てのValueを、ソートキーの昇順で返します。
+				 */
+				getAllAcendant: function() {
+					var ret = [];
+
+					var pushFunc = Array.prototype.push;
+
+					var keyArrayLen = this._keyArray.length;
+					for (var i = 0; i < keyArrayLen; i++) {
+						var key = this._keyArray[i];
+
+						var valuesInKey = this._map[key];
+						pushFunc.apply(ret, valuesInKey);
+					}
+
+					return ret;
 				},
 
 				getIndexInKey: function(key, value) {
@@ -2986,7 +3047,45 @@
 		return desc;
 	});
 
-	var DisplayUnitContainer = DisplayUnit.extend(function() {
+	var DisplayUnitContainerEvent = Event.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayUnitContainerEvent',
+
+			field: {
+				displayUnit: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayUnitContainerEvent
+				 */
+				constructor: function DisplayUnitContainerEvent(eventName) {
+					super_.call(this, eventName);
+				}
+			}
+		};
+		return desc;
+	});
+
+	var TransformEvent = Event.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.TransformEvent',
+			field: {
+				transform: null
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.TransformEvent
+				 */
+				constructor: function TransformEvent(type) {
+					super_.call(this, type);
+				}
+			}
+		};
+		return desc;
+	});
+
+	var DisplayUnitContainer = DisplayUnit.extend(function(super_) {
 		function getDisplayUnitByIdInner(container, id) {
 			var children = container._children;
 			for (var i = 0, len = children.length; i < len; i++) {
@@ -3011,7 +3110,6 @@
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
-				_rootG: null,
 				_children: null,
 				_scaleX: null,
 				_scaleY: null,
@@ -3029,7 +3127,7 @@
 				 * @memberOf h5.ui.components.stage.DisplayUnitContainer
 				 */
 				constructor: function DisplayUnitContainer(id) {
-					DisplayUnitContainer._super.call(this, id);
+					super_.call(this, id);
 
 					//TODO defaultValue
 					this.x = 0;
@@ -3053,20 +3151,9 @@
 
 					this._isUpdateTransformReserved = false;
 
+					this._belongingLayer = null;
+
 					this._children = [];
-
-					//TODO ここではsvgは作らない。
-					this._domRoot = createSvgElement('svg');
-					this._domRoot.setAttribute('data-stage-role', 'container'); //TODO for debugging
-
-					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
-					//width, heightの指定との整合性について検討
-					this._domRoot.style.overflow = "visible";
-
-					//rootGは<g>要素。transformを一括してかけるため、
-					//子要素は全てこの<g>の下に追加する。
-					this._rootG = createSvgElement('g');
-					this._domRoot.appendChild(this._rootG);
 				},
 
 				addDisplayUnit: function(du) {
@@ -3074,42 +3161,45 @@
 
 					this._children.push(du);
 
-					var appendTargetDU = this._zIndexList.getAppendTarget(du.zIndex);
-
 					this._zIndexList.add(du.zIndex, du);
 
-					//TODO 仮想化対応
-					var appendTargetDOM = appendTargetDU ? appendTargetDU._domRoot.nextSibling
-							: this._rootG.firstChild;
-
-					//TODO 仮想化対応
-					this._rootG.insertBefore(du._domRoot, appendTargetDOM);
-
 					if (this._rootStage) {
-						du._onAddedToRoot(this._rootStage);
+						du._onAddedToRoot(this._rootStage, this._belongingLayer);
 					}
+
+					//このコンテナにDUが追加されたことをLayerまで通知・伝播
+					this.__onDescendantAdded(du);
+
+					//TODO コンテナごとにはイベントをあげず、Layerで集約する
+					//					var event = DisplayUnitContainerEvent.create('add');
+					//					event.displayUnit = du;
+					//					this.dispatchEvent(event);
 				},
 
 				removeDisplayUnit: function(du) {
 					var idx = this._children.indexOf(du);
-					if (idx !== -1) {
-						//削除されるDU側にクリーンアップのタイミングを与える
-						//TODO ここで記述するのがよいか？
-						if (typeof du._onRemove === 'function') {
-							du._onRemove();
-						}
-
-						this._zIndexList.remove(du.zIndex, du);
-
-						this._children.splice(idx, 1);
-
-						//TODO 仮想化対応
-						this._rootG.removeChild(du._domRoot);
-						du._parentDU = null;
-
-						//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
-						du._rootStage = null;
+					if (idx === -1) {
+						return;
 					}
+
+					//削除されるDU側にクリーンアップのタイミングを与える
+					//TODO ここで記述するのがよいか？
+					if (typeof du._onRemove === 'function') {
+						du._onRemove();
+					}
+
+					this._zIndexList.remove(du.zIndex, du);
+
+					this._children.splice(idx, 1);
+
+					du._parentDU = null;
+
+					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
+					du._rootStage = null;
+
+					var event = DisplayUnitContainerEvent.create('remove');
+					event.displayUnit = du;
+					this.dispatchEvent(event);
 				},
 
 				getDisplayUnitById: function(id) {
@@ -3121,13 +3211,20 @@
 					return this._children;
 				},
 
-				_onAddedToRoot: function(rootStage) {
-					this._rootStage = rootStage;
+				/**
+				 * オーバーライド
+				 *
+				 * @overrides
+				 * @param rootStage
+				 * @param belongingLayer
+				 */
+				_onAddedToRoot: function(rootStage, belongingLayer) {
+					super_._onAddedToRoot.call(this, rootStage, belongingLayer);
 
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
 						var du = children[i];
-						du._onAddedToRoot(rootStage);
+						du._onAddedToRoot(rootStage, belongingLayer);
 					}
 				},
 
@@ -3191,19 +3288,47 @@
 				},
 
 				_updateTransform: function() {
-					if (this._isUpdateTransformReserved) {
-						return;
-					}
-					this._isUpdateTransformReserved = true;
+					//TODO View側で行う
+					//that._rootG.setAttribute('transform', transform);
 
-					var that = this;
-					//TODO rAFはここで直接呼ばない
-					requestAnimationFrame(function() {
-						that._isUpdateTransformReserved = false;
-						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-								that._scaleX, that._scaleY, -that._scrollX, -that._scrollY);
-						that._rootG.setAttribute('transform', transform);
-					});
+					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
+
+					var event = TransformEvent.create('transformUpdate');
+					event.transform = transform;
+					this.dispatchEvent(event);
+				},
+
+				__renderDOM: function(view) {
+					//TODO ここではsvgは作らない。
+					var rootSvg = createSvgElement('svg');
+					rootSvg.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
+					rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
+
+					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
+					//width, heightの指定との整合性について検討
+					rootSvg.style.overflow = "visible";
+
+					//rootGは<g>要素。transformを一括してかけるため、
+					//子要素は全てこの<g>の下に追加する。
+					var rootG = createSvgElement('g');
+					rootSvg.appendChild(rootG);
+
+					var children = this._zIndexList.getAllAcendant();
+
+					var childrenLen = children.length;
+					for (var i = 0; i < childrenLen; i++) {
+						var childDU = children[i];
+						var dom = childDU.__renderDOM(view);
+						rootG.appendChild(dom);
+					}
+
+					return rootSvg;
+				},
+
+				__addDOM: function(containerElement, targetElement) {
+					//TODO zIndex対応
+					containerElement.firstChild.appendChild(targetElement);
 				}
 			}
 		};
@@ -3212,114 +3337,124 @@
 
 
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
-	var Layer = DisplayUnitContainer.extend(function() {
-		var desc = {
-			name: 'h5.ui.components.stage.Layer',
-			field: {
-				UIDragScreenScrollDirection: null
-			},
-			method: {
-				/**
-				 * @constructor
-				 * @memberOf h5.ui.components.stage.Layer
-				 */
-				constructor: function Layer(id) {
-					Layer._super.call(this);
+	var Layer = DisplayUnitContainer
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.Layer',
+					field: {
+						UIDragScreenScrollDirection: null
+					},
+					method: {
+						/**
+						 * @constructor
+						 * @memberOf h5.ui.components.stage.Layer
+						 */
+						constructor: function Layer(id, stage) {
+							super_.call(this);
 
-					this.id = id;
+							this.id = id;
+							this.UIDragScreenScrollDirection = ScrollDirection.XY;
+							this._rootStage = stage;
+							this._belongingLayer = this;
+						},
 
-					//TODO ここではsvgは作らない。
-					this._domRoot.setAttribute('data-stage-role', 'layer');
+						/**
+						 * オーバーライド
+						 *
+						 * @returns
+						 */
+						getWorldGlobalPosition: function() {
+							var p = WorldPoint.create(this.x, this.y);
+							return p;
+						},
 
-					this.UIDragScreenScrollDirection = ScrollDirection.XY;
-				},
+						/**
+						 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+						 *
+						 * @param worldX
+						 * @param worldY
+						 */
+						moveTo: function(worldX, worldY) {
+							throw new Error(
+									'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
 
-				/**
-				 * オーバーライド
-				 *
-				 * @returns
-				 */
-				getWorldGlobalPosition: function() {
-					var p = WorldPoint.create(this.x, this.y);
-					return p;
-				},
+							//							this.x = worldX;
+							//							this.y = worldY;
+							//							this._updateTransform();
+						},
 
-				/**
-				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
-				 *
-				 * @param worldX
-				 * @param worldY
-				 */
-				moveTo: function(worldX, worldY) {
-					this.x = worldX;
-					this.y = worldY;
-					this._updateTransform();
-				},
+						/**
+						 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+						 *
+						 * @param worldX
+						 * @param worldY
+						 */
+						moveBy: function(worldX, worldY) {
+							throw new Error(
+									'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
 
-				/**
-				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
-				 *
-				 * @param worldX
-				 * @param worldY
-				 */
-				moveBy: function(worldX, worldY) {
-					var x = this.x + worldX;
-					var y = this.y + worldY;
-					this.scrollTo(x, y);
-				},
+							//							var x = this.x + worldX;
+							//							var y = this.y + worldY;
+							//							this.scrollTo(x, y);
+						},
 
-				/**
-				 * オーバーライド。レイヤーではtranslate量にDUのx,yの値を用いる。
-				 *
-				 * @param worldX
-				 * @param worldY
-				 */
-				_updateTransform: function() {
-					//TODO Reservedチェック部分と、実際にupdateする部分をわける方がよいか
-					if (this._isUpdateTransformReserved) {
-						return;
-					}
-					this._isUpdateTransformReserved = true;
+						__createGraphics: function(stageView, svgRoot) {
+							var SVGGraphics = h5.cls.manager
+									.getClass('h5.ui.components.stage.SVGGraphics');
 
-					var that = this;
-					//TODO rAFはここで直接呼ばない
-					requestAnimationFrame(function() {
-						that._isUpdateTransformReserved = false;
+							var defs = stageView.getDefsForLayer(this);
 
-						var scaleXStr = getNormalizedValueString(that._scaleX);
-						var scaleYStr = getNormalizedValueString(that._scaleY);
-						var tx = getNormalizedValueString(that.x);
-						var ty = getNormalizedValueString(that.y);
+							var graphics = SVGGraphics.create(svgRoot, defs);
+							return graphics;
+						},
 
-						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-								scaleXStr, scaleYStr, tx, ty);
-						that._rootG.setAttribute('transform', transform);
-					});
+						__renderDOM: function() {
+							var root = super_.__renderDOM.call(this);
+							//roleを上書き
+							root.setAttribute('data-stage-role', 'layer');
+							return root;
+						},
 
-					//小数表現を正規化して小数文字列を返す
-					function getNormalizedValueString(value) {
-						var PRECISION = 10;
+						/**
+						 * オーバーライド
+						 *
+						 * @param du
+						 */
+						__onDirtyNotify: function(du) {
+							var event = DisplayUnitContainerEvent.create('displayUnitDirty');
+							event.displayUnit = du;
+							this.dispatchEvent(event);
+						},
 
-						var intPart = Math.floor(value);
-						if (value === intPart) {
-							//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
-							return '' + intPart;
+						/**
+						 * オーバーライド
+						 *
+						 * @param targetDU
+						 * @param parentDU
+						 */
+						__onDescendantAdded: function(targetDU) {
+							var event = DisplayUnitContainerEvent.create('displayUnitAdd');
+							event.displayUnit = targetDU;
+							this.dispatchEvent(event);
+						},
+
+						/**
+						 * 属するレイヤーは自分自身なので引数は無視する
+						 *
+						 * @param stage
+						 * @param belongingLayer
+						 */
+						_onAddedToRoot: function(stage, belongingLayer) {
+							var children = this._children;
+							for (var i = 0, len = children.length; i < len; i++) {
+								var du = children[i];
+								du._onAddedToRoot(this._rootStage, this._belongingLayer);
+							}
 						}
-						var str = value.toString();
-						var dotIdx = str.indexOf('.');
-						if (dotIdx === -1) {
-							return '' + intPart;
-						}
-						var decstr = str.slice(dotIdx + 1);
-						var len = decstr.length > PRECISION ? PRECISION : decstr.length;
-						var ret = '' + intPart + '.' + decstr.slice(0, len);
-						return ret;
 					}
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	var BulkOperation = RootClass.extend(function() {
 		var desc = {
@@ -3414,6 +3549,7 @@
 
 	var RootClass = h5.cls.RootClass;
 	var stageModule = h5.ui.components.stage;
+	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
 
@@ -3610,7 +3746,7 @@
 				getDisplayPositionFromDisplayOffset: function(displayOffsetX, displayOffsetY) {
 					var dispX = this.displayX + displayOffsetX;
 					var dispY = this.displayY + displayOffsetY;
-					var point = stageModule.DisplayPoint.create(dispX, dispY);
+					var point = DisplayPoint.create(dispX, dispY);
 					return point;
 				},
 
@@ -3640,7 +3776,7 @@
 				getDisplayPosition: function(worldX, worldY) {
 					var dispX = worldX * this._scaleX;
 					var dispY = worldY * this._scaleY;
-					var point = stageModule.DisplayPoint.create(dispX, dispY);
+					var point = DisplayPoint.create(dispX, dispY);
 					return point;
 				},
 
@@ -3700,7 +3836,7 @@
 				toWorldPosition: function(displayX, displayY) {
 					var x;
 					var y;
-					if (arguments.length === 1 && stageModule.DisplayPoint.isClassOf(displayX)) {
+					if (arguments.length === 1 && DisplayPoint.isClassOf(displayX)) {
 						x = displayX.x;
 						y = displayX.y;
 					} else {
@@ -3732,101 +3868,602 @@
 		return desc;
 	});
 
-	var StageView = RootClass.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.StageView',
+	var StageView = RootClass
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.StageView',
 
-			field: {
-				_stage: null,
+					field: {
+						_stage: null,
 
-				_rootElement: null,
-				_foremostLayer: null,
-				_viewport: null,
+						_x: null,
+						_y: null,
 
-			},
+						_coordinateConverter: null,
 
-			accessor: {
-				width: {
-					get: function() {
-						return this._stage._t_splitWidth;
+						_rootElement: null,
+						_foremostLayer: null,
+						_viewport: null,
+
+						/**
+						 * 実際にDOMを描画する範囲
+						 */
+						_renderRect: null,
+
+						_layerDOMs: null,
+
+						_layerElementMap: null,
+
+						_isUpdateTransformReserved: null,
+
+						_width: null,
+						_height: null,
+
+						_scrollRangeX: null,
+						_scrollRangeY: null,
+
+						_scaleRangeX: null,
+						_scaleRangeY: null,
+
+						_layerDefsMap: null
 					},
-					set: function(value) {
-						this._stage._t_splitWidth = value;
-						this._stage.refresh();
-					}
-				},
-				height: {
-					get: function() {
-						return this._stage._t_splitHeight;
+
+					accessor: {
+						x: {
+							get: function() {
+								return this._x;
+							},
+							set: function(value) {
+								this._x = value;
+
+								if (this._rootElement) {
+									$(this._rootElement).css({
+										left: value
+									});
+								}
+							}
+						},
+						y: {
+							get: function() {
+								return this._y;
+							},
+							set: function(value) {
+								this._y = value;
+
+								if (this._rootElement) {
+									$(this._rootElement).css({
+										top: value
+									});
+								}
+							}
+						},
+						width: {
+							get: function() {
+								return this._width;
+							},
+							set: function(value) {
+								this._width = value;
+
+								if (this._rootElement) {
+									$(this._rootElement).css({
+										width: value
+									});
+
+									this._layerElementMap.forEach(function(dom, key, map) {
+										stageModule.SvgUtil.setAttributes(dom, {
+											width: value
+										});
+									});
+								}
+							}
+						},
+						height: {
+							get: function() {
+								return this._height;
+							},
+							set: function(value) {
+								this._height = value;
+
+								if (this._rootElement) {
+									$(this._rootElement).css({
+										height: value
+									});
+
+									this._layerElementMap.forEach(function(dom, key, map) {
+										stageModule.SvgUtil.setAttributes(dom, {
+											height: value
+										});
+									});
+								}
+							}
+						},
+						coordinateConverter: {
+							get: function() {
+								return this._coordinateConverter;
+							}
+						}
 					},
-					set: function(value) {
-						this._stage._t_splitHeight = value;
-						this._stage.refresh();
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.StageView
+						 */
+						constructor: function StageView(stage) {
+							super_.call(this);
+							this._stage = stage;
+							this._x = 0;
+							this._y = 0;
+							this._width = 0;
+							this._height = 0;
+
+							this._viewport = Viewport.create();
+
+							this._layerDOMs = [];
+
+							this._layerElementMap = new Map();
+
+							this._layerDefsMap = new Map();
+
+							this._isUpdateTransformReserved = false;
+
+							this._scrollRangeX = {
+								min: null,
+								max: null
+							};
+
+							this._scrollRangeY = {
+								min: null,
+								max: null
+							};
+
+							this._scaleRangeX = {
+								min: ABSOLUTE_SCALE_MIN,
+								max: null
+							};
+
+							this._scaleRangeY = {
+								min: ABSOLUTE_SCALE_MIN,
+								max: null
+							};
+
+							this._coordinateConverter = CoordinateConverter.create(this._viewport);
+						},
+
+						init: function() {
+							var $root = $('<div class="h5-stage-view-root"></div>');
+							$root.css({
+								position: 'absolute',
+								overflow: 'hidden',
+								margin: 0,
+								padding: 0,
+								width: this._width,
+								height: this._height,
+								top: this._y,
+								left: this._x
+							});
+							this._rootElement = $root[0];
+							this._stage.rootElement.appendChild(this._rootElement);
+
+							var layers = this._stage._layers;
+
+							var that = this;
+							var duAddListener = function(event) {
+								that._onDUAdd(event);
+							};
+							var duDirtyListener = function(event) {
+								that._onDUDirty(event);
+							};
+
+							var len = layers.length;
+							for (var i = 0; i < len; i++) {
+								var layer = layers[i];
+								var dom = layer.__renderDOM();
+
+								//SVGのwidth, heightはSVGAttirubute
+								//top, leftはゼロ（初期値）
+								$(dom).css({
+									position: 'absolute',
+									overflow: 'hidden',
+									margin: 0,
+									padding: 0
+								});
+
+								layer.addEventListener('displayUnitAdd', duAddListener);
+								layer.addEventListener('displayUnitDirty', duDirtyListener);
+
+								stageModule.SvgUtil.setAttributes(dom, {
+									width: this._width,
+									height: this._height
+								});
+
+								//先にaddしたレイヤーの方が手前に来るようにする
+								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
+								this._rootElement.insertBefore(dom, this._rootElement.firstChild);
+								this._layerElementMap.set(layer, dom);
+							}
+
+							this._updateLayerScrollPosition();
+						},
+
+						setSize: function(displayWidth, displayHeight) {
+							this.width = displayWidth;
+							this.height = displayHeight;
+						},
+
+						getScrollPosition: function() {
+							var pos = DisplayPoint.create(this._viewport.displayX,
+									this._viewport.displayY);
+							return pos;
+						},
+
+						scrollTo: function(dispX, dispY) {
+							this._scrollTo(dispX, dispY);
+						},
+
+						_scrollTo: function(dispX, dispY) {
+							var oldPos = DisplayPoint.create(this._viewport.displayX,
+									this._viewport.displayY);
+
+							var actualDispX = StageUtil.clamp(dispX, this._scrollRangeX.min,
+									this._scrollRangeX.max);
+							var actualDispY = StageUtil.clamp(dispY, this._scrollRangeY.min,
+									this._scrollRangeY.max);
+
+							var actualDiff = {
+								dx: actualDispX - this._viewport.displayX,
+								dy: actualDispY - this._viewport.displayY
+							};
+
+							if (this._viewport.displayX === actualDispX
+									&& this._viewport.displayY === actualDispY) {
+								//サイズが現在と変わらなかったら何もしない
+								return actualDiff;
+							}
+
+							this._viewport.scrollTo(actualDispX, actualDispY);
+
+							this._updateLayerScrollPosition();
+
+							var newPos = DisplayPoint.create(actualDispX, actualDispY);
+
+							//TODO 現在はこの場所でイベントを出しているが、
+							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
+							//描画更新後にイベントをあげるようにする
+							var evArg = {
+								scrollPosition: {
+									oldValue: oldPos,
+									newValue: newPos,
+									isChanged: true
+								},
+								scale: {
+									oldValue: {
+										x: this._viewport.scaleX,
+										y: this._viewport.scaleY
+									},
+									newValue: {
+										x: this._viewport.scaleX,
+										y: this._viewport.scaleY
+									},
+									isChanged: false
+								}
+							};
+							//			this.trigger(EVENT_SIGHT_CHANGE, evArg);
+
+							return actualDiff;
+						},
+
+						scrollBy: function(displayDx, displayDy) {
+							this._scrollBy(displayDx, displayDy);
+						},
+
+						_scrollBy: function(displayDx, displayDy) {
+							if (displayDx === 0 && displayDy === 0) {
+								return;
+							}
+
+							var dx = this._viewport.displayX + displayDx;
+							var dy = this._viewport.displayY + displayDy;
+							var actualDiff = this._scrollTo(dx, dy);
+							return actualDiff;
+						},
+
+						scrollWorldTo: function(worldX, worldY) {
+							var dispPos = this._viewport.getDisplayPosition(worldX, worldY);
+							this.scrollTo(dispPos.x, dispPos.y);
+						},
+
+						scrollWorldBy: function(worldDx, worldDy) {
+							if (worldDx === 0 && worldDy === 0) {
+								return;
+							}
+
+							var dx = this._viewport.worldX + worldDx;
+							var dy = this._viewport.worldY + worldDy;
+							this.scrollWorldTo(dx, dy);
+						},
+
+						/**
+						 * このステージの拡大率を設定します。スケール値はワールド座標系に対して設定されます。<br>
+						 * つまり、scaleを2にすると、画面上は各オブジェクトが2倍の大きさの大きさで表示されます。<br>
+						 * このメソッドを呼び出すことは、すべてのレイヤーのsetScale()に同じ値を設定することと等価です。<br>
+						 * ただし、DisplayUnit.setScale()と異なり、拡縮時の中心位置を指定することができます。
+						 *
+						 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
+						 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
+						 * @param displayOffsetX
+						 *            拡縮時の中心点のx（ディスプレイ座標系におけるoffsetX(stageのルート要素の左上を基準とした座標)）
+						 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
+						 */
+						setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
+							var actualScaleX = StageUtil.clamp(scaleX, this._scaleRangeX.min,
+									this._scaleRangeX.max);
+							var actualScaleY = StageUtil.clamp(scaleY, this._scaleRangeY.min,
+									this._scaleRangeY.max);
+
+							if (scaleX == null) {
+								actualScaleX = this._viewport.scaleX;
+							}
+							if (scaleY == null) {
+								actualScaleY = this._viewport.scaleY;
+							}
+
+							if (actualScaleX === this._viewport.scaleX
+									&& actualScaleY === this._viewport.scaleY) {
+								return;
+							}
+
+							var offX = displayOffsetX;
+							var offY = displayOffsetY;
+
+							if (displayOffsetX == null && displayOffsetY == null) {
+								var rootOffset = $(this._rootElement).offset();
+								if (displayOffsetX == null) {
+									offX = rootOffset.left + this._viewport.displayWidth / 2;
+								}
+								if (displayOffsetY == null) {
+									offY = rootOffset.top + this._viewport.displayHeight / 2;
+								}
+							}
+
+							var scaleCenter = this._viewport.getWorldPositionFromDisplayOffset(
+									offX, offY);
+
+							var oldScrollPos = DisplayPoint.create(this._viewport.displayX,
+									this._viewport.displayY);
+							var oldScaleX = this._viewport.scaleX;
+							var oldScaleY = this._viewport.scaleY;
+
+							this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x,
+									scaleCenter.y);
+
+							//TODO clampする、もしくはscrollTo()する
+							var newScrollPos = DisplayPoint.create(this._viewport.displayX,
+									this._viewport.displayY);
+
+							var isScrollPoisitionChanged = true;
+							if (oldScrollPos.x === newScrollPos.x
+									&& oldScrollPos.y === newScrollPos.y) {
+								isScrollPoisitionChanged = false;
+							}
+
+							this._updateLayerScrollPosition();
+
+							//TODO 現在はこの場所でイベントを出しているが、
+							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
+							//描画更新後にイベントをあげるようにする
+							//TODO StageView側からイベントをあげて、それをさらにStageControllerであげる
+							var evArg = {
+								scrollPosition: {
+									oldValue: oldScrollPos,
+									newValue: newScrollPos,
+									isChanged: isScrollPoisitionChanged
+								},
+								scale: {
+									oldValue: {
+										x: oldScaleX,
+										y: oldScaleY
+									},
+									newValue: {
+										x: actualScaleX,
+										y: actualScaleY
+									},
+									isChanged: true
+								}
+							};
+							//TODO 仮実装
+							return evArg;
+							//							this.trigger(EVENT_SIGHT_CHANGE, evArg);
+						},
+
+						setScaleRangeX: function(min, max) {
+							var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
+
+							this._scaleRangeX = {
+								min: actualMin,
+								max: max
+							};
+
+							this.setScale(this._viewport.scaleX, null);
+						},
+
+						setScaleRangeY: function(min, max) {
+							var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
+
+							this._scaleRangeY = {
+								min: actualMin,
+								max: max
+							};
+
+							this.setScale(null, this._viewport.scaleY);
+						},
+
+						setScrollRangeX: function(minDisplayX, maxDisplayX) {
+							//TODO 同じ列のものは全て同じ設定を適用させる？
+							//それとも、このメソッドはStageViewでは直接提供せず Collection側で定義させる？
+							//TODO 仮実装
+							return this._stage.setScrollRangeX(minDisplayX, maxDisplayX);
+						},
+
+						setScrollRangeY: function(minDisplayY, maxDisplayY) {
+							//TODO 仮実装
+							return this._stage.setScrollRangeY(minDisplayY, maxDisplayY);
+						},
+
+						getDefsForLayer: function(layer) {
+							var defs = this._layerDefsMap.get(layer);
+
+							if (!defs) {
+								var layerElement = this._layerElementMap.get(layer);
+								var element = document.createElementNS(
+										'http://www.w3.org/2000/svg', 'defs');
+								layerElement.appendChild(element);
+
+								var SVGDefinitions = h5.cls.manager
+										.getClass('h5.ui.components.stage.SVGDefinitions');
+								defs = SVGDefinitions.create(element);
+								this._layerDefsMap.set(layer, defs);
+							}
+
+							return defs;
+						},
+
+						_updateLayerScrollPosition: function() {
+							//							if (this._isUpdateTransformReserved) {
+							//								return;
+							//							}
+							//							this._isUpdateTransformReserved = true;
+
+							//							var that = this;
+							//TODO rAFはここで直接呼ばない
+							//							requestAnimationFrame(function() {
+							//								that._isUpdateTransformReserved = false;
+
+							var layers = this._stage._layers;
+
+							for (var i = 0, len = layers.length; i < len; i++) {
+								var layer = layers[i];
+
+								var scrollX = -this._viewport.worldX;
+								var scrollY = -this._viewport.worldY;
+
+								switch (layer.UIDragScreenScrollDirection) {
+								case SCROLL_DIRECTION_XY:
+									break;
+								case SCROLL_DIRECTION_X:
+									scrollY = 0;
+									break;
+								case SCROLL_DIRECTION_Y:
+									scrollX = 0;
+									break;
+								case SCROLL_DIRECTION_NONE:
+								default:
+									scrollX = 0;
+									scrollY = 0;
+									break;
+								}
+
+								var dom = this._layerElementMap.get(layer);
+								this._updateTransform(dom, scrollX, scrollY);
+
+								//								layer.setScale(that._viewport.scaleX, that._viewport.scaleY);
+								//								layer.moveTo(scrollX, scrollY);
+							}
+
+							//TODO foremostLayerは2種類必要：グローバルとViewLocal
+							//								that._foremostLayer.setScale(that._viewport.scaleX,
+							//										that._viewport.scaleY);
+							//								that._foremostLayer.moveTo(-that._viewport.worldX,
+							//										-that._viewport.worldY);
+							//							});
+						},
+
+
+						/**
+						 * レイヤーではtranslate量にDUのx,yの値を用いる。
+						 *
+						 * @param worldX
+						 * @param worldY
+						 */
+						_updateTransform: function(element, scrollX, scrollY) {
+							var scaleXStr = getNormalizedValueString(this._viewport.scaleX);
+							var scaleYStr = getNormalizedValueString(this._viewport.scaleY);
+							var tx = getNormalizedValueString(scrollX);
+							var ty = getNormalizedValueString(scrollY);
+
+							var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+									scaleXStr, scaleYStr, tx, ty);
+
+							//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
+							//その<g>にtransformを設定する。
+							element.firstChild.setAttribute('transform', transform);
+
+							/* 処理ここまで */
+
+							//小数表現を正規化して小数文字列を返す
+							function getNormalizedValueString(value) {
+								var PRECISION = 10;
+
+								var intPart = Math.floor(value);
+								if (value === intPart) {
+									//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
+									return '' + intPart;
+								}
+								var str = value.toString();
+								var dotIdx = str.indexOf('.');
+								if (dotIdx === -1) {
+									return '' + intPart;
+								}
+								var decstr = str.slice(dotIdx + 1);
+								var len = decstr.length > PRECISION ? PRECISION : decstr.length;
+								var ret = '' + intPart + '.' + decstr.slice(0, len);
+								return ret;
+							}
+						},
+
+						_onDUDirty: function(event) {
+							var du = event.displayUnit;
+
+							//TODO findでなくDOMマップを持つ
+							var $dom = $(this._rootElement).find(
+									'[data-h5-dyn-du-id="' + du.id + '"]');
+							if (!$dom[0]) {
+								//対応するDOMが存在しない
+								return;
+							}
+
+							du.__updateDOM(this, $dom[0]);
+						},
+
+						_onDUAdd: function(event) {
+							var du = event.displayUnit;
+							var dom = du.__renderDOM(this);
+
+							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
+							var $parent = $(this._rootElement).find(
+									'[data-h5-dyn-du-id="' + du.parentDisplayUnit.id + '"]');
+
+							//DOMの追加方法は
+							var parentDU = du.parentDisplayUnit;
+
+							var parentDOM = $parent[0];
+
+							if (parentDOM === undefined) {
+								//親に対応するDOMが見つからなかったということは
+								//レイヤーに直接追加されたもの
+								//（コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する）
+								//$(this._rootElement).append(dom);
+
+								//このparentDUは必ずLayer
+								parentDOM = this._layerElementMap.get(parentDU);
+							}
+							parentDU.__addDOM(parentDOM, dom);
+
+							console.log('du added id =' + du.id);
+						}
 					}
-				}
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.StageView
-				 */
-				constructor: function StageView(stage) {
-					super_.call(this);
-					this._stage = stage;
-				},
-
-				setSize: function(displayWidth, displayHeight) {
-					this.width = displayWidth;
-					this.height = displayHeight;
-				},
-
-				getScrollPosition: function() {
-					return this._stage.getScrollPosition();
-				},
-
-				scrollBy: function(displayDx, displayDy) {
-					return this._stage.scrollBy(displayDx, displayDy);
-				},
-
-				scrollTo: function(displayX, displayY) {
-					return this._stage.scrollTo(displayX, displayY);
-				},
-
-				scrollWorldBy: function(worldDx, worldDy) {
-					return this._stage.scrollWorldBy(worldDx, worldDy);
-				},
-
-				scrollWorldTo: function(worldX, worldY) {
-					return this._stage.scrollWorldTo(worldX, worldY);
-				},
-
-				setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
-					return this._stage.setScale(scaleX, scaleY, displayOffsetX, displayOffsetY);
-				},
-
-				setScaleRangeX: function(min, max) {
-					return this._stage.setScaleRangeX(min, max);
-				},
-
-				setScaleRangeY: function(min, max) {
-					return this._stage.setScaleRangeY(min, max);
-				},
-
-				setScrollRangeX: function(minDisplayX, maxDisplayX) {
-					//TODO 同じ列のものは全て同じ設定を適用させる？
-					//それとも、このメソッドはStageViewでは直接提供せず Collection側で定義させる？
-					//TODO 仮実装
-					return this._stage.setScrollRangeX(minDisplayX, maxDisplayX);
-				},
-
-				setScrollRangeY: function(minDisplayY, maxDisplayY) {
-					//TODO 仮実装
-					return this._stage.setScrollRangeY(minDisplayY, maxDisplayY);
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	RootClass.extend(function(super_) {
 		var desc = {
@@ -3881,7 +4518,7 @@
 			field: {
 				_viewCollection: null,
 				_type: null,
-				_height: null,
+				//_height: null,
 				_index: null,
 				_overallIndex: null
 			},
@@ -3889,7 +4526,17 @@
 			accessor: {
 				height: {
 					get: function() {
-						return this._height;
+						try {
+							var firstColumnView = this._viewCollection.getView(this._index, 0);
+							return firstColumnView.height;
+						} catch (e) {
+							//行にViewがなければ0
+							//格子状のグリッドなので、Rowがあれば必ず1つは列が存在するので
+							//ここには到達しないはず
+							return 0;
+						}
+
+						//return this._height;
 					}
 				},
 				type: {
@@ -3926,9 +4573,16 @@
 					if (this._type === GRID_TYPE_SEPARATOR) {
 						return null; //TODO 例外を出す方が良い？
 					}
+					return this._viewCollection.getView(this._index, columnIndex);
+				},
 
-					//TODO
-					return null;
+				getScrollY: function() {
+					if (this._type === GRID_TYPE_SEPARATOR) {
+						//セパレータの場合はスクロールしないので常に0
+						return 0;
+					}
+					var firstColumnView = this._viewCollection.getView(this._index, 0);
+					return firstColumnView.getScrollPosition().y;
 				}
 			}
 		};
@@ -4011,9 +4665,9 @@
 				_isForceActive: null,
 
 				/**
-				 * @private ビューの集合。行番号 -> 列番号 の二次元配列
+				 * @private ビューの集合。"行番号_列番号" -> Viewのマップ
 				 */
-				_views: null,
+				_viewMap: null,
 
 				_numberOfOverallRows: null,
 				_numberOfOverallColumns: null,
@@ -4071,7 +4725,9 @@
 				constructor: function GridStageViewCollection(stage) {
 					super_.call(this);
 					this._stage = stage;
-					this._views = [];
+
+					// 行番号 -> { 列番号 -> StageView } という二次元マップ
+					this._viewMap = {};
 
 					this._numberOfOverallRows = 1;
 					this._numberOfOverallColumns = 1;
@@ -4079,8 +4735,6 @@
 					this._numberOfColumns = 1;
 					this._numberOfRowSeparators = 0;
 					this._numberOfColumnSeparators = 0;
-
-					this._defaultView = StageView.create(stage);
 				},
 
 				/**
@@ -4090,14 +4744,39 @@
 				 * @param columnIndex 列番号（画面左から順に連番、0オリジン）
 				 */
 				getView: function(rowIndex, columnIndex) {
-					return this._defaultView;
+					var row = this._viewMap[rowIndex];
+					if (!row) {
+						throw new Error('指定された行にはViewはありません。 rowIndex = ' + rowIndex);
+					}
+
+					var view = row[columnIndex];
+					if (!view) {
+						throw new Error('指定された位置にはViewはありません。');
+					}
+
+					return view;
+				},
+
+				getViews: function() {
+					var ret = [];
+
+					var that = this;
+					Object.keys(this._viewMap).forEach(function(rowIndex, index, array) {
+						var row = that._viewMap[rowIndex];
+						Object.keys(row).forEach(function(columnIndex, idx, ary) {
+							ret.push(row[columnIndex]);
+						});
+					});
+
+					return ret;
 				},
 
 				/**
 				 * 現在アクティブなStageViewを取得します。
 				 */
 				getActiveView: function() {
-					return this._defaultView;
+					//TODO activeを判定
+					return this.getView(0, 0);
 				},
 
 				/**
@@ -4108,11 +4787,22 @@
 				 */
 				setActiveView: function(stageView, force) {
 					//stageView.isActive = true;
+					//this._defaultView = stageView;
 					this._isForceActive = force === true;
 				},
 
 				getRows: function() {
+					var ret = [];
 
+					var rows = this._rows;
+					for (var i = 0, len = rows.length; i < len; i++) {
+						var row = rows[i];
+						if (row.type === GRID_TYPE_CONTENTS) {
+							ret.push(row);
+						}
+					}
+
+					return ret;
 				},
 
 				getRowsOfAllTypes: function() {
@@ -4131,8 +4821,13 @@
 				//					return [this._defaultView];
 				//				},
 
-				_addView: function(stageView, rowIndex, columnIndex) {
-
+				_addView: function(view, rowIndex, columnIndex) {
+					var colMap = this._viewMap[rowIndex];
+					if (!colMap) {
+						colMap = {};
+						this._viewMap[rowIndex] = colMap;
+					}
+					colMap[columnIndex] = view;
 				}
 			}
 		};
@@ -4141,7 +4836,6 @@
 
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
-	var DisplayPoint = stageModule.DisplayPoint;
 	var BasicDisplayUnit = h5.cls.manager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 	var Edge = h5.cls.manager.getClass('h5.ui.components.stage.Edge');
 
@@ -4291,27 +4985,6 @@
 
 		//(UI操作によるかどうかは関係なく)スクロールする範囲を配列で指定。
 		//{ min: , max: } をディスプレイ座標で指定。
-		_scrollRangeX: {
-			min: null,
-			max: null
-		},
-
-		_scrollRangeY: {
-			min: null,
-			max: null
-		},
-
-		_scaleRangeX: {
-			min: ABSOLUTE_SCALE_MIN,
-			max: null
-		},
-
-		_scaleRangeY: {
-			min: ABSOLUTE_SCALE_MIN,
-			max: null
-		},
-
-		coordinateConverter: null,
 
 		//TODO dependsOn()
 		_selectionLogic: h5.ui.SelectionLogic,
@@ -4467,53 +5140,29 @@
 			return ret;
 		},
 
-		_getDefs: function() {
-			if (!this._defs) {
-				var SVGDefinitions = h5.cls.manager
-						.getClass('h5.ui.components.stage.SVGDefinitions');
-				var element = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-				this._defs = SVGDefinitions.create(element);
-				this._duRoot.appendChild(element);
-			}
-			return this._defs;
-		},
-
-		_createGraphics: function(svgRoot) {
-			var SVGGraphics = h5.cls.manager.getClass('h5.ui.components.stage.SVGGraphics');
-			var graphics = SVGGraphics.create(svgRoot, this._getDefs());
-			return graphics;
-		},
-
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
-			this._viewport = Viewport.create();
 			this.UIDragMode = DRAG_MODE_AUTO;
-			this.coordinateConverter = CoordinateConverter.create(this._viewport);
 
 			this._stageViewCollection = GridStageViewCollection.create(this);
 		},
 
 		__ready: function() {
-			if (!this._duRoot) {
-				var rootSvg = stageModule.SvgUtil.createElement('svg');
-				this._duRoot = rootSvg;
-				this._layerRootG = stageModule.SvgUtil.createElement('g');
-				this._duRoot.appendChild(this._layerRootG);
+			//グローバルForemostLayerはStageに直接追加
+			this._foremostLayer = stageModule.Layer.create(LAYER_ID_FOREMOST, this);
+			//this.rootElement.appendChild(this._foremostLayer._domRoot);
 
-				//常にForegroundに表示されるレイヤーを追加
-				this._foremostLayer = stageModule.Layer.create(LAYER_ID_FOREMOST);
-				this._layerRootG.appendChild(this._foremostLayer._domRoot);
-				stageModule.SvgUtil.setAttribute(this._foremostLayer._domRoot, 'pointer-events',
-						'none');
-				this._foremostLayer._onAddedToRoot(this);
-			}
+			//TODO グローバルなForemostLayerはただのdiv/svgとし、独自処理にする
+			//			stageModule.SvgUtil
+			//					.setAttribute(this._foremostLayer._domRoot, 'pointer-events', 'none');
 
+			this._foremostLayer._onAddedToRoot(this);
+
+			//overflow: hiddenは各StageView側で設定
 			$(this.rootElement).css({
-				position: 'absolute',
-				overflow: 'hidden'
+				position: 'absolute'
 			});
-			this.rootElement.appendChild(this._duRoot);
 
 			this.refresh(true);
 		},
@@ -4640,9 +5289,11 @@
 			};
 			var bizEvent = $.event.fix(event.originalEvent);
 			bizEvent.type = triggerEventName;
-			bizEvent.target = du._domRoot; //TODO 仮想化対応
-			bizEvent.currentTarget = du._domRoot;
-			$(du._domRoot).trigger(bizEvent, evArg);
+			bizEvent.target = null; //du._domRoot; //TODO 仮想化対応
+			bizEvent.currentTarget = null; // du._domRoot;
+
+			//TODO クリックされたDUの実DOMからイベントをあげるのが元々の仕様。ただし、分割が入ったのでDOM依存はよくないかも？
+			$(this.rootElement).trigger(bizEvent, evArg);
 
 			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
 				//DUがselectableでない場合は選択処理はしない。
@@ -5311,37 +5962,38 @@
 
 		_updateRootSize: function(width, height) {
 			//TODO 仮実装。Viewの分割に対応。
-			if (this._t_splitHeight != null) {
-				height = this._t_splitHeight;
-			}
-			if (this._t_splitWidth != null) {
-				width = this._t_splitWidth;
-			}
+			//			if (this._t_splitHeight != null) {
+			//				height = this._t_splitHeight;
+			//			}
+			//			if (this._t_splitWidth != null) {
+			//				width = this._t_splitWidth;
+			//			}
 
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
-			//TODO svgのwidth, heightはsetAttribute()を使うのが正しい？？NS確認
-			stageModule.SvgUtil.setAttributes(this._duRoot, {
-				width: w,
-				height: h
-			});
-
-			this._viewport.setDisplaySize(w, h);
-			this._updateViewBox();
+			var views = this._stageViewCollection.getViews();
+			var len = views.length;
+			for (var i = 0; i < len; i++) {
+				var view = views[i];
+				view.width = w;
+				view.height = h;
+				//TODO viewportの値はStageView側で更新すべき
+				view._viewport.setDisplaySize(w, h);
+			}
 		},
 
-		_updateViewBox: function() {
-			var wr = this._viewport.getWorldRect();
-
-			//位置は変えない
-			var x = 0;
-			var y = 0;
-			var w = wr.width;
-			var h = wr.height;
-
-			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
-		},
+		//		_updateViewBox: function() {
+		//			var wr = this._viewport.getWorldRect();
+		//
+		//			//位置は変えない
+		//			var x = 0;
+		//			var y = 0;
+		//			var w = wr.width;
+		//			var h = wr.height;
+		//
+		//			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
+		//		},
 
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
@@ -5351,10 +6003,16 @@
 			if (initData.layers) {
 				for (var i = 0, len = initData.layers.length; i < len; i++) {
 					var layerDef = initData.layers[i];
-					var layer = stageModule.Layer.create(layerDef.id);
+					var layer = stageModule.Layer.create(layerDef.id, this);
 					this.addLayer(layer, null, layerDef.isDefault);
 				}
 			}
+
+			var view = StageView.create(this);
+			view.init();
+			this._stageViewCollection._addView(view, 0, 0);
+			this._stageViewCollection.setActiveView(view, true);
+			this._updateRootSize();
 		},
 
 		//TODO layerRootGに直接ではなくデフォルト（背景）レイヤーにaddする
@@ -5402,9 +6060,6 @@
 			} else {
 				this._layers.push(layer);
 			}
-			//先にaddしたレイヤーの方が手前に来るようにする
-			//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
-			this._layerRootG.insertBefore(layer._domRoot, this._layerRootG.firstChild);
 			layer._onAddedToRoot(this);
 		},
 
@@ -5418,131 +6073,30 @@
 			return null;
 		},
 
-		_isUpdateTransformReserved: false,
-
-		_updateLayerScrollPosition: function() {
-			if (this._isUpdateTransformReserved) {
-				return;
-			}
-			this._isUpdateTransformReserved = true;
-
-			var that = this;
-			//TODO rAFはここで直接呼ばない
-			requestAnimationFrame(function() {
-				that._isUpdateTransformReserved = false;
-				for (var i = 0, len = that._layers.length; i < len; i++) {
-					var layer = that._layers[i];
-
-					var scrollX = -that._viewport.worldX;
-					var scrollY = -that._viewport.worldY;
-
-					switch (layer.UIDragScreenScrollDirection) {
-					case SCROLL_DIRECTION_XY:
-						break;
-					case SCROLL_DIRECTION_X:
-						scrollY = 0;
-						break;
-					case SCROLL_DIRECTION_Y:
-						scrollX = 0;
-						break;
-					case SCROLL_DIRECTION_NONE:
-					default:
-						scrollX = 0;
-						scrollY = 0;
-						break;
-					}
-
-					layer.setScale(that._viewport.scaleX, that._viewport.scaleY);
-					layer.moveTo(scrollX, scrollY);
-				}
-
-				that._foremostLayer.setScale(that._viewport.scaleX, that._viewport.scaleY);
-				that._foremostLayer.moveTo(-that._viewport.worldX, -that._viewport.worldY);
-			});
-		},
-
 		scrollTo: function(dispX, dispY) {
-			this._scrollTo(dispX, dispY);
+			return this._getActiveView().scrollTo(dispX, dispY);
 		},
 
 		_scrollTo: function(dispX, dispY) {
-			var oldPos = DisplayPoint.create(this._viewport.displayX, this._viewport.displayY);
-
-			var actualDispX = StageUtil
-					.clamp(dispX, this._scrollRangeX.min, this._scrollRangeX.max);
-			var actualDispY = StageUtil
-					.clamp(dispY, this._scrollRangeY.min, this._scrollRangeY.max);
-
-			var actualDiff = {
-				dx: actualDispX - this._viewport.displayX,
-				dy: actualDispY - this._viewport.displayY
-			};
-
-			if (this._viewport.displayX === actualDispX && this._viewport.displayY === actualDispY) {
-				//サイズが現在と変わらなかったら何もしない
-				return actualDiff;
-			}
-
-			this._viewport.scrollTo(actualDispX, actualDispY);
-
-			this._updateLayerScrollPosition();
-
-			var newPos = DisplayPoint.create(actualDispX, actualDispY);
-
-			//TODO 現在はこの場所でイベントを出しているが、
-			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
-			//描画更新後にイベントをあげるようにする
-			var evArg = {
-				scrollPosition: {
-					oldValue: oldPos,
-					newValue: newPos,
-					isChanged: true
-				},
-				scale: {
-					oldValue: {
-						x: this._viewport.scaleX,
-						y: this._viewport.scaleY
-					},
-					newValue: {
-						x: this._viewport.scaleX,
-						y: this._viewport.scaleY
-					},
-					isChanged: false
-				}
-			};
-			this.trigger(EVENT_SIGHT_CHANGE, evArg);
-
-			return actualDiff;
+			//TODO 仮
+			return this._getActiveView()._scrollTo(dispX, dispY);
 		},
 
 		scrollBy: function(displayDx, displayDy) {
-			this._scrollBy(displayDx, displayDy);
+			return this._getActiveView().scrollBy(displayDx, displayDy);
 		},
 
+		//TODO StageView側に移動、ただしDragSession内部で使っている
 		_scrollBy: function(displayDx, displayDy) {
-			if (displayDx === 0 && displayDy === 0) {
-				return;
-			}
-
-			var dx = this._viewport.displayX + displayDx;
-			var dy = this._viewport.displayY + displayDy;
-			var actualDiff = this._scrollTo(dx, dy);
-			return actualDiff;
+			return this._getActiveView()._scrollBy(displayDx, displayDy);
 		},
 
 		scrollWorldTo: function(worldX, worldY) {
-			var dispPos = this._viewport.getDisplayPosition(worldX, worldY);
-			this.scrollTo(dispPos.x, dispPos.y);
+			return this._getActiveView().scrollWorldTo(worldX, worldY);
 		},
 
 		scrollWorldBy: function(worldDx, worldDy) {
-			if (worldDx === 0 && worldDy === 0) {
-				return;
-			}
-
-			var dx = this._viewport.worldX + worldDx;
-			var dy = this._viewport.worldY + worldDy;
-			this.scrollWorldTo(dx, dy);
+			return this._getActiveView().scrollWorldBy(worldDx, worldDy);
 		},
 
 		/**
@@ -5557,99 +6111,22 @@
 		 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
 		setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
-			var actualScaleX = StageUtil
-					.clamp(scaleX, this._scaleRangeX.min, this._scaleRangeX.max);
-			var actualScaleY = StageUtil
-					.clamp(scaleY, this._scaleRangeY.min, this._scaleRangeY.max);
-
-			if (scaleX == null) {
-				actualScaleX = this._viewport.scaleX;
-			}
-			if (scaleY == null) {
-				actualScaleY = this._viewport.scaleY;
-			}
-
-			if (actualScaleX === this._viewport.scaleX && actualScaleY === this._viewport.scaleY) {
-				return;
-			}
-
-			var offX = displayOffsetX;
-			var offY = displayOffsetY;
-
-			if (displayOffsetX == null && displayOffsetY == null) {
-				var rootOffset = $(this.rootElement).offset();
-				if (displayOffsetX == null) {
-					offX = rootOffset.left + this._viewport.displayWidth / 2;
-				}
-				if (displayOffsetY == null) {
-					offY = rootOffset.top + this._viewport.displayHeight / 2;
-				}
-			}
-
-			var scaleCenter = this._viewport.getWorldPositionFromDisplayOffset(offX, offY);
-
-			var oldScrollPos = DisplayPoint
-					.create(this._viewport.displayX, this._viewport.displayY);
-			var oldScaleX = this._viewport.scaleX;
-			var oldScaleY = this._viewport.scaleY;
-
-			this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x, scaleCenter.y);
-
-			//TODO clampする、もしくはscrollTo()する
-			var newScrollPos = DisplayPoint
-					.create(this._viewport.displayX, this._viewport.displayY);
-
-			var isScrollPoisitionChanged = true;
-			if (oldScrollPos.x === newScrollPos.x && oldScrollPos.y === newScrollPos.y) {
-				isScrollPoisitionChanged = false;
-			}
-
-			this._updateLayerScrollPosition();
-
-			//TODO 現在はこの場所でイベントを出しているが、
-			//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
-			//描画更新後にイベントをあげるようにする
-			var evArg = {
-				scrollPosition: {
-					oldValue: oldScrollPos,
-					newValue: newScrollPos,
-					isChanged: isScrollPoisitionChanged
-				},
-				scale: {
-					oldValue: {
-						x: oldScaleX,
-						y: oldScaleY
-					},
-					newValue: {
-						x: actualScaleX,
-						y: actualScaleY
-					},
-					isChanged: true
-				}
-			};
+			//TODO 戻り値でevArgをもらうのは仮実装
+			var evArg = this._getActiveView().setScale(scaleX, scaleY, displayOffsetX,
+					displayOffsetY);
 			this.trigger(EVENT_SIGHT_CHANGE, evArg);
 		},
 
+		_getActiveView: function() {
+			return this._stageViewCollection.getActiveView();
+		},
+
 		setScaleRangeX: function(min, max) {
-			var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
-
-			this._scaleRangeX = {
-				min: actualMin,
-				max: max
-			};
-
-			this.setScale(this._viewport.scaleX, null);
+			this._getActiveView().setScaleRangeX(min, max);
 		},
 
 		setScaleRangeY: function(min, max) {
-			var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
-
-			this._scaleRangeY = {
-				min: actualMin,
-				max: max
-			};
-
-			this.setScale(null, this._viewport.scaleY);
+			this._getActiveView().setScaleRangeY(min, max);
 		},
 
 		refresh: function(immediate) {
@@ -5657,9 +6134,7 @@
 		},
 
 		getScrollPosition: function() {
-			var pos = stageModule.DisplayPoint.create(this._viewport.displayX,
-					this._viewport.displayY);
-			return pos;
+			this._getActiveView().getScrollPosition();
 		},
 
 		_lastEnteredDU: null,
@@ -5917,9 +6392,18 @@
 		},
 
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
+			//セパレータは一旦削除し、グリッド構成時に改めて作成
+			$(this.rootElement).find('.stageGridSeparator').remove();
+
+			//TODO マップクリア
+			//this._stageViewCollection._viewMap = {};
+
+			if (!horizontalSplitDefinitions && !verticalSplitDefinitions) {
+				//TODO 分割・複製を解除完全に解除する場合、直前のActiveViewを残すようにする
+			}
+
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
-				$(this.rootElement).find('.stageGridSeparator').remove();
 
 				this._stageViewCollection._numberOfOverallRows = 1;
 				this._stageViewCollection._numberOfRows = 1;
@@ -6094,12 +6578,12 @@
 				info.$target.css({
 					top: newTop
 				});
-				var view = this._stageViewCollection.getActiveView();
+				var view = this._stageViewCollection.getView(0, 0);
 				//TODO topの値でなく、高さを計算する必要がある
 				view.height = newTop;
 
 				//TODO 対応するStageGridRowの高さを正しくセットする必要がある
-				this._stageViewCollection._rows[0]._height = newTop;
+				//this._stageViewCollection._rows[0]._height = newTop;
 			} else {
 				var currLeft = info.$target.position().left;
 				var newLeft = currLeft + dispDx;
