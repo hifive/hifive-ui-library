@@ -2467,7 +2467,7 @@
 			},
 			method: {
 				constructor: function BasicDisplayUnit(id) {
-					super_.call(this, id);
+					super_.constructor.call(this, id);
 
 					this._isSelectable = true;
 					this.isDraggable = true;
@@ -2614,7 +2614,7 @@
 				 * @memberOf h5.ui.components.stage.Edge
 				 */
 				constructor: function Edge(duFrom, duTo) {
-					super_.call(this);
+					super_.constructor.call(this);
 					this._from = duFrom;
 					this._to = duTo;
 
@@ -2900,7 +2900,7 @@
 				 * @memberOf h5.ui.components.stage.ZIndexList
 				 */
 				constructor: function ZIndexList() {
-					super_.call(this);
+					super_.constructor.call(this);
 					this._keyArray = [];
 					this._map = {};
 				},
@@ -3060,7 +3060,7 @@
 				 * @memberOf h5.ui.components.stage.DisplayUnitContainerEvent
 				 */
 				constructor: function DisplayUnitContainerEvent(eventName) {
-					super_.call(this, eventName);
+					super_.constructor.call(this, eventName);
 				}
 			}
 		};
@@ -3078,7 +3078,7 @@
 				 * @memberOf h5.ui.components.stage.TransformEvent
 				 */
 				constructor: function TransformEvent(type) {
-					super_.call(this, type);
+					super_.constructor.call(this, type);
 				}
 			}
 		};
@@ -3127,7 +3127,7 @@
 				 * @memberOf h5.ui.components.stage.DisplayUnitContainer
 				 */
 				constructor: function DisplayUnitContainer(id) {
-					super_.call(this, id);
+					super_.constructor.call(this, id);
 
 					//TODO defaultValue
 					this.x = 0;
@@ -3350,7 +3350,7 @@
 						 * @memberOf h5.ui.components.stage.Layer
 						 */
 						constructor: function Layer(id, stage) {
-							super_.call(this);
+							super_.constructor.call(this);
 
 							this.id = id;
 							this.UIDragScreenScrollDirection = ScrollDirection.XY;
@@ -3989,7 +3989,7 @@
 						 * @memberOf h5.ui.components.stage.StageView
 						 */
 						constructor: function StageView(stage) {
-							super_.call(this);
+							super_.constructor.call(this);
 							this._stage = stage;
 							this._x = 0;
 							this._y = 0;
@@ -4495,7 +4495,7 @@
 				 * @memberOf h5.ui.components.stage.Separator
 				 */
 				constructor: function Separator(isHorizontal) {
-					super_.call(this);
+					super_.constructor.call(this);
 					this.rowIndex = 0;
 					this.columnIndex = 0;
 					this.overallRowIndex = 0;
@@ -4561,7 +4561,7 @@
 				 * @memberOf h5.ui.components.stage.StageGridRow
 				 */
 				constructor: function StageGridRow(viewCollection, type, index, overallIndex) {
-					super_.call(this);
+					super_.constructor.call(this);
 					this._viewCollection = viewCollection;
 					this._type = type;
 					this._height = 0;
@@ -4629,7 +4629,7 @@
 				 * @memberOf h5.ui.components.stage.StageGridColumn
 				 */
 				constructor: function StageGridColumn(viewCollection, type, index, overallIndex) {
-					super_.call(this);
+					super_.constructor.call(this);
 					this._type = type;
 					this._width = 0;
 					this._viewCollection = viewCollection;
@@ -4681,7 +4681,7 @@
 				_rows: null,
 
 				//TODO 仮実装
-				_defaultView: null
+				_activeView: null
 			},
 
 			accessor: {
@@ -4723,7 +4723,7 @@
 				 * @memberOf h5.ui.components.stage.GridStageViewCollection
 				 */
 				constructor: function GridStageViewCollection(stage) {
-					super_.call(this);
+					super_.constructor.call(this);
 					this._stage = stage;
 
 					// 行番号 -> { 列番号 -> StageView } という二次元マップ
@@ -4775,8 +4775,7 @@
 				 * 現在アクティブなStageViewを取得します。
 				 */
 				getActiveView: function() {
-					//TODO activeを判定
-					return this.getView(0, 0);
+					return this._activeView;
 				},
 
 				/**
@@ -4786,8 +4785,7 @@
 				 * @param force 指定されたビューをUI操作に関係なく常にアクティブなビューとするかどうか。デフォルト：false。
 				 */
 				setActiveView: function(stageView, force) {
-					//stageView.isActive = true;
-					//this._defaultView = stageView;
+					this._activeView = stageView;
 					this._isForceActive = force === true;
 				},
 
@@ -4821,13 +4819,18 @@
 				//					return [this._defaultView];
 				//				},
 
+				_clear: function() {
+					this._activeView = null;
+					this._viewMap = {};
+				},
+
 				_addView: function(view, rowIndex, columnIndex) {
-					var colMap = this._viewMap[rowIndex];
-					if (!colMap) {
-						colMap = {};
-						this._viewMap[rowIndex] = colMap;
+					var rowMap = this._viewMap[rowIndex];
+					if (!rowMap) {
+						rowMap = {};
+						this._viewMap[rowIndex] = rowMap;
 					}
-					colMap[columnIndex] = view;
+					rowMap[columnIndex] = view;
 				}
 			}
 		};
@@ -5972,28 +5975,19 @@
 			var w = width !== undefined ? width : $(this.rootElement).width();
 			var h = height !== undefined ? height : $(this.rootElement).height();
 
+			//一番下・右のビューに対して差分を与える
+
 			var views = this._stageViewCollection.getViews();
 			var len = views.length;
 			for (var i = 0; i < len; i++) {
 				var view = views[i];
+
 				view.width = w;
 				view.height = h;
 				//TODO viewportの値はStageView側で更新すべき
 				view._viewport.setDisplaySize(w, h);
 			}
 		},
-
-		//		_updateViewBox: function() {
-		//			var wr = this._viewport.getWorldRect();
-		//
-		//			//位置は変えない
-		//			var x = 0;
-		//			var y = 0;
-		//			var w = wr.width;
-		//			var h = wr.height;
-		//
-		//			this._duRoot.setAttribute('viewBox', h5.u.str.format('{0} {1} {2} {3}', x, y, w, h));
-		//		},
 
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
@@ -6395,12 +6389,23 @@
 			//セパレータは一旦削除し、グリッド構成時に改めて作成
 			$(this.rootElement).find('.stageGridSeparator').remove();
 
+			if (!horizontalSplitDefinitions && !verticalSplitDefinitions) {
+				//分割・複製を解除完全に解除する場合、直前のActiveViewを残す
+				var oldActiveView = this._stageViewCollection.getActiveView();
+				if (!oldActiveView) {
+					oldActiveView = this._stageViewCollection.getView(0, 0);
+				}
+				this._stageViewCollection.clear();
+				this._stageViewCollection._addView(oldActiveView, 0, 0);
+				this._stageViewCollection.setActiveView(view, true);
+				//TODO サイズ変更
+				this._updateRootSize();
+				return;
+			}
+
 			//TODO マップクリア
 			//this._stageViewCollection._viewMap = {};
 
-			if (!horizontalSplitDefinitions && !verticalSplitDefinitions) {
-				//TODO 分割・複製を解除完全に解除する場合、直前のActiveViewを残すようにする
-			}
 
 			if (horizontalSplitDefinitions == null) {
 				this._t_splitHeight = null;
