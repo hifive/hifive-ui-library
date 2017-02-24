@@ -4967,25 +4967,36 @@
 					var numOfRows = 0;
 					var rows = [];
 
+					var totalHeight = 0;
+
 					var hDefsLen = horizontalSplitDefinitions.length;
-					for (var rowIndex = 0; rowIndex < hDefsLen; rowIndex++) {
-						var def = horizontalSplitDefinitions[rowIndex];
+					for (var rowOverallIndex = 0; rowOverallIndex < hDefsLen; rowOverallIndex++) {
+						var def = horizontalSplitDefinitions[rowOverallIndex];
 						var stageGridRow;
 						if (def.type === GRID_TYPE_SEPARATOR) {
 							stageGridRow = StageGridRow.create(this, GRID_TYPE_SEPARATOR,
-									numOfRowSeps, rowIndex);
-							stageGridRow._desiredHeight = def.height != null ? def.height
+									numOfRowSeps, rowOverallIndex);
+							var desiredHeight = def.height != null ? def.height
 									: DEFAULT_GRID_SEPARATOR_THICKNESS;
+							stageGridRow._desiredHeight = desiredHeight;
+
+							//セパレータは縦・横にまたがって作るので、このループの中で作ってしまう
+							//セパレータにはoverallIndexを持たせる
+							$createGridSeparator(rowOverallIndex, true, desiredHeight, totalHeight)
+									.appendTo(this._stage.rootElement);
 
 							numOfRowSeps++;
 						} else {
 							stageGridRow = StageGridRow.create(this, GRID_TYPE_CONTENTS, numOfRows,
-									rowIndex);
+									rowOverallIndex);
 							stageGridRow._desiredHeight = def.height;
 
 							numOfRows++;
 						}
 						rows.push(stageGridRow);
+
+						totalHeight += stageGridRow._desiredHeight ? stageGridRow._desiredHeight
+								: 0;
 					}
 
 					this._numberOfOverallRows = hDefsLen;
@@ -5000,26 +5011,35 @@
 					var numOfColSeps = 0;
 					var numOfCols = 0;
 					var cols = [];
+					var totalWidth = 0;
 
 					var vDefsLen = verticalSplitDefinitions.length;
-					for (var colIndex = 0; colIndex < vDefsLen; colIndex++) {
-						var def = verticalSplitDefinitions[colIndex];
+					for (var colOverallIndex = 0; colOverallIndex < vDefsLen; colOverallIndex++) {
+						var def = verticalSplitDefinitions[colOverallIndex];
 						var stageGridCol;
 						if (def.type === GRID_TYPE_SEPARATOR) {
 							stageGridCol = StageGridColumn.create(this, GRID_TYPE_SEPARATOR,
-									numOfColSeps, colIndex);
+									numOfColSeps, colOverallIndex);
 							stageGridCol._desiredWidth = def.width != null ? def.width
 									: DEFAULT_GRID_SEPARATOR_THICKNESS;
+
+							//セパレータは縦・横にまたがって作るので、このループの中で作ってしまう
+							//セパレータにはoverallIndexを持たせる
+							$createGridSeparator(colOverallIndex, false,
+									stageGridCol._desiredWidth, totalWidth).appendTo(
+									this._stage.rootElement);
 
 							numOfColSeps++;
 						} else {
 							stageGridCol = StageGridColumn.create(this, GRID_TYPE_CONTENTS,
-									numOfCols, colIndex);
+									numOfCols, colOverallIndex);
 							stageGridCol._desiredWidth = def.width;
 
 							numOfCols++;
 						}
 						cols.push(stageGridCol);
+
+						totalWidth += stageGridCol._desiredWidth ? stageGridCol._desiredWidth : 0;
 					}
 
 					this._numberOfOverallColumns = vDefsLen;
@@ -5038,10 +5058,6 @@
 						var row = rows[hDefIndex];
 
 						if (hDef.type === GRID_TYPE_SEPARATOR) {
-							//SeparatorにはoverallIndexを持たせる
-							$createGridSeparator(hDefIndex, true, row._desiredHeight, totalHeight)
-									.appendTo(this._stage.rootElement);
-
 							totalHeight += row._desiredHeight ? row._desiredHeight : 0;
 							continue;
 						}
@@ -5054,10 +5070,6 @@
 							var col = cols[vDefIndex];
 
 							if (vDef.type === GRID_TYPE_SEPARATOR) {
-								//SeparatorにはoverallIndexを持たせる
-								$createGridSeparator(vDefIndex, false, col._desiredWidth,
-										totalWidth).appendTo(this._stage.rootElement);
-
 								totalWidth += col._desiredWidth ? col._desiredWidth : 0;
 								continue;
 							}
