@@ -3938,6 +3938,9 @@
 
 						_layerDefsMap: null,
 
+						_rowIndex: null,
+						_columnIndex: null,
+
 						_duAddListener: null,
 						_duDirtyListener: null
 					},
@@ -4011,6 +4014,19 @@
 								}
 							}
 						},
+
+						rowIndex: {
+							get: function() {
+								return this._rowIndex;
+							}
+						},
+
+						columnIndex: {
+							get: function() {
+								return this._columnIndex;
+							}
+						},
+
 						coordinateConverter: {
 							get: function() {
 								return this._coordinateConverter;
@@ -4974,6 +4990,8 @@
 						this._viewMap[rowIndex] = rowMap;
 					}
 					rowMap[columnIndex] = view;
+					view._rowIndex = rowIndex;
+					view._columnIndex = columnIndex;
 				},
 
 				_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
