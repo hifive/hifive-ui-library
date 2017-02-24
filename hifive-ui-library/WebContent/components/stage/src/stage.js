@@ -4578,6 +4578,10 @@
 			accessor: {
 				height: {
 					get: function() {
+						if (this._type === GRID_TYPE_SEPARATOR) {
+							return this._desiredHeight;
+						}
+
 						try {
 							var firstColumnView = this._viewCollection.getView(this._index, 0);
 							return firstColumnView.height;
@@ -4587,8 +4591,6 @@
 							//ここには到達しないはず
 							return 0;
 						}
-
-						//return this._height;
 					}
 				},
 				type: {
@@ -4660,7 +4662,6 @@
 			field: {
 				_viewCollection: null,
 				_type: null,
-				_width: null,
 				_desiredWidth: null,
 				_index: null,
 				_overallIndex: null
@@ -4674,7 +4675,19 @@
 				},
 				width: {
 					get: function() {
-						return this._width;
+						if (this._type === GRID_TYPE_SEPARATOR) {
+							return this._desiredWidth;
+						}
+
+						try {
+							var firstRowView = this._viewCollection.getView(0, this._index);
+							return firstRowView.width;
+						} catch (e) {
+							//行にViewがなければ0
+							//格子状のグリッドなので、Rowがあれば必ず1つは列が存在するので
+							//ここには到達しないはず
+							return 0;
+						}
 					}
 				},
 				index: {
@@ -4696,7 +4709,6 @@
 				constructor: function StageGridColumn(viewCollection, type, index, overallIndex) {
 					super_.constructor.call(this);
 					this._type = type;
-					this._width = 0;
 					this._desiredWidth = null;
 					this._viewCollection = viewCollection;
 					this._index = index;
@@ -6762,15 +6774,25 @@
 		_startGridSeparatorDrag: function(context) {
 			var $el = $(context.event.target);
 
-			var rowIndex = parseInt($el.data('stageDynRow'));
-			var columnIndex = parseInt($el.data('stageDynCol'));
+			var index = parseInt($el.data('stageDynSepIdx'));
 			var isHorizontal = $el.hasClass('horizontal');
+
+			var sep;
+
+			//TODO StageViewCollection側にseparatorをIndex指定で取得するAPIを作るべき
+			if (isHorizontal) {
+				var allRows = this._stageViewCollection.getRowsOfAllTypes();
+				sep = allRows[index];
+			} else {
+				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
+				sep = allCols[index];
+			}
 
 			this._gridSeparatorDragInfo = {
 				$target: $el,
-				rowIndex: rowIndex,
-				columnIndex: columnIndex,
-				isHorizontal: isHorizontal
+				index: index,
+				isHorizontal: isHorizontal,
+				separator: sep
 			};
 			this._isGridSeparatorDragging = true;
 		},
@@ -6806,21 +6828,42 @@
 				info.$target.css({
 					top: newTop
 				});
-				var view = this._stageViewCollection.getView(0, 0);
-				//TODO topの値でなく、高さを計算する必要がある
-				view.height = newTop;
 
-				//TODO 対応するStageGridRowの高さを正しくセットする必要がある
-				//this._stageViewCollection._rows[0]._height = newTop;
+				//自分（セパレータ）の上下のRowの高さと位置を変更
+				var allRows = this._stageViewCollection.getRowsOfAllTypes();
+
+				var aboveRow = allRows[info.index - 1];
+				var belowRow = allRows[info.index + 1];
+
+				aboveRow.getViewAll().forEach(function(view) {
+					view.height += dispDy;
+				});
+
+				belowRow.getViewAll().forEach(function(view) {
+					view.y = newTop + info.separator.height;
+					view.height -= dispDy;
+				});
+
 			} else {
 				var currLeft = info.$target.position().left;
 				var newLeft = currLeft + dispDx;
 				info.$target.css({
 					left: newLeft
 				});
-				var view = this._stageViewCollection.getActiveView();
-				//TODO leftの値でなく、幅を計算する必要がある
-				view.width = newLeft;
+
+				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
+
+				var leftCol = allCols[info.index - 1];
+				var rightCol = allCols[info.index + 1];
+
+				leftCol.getViewAll().forEach(function(view) {
+					view.width += dispDx;
+				});
+
+				rightCol.getViewAll().forEach(function(view) {
+					view.x = newLeft + info.separator.width;
+					view.width -= dispDx;
+				});
 			}
 
 			this._isDraggingStarted = true;
