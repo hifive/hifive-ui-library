@@ -4179,6 +4179,8 @@
 							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
 							//描画更新後にイベントをあげるようにする
 							var evArg = {
+								view: this,
+
 								scrollPosition: {
 									oldValue: oldPos,
 									newValue: newPos,
@@ -4196,7 +4198,8 @@
 									isChanged: false
 								}
 							};
-							//			this.trigger(EVENT_SIGHT_CHANGE, evArg);
+
+							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 
 							return actualDiff;
 						},
@@ -4302,6 +4305,8 @@
 							//描画更新後にイベントをあげるようにする
 							//TODO StageView側からイベントをあげて、それをさらにStageControllerであげる
 							var evArg = {
+								view: this,
+
 								scrollPosition: {
 									oldValue: oldScrollPos,
 									newValue: newScrollPos,
@@ -4319,9 +4324,7 @@
 									isChanged: true
 								}
 							};
-							//TODO 仮実装
-							return evArg;
-							//							this.trigger(EVENT_SIGHT_CHANGE, evArg);
+							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 						},
 
 						setScaleRangeX: function(min, max) {
@@ -6471,12 +6474,7 @@
 		 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
 		setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
-			//TODO 戻り値でevArgをもらうのは仮実装
-			var evArg = this._getActiveView().setScale(scaleX, scaleY, displayOffsetX,
-					displayOffsetY);
-			if (evArg) {
-				this.trigger(EVENT_SIGHT_CHANGE, evArg);
-			}
+			return this._getActiveView().setScale(scaleX, scaleY, displayOffsetX, displayOffsetY);
 		},
 
 		_getActiveView: function() {
