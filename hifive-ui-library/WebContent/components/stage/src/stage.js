@@ -251,7 +251,7 @@
 	 * @name DragSession
 	 * @returns クラス定義
 	 */
-	EventDispatcher.extend(function() {
+	EventDispatcher.extend(function(super_) {
 		//eventはnullの場合がある（doPseudoMoveByの場合）
 		function defaultMoveFunction(du, data, event, delta, dragSession) {
 			var ret = {
@@ -332,7 +332,7 @@
 				 * @param dragMode
 				 */
 				constructor: function DragSession(rootElement, foregroundRootElement, event) {
-					DragSession._super.call(this);
+					super_.constructor.call(this);
 
 					this.canDrop = true;
 					this.async = false;
@@ -746,7 +746,7 @@
 
 
 	var Rect = RootClass
-			.extend(function() {
+			.extend(function(super_) {
 				var desc = {
 					name: 'h5.ui.components.stage.Rect',
 					field: {
@@ -778,7 +778,7 @@
 						 * @memberOf h5.ui.components.stage.Rect
 						 */
 						constructor: function Rect(x, y, width, height) {
-							Rect._super.call(this);
+							super_.constructor.call(this);
 							this._x = x !== undefined ? x : 0;
 							this._y = y !== undefined ? y : 0;
 							this._p_width = width !== undefined ? width : 0;
@@ -836,7 +836,7 @@
 			});
 
 
-	var Point = RootClass.extend(function() {
+	var Point = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.Point',
 			field: {
@@ -848,7 +848,7 @@
 				 * @memberOf 'h5.ui.components.stage.Point
 				 */
 				constructor: function Point(x, y) {
-					Point._super.call(this);
+					super_.constructor.call(this);
 					this.x = x;
 					this.y = y;
 				}
@@ -857,7 +857,7 @@
 		return desc;
 	});
 
-	var WorldPoint = Point.extend(function() {
+	var WorldPoint = Point.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.WorldPoint',
 			method: {
@@ -865,14 +865,14 @@
 				 * @memberOf h5.ui.components.stage.WorldPoint
 				 */
 				constructor: function WorldPoint(x, y) {
-					WorldPoint._super.call(this, x, y);
+					super_.constructor.call(this, x, y);
 				}
 			}
 		};
 		return desc;
 	});
 
-	var DisplayPoint = Point.extend(function() {
+	var DisplayPoint = Point.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayPoint',
 			method: {
@@ -880,19 +880,19 @@
 				 * @memberOf h5.ui.components.stage.DisplayPoint
 				 */
 				constructor: function DisplayPoint(x, y) {
-					DisplayPoint._super.call(this, x, y);
+					super_.constructor.call(this, x, y);
 				}
 			}
 		};
 		return desc;
 	});
 
-	var SVGPoint = Point.extend(function() {
+	var SVGPoint = Point.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGPoint',
 			method: {
 				constructor: function SVGPoint(x, y) {
-					SVGPoint._super.call(this, x, y);
+					super_.constructor.call(this, x, y);
 				},
 				toString: function() {
 					return this.x + ',' + this.y;
@@ -961,7 +961,7 @@
 	//Eclipseのフォーマッタと相性が悪い。いずれ方法を検討。
 	var ERR_MUST_OVERRIDE_RENDER_FUNCTION = 'SVGDrawElementのrenderメソッドは、その子クラスで必ずオーバーライドする必要があります。';
 
-	var SVGElementWrapper = RootClass.extend(function() {
+	var SVGElementWrapper = RootClass.extend(function(super_) {
 
 		function getChangedAttributes() {
 			return {
@@ -993,9 +993,6 @@
 		}
 
 		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGElementWrapper
-			 */
 			name: 'h5.ui.components.stage.SVGElementWrapper',
 			field: {
 				_element: null,
@@ -1025,8 +1022,11 @@
 				}
 			},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGElementWrapper
+				 */
 				constructor: function SVGElementWrapper(graphics, element, id) {
-					SVGElementWrapper._super.call(this);
+					super_.constructor.call(this);
 					this._element = element;
 					this._graphics = graphics;
 
@@ -1181,7 +1181,7 @@
 		return desc;
 	});
 
-	var SVGDrawElement = SVGElementWrapper.extend(function() {
+	var SVGDrawElement = SVGElementWrapper.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGDrawElement',
 			method: {
@@ -1189,7 +1189,7 @@
 				 * @memberOf h5.ui.components.stage.SVGDrawElement
 				 */
 				constructor: function SVGDrawElement(graphics, element, id) {
-					SVGDrawElement._super.call(this, graphics, element, id);
+					super_.constructor.call(this, graphics, element, id);
 				}
 			}
 		};
@@ -1244,7 +1244,7 @@
 		}
 	}
 
-	var SVGLine = SVGDrawElement.extend(function() {
+	var SVGLine = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGLine',
 			accessor: {},
@@ -1253,7 +1253,7 @@
 				 * @memberOf h5.ui.components.stage.SVGLine
 				 */
 				constructor: function SVGLine(graphics, element) {
-					SVGLine._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 				},
 				render: function() {
 					this._renderChangedAttributes();
@@ -1266,7 +1266,7 @@
 		return desc;
 	});
 
-	var SVGText = SVGDrawElement.extend(function() {
+	var SVGText = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGText',
 			field: {
@@ -1296,7 +1296,7 @@
 				 * @memberOf h5.ui.components.stage.SVGText
 				 */
 				constructor: function SVGText(graphics, element) {
-					SVGText._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 					this._textContent = this._text = null;
 				},
 				render: function() {
@@ -1354,7 +1354,7 @@
 		return desc;
 	});
 
-	var SVGRect = SVGDrawElement.extend(function() {
+	var SVGRect = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGRect',
 			accessor: {},
@@ -1363,7 +1363,7 @@
 				 * @memberOf h5.ui.components.stage.SVGRect
 				 */
 				constructor: function SVGRect(graphics, element) {
-					SVGRect._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 				},
 				render: function() {
 					this._renderChangedAttributes();
@@ -1376,7 +1376,7 @@
 		return desc;
 	});
 
-	var SVGCircle = SVGDrawElement.extend(function() {
+	var SVGCircle = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGCircle',
 			accessor: {},
@@ -1385,7 +1385,7 @@
 				 * @memberOf h5.ui.components.stage.SVGCircle
 				 */
 				constructor: function SVGCircle(graphics, element) {
-					SVGCircle._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 				},
 				render: function() {
 					this._renderChangedAttributes();
@@ -1397,7 +1397,7 @@
 		return desc;
 	});
 
-	var SVGTriangle = SVGDrawElement.extend(function() {
+	var SVGTriangle = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGTriangle',
 			field: {
@@ -1455,8 +1455,11 @@
 				}
 			},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGTriangle
+				 */
 				constructor: function SVGTriangle(graphics, element) {
-					SVGTriangle._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 					this._topX = 0;
 					this._topY = 0;
 					this._width = 0;
@@ -1531,7 +1534,7 @@
 		return desc;
 	});
 
-	var SVGImage = SVGDrawElement.extend(function() {
+	var SVGImage = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGImage',
 			accessor: {},
@@ -1540,7 +1543,7 @@
 				 * @memberOf h5.ui.components.stage.SVGImage
 				 */
 				constructor: function SVGImage(graphics, element) {
-					SVGImage._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 				},
 				render: function() {
 					this._renderChangedAttributes();
@@ -1553,7 +1556,7 @@
 		return desc;
 	});
 
-	var SVGPolyline = SVGDrawElement.extend(function() {
+	var SVGPolyline = SVGDrawElement.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGPolyline',
 			field: {
@@ -1571,7 +1574,7 @@
 				 * @memberOf h5.ui.components.stage.SVGPolyline
 				 */
 				constructor: function SVGPolyline(graphics, element) {
-					SVGPolyline._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 					this._points = PointArray.create();
 					this._points.addEventListener('pointArrayChanged', this._pointArrayChanged
 							.bind(this));
@@ -1594,7 +1597,7 @@
 	});
 
 	// polylineとpolygonは同じI/F
-	var SVGPolygon = SVGPolyline.extend(function() {
+	var SVGPolygon = SVGPolyline.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SVGPolygon',
 			method: {
@@ -1602,7 +1605,7 @@
 				 * @memberOf h5.ui.components.stage.SVGPolygon
 				 */
 				constructor: function SVGPolygon(graphics, element) {
-					SVGPolygon._super.call(this, graphics, element);
+					super_.constructor.call(this, graphics, element);
 				}
 			}
 		};
@@ -1610,7 +1613,7 @@
 	});
 
 
-	var SVGDefinitions = SVGElementWrapper.extend(function() {
+	var SVGDefinitions = SVGElementWrapper.extend(function(super_) {
 		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
 		var desc = {
 			/**
@@ -1621,8 +1624,11 @@
 				_definitions: null
 			},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGDefinitions
+				 */
 				constructor: function SVGDefinitions(element) {
-					SVGDefinitions._super.call(this);
+					super_.constructor.call(this);
 					this._element = element;
 					this._definitions = new Map();
 				},
@@ -1668,18 +1674,18 @@
 		return desc;
 	});
 
-	var SVGGradient = SVGElementWrapper.extend(function() {
+	var SVGGradient = SVGElementWrapper.extend(function(super_) {
 		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGGradient
-			 */
 			name: 'h5.ui.components.stage.SVGGradient',
 			field: {
 				_stops: null
 			},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGGradient
+				 */
 				constructor: function SVGGradient(element, id) {
-					SVGGradient._super.call(this, null, element, id);
+					super_.constructor.call(this, null, element, id);
 					this._isDefinition = true;
 					this._stops = [];
 				},
@@ -1709,16 +1715,16 @@
 		return desc;
 	});
 
-	var SVGLinearGradient = SVGGradient.extend(function() {
+	var SVGLinearGradient = SVGGradient.extend(function(super_) {
 		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGLinearGradient
-			 */
 			name: 'h5.ui.components.stage.SVGLinearGradient',
 			accessor: {},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGLinearGradient
+				 */
 				constructor: function SVGLinearGradient(element, id) {
-					SVGLinearGradient._super.call(this, element, id);
+					super_.constructor.call(this, element, id);
 				},
 				from: function(x1, y1) {
 					this.x1 = x1;
@@ -1737,16 +1743,16 @@
 		return desc;
 	});
 
-	var SVGRadialGradient = SVGGradient.extend(function() {
+	var SVGRadialGradient = SVGGradient.extend(function(super_) {
 		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGRadialGradient
-			 */
 			name: 'h5.ui.components.stage.SVGRadialGradient',
 			accessor: {},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SVGRadialGradient
+				 */
 				constructor: function SVGRadialGradient(element, id) {
-					SVGRadialGradient._super.call(this, element, id);
+					super_.constructor.call(this, element, id);
 				},
 				center: function(cx, cy) {
 					this.cx = cx;
@@ -1769,7 +1775,7 @@
 		return desc;
 	});
 
-	var SVGGraphics = RootClass.extend(function() {
+	var SVGGraphics = RootClass.extend(function(super_) {
 		//TODO 仮実装
 		var idSequence = 0;
 
@@ -1799,7 +1805,7 @@
 				 * @memberOf h5.ui.components.stage.SVGGraphics
 				 */
 				constructor: function SVGGraphics(rootSvg, rootDefs) {
-					SVGGraphics._super.call(this);
+					super_.constructor.call(this);
 					this._rootSvg = rootSvg;
 					this._defs = rootDefs;
 					this._renderWaitingList = [];
@@ -1929,7 +1935,7 @@
 	});
 
 	//重複を許さないセット
-	var SimpleSet = RootClass.extend(function() {
+	var SimpleSet = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SimpleSet',
 			field: {
@@ -1940,7 +1946,7 @@
 				 * @memberOf h5.ui.components.stage.SimpleSet
 				 */
 				constructor: function SimpleSet() {
-					SimpleSet._super.call(this);
+					super_.constructor.call(this);
 					this._keys = [];
 				},
 				add: function(key) {
@@ -1974,7 +1980,7 @@
 		return desc;
 	});
 
-	var PointArray = EventDispatcher.extend(function() {
+	var PointArray = EventDispatcher.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.PointArray',
 			field: {
@@ -1992,7 +1998,7 @@
 				 * @memberOf h5.ui.components.stage.PointArray
 				 */
 				constructor: function() {
-					PointArray._super.call(this);
+					super_.constructor.call(this);
 					this._points = [];
 				},
 				add: function(x, y) {
@@ -2042,7 +2048,7 @@
 	//TODO layouter(仮)を差し込めるようにし、
 	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
 	//layouterがフックして強制ブロック・別の値をセット等できるようにする
-	var DisplayUnit = EventDispatcher.extend(function() {
+	var DisplayUnit = EventDispatcher.extend(function(super_) {
 		var duIdSequence = 0;
 
 		var classDesc = {
@@ -2183,7 +2189,7 @@
 				 * @memberOf h5.ui.components.stage.DisplayUnit
 				 */
 				constructor: function DisplayUnit(id) {
-					DisplayUnit._super.call(this);
+					super_.constructor.call(this);
 					//TODO 引数のIDは必須にする？？
 					if (id == null) {
 						//TODO ただの連番でなくGUID等にする
@@ -2436,28 +2442,19 @@
 				},
 				width: {
 					get: function() {
-						//return super_.width.get.call(this);
-						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-								'width').get.call(this);
+						return super_.width.get.call(this);
 					},
 					set: function(value) {
-						//						super_.width.set.call(this, value);
-						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-								'width').set.call(this, value);
+						super_.width.set.call(this, value);
 						this.requestRender();
 					}
 				},
 				height: {
 					get: function() {
-						//return super_.height.get.call(this);
-						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-								'height').get.call(this);
+						return super_.height.get.call(this);
 					},
 					set: function(value) {
-						//super_.height.set.call(this, value);
-						return Object.getOwnPropertyDescriptor(BasicDisplayUnit._super.prototype,
-								'height').set.call(this, value);
-
+						super_.height.set.call(this, value);
 						this.requestRender();
 					}
 				},
@@ -2834,7 +2831,7 @@
 					this._to.removeEventListener('positionChange', this._fromSizeChangeHandler);
 				},
 
-				__renderDOM: function() {
+				__renderDOM: function(view) {
 					var rootSvg = createSvgElement('svg');
 					rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
 					rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
@@ -2851,7 +2848,7 @@
 		return desc;
 	});
 
-	var EdgeEndpoint = RootClass.extend(function() {
+	var EdgeEndpoint = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
@@ -2872,7 +2869,7 @@
 				 * @memberOf h5.ui.components.stage.EdgeEndpoint
 				 */
 				constructor: function EdgeEndpoint() {
-					EdgeEndpoint._super.call(this);
+					super_.constructor.call(this);
 				}
 
 			}
@@ -3486,7 +3483,7 @@
 				return desc;
 			});
 
-	var BulkOperation = RootClass.extend(function() {
+	var BulkOperation = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.BulkOperation',
 			field: {
@@ -3497,7 +3494,7 @@
 				 * @memberOf h5.ui.components.stage.BulkOperation
 				 */
 				constructor: function BulkOperation(targets) {
-					BulkOperation._super.call(this);
+					super_.constructor.call(this);
 					if (!targets) {
 						return;
 					}
@@ -3584,7 +3581,7 @@
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
 
-	var Viewport = RootClass.extend(function() {
+	var Viewport = RootClass.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
 
 		var desc = {
@@ -3656,7 +3653,7 @@
 				 * @memberOf h5.ui.components.stage.Viewport
 				 */
 				constructor: function Viewport() {
-					Viewport._super.call(this);
+					super_.constructor.call(this);
 					this._displayRect = stageModule.Rect.create();
 					this._worldRect = stageModule.Rect.create();
 					this._scaleX = 1;
@@ -3850,7 +3847,7 @@
 		return desc;
 	});
 
-	var CoordinateConverter = RootClass.extend(function() {
+	var CoordinateConverter = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.CoordinateConverter',
 			field: {
@@ -3861,7 +3858,7 @@
 				 * @memberOf h5.ui.components.stage.CoordinateConverter
 				 */
 				constructor: function CoordinateConverter(viewport) {
-					CoordinateConverter._super.call(this);
+					super_.constructor.call(this);
 					this._viewport = viewport;
 				},
 				toWorldPosition: function(displayX, displayY) {
@@ -3979,9 +3976,17 @@
 								return this._width;
 							},
 							set: function(value) {
+								if (value === this._width) {
+									return;
+								}
+
 								this._width = value;
 
 								if (this._rootElement) {
+									if (value < 0) {
+										value = 0;
+									}
+
 									$(this._rootElement).css({
 										width: value
 									});
@@ -3999,9 +4004,17 @@
 								return this._height;
 							},
 							set: function(value) {
+								if (value === this._height) {
+									return;
+								}
+
 								this._height = value;
 
 								if (this._rootElement) {
+									if (value < 0) {
+										value = 0;
+									}
+
 									$(this._rootElement).css({
 										height: value
 									});
@@ -6844,6 +6857,12 @@
 			if (info.isHorizontal) {
 				var currTop = info.$target.position().top;
 				var newTop = currTop + dispDy;
+
+				//TODO マウスが突き抜けた場合にずれないようにする必要がある
+				if (newTop < 0) {
+					newTop = 0;
+				}
+
 				info.$target.css({
 					top: newTop
 				});
@@ -6866,6 +6885,12 @@
 			} else {
 				var currLeft = info.$target.position().left;
 				var newLeft = currLeft + dispDx;
+
+				//TODO マウスが突き抜けた場合にずれないようにする必要がある
+				if (newLeft < 0) {
+					newLeft = 0;
+				}
+
 				info.$target.css({
 					left: newLeft
 				});
