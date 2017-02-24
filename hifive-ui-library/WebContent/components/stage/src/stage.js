@@ -3249,7 +3249,7 @@
 				scrollTo: function(worldX, worldY) {
 					this._scrollX = worldX;
 					this._scrollY = worldY;
-					this._updateTransform();
+					this._setDirty();
 				},
 
 				scrollBy: function(worldX, worldY) {
@@ -3283,20 +3283,16 @@
 					this._scaleY = y;
 
 					if (isScaleChanged) {
-						this._updateTransform();
+						this._setDirty();
 					}
 				},
 
-				_updateTransform: function() {
-					//TODO View側で行う
-					//that._rootG.setAttribute('transform', transform);
-
+				_updateTransform: function(element) {
 					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
 							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
 
-					var event = TransformEvent.create('transformUpdate');
-					event.transform = transform;
-					this.dispatchEvent(event);
+					//直下のgタグに対してtransformをかける
+					element.firstChild.setAttribute('transform', transform);
 				},
 
 				__renderDOM: function(view) {
@@ -3328,7 +3324,13 @@
 				__addDOM: function(containerElement, targetElement) {
 					//TODO zIndex対応
 					containerElement.firstChild.appendChild(targetElement);
-				}
+				},
+
+				__updateDOM: function(stageView, element) {
+					super_.__updateDOM.call(this, stageView, element);
+
+					this._updateTransform(element);
+				},
 			}
 		};
 		return desc;
@@ -4624,6 +4626,18 @@
 					return this._viewCollection.getView(this._index, columnIndex);
 				},
 
+				getViewAll: function() {
+					var numCols = this._viewCollection.numberOfColumns;
+
+					//格子状のグリッドなので、numColの列まで必ずその列に対応するビューが存在する
+					var ret = [];
+					for (var colIndex = 0; colIndex < numCols; colIndex++) {
+						var view = this._viewCollection.getView(this._index, colIndex);
+						ret.push(view);
+					}
+					return ret;
+				},
+
 				getScrollY: function() {
 					if (this._type === GRID_TYPE_SEPARATOR) {
 						//セパレータの場合はスクロールしないので常に0
@@ -4693,6 +4707,18 @@
 					}
 
 					return null; //TODO
+				},
+
+				getViewAll: function() {
+					var numRows = this._viewCollection.numberOfRows;
+
+					//格子状のグリッドなので、numRowsの行まで必ず対応するビューが存在する
+					var ret = [];
+					for (var rowIndex = 0; rowIndex < numRows; rowIndex++) {
+						var view = this._viewCollection.getView(rowIndex, this._index);
+						ret.push(view);
+					}
+					return ret;
 				}
 			}
 		};
@@ -4844,7 +4870,7 @@
 					return view;
 				},
 
-				getViews: function() {
+				getViewAll: function() {
 					var ret = [];
 
 					var that = this;
@@ -4954,7 +4980,7 @@
 					var oldViewMap = this._viewMap;
 					var oldNumOfRows = this.numberOfRows;
 					var oldNumOfCols = this.numberOfColumns;
-					var oldViews = this.getViews();
+					var oldViews = this.getViewAll();
 
 					//内部状態をクリア
 					this._clear();
@@ -6300,16 +6326,16 @@
 
 			//一番下・右のビューに対して差分を与える
 
-			var views = this._stageViewCollection.getViews();
-			var len = views.length;
-			for (var i = 0; i < len; i++) {
-				var view = views[i];
-
-				view.width = w;
-				view.height = h;
-				//TODO viewportの値はStageView側で更新すべき
-				view._viewport.setDisplaySize(w, h);
-			}
+			//			var views = this._stageViewCollection.getViewAll();
+			//			var len = views.length;
+			//			for (var i = 0; i < len; i++) {
+			//				var view = views[i];
+			//
+			//				view.width = w;
+			//				view.height = h;
+			//				//TODO viewportの値はStageView側で更新すべき
+			//				view._viewport.setDisplaySize(w, h);
+			//			}
 		},
 
 		setup: function(initData) {
