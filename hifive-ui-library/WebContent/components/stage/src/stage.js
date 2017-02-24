@@ -3300,7 +3300,6 @@
 				},
 
 				__renderDOM: function(view) {
-					//TODO ここではsvgは作らない。
 					var rootSvg = createSvgElement('svg');
 					rootSvg.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
 					rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
@@ -3408,11 +3407,36 @@
 							return graphics;
 						},
 
-						__renderDOM: function() {
-							var root = super_.__renderDOM.call(this);
-							//roleを上書き
-							root.setAttribute('data-stage-role', 'layer');
-							return root;
+						__createRootElement: function(view) {
+							var rootSvg = createSvgElement('svg');
+							rootSvg.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
+							rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
+
+							//レイヤーはgをtransformしてスクロールを実現するので
+							//overflowはvisibleである必要がある
+							rootSvg.style.overflow = "visible";
+
+							//rootGは<g>要素。transformを一括してかけるため、
+							//子要素は全てこの<g>の下に追加する。
+							var rootG = createSvgElement('g');
+							rootSvg.appendChild(rootG);
+
+							return rootSvg;
+						},
+
+						__renderDOM: function(view) {
+							var children = this._zIndexList.getAllAcendant();
+
+							var layerElement = view.getElementForLayer(this);
+
+							var childrenLen = children.length;
+							for (var i = 0; i < childrenLen; i++) {
+								var childDU = children[i];
+								var dom = childDU.__renderDOM(view);
+								this.__addDOM(layerElement, dom);
+							}
+
+							return null;
 						},
 
 						/**
@@ -3546,6 +3570,7 @@
 })();
 
 (function($) {
+	'use strict';
 
 	var RootClass = h5.cls.RootClass;
 	var stageModule = h5.ui.components.stage;
@@ -3905,7 +3930,10 @@
 						_scaleRangeX: null,
 						_scaleRangeY: null,
 
-						_layerDefsMap: null
+						_layerDefsMap: null,
+
+						_duAddListener: null,
+						_duDirtyListener: null
 					},
 
 					accessor: {
@@ -4047,42 +4075,57 @@
 							var layers = this._stage._layers;
 
 							var that = this;
-							var duAddListener = function(event) {
+							this._duAddListener = function(event) {
 								that._onDUAdd(event);
 							};
-							var duDirtyListener = function(event) {
+							this._duDirtyListener = function(event) {
 								that._onDUDirty(event);
 							};
 
 							var len = layers.length;
 							for (var i = 0; i < len; i++) {
 								var layer = layers[i];
-								var dom = layer.__renderDOM();
+
+								var layerRootElement = layer.__createRootElement(this);
+								this._layerElementMap.set(layer, layerRootElement);
 
 								//SVGのwidth, heightはSVGAttirubute
 								//top, leftはゼロ（初期値）
-								$(dom).css({
+								$(layerRootElement).css({
 									position: 'absolute',
-									overflow: 'hidden',
+									overflow: 'visible',
 									margin: 0,
 									padding: 0
 								});
 
-								layer.addEventListener('displayUnitAdd', duAddListener);
-								layer.addEventListener('displayUnitDirty', duDirtyListener);
+								layer.__renderDOM(this);
 
-								stageModule.SvgUtil.setAttributes(dom, {
-									width: this._width,
-									height: this._height
-								});
+								layer.addEventListener('displayUnitAdd', this._duAddListener);
+								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
+
+								//																stageModule.SvgUtil.setAttributes(dom, {
+								//																	width: this._width,
+								//																	height: this._height
+								//																});
 
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
-								this._rootElement.insertBefore(dom, this._rootElement.firstChild);
-								this._layerElementMap.set(layer, dom);
+								this._rootElement.appendChild(layerRootElement);
+								//										this._rootElement.firstChild);
 							}
 
 							this._updateLayerScrollPosition();
+						},
+
+						dispose: function() {
+							var that = this;
+							this._stage._layers.forEach(function(layer) {
+								layer.removeEventListener('displayUnitAdd', that._duAddListener);
+								layer
+										.removeEventListener('displayUnitDirty',
+												that._duDirtyListener);
+							});
+							$(this._rootElement).remove();
 						},
 
 						setSize: function(displayWidth, displayHeight) {
@@ -4327,6 +4370,11 @@
 							return defs;
 						},
 
+						getElementForLayer: function(layer) {
+							var elem = this._layerElementMap.get(layer);
+							return elem;
+						},
+
 						_updateLayerScrollPosition: function() {
 							//							if (this._isUpdateTransformReserved) {
 							//								return;
@@ -4518,7 +4566,7 @@
 			field: {
 				_viewCollection: null,
 				_type: null,
-				//_height: null,
+				_desiredHeight: null,
 				_index: null,
 				_overallIndex: null
 			},
@@ -4564,7 +4612,7 @@
 					super_.constructor.call(this);
 					this._viewCollection = viewCollection;
 					this._type = type;
-					this._height = 0;
+					this._desiredHeight = null;
 					this._index = index;
 					this._overallIndex = overallIndex;
 				},
@@ -4597,6 +4645,7 @@
 				_viewCollection: null,
 				_type: null,
 				_width: null,
+				_desiredWidth: null,
 				_index: null,
 				_overallIndex: null
 			},
@@ -4632,6 +4681,7 @@
 					super_.constructor.call(this);
 					this._type = type;
 					this._width = 0;
+					this._desiredWidth = null;
 					this._viewCollection = viewCollection;
 					this._index = index;
 					this._overallIndex = overallIndex;
@@ -4650,6 +4700,34 @@
 	});
 
 	var GridStageViewCollection = RootClass.extend(function(super_) {
+
+		function $createGridSeparator(index, isHorizontal, thickness, pos) {
+			var $sep = $('<div data-stage-dyn-sep-idx="' + index
+					+ '" class="stageGridSeparator"></div>');
+
+			if (isHorizontal) {
+				$sep.addClass('horizontal'); //TODO 効率化
+				$sep.css({
+					position: 'absolute',
+					width: '100%',
+					height: thickness,
+					top: pos
+				});
+			} else {
+				$sep.addClass('vertical');
+				$sep.css({
+					position: 'absolute',
+					width: thickness,
+					height: '100%',
+					left: pos
+				});
+			}
+
+			return $sep;
+		}
+
+		var DEFAULT_GRID_SEPARATOR_THICKNESS = 4;
+
 		var desc = {
 			name: 'h5.ui.components.stage.GridStageViewCollection',
 
@@ -4678,9 +4756,13 @@
 				_numberOfRowSeparators: null,
 				_numberOfColumnSeparators: null,
 
+				/** 行オブジェクトの配列 */
 				_rows: null,
 
-				//TODO 仮実装
+				/** 列オブジェクトの配列 */
+				_columns: null,
+
+				/** アクティブビュー */
 				_activeView: null
 			},
 
@@ -4729,10 +4811,11 @@
 					// 行番号 -> { 列番号 -> StageView } という二次元マップ
 					this._viewMap = {};
 
-					this._numberOfOverallRows = 1;
-					this._numberOfOverallColumns = 1;
-					this._numberOfRows = 1;
-					this._numberOfColumns = 1;
+					//初期状態では「何もない」ことにする
+					this._numberOfOverallRows = 0;
+					this._numberOfOverallColumns = 0;
+					this._numberOfRows = 0;
+					this._numberOfColumns = 0;
 					this._numberOfRowSeparators = 0;
 					this._numberOfColumnSeparators = 0;
 				},
@@ -4744,7 +4827,11 @@
 				 * @param columnIndex 列番号（画面左から順に連番、0オリジン）
 				 */
 				getView: function(rowIndex, columnIndex) {
-					var row = this._viewMap[rowIndex];
+					return this._getView(this._viewMap, rowIndex, columnIndex);
+				},
+
+				_getView: function(viewMap, rowIndex, columnIndex) {
+					var row = viewMap[rowIndex];
 					if (!row) {
 						throw new Error('指定された行にはViewはありません。 rowIndex = ' + rowIndex);
 					}
@@ -4785,6 +4872,7 @@
 				 * @param force 指定されたビューをUI操作に関係なく常にアクティブなビューとするかどうか。デフォルト：false。
 				 */
 				setActiveView: function(stageView, force) {
+					//このコレクションが保持しているViewかどうかはチェックしていない
 					this._activeView = stageView;
 					this._isForceActive = force === true;
 				},
@@ -4808,15 +4896,25 @@
 				},
 
 				getColumns: function() {
+					var ret = [];
 
+					var cols = this._columns;
+					for (var i = 0, len = cols.length; i < len; i++) {
+						var col = cols[i];
+						if (col.type === GRID_TYPE_CONTENTS) {
+							ret.push(col);
+						}
+					}
+
+					return ret;
+				},
+
+				getColumnsOfAllTypes: function() {
+					return this._columns;
 				},
 
 				//				getSeparators: function() {
 				//
-				//				},
-				//
-				//				getAllViews: function(includesSeparator) {
-				//					return [this._defaultView];
 				//				},
 
 				_clear: function() {
@@ -4831,6 +4929,219 @@
 						this._viewMap[rowIndex] = rowMap;
 					}
 					rowMap[columnIndex] = view;
+				},
+
+				_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
+						rootWidth, rootHeight) {
+
+					//セパレータは一旦削除し、グリッド構成時に改めて作成
+					$(this._stage.rootElement).find('.stageGridSeparator').remove();
+
+					//一度ビューを作成済みで、すべての分割を解除する場合
+					//					if (!horizontalSplitDefinitions && !verticalSplitDefinitions
+					//							&& this._activeView) {
+					//						//分割・複製を解除完全に解除する場合、直前のActiveViewを残す
+					//						var topLeftView = this.getView(0, 0);
+					//						this._clear();
+					//						this._addView(topLeftView, 0, 0);
+					//						this.setActiveView(topLeftView, true);
+					//						//TODO サイズ変更
+					//						//this._updateRootSize();
+					//						return;
+					//					}
+
+					//ビューを使いまわせるように直前のマップと行数・列数を保持しておく
+					var oldViewMap = this._viewMap;
+					var oldNumOfRows = this.numberOfRows;
+					var oldNumOfCols = this.numberOfColumns;
+					var oldViews = this.getViews();
+
+					//内部状態をクリア
+					this._clear();
+
+					if (!horizontalSplitDefinitions) {
+						horizontalSplitDefinitions = [{}];
+					}
+
+					var numOfRowSeps = 0;
+					var numOfRows = 0;
+					var rows = [];
+
+					var hDefsLen = horizontalSplitDefinitions.length;
+					for (var rowIndex = 0; rowIndex < hDefsLen; rowIndex++) {
+						var def = horizontalSplitDefinitions[rowIndex];
+						var stageGridRow;
+						if (def.type === GRID_TYPE_SEPARATOR) {
+							stageGridRow = StageGridRow.create(this, GRID_TYPE_SEPARATOR,
+									numOfRowSeps, rowIndex);
+							stageGridRow._desiredHeight = def.height != null ? def.height
+									: DEFAULT_GRID_SEPARATOR_THICKNESS;
+
+							numOfRowSeps++;
+						} else {
+							stageGridRow = StageGridRow.create(this, GRID_TYPE_CONTENTS, numOfRows,
+									rowIndex);
+							stageGridRow._desiredHeight = def.height;
+
+							numOfRows++;
+						}
+						rows.push(stageGridRow);
+					}
+
+					this._numberOfOverallRows = hDefsLen;
+					this._numberOfRows = numOfRows;
+					this._numberOfRowSeparators = numOfRowSeps;
+					this._rows = rows;
+
+					if (!verticalSplitDefinitions) {
+						verticalSplitDefinitions = [{}];
+					}
+
+					var numOfColSeps = 0;
+					var numOfCols = 0;
+					var cols = [];
+
+					var vDefsLen = verticalSplitDefinitions.length;
+					for (var colIndex = 0; colIndex < vDefsLen; colIndex++) {
+						var def = verticalSplitDefinitions[colIndex];
+						var stageGridCol;
+						if (def.type === GRID_TYPE_SEPARATOR) {
+							stageGridCol = StageGridColumn.create(this, GRID_TYPE_SEPARATOR,
+									numOfColSeps, colIndex);
+							stageGridCol._desiredWidth = def.width != null ? def.width
+									: DEFAULT_GRID_SEPARATOR_THICKNESS;
+
+							numOfColSeps++;
+						} else {
+							stageGridCol = StageGridColumn.create(this, GRID_TYPE_CONTENTS,
+									numOfCols, colIndex);
+							stageGridCol._desiredWidth = def.width;
+
+							numOfCols++;
+						}
+						cols.push(stageGridCol);
+					}
+
+					this._numberOfOverallColumns = vDefsLen;
+					this._numberOfColumns = numOfCols;
+					this._numberOfColumnSeparators = numOfColSeps;
+					this._columns = cols;
+
+					var reusedViews = [];
+
+					var totalHeight = 0;
+					var rowIndex = 0;
+
+					//格子状のグリッドのViewとセパレータのDOMを作成
+					for (var hDefIndex = 0; hDefIndex < hDefsLen; hDefIndex++) {
+						var hDef = horizontalSplitDefinitions[hDefIndex];
+						var row = rows[hDefIndex];
+
+						if (hDef.type === GRID_TYPE_SEPARATOR) {
+							//SeparatorにはoverallIndexを持たせる
+							$createGridSeparator(hDefIndex, true, row._desiredHeight, totalHeight)
+									.appendTo(this._stage.rootElement);
+
+							totalHeight += row._desiredHeight ? row._desiredHeight : 0;
+							continue;
+						}
+
+						var totalWidth = 0;
+						var colIndex = 0;
+
+						for (var vDefIndex = 0; vDefIndex < vDefsLen; vDefIndex++) {
+							var vDef = verticalSplitDefinitions[vDefIndex];
+							var col = cols[vDefIndex];
+
+							if (vDef.type === GRID_TYPE_SEPARATOR) {
+								//SeparatorにはoverallIndexを持たせる
+								$createGridSeparator(vDefIndex, false, col._desiredWidth,
+										totalWidth).appendTo(this._stage.rootElement);
+
+								totalWidth += col._desiredWidth ? col._desiredWidth : 0;
+								continue;
+							}
+
+							var theView;
+
+							if (rowIndex < oldNumOfRows && colIndex < oldNumOfCols) {
+								//今回の位置と同じ位置にビューがあれば再利用する
+								theView = this._getView(oldViewMap, rowIndex, colIndex);
+								reusedViews.push(theView);
+							} else {
+								//新規にビューを作成する
+								theView = StageView.create(this._stage);
+								theView.init();
+							}
+
+							this._addView(theView, rowIndex, colIndex);
+
+							//TODO scrollRange設定、サイズ設定などを行う
+							var viewH = row._desiredHeight ? row._desiredHeight : rootHeight
+									- totalHeight;
+							var viewW = col._desiredWidth ? col._desiredWidth : rootWidth
+									- totalWidth;
+
+							theView.x = totalWidth;
+							theView.y = totalHeight;
+							theView.height = viewH;
+							theView.width = viewW;
+
+							totalWidth += col._desiredWidth ? col._desiredWidth : 0;
+							colIndex++;
+						}
+
+						totalHeight += row._desiredHeight ? row._desiredHeight : 0;
+						rowIndex++;
+					}
+
+					//再利用されなかったViewを破棄
+					oldViews.filter(function(view) {
+						return reusedViews.indexOf(view) === -1;
+					}).forEach(function(v) {
+						v.dispose();
+					});
+
+					//TODO forceActive指定があればそのViewをアクティブにする
+					var topLeftView = this.getView(0, 0);
+					this.setActiveView(topLeftView);
+
+					return;
+
+					/** ************************* */
+
+
+					if (horizontalSplitDefinitions == null) {
+					} else {
+
+
+						var rxMin = null;
+						var rxMax = null;
+						if (hDef.scrollRangeX) {
+							rxMin = hDef.scrollRangeX.min != null ? hDef.scrollRangeX.min : null;
+							rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
+						}
+						this.setScrollRangeX(rxMin, rxMax);
+
+
+
+					}
+
+					if (verticalSplitDefinitions == null) {
+					} else {
+
+						var vDef = verticalSplitDefinitions[0];
+						this._t_splitWidth = vDef.width;
+
+						var ryMin = null;
+						var ryMax = null;
+						if (hDef.scrollRangeX) {
+							ryMin = hDef.scrollRangeY.min != null ? hDef.scrollRangeY.min : null;
+							ryMax = hDef.scrollRangeY.max != null ? hDef.scrollRangeY.max : null;
+						}
+
+						this.setScrollRangeY(ryMin, ryMax);
+					}
 				}
 			}
 		};
@@ -6002,10 +6313,11 @@
 				}
 			}
 
-			var view = StageView.create(this);
-			view.init();
-			this._stageViewCollection._addView(view, 0, 0);
-			this._stageViewCollection.setActiveView(view, true);
+			//初期状態では分割のない表示を行う
+			this._resetGridView(null, null);
+
+			//			this._stageViewCollection._addView(view, 0, 0);
+			//			this._stageViewCollection.setActiveView(view, true);
 			this._updateRootSize();
 		},
 
@@ -6108,7 +6420,9 @@
 			//TODO 戻り値でevArgをもらうのは仮実装
 			var evArg = this._getActiveView().setScale(scaleX, scaleY, displayOffsetX,
 					displayOffsetY);
-			this.trigger(EVENT_SIGHT_CHANGE, evArg);
+			if (evArg) {
+				this.trigger(EVENT_SIGHT_CHANGE, evArg);
+			}
 		},
 
 		_getActiveView: function() {
@@ -6128,7 +6442,7 @@
 		},
 
 		getScrollPosition: function() {
-			this._getActiveView().getScrollPosition();
+			return this._getActiveView().getScrollPosition();
 		},
 
 		_lastEnteredDU: null,
@@ -6386,142 +6700,11 @@
 		},
 
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
-			//セパレータは一旦削除し、グリッド構成時に改めて作成
-			$(this.rootElement).find('.stageGridSeparator').remove();
+			var w = $(this.rootElement).width();
+			var h = $(this.rootElement).height();
 
-			if (!horizontalSplitDefinitions && !verticalSplitDefinitions) {
-				//分割・複製を解除完全に解除する場合、直前のActiveViewを残す
-				var oldActiveView = this._stageViewCollection.getActiveView();
-				if (!oldActiveView) {
-					oldActiveView = this._stageViewCollection.getView(0, 0);
-				}
-				this._stageViewCollection.clear();
-				this._stageViewCollection._addView(oldActiveView, 0, 0);
-				this._stageViewCollection.setActiveView(view, true);
-				//TODO サイズ変更
-				this._updateRootSize();
-				return;
-			}
-
-			//TODO マップクリア
-			//this._stageViewCollection._viewMap = {};
-
-
-			if (horizontalSplitDefinitions == null) {
-				this._t_splitHeight = null;
-
-				this._stageViewCollection._numberOfOverallRows = 1;
-				this._stageViewCollection._numberOfRows = 1;
-				this._stageViewCollection._numberOfRowSeparators = 0;
-				this._stageViewCollection._rows = [StageGridRow.create(this._stageViewCollection,
-						GRID_TYPE_CONTENTS, 0, 0)];
-
-			} else {
-				var numOfRowSeps = 0;
-				var numOfRows = 0;
-
-				var stageGridRows = [];
-
-				var hDefsLen = horizontalSplitDefinitions.length;
-				for (var hi = 0; hi < hDefsLen; hi++) {
-					var def = horizontalSplitDefinitions[hi];
-					var stageGridRow;
-					if (def.type === GRID_TYPE_SEPARATOR) {
-						stageGridRow = StageGridRow.create(this._stageViewCollection,
-								GRID_TYPE_SEPARATOR, numOfRowSeps, hi);
-						stageGridRow._height = def.height;
-						numOfRowSeps++;
-					} else {
-						stageGridRow = StageGridRow.create(this._stageViewCollection,
-								GRID_TYPE_CONTENTS, numOfRows, hi);
-						stageGridRow._height = def.height;
-						numOfRows++;
-					}
-					stageGridRows.push(stageGridRow);
-				}
-
-				this._stageViewCollection._numberOfOverallRows = hDefsLen;
-				this._stageViewCollection._numberOfRows = numOfRows;
-				this._stageViewCollection._numberOfRowSeparators = numOfRowSeps;
-				this._stageViewCollection._rows = stageGridRows;
-
-				var hDef = horizontalSplitDefinitions[0];
-				this._t_splitHeight = hDef.height;
-
-				var rxMin = null;
-				var rxMax = null;
-				if (hDef.scrollRangeX) {
-					rxMin = hDef.scrollRangeX.min != null ? hDef.scrollRangeX.min : null;
-					rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max : null;
-				}
-
-				var $separator = this._$createGridSeparator(0, 0, true,
-						horizontalSplitDefinitions[1].height, hDef.height);
-				$(this.rootElement).append($separator);
-
-				this.setScrollRangeX(rxMin, rxMax);
-			}
-
-			if (verticalSplitDefinitions == null) {
-				this._t_splitWidth = null;
-				this._stageViewCollection._numberOfOverallColumns = 1;
-				this._stageViewCollection._numberOfColumns = 1;
-				this._stageViewCollection._numberOfColumnSeparators = 0;
-			} else {
-				var numOfColSeps = 0;
-				var numOfCols = 0;
-
-				var vDefsLen = verticalSplitDefinitions.length;
-				for (var vi = 0; vi < vDefsLen; vi++) {
-					var def = verticalSplitDefinitions[vi];
-					if (def.type === GRID_TYPE_SEPARATOR) {
-						numOfColSeps++;
-					} else {
-						numOfCols++;
-					}
-				}
-
-				this._stageViewCollection._numberOfOverallColumns = vDefsLen;
-				this._stageViewCollection._numberOfColumns = numOfRows;
-				this._stageViewCollection._numberOfColumnSeparators = numOfColSeps;
-
-				var vDef = verticalSplitDefinitions[0];
-				this._t_splitWidth = vDef.width;
-
-				var ryMin = null;
-				var ryMax = null;
-				if (hDef.scrollRangeX) {
-					ryMin = hDef.scrollRangeY.min != null ? hDef.scrollRangeY.min : null;
-					ryMax = hDef.scrollRangeY.max != null ? hDef.scrollRangeY.max : null;
-				}
-
-				this.setScrollRangeY(ryMin, ryMax);
-			}
-		},
-
-		_$createGridSeparator: function(rowIndex, columnIndex, isHorizontal, thickness, pos) {
-			var $sep = $('<div data-stage-dyn-row="' + rowIndex + '" data-stage-dyn-col="'
-					+ columnIndex + '" class="stageGridSeparator"></div>');
-
-			if (isHorizontal) {
-				$sep.addClass('horizontal'); //TODO 効率化
-				$sep.css({
-					position: 'absolute',
-					width: '100%',
-					height: thickness,
-					top: pos
-				});
-			} else {
-				$sep.addClass('vertical');
-				$sep.css({
-					position: 'absolute',
-					width: thickness,
-					height: '100%',
-					left: pos
-				});
-			}
-
-			return $sep;
+			this._stageViewCollection._makeGrid(horizontalSplitDefinitions,
+					verticalSplitDefinitions, w, h);
 		},
 
 		_createViewStructureChangeEventArg: function() {

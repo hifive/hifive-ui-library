@@ -406,12 +406,8 @@
 			}, {
 				type: 'separator',
 				height: 5
-			}, {
-				height: 300
-			}];
-			var vDef = [{
-				width: 200
-			}];
+			}, {}];
+			var vDef = null; //[{}];
 
 			this._stageController.splitView(hDef, vDef);
 		},
