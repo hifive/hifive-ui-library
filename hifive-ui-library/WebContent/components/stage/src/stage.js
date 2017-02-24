@@ -3309,6 +3309,8 @@
 					var rootG = createSvgElement('g');
 					rootSvg.appendChild(rootG);
 
+					this.__updateDOM(view, rootSvg);
+
 					var children = this._zIndexList.getAllAcendant();
 
 					var childrenLen = children.length;
