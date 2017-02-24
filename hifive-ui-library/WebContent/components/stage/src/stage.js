@@ -2174,7 +2174,7 @@
 							return;
 						}
 						this._isVisible = value;
-						this._domRoot.style.display = this._isVisible ? '' : 'none';
+						this._setDirty();
 					}
 				}
 			},
@@ -2350,6 +2350,8 @@
 						width: this.width,
 						height: this.height
 					});
+
+					element.style.display = this._isVisible ? '' : 'none';
 				},
 
 				__renderDOM: function() {
@@ -5655,11 +5657,11 @@
 			};
 			var bizEvent = $.event.fix(event.originalEvent);
 			bizEvent.type = triggerEventName;
-			bizEvent.target = null; //du._domRoot; //TODO 仮想化対応
-			bizEvent.currentTarget = null; // du._domRoot;
+			bizEvent.target = event.target; //null; //du._domRoot; //TODO 仮想化対応
+			bizEvent.currentTarget = event.target; // du._domRoot;
 
 			//TODO クリックされたDUの実DOMからイベントをあげるのが元々の仕様。ただし、分割が入ったのでDOM依存はよくないかも？
-			$(this.rootElement).trigger(bizEvent, evArg);
+			$(event.target).trigger(bizEvent, evArg);
 
 			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
 				//DUがselectableでない場合は選択処理はしない。
@@ -6702,7 +6704,8 @@
 			}
 
 			//TODO domRootがスクロールしても消えないことを保証する
-			var eventSource = du._domRoot;
+			//TODO DOMからDUのルートを取れるようにする
+			var eventSource = event.target; //du._domRoot;
 
 			var ev = $.event.fix(event.originalEvent);
 			ev.type = eventName;
