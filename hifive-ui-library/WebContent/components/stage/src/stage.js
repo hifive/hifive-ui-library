@@ -3203,7 +3203,7 @@
 					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
 					du._rootStage = null;
 
-					this._parentDU.__onDescendantRemoved(du);
+					this.__onDescendantRemoved(du);
 
 					//TODO イベントは直接あげずLayerで集約
 					//var event = DisplayUnitContainerEvent.create('remove');
