@@ -2373,17 +2373,6 @@
 					if (this._parentDU) {
 						this._parentDU.__onDirtyNotify(du);
 					}
-				},
-
-				/**
-				 * 子孫に要素が追加されたときに子⇒親に向かって呼び出されるコールバック
-				 *
-				 * @param targetDU
-				 */
-				__onDescendantAdded: function(targetDU) {
-					if (this._parentDU) {
-						this._parentDU.__onDescendantAdded(targetDU);
-					}
 				}
 			}
 		};
@@ -2496,8 +2485,10 @@
 						return;
 					}
 
-					var event = Event.create('renderRequest');
-					this.dispatchEvent(event);
+					this._setDirty();
+
+					//var event = Event.create('renderRequest');
+					//this.dispatchEvent(event);
 				},
 
 				select: function(isExclusive) {
@@ -2540,37 +2531,41 @@
 				/**
 				 * @overrides オーバーライド
 				 */
-				__renderDOM: function(stageView) {
+				__renderDOM: function(view) {
 					var root = createSvgElement('svg');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
 					root.setAttribute('data-h5-dyn-du-id', this.id);
 
-					this.__updateDOM(stageView, root);
+					this.__updateDOM(view, root);
+					return root;
+				},
 
+				__updateDOM: function(view, element) {
+					super_.__updateDOM.call(this, view, element);
+					$(element).empty();
+					this._update(view, element);
+				},
+
+				_update: function(view, root) {
 					if (!this._renderer) {
 						//レンダラがセットされていない場合は空の要素を返す
-						return root;
+						return;
 					}
 
 					var context = {
 						displayUnit: this,
 						rootElement: root,
-						rowIndex: 0, //TODO 正しい値を与える
-						columnIndex: 0
-					//TODO 正しい値を与える
+						rowIndex: view.rowIndex,
+						columnIndex: view.columnIndex
 					};
 
-					var graphics = this.__createGraphics(stageView, root);
+					var graphics = this.__createGraphics(view, root);
 
 					this._renderer(context, graphics);
 
-					if (!graphics.isDirty) {
-						return root;
+					if (graphics.isDirty) {
+						graphics.render();
 					}
-
-					graphics.render();
-
-					return root;
 				}
 			}
 		};
@@ -2805,6 +2800,8 @@
 						return;
 					}
 
+					this._setDirty();
+
 					//TODO rAFをここで直接使わない
 					//					var that = this;
 					//					requestAnimationFrame(function() {
@@ -2842,6 +2839,13 @@
 					this._render(rootSvg);
 
 					return rootSvg;
+				},
+
+				__updateDOM: function(view, element) {
+					super_.__updateDOM.call(this, view, element);
+					//TODO 毎回emptyしなくて済むようにする
+					$(element).empty();
+					this._render(element);
 				}
 			}
 		};
@@ -3167,6 +3171,9 @@
 					}
 
 					//このコンテナにDUが追加されたことをLayerまで通知・伝播
+					//注：ここで、parentDU.__onDescendantAdded()としてはいけない。
+					//Layerなど、自分の__onDescendantAdded()をオーバーライドしている場合に
+					//正しく動作しなくなるため。
 					this.__onDescendantAdded(du);
 
 					//TODO コンテナごとにはイベントをあげず、Layerで集約する
@@ -3196,9 +3203,12 @@
 					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
 					du._rootStage = null;
 
-					var event = DisplayUnitContainerEvent.create('remove');
-					event.displayUnit = du;
-					this.dispatchEvent(event);
+					this._parentDU.__onDescendantRemoved(du);
+
+					//TODO イベントは直接あげずLayerで集約
+					//var event = DisplayUnitContainerEvent.create('remove');
+					//event.displayUnit = du;
+					//this.dispatchEvent(event);
 				},
 
 				getDisplayUnitById: function(id) {
@@ -3322,16 +3332,38 @@
 					return rootSvg;
 				},
 
-				__addDOM: function(containerElement, targetElement) {
+				__addDOM: function(view, containerElement, targetElement) {
 					//TODO zIndex対応
 					containerElement.firstChild.appendChild(targetElement);
 				},
 
-				__updateDOM: function(stageView, element) {
-					super_.__updateDOM.call(this, stageView, element);
+				__removeDOM: function(view, containerElement, targetElement) {
+					//TODO zIndex対応
+					containerElement.firstChild.removeChild(targetElement);
+				},
+
+				__updateDOM: function(view, element) {
+					super_.__updateDOM.call(this, view, element);
 
 					this._updateTransform(element);
 				},
+
+				/**
+				 * 子孫に要素が追加されたときに子⇒親に向かって呼び出されるコールバック
+				 *
+				 * @param targetDU
+				 */
+				__onDescendantAdded: function(displayUnit) {
+					if (this._parentDU) {
+						this._parentDU.__onDescendantAdded(displayUnit);
+					}
+				},
+
+				__onDescendantRemoved: function(displayUnit) {
+					if (this._parentDU) {
+						this._parentDU.__onDescendantRemoved(displayUnit);
+					}
+				}
 			}
 		};
 		return desc;
@@ -3436,7 +3468,7 @@
 							for (var i = 0; i < childrenLen; i++) {
 								var childDU = children[i];
 								var dom = childDU.__renderDOM(view);
-								this.__addDOM(layerElement, dom);
+								this.__addDOM(view, layerElement, dom);
 							}
 
 							return null;
@@ -3459,9 +3491,20 @@
 						 * @param targetDU
 						 * @param parentDU
 						 */
-						__onDescendantAdded: function(targetDU) {
+						__onDescendantAdded: function(displayUnit) {
 							var event = DisplayUnitContainerEvent.create('displayUnitAdd');
-							event.displayUnit = targetDU;
+							event.displayUnit = displayUnit;
+							this.dispatchEvent(event);
+						},
+
+						/**
+						 * オーバーライド
+						 *
+						 * @param du 取り外されたDisplayUnit
+						 */
+						__onDescendantRemoved: function(displayUnit) {
+							var event = DisplayUnitContainerEvent.create('displayUnitRemove');
+							event.displayUnit = displayUnit;
 							this.dispatchEvent(event);
 						},
 
@@ -3939,6 +3982,7 @@
 						_columnIndex: null,
 
 						_duAddListener: null,
+						_duRemoveListener: null,
 						_duDirtyListener: null
 					},
 
@@ -4113,6 +4157,9 @@
 							this._duAddListener = function(event) {
 								that._onDUAdd(event);
 							};
+							this._duRemoveListener = function(event) {
+								that._onDURemove(event);
+							};
 							this._duDirtyListener = function(event) {
 								that._onDUDirty(event);
 							};
@@ -4136,6 +4183,7 @@
 								layer.__renderDOM(this);
 
 								layer.addEventListener('displayUnitAdd', this._duAddListener);
+								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
 
 								//																stageModule.SvgUtil.setAttributes(dom, {
@@ -4156,6 +4204,8 @@
 							var that = this;
 							this._stage._layers.forEach(function(layer) {
 								layer.removeEventListener('displayUnitAdd', that._duAddListener);
+								layer.removeEventListener('displayUnitRemove',
+										that._duRemoveListener);
 								layer
 										.removeEventListener('displayUnitDirty',
 												that._duDirtyListener);
@@ -4542,9 +4592,40 @@
 								//このparentDUは必ずLayer
 								parentDOM = this._layerElementMap.get(parentDU);
 							}
-							parentDU.__addDOM(parentDOM, dom);
+							parentDU.__addDOM(this, parentDOM, dom);
+						},
 
-							console.log('du added id =' + du.id);
+						_onDURemove: function(event) {
+							var du = event.displayUnit;
+
+							var targetElement = $(this._rootElement).find(
+									'[data-h5-dyn-du-id="' + du.id + '"]')[0];
+
+
+							if (!targetElement) {
+								//対象のDOMを描画していなければ何もしない
+								return;
+							}
+
+							//具体的なDOMの削除方法はコンテナ自身が知っているのでコンテナを取得する
+							var parentDU = du.parentDisplayUnit;
+
+							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
+							var $parent = $(this._rootElement).find(
+									'[data-h5-dyn-du-id="' + du.parentDisplayUnit.id + '"]');
+							var parentDOM = $parent[0];
+
+							if (parentDOM === undefined) {
+								//親に対応するDOMが見つからなかったということは
+								//レイヤーに直接追加されたもの
+								//（コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する）
+								//$(this._rootElement).append(dom);
+
+								//このparentDUは必ずLayer
+								parentDOM = this._layerElementMap.get(parentDU);
+							}
+
+							parentDU.__removeDOM(this, parentDOM, targetElement);
 						}
 					}
 				};
