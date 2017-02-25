@@ -3055,15 +3055,16 @@
 			name: 'h5.ui.components.stage.DisplayUnitContainerEvent',
 
 			field: {
-				displayUnit: null
+				displayUnit: null,
+				parentDisplayUnit: null
 			},
 
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.DisplayUnitContainerEvent
 				 */
-				constructor: function DisplayUnitContainerEvent(eventName) {
-					super_.constructor.call(this, eventName);
+				constructor: function DisplayUnitContainerEvent(type) {
+					super_.constructor.call(this, type);
 				}
 			}
 		};
@@ -3203,7 +3204,7 @@
 					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
 					du._rootStage = null;
 
-					this.__onDescendantRemoved(du);
+					this.__onDescendantRemoved(du, this);
 
 					//TODO イベントは直接あげずLayerで集約
 					//var event = DisplayUnitContainerEvent.create('remove');
@@ -3359,9 +3360,9 @@
 					}
 				},
 
-				__onDescendantRemoved: function(displayUnit) {
+				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
 					if (this._parentDU) {
-						this._parentDU.__onDescendantRemoved(displayUnit);
+						this._parentDU.__onDescendantRemoved(displayUnit, parentDisplayUnit);
 					}
 				}
 			}
@@ -3502,9 +3503,10 @@
 						 *
 						 * @param du 取り外されたDisplayUnit
 						 */
-						__onDescendantRemoved: function(displayUnit) {
+						__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
 							var event = DisplayUnitContainerEvent.create('displayUnitRemove');
 							event.displayUnit = displayUnit;
+							event.parentDisplayUnit = parentDisplayUnit;
 							this.dispatchEvent(event);
 						},
 
@@ -4601,25 +4603,25 @@
 							var targetElement = $(this._rootElement).find(
 									'[data-h5-dyn-du-id="' + du.id + '"]')[0];
 
-
 							if (!targetElement) {
 								//対象のDOMを描画していなければ何もしない
 								return;
 							}
 
 							//具体的なDOMの削除方法はコンテナ自身が知っているのでコンテナを取得する
-							var parentDU = du.parentDisplayUnit;
+							//なお、ターゲットのDU自身は既に削除された後なので
+							//parentDisplayUnitを参照してもnullなので注意。
+							var parentDU = event.parentDisplayUnit;
 
 							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
 							var $parent = $(this._rootElement).find(
-									'[data-h5-dyn-du-id="' + du.parentDisplayUnit.id + '"]');
+									'[data-h5-dyn-du-id="' + parentDU.id + '"]');
 							var parentDOM = $parent[0];
 
 							if (parentDOM === undefined) {
 								//親に対応するDOMが見つからなかったということは
 								//レイヤーに直接追加されたもの
-								//（コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する）
-								//$(this._rootElement).append(dom);
+								//TODO 現時点では、コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する
 
 								//このparentDUは必ずLayer
 								parentDOM = this._layerElementMap.get(parentDU);
