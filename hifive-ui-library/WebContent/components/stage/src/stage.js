@@ -4670,15 +4670,17 @@
 						},
 
 						setScrollRangeX: function(minDisplayX, maxDisplayX) {
-							//TODO 同じ列のものは全て同じ設定を適用させる？
-							//それとも、このメソッドはStageViewでは直接提供せず Collection側で定義させる？
-							//TODO 仮実装
-							return this._stage.setScrollRangeX(minDisplayX, maxDisplayX);
+							this._scrollRangeX = {
+								min: minDisplayX,
+								max: maxDisplayX
+							};
 						},
 
 						setScrollRangeY: function(minDisplayY, maxDisplayY) {
-							//TODO 仮実装
-							return this._stage.setScrollRangeY(minDisplayY, maxDisplayY);
+							this._scrollRangeY = {
+								min: minDisplayY,
+								max: maxDisplayY
+							};
 						},
 
 						getDefsForLayer: function(layer) {
@@ -5728,6 +5730,36 @@
 
 								this.setScrollRangeY(ryMin, ryMax);
 							}
+						},
+
+						_setRowScrollBarMode: function(rowIndex, mode) {
+							var row = this.getRow(rowIndex);
+							row._scrollBarMode = mode;
+
+							var bottommostView = row.getView(this.numberOfColumns);
+
+							if (mode === SCROLL_BAR_MODE_ALWAYS) {
+								bottommostView.height -= SCROLL_BAR_THICKNESS;
+								var $root = $('<div class="h5-stage-vscrollbar"></div>');
+								row._scrollBarController = this._createVScrollBarController(
+										$root[0], row.height, 300);
+							}
+						},
+
+						_createVScrollBarController: function(rootElement, height, scrollValue) {
+							var controller = h5.core.controller(rootElement,
+									h5.ui.components.stage.VerticalScrollBarController);
+
+							controller.readyPromise.done(function() {
+								this.setScrollSize(height, scrollValue);
+								this.setBarSize(height);
+							});
+
+							return controller;
+						},
+
+						_setColumnScrollBarMode: function(columnIndex, mode) {
+
 						},
 
 						_onViewportScaleChange: function(event) {
@@ -7312,15 +7344,15 @@
 			this.scrollBy(0, dy);
 		},
 
-		'{rootElement} keydown': function(context) {
+		'{document} keydown': function(context) {
 			this._processKeyEvent(context.event, EVENT_DU_KEY_DOWN);
 		},
 
-		'{rootElement} keypress': function(context) {
+		'{document} keypress': function(context) {
 			this._processKeyEvent(context.event, EVENT_DU_KEY_PRESS);
 		},
 
-		'{rootElement} keyup': function(context) {
+		'{document} keyup': function(context) {
 			this._processKeyEvent(context.event, EVENT_DU_KEY_UP);
 		},
 
@@ -7360,17 +7392,11 @@
 		},
 
 		setScrollRangeX: function(minDisplayX, maxDisplayX) {
-			this._scrollRangeX = {
-				min: minDisplayX,
-				max: maxDisplayX
-			};
+			return this._getActiveView().setScrollRangeX(minDisplayX, maxDisplayX);
 		},
 
 		setScrollRangeY: function(minDisplayY, maxDisplayY) {
-			this._scrollRangeY = {
-				min: minDisplayY,
-				max: maxDisplayY
-			};
+			return this._getActiveView().setScrollRangeY(minDisplayY, maxDisplayY);
 		},
 
 		_stageViewCollection: null,
