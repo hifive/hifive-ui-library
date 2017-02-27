@@ -5118,10 +5118,12 @@
 
 								var that = this;
 
+								var amount = maxValue - minValue;
+
 								var controller = this._createVScrollBarController($root[0],
-										row.height, 1000);
+										row.height, amount);
 								controller.readyPromise.done(function() {
-									this.setScrollSize(height, maxValue);
+									this.setScrollSize(height, amount);
 									this.setBarSize(height);
 									this.setScrollPosition(that.getScrollY());
 								});
@@ -5148,10 +5150,9 @@
 							}
 						},
 
-						_createVScrollBarController: function(rootElement, height, scrollValue) {
+						_createVScrollBarController: function(rootElement) {
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.VerticalScrollBarController);
-
 							return controller;
 						},
 
@@ -5255,6 +5256,15 @@
 							return ret;
 						},
 
+						getScrollX: function() {
+							if (this._type === GRID_TYPE_SEPARATOR) {
+								//セパレータの場合はスクロールしないので常に0
+								return 0;
+							}
+							var firstView = this._viewCollection.getView(0, this._index);
+							return firstView.getScrollPosition().x;
+						},
+
 						setScrollX: function(value) {
 							if (this._type === GRID_TYPE_SEPARATOR) {
 								//セパレータの場合はスクロールしないので常に0
@@ -5275,7 +5285,7 @@
 									maxDisplayX);
 						},
 
-						_setScrollBarMode: function(col, mode) {
+						_setScrollBarMode: function(col, mode, minValue, maxValue) {
 							var bottommostView = col.getView(this._viewCollection.numberOfRows - 1);
 
 							if (mode === SCROLL_BAR_MODE_ALWAYS) {
@@ -5290,13 +5300,18 @@
 									cursor: 'default'
 								});
 
-								col._scrollBarController = this._createHScrollBarController(
-										$root[0], col.width, col.width);
+								var amount = maxValue - minValue;
+
+								col._scrollBarController = this
+										._createHScrollBarController($root[0]);
+
+								var that = this;
 
 								col._scrollBarController.readyPromise.done(function() {
 									//第1はサムの相対値、第2が最大値
-									this.setScrollSize(10, 1000);
+									this.setScrollSize(col.width, amount);
 									this.setBarSize(col.witdh);
+									this.setScrollPosition(that.getScrollX());
 								});
 
 								$root.appendTo(this._viewCollection._stage.rootElement);
@@ -5310,10 +5325,9 @@
 							}
 						},
 
-						_createHScrollBarController: function(rootElement, width, scrollValue) {
+						_createHScrollBarController: function(rootElement) {
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.HorizontalScrollBarController);
-
 							return controller;
 						},
 
