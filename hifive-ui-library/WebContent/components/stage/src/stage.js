@@ -3653,6 +3653,8 @@
 	var Layer = h5.cls.manager.getClass('h5.ui.components.stage.Layer');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
 
+	var SvgUtil = h5.ui.components.stage.SvgUtil;
+
 	var Viewport = EventDispatcher.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
 
@@ -3993,7 +3995,10 @@
 						_coordinateConverter: null,
 
 						_rootElement: null,
-						_foremostLayer: null,
+
+						_foremostSvg: null,
+						_foremostSvgGroup: null,
+
 						_viewport: null,
 
 						/**
@@ -4204,6 +4209,39 @@
 							this._isViewportEventSuppressed = false;
 						},
 
+						_initForemostSvg: function() {
+							var foremostSvg = SvgUtil.createElement('svg');
+							foremostSvg.setAttribute('data-h5-dyn-stage-role', 'foremostSvg'); //TODO for debugging
+
+							//レイヤーはgをtransformしてスクロールを実現するので
+							//overflowはvisibleである必要がある
+							foremostSvg.style.overflow = "visible";
+
+							//rootGは<g>要素。transformを一括してかけるため、
+							//子要素は全てこの<g>の下に追加する。
+							var foremostG = SvgUtil.createElement('g');
+							foremostSvg.appendChild(foremostG);
+
+							//SVGのwidth, heightはSVGAttirubute
+							//Chromeの場合overflow:visibleにしてもサイズを0x0にすると
+							//描画されなくなるため1x1とする。
+							$(foremostSvg).css({
+								position: 'absolute',
+								margin: 0,
+								padding: 0,
+								width: 1,
+								height: 1
+							});
+
+							SvgUtil.setAttributes(foremostSvg, {
+								overflow: 'visible'
+							});
+
+							this._foremostSvg = foremostSvg;
+							this._foremostSvgGroup = foremostG;
+							this._rootElement.appendChild(foremostSvg);
+						},
+
 						init: function() {
 							var $root = $('<div class="h5-stage-view-root"></div>');
 							$root.css({
@@ -4240,25 +4278,23 @@
 								this._layerElementMap.set(layer, layerRootElement);
 
 								//SVGのwidth, heightはSVGAttirubute
+								//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
+								//DOMツリー上の子要素が直接クリックできるようにする。
+								//（そうしないとDUをクリックできない）
+								//IE11とFirefox50で確認。
+								//なお、Chromeの場合はoverflow:visibleにしてもサイズを0x0にすると
+								//描画されなくなるため1x1とする。
 								$(layerRootElement).css({
 									position: 'absolute',
 									margin: 0,
-									padding: 0
+									padding: 0,
+									width: 1,
+									height: 1
 								});
 
-								//TODO ブラウザ判定でなく機能判定できる方法があれば変更する
-								if (h5.env.ua.isIE || h5.env.ua.isFirefox) {
-									//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
-									//DOMツリー上の子要素が直接クリックできるようにする。
-									//（そうしないとDUをクリックできない）
-									//IE11とFirefox50で確認。
-									//なお、Chromeの場合はoverflow:visibleにしてもサイズを0x0にすると
-									//描画されなくなるため設定しない。
-									$(layerRootElement).css({
-										width: 0,
-										height: 0
-									});
-								}
+								stageModule.SvgUtil.setAttributes(layerRootElement, {
+									overflow: 'visible'
+								});
 
 								layer.__renderDOM(this);
 
@@ -4266,14 +4302,12 @@
 								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
 
-								stageModule.SvgUtil.setAttributes(layerRootElement, {
-									overflow: 'visible'
-								});
-
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
 								this._rootElement.appendChild(layerRootElement);
 							}
+
+							this._initForemostSvg();
 
 							this._updateLayerScrollPosition();
 						},
