@@ -4222,17 +4222,25 @@
 								this._layerElementMap.set(layer, layerRootElement);
 
 								//SVGのwidth, heightはSVGAttirubute
-								//top, leftはゼロ（初期値）
-								//レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
-								//DOMツリー上の子要素が直接クリックできるようにする
 								$(layerRootElement).css({
 									position: 'absolute',
-									overflow: 'visible',
 									margin: 0,
-									padding: 0,
-									width: 0,
-									height: 0
+									padding: 0
 								});
+
+								//TODO ブラウザ判定でなく機能判定できる方法があれば変更する
+								if (h5.env.ua.isIE || h5.env.ua.isFirefox) {
+									//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
+									//DOMツリー上の子要素が直接クリックできるようにする。
+									//（そうしないとDUをクリックできない）
+									//IE11とFirefox50で確認。
+									//なお、Chromeの場合はoverflow:visibleにしてもサイズを0x0にすると
+									//描画されなくなるため設定しない。
+									$(layerRootElement).css({
+										width: 0,
+										height: 0
+									});
+								}
 
 								layer.__renderDOM(this);
 
@@ -4240,15 +4248,13 @@
 								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
 
-								//																stageModule.SvgUtil.setAttributes(dom, {
-								//																	width: this._width,
-								//																	height: this._height
-								//																});
+								stageModule.SvgUtil.setAttributes(layerRootElement, {
+									overflow: 'visible'
+								});
 
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
 								this._rootElement.appendChild(layerRootElement);
-								//										this._rootElement.firstChild);
 							}
 
 							this._updateLayerScrollPosition();
