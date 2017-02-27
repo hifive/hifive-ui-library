@@ -3632,6 +3632,7 @@
 	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
+	var Event = h5.cls.manager.getClass('h5.event.Event');
 	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
 
 	var Viewport = EventDispatcher.extend(function(super_) {
@@ -3732,6 +3733,10 @@
 					var ww = this._displayRect.width / this._scaleX;
 					var wh = this._displayRect.height / this._scaleY;
 					this._worldRect.setRect(wx, wy, ww, wh);
+
+					//setWorldRectもあるので注意
+					var event = Event.create('rectChange');
+					this.dispatchEvent(event);
 				},
 
 				setWorldSize: function(worldWidth, worldHeight) {
@@ -3746,6 +3751,9 @@
 					var dw = this._worldRect.width * this._scaleX;
 					var dh = this._worldRect.height * this._scaleY;
 					this._displayRect.setRect(dx, dy, dw, dh);
+
+					var event = Event.create('rectChange');
+					this.dispatchEvent(event);
 				},
 
 				getWorldRect: function() {
@@ -3779,6 +3787,9 @@
 					var newWorldH = this.displayHeight / this._scaleY;
 					this._worldRect.setSize(newWorldW, newWorldH);
 
+					var event = Event.create('scaleChange');
+					this.dispatchEvent(event);
+
 					//今回の拡縮の際の中心点（ワールド座標系）
 					var worldScaleCenterX = centerWorldX;
 					var worldScaleCenterY = centerWorldY;
@@ -3794,6 +3805,7 @@
 					var worldDy = (newWorldH - oldWorldH) * gapYRatio;
 
 					//DisplayRect側を更新すれば、WorldRect側は自動的に更新される
+					//このタイミングで rectChangeイベントが発生する
 					this.scrollWorldBy(-worldDx, -worldDy);
 				},
 
@@ -3990,7 +4002,10 @@
 
 						_duAddListener: null,
 						_duRemoveListener: null,
-						_duDirtyListener: null
+						_duDirtyListener: null,
+
+						_viewportRectChangeListener: null,
+						_viewportScaleChangeListener: null
 					},
 
 					accessor: {
@@ -4044,11 +4059,8 @@
 										width: value
 									});
 
-									this._layerElementMap.forEach(function(dom, key, map) {
-										stageModule.SvgUtil.setAttributes(dom, {
-											width: value
-										});
-									});
+									//注：レイヤーに対してはサイズを設定してはいけない。
+									//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 								}
 							}
 						},
@@ -4074,11 +4086,8 @@
 										height: value
 									});
 
-									this._layerElementMap.forEach(function(dom, key, map) {
-										stageModule.SvgUtil.setAttributes(dom, {
-											height: value
-										});
-									});
+									//注：レイヤーに対してはサイズを設定してはいけない。
+									//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 								}
 
 								//								var event = PropertyChangeEvent.create('height', oldValue, value);
@@ -4127,7 +4136,8 @@
 							this._x = 0;
 							this._y = 0;
 
-							this._viewport = Viewport.create();
+							var viewport = Viewport.create();
+							this._viewport = viewport;
 
 							this._layerDOMs = [];
 
@@ -4158,6 +4168,18 @@
 							};
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
+
+							var that = this;
+							this._viewportRectChangeListener = function(event) {
+								that._onViewportRectChange(event);
+							};
+							this._viewportScaleChangeListener = function(event) {
+								that._onViewportScaleChange(event);
+							};
+							viewport.addEventListener('rectChange',
+									this._viewportRectChangeListener);
+							viewport.addEventListener('scaleChange',
+									this._viewportScaleChangeListener);
 						},
 
 						init: function() {
@@ -4234,6 +4256,12 @@
 										.removeEventListener('displayUnitDirty',
 												that._duDirtyListener);
 							});
+
+							this._viewport.removeEventListener('rectChange',
+									this._viewportRectChangeListener);
+							this._viewport.removeEventListener('scaleChange',
+									this._viewportScaleChangeListener);
+
 							$(this._rootElement).remove();
 						},
 
@@ -4639,6 +4667,16 @@
 							}
 
 							parentDU.__removeDOM(this, parentDOM, targetElement);
+						},
+
+						_onViewportRectChange: function(event) {
+							var event = Event.create('viewportRectChange');
+							this.dispatchEvent(event);
+						},
+
+						_onViewportScaleChange: function(event) {
+							var event = Event.create('viewportScaleChange');
+							this.dispatchEvent(event);
 						}
 					}
 				};
@@ -4931,7 +4969,13 @@
 				_columns: null,
 
 				/** アクティブビュー */
-				_activeView: null
+				_activeView: null,
+
+				_viewportRectChangeListener: null,
+				_onViewportRectChange: null,
+
+				_viewportScaleChangeListener: null,
+				_onViewportScaleChange: null
 			},
 
 			accessor: {
