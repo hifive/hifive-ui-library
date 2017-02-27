@@ -663,88 +663,6 @@
 	});
 
 
-	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
-
-	var dragController = {
-		/**
-		 * @memberOf h5.ui.components.stage.DragController
-		 */
-		__name: 'h5.ui.components.stage.DragController',
-
-		_dragSession: null,
-
-		getDragSession: function() {
-			return this._dragSession;
-		},
-
-		'{rootElement} h5trackstart': function(context) {
-			this._dragSession = DragSession.create(this.rootElement, context.event);
-			//TODO DragStartイベントの出し方
-			this.trigger('dgDragStart', {
-				dragSession: this._dragSession
-			});
-		},
-
-		'{rootElement} h5trackmove': function(context) {
-			if (!this._dragSession || this._dragSession.isCompleted) {
-				return;
-			}
-
-			var ev = context.event;
-			var dx = ev.dx;
-			var dy = ev.dy;
-			this._dragSession._onMove(dx, dy);
-		},
-
-		'{rootElement} h5trackend': function(context) {
-			if (!this._dragSession || this._dragSession.isCompleted) {
-				return;
-			}
-
-			var ds = this._dragSession;
-
-			ds.complete();
-
-			this._dragSession = null;
-
-			//TODO dragSessionを渡すべきか？
-			this.trigger('dgDragEnd', {
-				dragSession: ds
-			});
-		}
-	};
-
-	h5.core.expose(dragController);
-
-	var dragSessionController = {
-		/**
-		 * @memberOf h5.ui.components.stage.DragSessionController_TOBEDELETED
-		 */
-		__name: 'h5.ui.components.stage.DragSessionController',
-
-		_dragSession: null,
-
-		setDragSession: function(dragSession) {
-			this._dragSession = dragSession;
-		},
-
-		'{rootElement} h5trackstart': function(context) {
-		//ignore
-		},
-
-		'{rootElement} h5trackmove': function(context) {
-			var ev = context.event;
-			var dx = ev.dx;
-			var dy = ev.dy;
-			this._dragSession._onMove(dx, dy);
-		},
-
-		'{rootElement} h5trackend': function(context) {
-			this._dragSession.complete();
-		}
-	};
-
-
 	var Rect = RootClass
 			.extend(function(super_) {
 				var desc = {
@@ -5747,15 +5665,7 @@
 		 */
 		__name: 'h5.ui.components.stage.StageController',
 
-		//ルートとなるSVG要素(直接の子は_layerRootGのg要素のみ)
-		_duRoot: null,
-
 		_layers: null,
-
-		//全てのレイヤーの親となるg要素。実質的に全てのDUはこのg要素の下に入る。
-		_layerRootG: null,
-
-		_foremostLayer: null,
 
 		_units: null,
 
@@ -5941,16 +5851,6 @@
 		},
 
 		__ready: function() {
-			//グローバルForemostLayerはStageに直接追加
-			this._foremostLayer = Layer.create(LAYER_ID_FOREMOST, this);
-			//this.rootElement.appendChild(this._foremostLayer._domRoot);
-
-			//TODO グローバルなForemostLayerはただのdiv/svgとし、独自処理にする
-			//			stageModule.SvgUtil
-			//					.setAttribute(this._foremostLayer._domRoot, 'pointer-events', 'none');
-
-			this._foremostLayer._onAddedToRoot(this);
-
 			//overflow: hiddenは各StageView側で設定
 			$(this.rootElement).css({
 				position: 'absolute'
@@ -6322,7 +6222,7 @@
 					}
 				} else {
 					//DUを掴んでいない場合またはDU.isDraggable=falseの場合、
-					//・Ctrlキーを押している場合はSELECTドラッグ
+					//・Shiftキーを押している場合はSELECTドラッグ
 					//・押していなくてかつスクロール方向がNONE以外ならSCREENドラッグ　を開始
 					if (event.shiftKey) {
 						var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_START, {
@@ -6373,6 +6273,10 @@
 			//IE11, FFでは、cursorを書き換えた瞬間に(ドラッグ途中でも)変更される。
 			function setCursor(value) {
 				$root.css('cursor', value);
+			}
+
+			function nofityDragSessionToView(dragSession) {
+				this._stageViewCollection.setDragSession(dragSession);
 			}
 		},
 
