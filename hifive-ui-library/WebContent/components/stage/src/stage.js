@@ -4526,6 +4526,25 @@
 							return elem;
 						},
 
+						/**
+						 * 指定された要素がこのビューに属するものかどうかを返します。 ビューのルート要素を指定した場合にもtrueが返ります。
+						 *
+						 * @param element
+						 */
+						isElementOwner: function(element) {
+							if (this._rootElement === element) {
+								//このビューのルート要素そのもの
+								return true;
+							}
+
+							if (this._rootElement.compareDocumentPosition(element)
+									& Node.DOCUMENT_POSITION_CONTAINED_BY) {
+								//ルート要素の子要素ならtrue
+								return true;
+							}
+							return false;
+						},
+
 						_updateLayerScrollPosition: function() {
 							var layers = this._stage._layers;
 
@@ -6299,6 +6318,11 @@
 
 			var event = context.event;
 
+			var view = this._getActiveViewFromElement(event.target);
+			if (view) {
+				this._stageViewCollection.setActiveView(view);
+			}
+
 			if ($(event.target).hasClass('stageGridSeparator')) {
 				//ドラッグ対象がグリッドセパレータの場合は
 				//グリッドのサイズ変更とみなす
@@ -6778,11 +6802,6 @@
 			return this._getActiveView().scrollTo(dispX, dispY);
 		},
 
-		_scrollTo: function(dispX, dispY) {
-			//TODO 仮
-			return this._getActiveView()._scrollTo(dispX, dispY);
-		},
-
 		scrollBy: function(displayDx, displayDy) {
 			return this._getActiveView().scrollBy(displayDx, displayDy);
 		},
@@ -6817,6 +6836,17 @@
 
 		_getActiveView: function() {
 			return this._stageViewCollection.getActiveView();
+		},
+
+		_getActiveViewFromElement: function(element) {
+			var views = this._stageViewCollection.getViewAll();
+			for (var i = 0, len = views.length; i < len; i++) {
+				var view = views[i];
+				if (view.isElementOwner(element)) {
+					return view;
+				}
+			}
+			return null;
 		},
 
 		setScaleRangeX: function(min, max) {
@@ -6967,6 +6997,11 @@
 		'{rootElement} wheel': function(context, $el) {
 			var event = context.event;
 			var wheelEvent = event.originalEvent;
+
+			var view = this._getActiveViewFromElement(event.target);
+			if (view) {
+				this._stageViewCollection.setActiveView(view);
+			}
 
 			//画面のスクロールをキャンセル
 			event.preventDefault();
