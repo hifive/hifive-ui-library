@@ -83,7 +83,8 @@
 			var newSelected = null;
 			if (!this.isSelected(obj)) {
 				//非選択状態であれば自動的に選択状態に(追加)する
-				newSelected = this.select(obj);
+				this._select(obj);
+				newSelected = [obj];
 			} else {
 				//既に選択済みだったので、新規選択リストは空をセット
 				newSelected = [];
@@ -134,6 +135,11 @@
 		 * @returns {Any[]} 実際に選択されたオブジェクトの配列を返す(既に選択済みだったものは除く)
 		 */
 		select: function(objs, isExclusive) {
+			var result = this._select(objs, isExclusive);
+			return result.actuals;
+		},
+
+		_select: function(objs, isExclusive) {
 			var oldFocused = this._focused;
 			var unselected = null;
 
@@ -144,7 +150,7 @@
 				unselected = [];
 			}
 
-			objs = $.isArray(objs) ? objs : [objs];
+			objs = Array.isArray(objs) ? objs : [objs];
 
 			// デフォルトで、先頭のものをfocus状態にする
 			var shouldRefocus = this._selected.length === 0;
@@ -181,12 +187,16 @@
 			}
 			if (actuals.length > 0 && shouldRefocus) {
 				// フォーカスされているものが無ければ、今回追加したものの先頭をフォーカスする
-				this.focus(actuals[0]);
+				this._focused = actuals[0];
 			}
 
 			this._dispatchSelectionChangeEvent(actuals, unselected, oldFocused);
 
-			return actuals;
+			return {
+				actuals: actuals,
+				unselected: unselected,
+				oldFocused: oldFocused
+			};
 		},
 
 		/**
