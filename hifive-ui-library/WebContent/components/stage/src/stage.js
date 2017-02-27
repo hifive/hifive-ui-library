@@ -1665,8 +1665,8 @@
 		var ID_SEQ_PREFIX = 'def_';
 
 		//TODO 仮実装、連番一意ID生成
-		function createDefId(layer) {
-			return ID_SEQ_PREFIX + layer.id + '_' + idSequence++;
+		function createDefId(view) {
+			return ID_SEQ_PREFIX + view.rowIndex + '_' + view.columnIndex + '_' + idSequence++;
 		}
 
 		var desc = {
@@ -1675,7 +1675,7 @@
 				_rootSvg: null,
 				_defs: null,
 				_renderWaitingList: null,
-				_layer: null
+				_view: null
 			},
 			accessor: {
 				isDirty: {
@@ -1688,12 +1688,12 @@
 				/**
 				 * @memberOf h5.ui.components.stage.SVGGraphics
 				 */
-				constructor: function SVGGraphics(layer, rootSvg, rootDefs) {
+				constructor: function SVGGraphics(view, rootSvg, rootDefs) {
 					super_.constructor.call(this);
 					this._rootSvg = rootSvg;
 					this._defs = rootDefs;
 					this._renderWaitingList = [];
-					this._layer = layer;
+					this._view = view;
 				},
 
 				_addDefinition: function(svgElementWrapper) {
@@ -1730,7 +1730,7 @@
 
 				createLinearGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId(this.layer);
+						id = createDefId(this._view);
 					}
 
 					var element = createSvgElement('linearGradient');
@@ -1741,7 +1741,7 @@
 
 				createRadialGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId(this.layer);
+						id = createDefId(this._view);
 					}
 
 					var element = createSvgElement('radialGradient');
@@ -3493,13 +3493,13 @@
 							//							this.scrollTo(x, y);
 						},
 
-						__createGraphics: function(stageView, svgRoot) {
+						__createGraphics: function(view, svgRoot) {
 							var SVGGraphics = h5.cls.manager
 									.getClass('h5.ui.components.stage.SVGGraphics');
 
-							var defs = stageView.getDefsForLayer(this);
+							var defs = view.getDefsForLayer(this);
 
-							var graphics = SVGGraphics.create(this, svgRoot, defs);
+							var graphics = SVGGraphics.create(view, svgRoot, defs);
 							return graphics;
 						},
 
