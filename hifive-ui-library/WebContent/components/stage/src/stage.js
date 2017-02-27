@@ -2072,7 +2072,15 @@
 				_groupTag: null,
 				_isVisible: null,
 
-				_belongingLayer: null
+				_belongingLayer: null,
+
+				/**
+				 * この要素を現在選択可能かどうか
+				 */
+				_isSelectable: null,
+
+				_isSelected: null,
+				_isFocused: null
 			},
 			accessor: {
 				x: {
@@ -2182,6 +2190,34 @@
 						this._isVisible = value;
 						this._setDirty();
 					}
+				},
+
+				isSelectable: {
+					get: function() {
+						return this._isSelectable;
+					},
+					set: function(value) {
+						if (this._isSelectable === value) {
+							return;
+						}
+						this._isSelectable = value;
+						if (value === false) {
+							//選択不能になったので、選択状態を解除
+							this.unselect();
+						}
+					}
+				},
+
+				isSelected: {
+					get: function() {
+						return this._isSelected;
+					}
+				},
+
+				isFocused: {
+					get: function() {
+						return this._isFocused;
+					}
 				}
 			},
 			method: {
@@ -2199,6 +2235,10 @@
 						//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 						this.id = id;
 					}
+
+					this._isSelectable = true;
+					this._isSelected = false;
+					this._isFocused = false;
 
 					//コンストラクタではバッキングストアを直接初期化するが、
 					//他の場所では必ずアクセサ経由で呼び出すこと。
@@ -2345,6 +2385,34 @@
 					return wpos;
 				},
 
+				select: function(isExclusive) {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.select(this, isExclusive);
+				},
+
+				unselect: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.unselect(this);
+				},
+
+				focus: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.focus(this);
+				},
+
+				unfocus: function(andUnselect) {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage.unfocus(andUnselect);
+				},
+
 				_setDirty: function() {
 					if (this._parentDU) {
 						this._parentDU.__onDirtyNotify(this);
@@ -2402,40 +2470,8 @@
 				_isDragging: null,
 
 				_renderer: null,
-				_isSelected: null,
-				_isFocused: null,
-
-				/**
-				 * この要素を現在選択可能かどうか
-				 */
-				_isSelectable: null
 			},
 			accessor: {
-				isSelectable: {
-					get: function() {
-						return this._isSelectable;
-					},
-					set: function(value) {
-						if (this._isSelectable === value) {
-							return;
-						}
-						this._isSelectable = value;
-						if (value === false) {
-							//選択不能になったので、選択状態を解除
-							this.unselect();
-						}
-					}
-				},
-				isSelected: {
-					get: function() {
-						return this._isSelected;
-					}
-				},
-				isFocused: {
-					get: function() {
-						return this._isFocused;
-					}
-				},
 				width: {
 					get: function() {
 						return super_.width.get.call(this);
@@ -2464,12 +2500,8 @@
 				constructor: function BasicDisplayUnit(id) {
 					super_.constructor.call(this, id);
 
-					this._isSelectable = true;
 					this.isDraggable = true;
 					this._isDragging = false;
-
-					this._isSelected = false;
-					this._isFocused = false;
 				},
 				/**
 				 * rendererのシグネチャ：function(graphics, du)
@@ -2496,34 +2528,6 @@
 
 					//var event = Event.create('renderRequest');
 					//this.dispatchEvent(event);
-				},
-
-				select: function(isExclusive) {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.select(this, isExclusive);
-				},
-
-				unselect: function() {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.unselect(this);
-				},
-
-				focus: function() {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.focus(this);
-				},
-
-				unfocus: function(andUnselect) {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.unfocus(andUnselect);
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
@@ -3629,11 +3633,14 @@
 
 	var RootClass = h5.cls.RootClass;
 	var stageModule = h5.ui.components.stage;
-	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
-	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
-	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
+
 	var Event = h5.cls.manager.getClass('h5.event.Event');
 	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
+
+	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
+	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
+	var Layer = h5.cls.manager.getClass('h5.ui.components.stage.Layer');
+	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
 
 	var Viewport = EventDispatcher.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
@@ -5886,7 +5893,7 @@
 
 		__ready: function() {
 			//グローバルForemostLayerはStageに直接追加
-			this._foremostLayer = stageModule.Layer.create(LAYER_ID_FOREMOST, this);
+			this._foremostLayer = Layer.create(LAYER_ID_FOREMOST, this);
 			//this.rootElement.appendChild(this._foremostLayer._domRoot);
 
 			//TODO グローバルなForemostLayerはただのdiv/svgとし、独自処理にする
@@ -6737,7 +6744,7 @@
 			if (initData.layers) {
 				for (var i = 0, len = initData.layers.length; i < len; i++) {
 					var layerDef = initData.layers[i];
-					var layer = stageModule.Layer.create(layerDef.id, this);
+					var layer = Layer.create(layerDef.id, this);
 					this.addLayer(layer, null, layerDef.isDefault);
 				}
 			}
@@ -6745,25 +6752,12 @@
 			//初期状態では分割のない表示を行う
 			this._resetGridView(null, null);
 
-			//			this._stageViewCollection._addView(view, 0, 0);
-			//			this._stageViewCollection.setActiveView(view, true);
 			this._updateRootSize();
 		},
 
-		//TODO layerRootGに直接ではなくデフォルト（背景）レイヤーにaddする
 		addDisplayUnit: function(displayUnit) {
 			this._units.set(displayUnit.id, displayUnit);
-			//this._layerRootG.appendChild(displayUnit.domRoot);
-
 			this._defaultLayer.addDisplayUnit(displayUnit);
-
-			//			displayUnit.domRoot.setAttributeNS(null, 'x', displayUnit.x);
-			//			displayUnit.domRoot.setAttributeNS(null, 'y', displayUnit.y);
-
-			//			if (displayUnit._renderer) {
-			//				displayUnit._renderer();
-			//			}
-
 		},
 
 		removeDisplayUnit: function(displayUnit) {
@@ -6775,8 +6769,6 @@
 
 			var duToBeRemoved = this.getDisplayUnitById(id);
 			duToBeRemoved.remove();
-
-			//this._layerRootG.removeChild(displayUnit.domRoot);
 		},
 
 		removeDisplayUnitAll: function() {
