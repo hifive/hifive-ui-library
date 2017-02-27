@@ -2433,7 +2433,6 @@
 
 				__updateDOM: function(view, element) {
 					super_.__updateDOM.call(this, view, element);
-					$(element).empty();
 					this._update(view, element);
 				},
 
@@ -6258,11 +6257,11 @@
 					this._dragSession = DragSession.create(this, this.rootElement, context.event);
 
 					var that = this;
-					this._dragSessionEndHandlerWrapper = function(event) {
-						that._dragSessionEndHandler(event);
+					this._dragSessionEndHandlerWrapper = function(ev) {
+						that._dragSessionEndHandler(ev);
 					};
-					this._dragSessionCancelHandlerWrapper = function(event) {
-						that._dragSessionCancelHandler(event);
+					this._dragSessionCancelHandlerWrapper = function(ev) {
+						that._dragSessionCancelHandler(ev);
 					};
 
 					this._dragSession.addEventListener('dragSessionEnd',
@@ -6360,9 +6359,11 @@
 				//TODO rootOffsetの取得をDUドラッグの場合と共通化
 				var rootOffset = $(this.rootElement).offset();
 
-				var dispStartOffX = event.pageX - rootOffset.left;
-				var dispStartOffY = event.pageY - rootOffset.top;
-				this._dragSelectStartPos = this._getActiveView()._viewport
+				var activeView = this._getActiveView();
+
+				var dispStartOffX = event.pageX - rootOffset.left - activeView.x;
+				var dispStartOffY = event.pageY - rootOffset.top - activeView.y;
+				this._dragSelectStartPos = activeView._viewport
 						.getDisplayPositionFromDisplayOffset(dispStartOffX, dispStartOffY);
 			}
 
@@ -6578,10 +6579,11 @@
 		},
 
 		_updateDragOverlay: function(dispActualX, dispActualY, dispW, dispH) {
-			var worldPos = this._getActiveView()._viewport.getWorldPosition(dispActualX,
-					dispActualY);
-			var ww = this._getActiveView()._viewport.getXLengthOfWorld(dispW);
-			var wh = this._getActiveView()._viewport.getYLengthOfWorld(dispH);
+			var activeView = this._getActiveView();
+
+			var worldPos = activeView._viewport.getWorldPosition(dispActualX, dispActualY);
+			var ww = activeView._viewport.getXLengthOfWorld(dispW);
+			var wh = activeView._viewport.getYLengthOfWorld(dispH);
 
 			this._stageViewCollection.__onSelectDUMove(worldPos, ww, wh);
 		},
@@ -6589,8 +6591,10 @@
 		_getCurrentDragPosition: function() {
 			var rootOffset = $(this.rootElement).offset();
 
-			var dispLastOffX = this._dragLastPagePos.x - rootOffset.left;
-			var dispLastOffY = this._dragLastPagePos.y - rootOffset.top;
+			var activeView = this._getActiveView();
+
+			var dispLastOffX = this._dragLastPagePos.x - rootOffset.left - activeView.x;
+			var dispLastOffY = this._dragLastPagePos.y - rootOffset.top - activeView.y;
 
 			var dispStartPos = this._dragSelectStartPos;
 			var dispLastPos = this._getActiveView()._viewport.getDisplayPositionFromDisplayOffset(
