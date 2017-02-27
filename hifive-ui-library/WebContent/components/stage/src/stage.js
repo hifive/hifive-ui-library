@@ -5296,10 +5296,10 @@
 								col._scrollBarController.readyPromise.done(function() {
 									//第1はサムの相対値、第2が最大値
 									this.setScrollSize(10, 1000);
-									this.setBarSize(width);
+									this.setBarSize(col.witdh);
 								});
 
-								$root.appendTo(this._stage.rootElement);
+								$root.appendTo(this._viewCollection._stage.rootElement);
 							} else {
 								if (col._scrollBarController) {
 									//noneの場合はスクロールバーを削除する
