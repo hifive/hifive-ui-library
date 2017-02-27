@@ -4223,11 +4223,15 @@
 
 								//SVGのwidth, heightはSVGAttirubute
 								//top, leftはゼロ（初期値）
+								//レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
+								//DOMツリー上の子要素が直接クリックできるようにする
 								$(layerRootElement).css({
 									position: 'absolute',
 									overflow: 'visible',
 									margin: 0,
-									padding: 0
+									padding: 0,
+									width: 0,
+									height: 0
 								});
 
 								layer.__renderDOM(this);
