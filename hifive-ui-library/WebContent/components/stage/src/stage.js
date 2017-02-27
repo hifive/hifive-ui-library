@@ -4700,9 +4700,9 @@
 								max: maxDisplayX
 							};
 
-							var viewCollection = this._stage._stageViewCollection;
-							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
-									maxDisplayX);
+							//							var viewCollection = this._stage._stageViewCollection;
+							//							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
+							//									maxDisplayX);
 						},
 
 						getScrollRangeY: function() {
@@ -4715,9 +4715,9 @@
 								max: maxDisplayY
 							};
 
-							var viewCollection = this._stage._stageViewCollection;
-							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
-									maxDisplayY);
+							//							var viewCollection = this._stage._stageViewCollection;
+							//							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
+							//									maxDisplayY);
 						},
 
 						getDefsForLayer: function(layer) {
@@ -4997,7 +4997,9 @@
 						_overallIndex: null,
 						_scrollBarMode: null,
 
-						_scrollBarController: null
+						_scrollBarController: null,
+
+						_scrollRangeY: null
 					},
 
 					accessor: {
@@ -5095,6 +5097,11 @@
 						},
 
 						setScrollRangeY: function(minDisplayY, maxDisplayY) {
+							this._scrollRangeY = {
+								min: minDisplayY,
+								max: maxDisplayY
+							};
+
 							if (minDisplayY == null || maxDisplayY == null) {
 								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
 								return;
@@ -5102,6 +5109,10 @@
 
 							this._setScrollBarMode(this, SCROLL_BAR_MODE_ALWAYS, minDisplayY,
 									maxDisplayY);
+						},
+
+						_getScrollBarPosition: function() {
+							this._scrollRangeY;
 						},
 
 						_setScrollBarMode: function(row, mode, minValue, maxValue) {
@@ -5296,6 +5307,7 @@
 									position: 'absolute',
 									left: bottommostView.x,
 									width: col.width,
+									height: SCROLL_BAR_THICKNESS,
 									bottom: 0,
 									cursor: 'default'
 								});
@@ -6815,11 +6827,11 @@
 			var isVertical = $scrollbar.hasClass('vertical');
 
 			if (isVertical) {
-				var vPos = -context.evArg.vertical.position;
+				var vPos = context.evArg.vertical.position;
 				this._stageViewCollection.getRow(idx).setScrollY(vPos);
 				console.log('vscr = ' + vPos);
 			} else {
-				var hPos = -context.evArg.horizontal.position;
+				var hPos = context.evArg.horizontal.position;
 				this._stageViewCollection.getColumn(idx).setScrollX(hPos);
 				console.log('hscr = ' + hPos);
 			}
