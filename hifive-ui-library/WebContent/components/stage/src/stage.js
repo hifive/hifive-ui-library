@@ -285,9 +285,6 @@
 				//各ドラッグ対象のドラッグ開始直前の親DU
 				_targetInitialParentDU: null,
 
-				//ドラッグ中のDUを格納するレイヤーノード
-				_foregroundRootElement: null,
-
 				//ドラッグ開始時のPagePosition
 				_startPageX: null,
 				_startPageY: null,
@@ -331,7 +328,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function DragSession(rootElement, foregroundRootElement, event) {
+				constructor: function DragSession(rootElement, event) {
 					super_.constructor.call(this);
 
 					this.canDrop = true;
@@ -345,7 +342,6 @@
 					this._proxyElement = null;
 
 					this._cursorRoot = rootElement;
-					this._foregroundRootElement = foregroundRootElement;
 
 					//TODO touchイベント、pointer event対応
 					this._startPageX = event.pageX;
@@ -542,14 +538,14 @@
 						return;
 					}
 
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
-					for (var i = 0, len = targets.length; i < len; i++) {
-						var t = targets[i]; //DU
-						var gpos = t.getWorldGlobalPosition();
-						t._domRoot.parentNode.removeChild(t._domRoot);
-						this._foregroundRootElement.appendChild(t._domRoot);
-						t.moveTo(gpos.x, gpos.y);
-					}
+					//					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					//					for (var i = 0, len = targets.length; i < len; i++) {
+					//						var t = targets[i]; //DU
+					//						var gpos = t.getWorldGlobalPosition();
+					//						t._domRoot.parentNode.removeChild(t._domRoot);
+					//						this._foregroundRootElement.appendChild(t._domRoot);
+					//						t.moveTo(gpos.x, gpos.y);
+					//					}
 				},
 
 				_deltaMove: function(event, delta) {
@@ -635,7 +631,6 @@
 					this._targets = null;
 					this._targetInitialPositions = null;
 					this._targetInitialParentDU = null;
-					this._foregroundRootElement = null;
 					this._cursorRoot = null;
 					this._moveFunction = null;
 					this._moveFunctionDataMap = null;
@@ -3947,7 +3942,9 @@
 
 						_viewportRectChangeListener: null,
 						_viewportScaleChangeListener: null,
-						_isViewportEventSuppressed: null
+						_isViewportEventSuppressed: null,
+
+						_dragSession: null
 					},
 
 					accessor: {
@@ -4228,6 +4225,56 @@
 							this._initForemostSvg();
 
 							this._updateLayerScrollPosition();
+						},
+
+						__onDragDUStart: function(dragSession) {
+							this._dragSession = dragSession;
+
+							var targetDUs = dragSession.getTarget();
+							if (!Array.isArray(targetDUs)) {
+								targetDUs = [targetDUs];
+							}
+
+							var that = this;
+							targetDUs.forEach(function(du) {
+								var element = du.__renderDOM(that);
+								//isVisible=falseをすることでDOMにdisplay:noneがつくので
+								//強制的に解除
+								$(element).css({
+									display: ''
+								});
+
+								var gpos = du.getWorldGlobalPosition();
+
+								SvgUtil.setAttributes({
+									x: gpos.x,
+									y: gpos.y,
+									width: du.width,
+									height: du.height
+								});
+
+								that._foremostSvgGroup.appendChild(element);
+
+								//レイヤーに存在する元々のDUは非表示にする
+								du.isVisible = false;
+							});
+						},
+
+						__onDragDUDrop: function(dragSession) {
+							this._dragSession = null;
+
+							var targetDUs = dragSession.getTarget();
+							if (!Array.isArray(targetDUs)) {
+								targetDUs = [targetDUs];
+							}
+
+							//フォアレイヤーのDOMを削除する
+							$(this._foremostSvgGroup).empty();
+
+							targetDUs.forEach(function(du) {
+								//レイヤーに存在する元々のDUを表示する
+								du.isVisible = true;
+							});
 						},
 
 						dispose: function() {
@@ -5163,10 +5210,6 @@
 							return this._columns;
 						},
 
-						//				getSeparators: function() {
-						//
-						//				},
-
 						_clear: function() {
 							var views = this.getViewAll();
 							var that = this;
@@ -5202,7 +5245,6 @@
 									this._viewportRectChangeListener);
 							view.addEventListener('viewportScaleChange',
 									this._viewportScaleChangeListener);
-
 						},
 
 						_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
@@ -5534,6 +5576,18 @@
 									v._isViewportEventSuppressed = false;
 								});
 							}
+						},
+
+						__onDragDUStart: function(dragSession) {
+							this.getViewAll().forEach(function(v) {
+								v.__onDragDUStart(dragSession);
+							});
+						},
+
+						__onDragDUDrop: function(dragSession) {
+							this.getViewAll().forEach(function(v) {
+								v.__onDragDUDrop(dragSession);
+							});
 						}
 					}
 				};
@@ -5640,8 +5694,6 @@
 	var EVENT_DRAG_DU_MOVE = 'stageDragMove';
 	var EVENT_DRAG_DU_END = 'stageDragEnd';
 	var EVENT_DRAG_DU_DROP = 'stageDragDrop';
-	var EVENT_DRAG_DU_DONE = 'stageDragDone';
-	var EVENT_DRAG_DU_FAIL = 'stageDragFail';
 	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
 
 	var EVENT_STAGE_CLICK = 'stageClick';
@@ -6155,8 +6207,7 @@
 				//UIDragModeがAUTOの場合
 				if (du && du.isDraggable) {
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
-					this._dragSession = DragSession.create(this.rootElement,
-							this._foremostLayer._rootG, context.event);
+					this._dragSession = DragSession.create(this.rootElement, context.event);
 					this._dragSession.addEventListener('dragSessionEnd', this
 							.own(this._dragSessionEndHandler));
 					this._dragSession.addEventListener('dragSessionCancel', this
@@ -6204,9 +6255,11 @@
 
 					this._dragSession.begin();
 
+					this._stageViewCollection.__onDragDUStart(this._dragSession);
+
 					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
-					var op = BulkOperation.create(this._dragSession.getTarget());
-					op.moveToForefront();
+					//					var op = BulkOperation.create(this._dragSession.getTarget());
+					//					op.moveToForefront();
 
 					//プロキシが設定されたらそれを表示
 					var proxyElem = this._dragSession.getProxyElement();
@@ -6247,7 +6300,7 @@
 							height: 0,
 							'pointer-events': 'none'
 						});
-						this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
+						//this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
 
@@ -6273,10 +6326,6 @@
 			//IE11, FFでは、cursorを書き換えた瞬間に(ドラッグ途中でも)変更される。
 			function setCursor(value) {
 				$root.css('cursor', value);
-			}
-
-			function nofityDragSessionToView(dragSession) {
-				this._stageViewCollection.setDragSession(dragSession);
 			}
 		},
 
@@ -6583,7 +6632,7 @@
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
 
-				this._dragSession._moveToOriginalParent();
+				this._stageViewCollection.__onDragDUDrop(this._dragSession);
 
 				this.trigger(delegatedJQueryEvent, {
 					dragSession: this._dragSession,
