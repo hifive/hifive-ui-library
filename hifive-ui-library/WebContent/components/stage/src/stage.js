@@ -5230,6 +5230,7 @@
 							var oldNumOfRows = this.numberOfRows;
 							var oldNumOfCols = this.numberOfColumns;
 							var oldViews = this.getViewAll();
+							var oldActiveView = this.getActiveView();
 
 							//内部状態をクリア
 							this._clear();
@@ -5391,6 +5392,58 @@
 							this._numberOfColumnSeparators = numOfColSeps;
 							this._columns = cols;
 
+							/* ここまでで、新しいグリッド構造とビューインスタンスの生成が完了 */
+							/* 以下で、スケールやサイズを調整 */
+
+							//もしoldActiveViewがあれば、それのスケールを維持する。
+							//それがなければ、一番左上のスケールを維持する。
+							var newScale = this.getView(0, 0).getScale();
+							if (oldActiveView) {
+								newScale = oldActiveView.getScale();
+							}
+
+							//全てのビューのスケールを合わせる
+							for (var rowIndex = 0, rowLen = rows.length; rowIndex < rowLen; rowIndex++) {
+								var row = rows[rowIndex];
+								var views = row.getViewAll();
+
+								var leftmostView = views[0];
+								leftmostView._isViewportEventSuppressed = true;
+								leftmostView.setScale(newScale.x, newScale.y);
+								leftmostView._isViewportEventSuppressed = false;
+
+								var leftmostScrollY = leftmostView.getScrollPosition().y;
+
+								//同じ行の各ビューのスクロールY座標を、一番左のビューに合わせる
+								for (var idx = 1, vLen = views.length; idx < vLen; idx++) {
+									var view = views[idx];
+									view._isViewportEventSuppressed = true;
+									view.setScale(newScale.x, newScale.y);
+									var vScrPos = view.getScrollPosition();
+									view.scrollTo(vScrPos.x, leftmostScrollY);
+									view._isViewportEventSuppressed = false;
+								}
+							}
+
+							//スケールは行ループで設定済みなので列ループでは行う必要はない
+							for (var colIndex = 0, colLen = cols.length; colIndex < colLen; colIndex++) {
+								var col = cols[colIndex];
+								var views = col.getViewAll();
+
+								var topmostView = views[0];
+								var topmostScrollX = topmostView.getScrollPosition().x;
+
+								//同じ列の各ビューのスクロールX座標を、一番左のビューに合わせる
+								for (var idx = 1, vLen = views.length; idx < vLen; idx++) {
+									var view = views[idx];
+									view._isViewportEventSuppressed = true;
+									var vScrPos = view.getScrollPosition();
+									view.scrollTo(topmostScrollX, vScrPos.y);
+									view._isViewportEventSuppressed = false;
+								}
+
+							}
+
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
 							this.setActiveView(topLeftView);
@@ -5451,7 +5504,7 @@
 
 						_onViewportRectChange: function(event) {
 							var srcView = event.target;
-							var newDisplayRect = srcView._viewport.getDisplayRect();
+							var newScrollPos = srcView.getScrollPosition();
 
 							//rowがnullの場合＝ビューがない
 							var row = this.getRow(srcView.rowIndex);
@@ -5462,7 +5515,7 @@
 									if (v !== srcView) {
 										//同じ行の他のビューについて、スクロールYの値のみ揃える
 										var vScrPos = v.getScrollPosition();
-										v.scrollTo(vScrPos.x, newDisplayRect.displayY);
+										v.scrollTo(vScrPos.x, newScrollPos.y);
 									}
 
 									v._isViewportEventSuppressed = false;
@@ -5477,7 +5530,7 @@
 									if (v !== srcView) {
 										//同じ行の他のビューについて、スクロールYの値のみ揃える
 										var vScrPos = v.getScrollPosition();
-										v.scrollTo(newDisplayRect.x, vScrPos.y);
+										v.scrollTo(newScrollPos.x, vScrPos.y);
 									}
 									v._isViewportEventSuppressed = false;
 								});
