@@ -2389,6 +2389,12 @@
 					if (!this._rootStage) {
 						return;
 					}
+
+					if (!this._isSelectable) {
+						//TODO ログを出すべきか
+						return;
+					}
+
 					this._rootStage.select(this, isExclusive);
 				},
 
@@ -2403,6 +2409,11 @@
 					if (!this._rootStage) {
 						return;
 					}
+
+					if (!this._isSelectable) {
+						return;
+					}
+
 					this._rootStage.focus(this);
 				},
 
@@ -5735,7 +5746,9 @@
 		_focusController: h5.ui.FocusController,
 
 		select: function(displayUnit, isExclusive) {
-			this._selectionLogic.select(displayUnit, isExclusive);
+			if (displayUnit.isSelectable) {
+				this._selectionLogic.select(displayUnit, isExclusive);
+			}
 		},
 
 		selectAll: function() {
@@ -5819,7 +5832,9 @@
 		},
 
 		focus: function(displayUnit) {
-			return this._selectionLogic.focus(displayUnit);
+			if (displayUnit.isSelectable) {
+				return this._selectionLogic.focus(displayUnit);
+			}
 		},
 
 		unfocus: function(andUnselect) {
