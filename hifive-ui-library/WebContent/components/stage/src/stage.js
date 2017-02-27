@@ -1665,8 +1665,8 @@
 		var ID_SEQ_PREFIX = 'def_';
 
 		//TODO 仮実装、連番一意ID生成
-		function createDefId() {
-			return ID_SEQ_PREFIX + idSequence++;
+		function createDefId(layer) {
+			return ID_SEQ_PREFIX + layer.id + '_' + idSequence++;
 		}
 
 		var desc = {
@@ -1674,7 +1674,8 @@
 			field: {
 				_rootSvg: null,
 				_defs: null,
-				_renderWaitingList: null
+				_renderWaitingList: null,
+				_layer: null
 			},
 			accessor: {
 				isDirty: {
@@ -1687,11 +1688,12 @@
 				/**
 				 * @memberOf h5.ui.components.stage.SVGGraphics
 				 */
-				constructor: function SVGGraphics(rootSvg, rootDefs) {
+				constructor: function SVGGraphics(layer, rootSvg, rootDefs) {
 					super_.constructor.call(this);
 					this._rootSvg = rootSvg;
 					this._defs = rootDefs;
 					this._renderWaitingList = [];
+					this._layer = layer;
 				},
 
 				_addDefinition: function(svgElementWrapper) {
@@ -1728,7 +1730,7 @@
 
 				createLinearGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId();
+						id = createDefId(this.layer);
 					}
 
 					var element = createSvgElement('linearGradient');
@@ -1739,7 +1741,7 @@
 
 				createRadialGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId();
+						id = createDefId(this.layer);
 					}
 
 					var element = createSvgElement('radialGradient');
@@ -2854,6 +2856,9 @@
 
 					//					/var ns = 'http://www.w3.org/2000/svg';
 
+					rootSvg.setAttribute('width', 1); //TODO for debugging
+					rootSvg.setAttribute('height', 1); //TODO for debugging
+
 					//					rootSvg.setAttributeNS(ns, 'width', 1);
 					//					rootSvg.setAttributeNS(ns, 'height', 1);
 
@@ -3494,7 +3499,7 @@
 
 							var defs = stageView.getDefsForLayer(this);
 
-							var graphics = SVGGraphics.create(svgRoot, defs);
+							var graphics = SVGGraphics.create(this, svgRoot, defs);
 							return graphics;
 						},
 
@@ -5067,6 +5072,23 @@
 					}
 					var firstColumnView = this._viewCollection.getView(this._index, 0);
 					return firstColumnView.getScrollPosition().y;
+				},
+
+				setScrollY: function(value) {
+					if (this._type === GRID_TYPE_SEPARATOR) {
+						//セパレータの場合はスクロールしないので常に0
+						return;
+					}
+					var firstColumnView = this._viewCollection.getView(this._index, 0);
+					var scrPos = firstColumnView.getScrollPosition();
+					firstColumnView.scrollTo(scrPos.x, value);
+				},
+
+				_setScrollBarMax: function(value) {
+					if (!this._scrollBarController) {
+						return;
+					}
+					this._scrollBarController.setScrollSize(0, value);
 				}
 			}
 		};
@@ -5159,6 +5181,17 @@
 						ret.push(view);
 					}
 					return ret;
+				},
+
+
+				setScrollX: function(value) {
+					if (this._type === GRID_TYPE_SEPARATOR) {
+						//セパレータの場合はスクロールしないので常に0
+						return;
+					}
+					var firstView = this._viewCollection.getView(0, this._index);
+					var scrPos = firstView.getScrollPosition();
+					firstView.scrollTo(value, scrPos.y);
 				}
 			}
 		};
@@ -5750,57 +5783,12 @@
 									view._isViewportEventSuppressed = false;
 								}
 
-								this._setColumnScrollBarMode(topmostView.columnIndex,
-										col.scrollBarMode);
+								this._setColumnScrollBarMode(col, col.scrollBarMode);
 							}
 
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
 							this.setActiveView(topLeftView);
-
-							return;
-
-							/** ************************* */
-
-							function createVScrollBar() {
-
-							}
-
-							if (horizontalSplitDefinitions == null) {
-							} else {
-
-
-								var rxMin = null;
-								var rxMax = null;
-								if (hDef.scrollRangeX) {
-									rxMin = hDef.scrollRangeX.min != null ? hDef.scrollRangeX.min
-											: null;
-									rxMax = hDef.scrollRangeX.max != null ? hDef.scrollRangeX.max
-											: null;
-								}
-								this.setScrollRangeX(rxMin, rxMax);
-
-
-
-							}
-
-							if (verticalSplitDefinitions == null) {
-							} else {
-
-								var vDef = verticalSplitDefinitions[0];
-								this._t_splitWidth = vDef.width;
-
-								var ryMin = null;
-								var ryMax = null;
-								if (hDef.scrollRangeX) {
-									ryMin = hDef.scrollRangeY.min != null ? hDef.scrollRangeY.min
-											: null;
-									ryMax = hDef.scrollRangeY.max != null ? hDef.scrollRangeY.max
-											: null;
-								}
-
-								this.setScrollRangeY(ryMin, ryMax);
-							}
 						},
 
 						_setRowScrollBarMode: function(row, mode) {
@@ -5808,7 +5796,8 @@
 
 							if (mode === SCROLL_BAR_MODE_ALWAYS) {
 								rightmostView.width -= SCROLL_BAR_THICKNESS;
-								var $root = $('<div class="h5-stage-scrollbar vertical"></div>');
+								var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
+										+ row.index + '"></div>');
 								row._scrollBarController = this._createVScrollBarController(
 										$root[0], row.height, 300);
 								$root.css({
@@ -5818,8 +5807,8 @@
 									cursor: 'default'
 								});
 
-								row._scrollBarController.setBarSize(SCROLL_BAR_THICKNESS);
-								row._scrollBarController.setScrollSize(1000, 10);
+								//row._scrollBarController.setBarSize(SCROLL_BAR_THICKNESS);
+								//row._scrollBarController.setScrollSize(10, 10000);
 
 								$root.appendTo(this._stage.rootElement);
 							} else {
@@ -5844,25 +5833,27 @@
 							return controller;
 						},
 
-						_setColumnScrollBarMode: function(columnIndex, mode) {
-							var col = this.getColumn(columnIndex);
-
+						_setColumnScrollBarMode: function(col, mode) {
 							var bottommostView = col.getView(this.numberOfRows - 1);
 
 							if (mode === SCROLL_BAR_MODE_ALWAYS) {
 								bottommostView.height -= SCROLL_BAR_THICKNESS;
-								var $root = $('<div class="h5-stage-scrollbar horizontal"></div>');
-								col._scrollBarController = this._createHScrollBarController(
-										$root[0], col.width, 300);
+								var $root = $('<div class="h5-stage-scrollbar horizontal" data-h5-dyn-stage-idx="'
+										+ col.index + '"></div>');
 								$root.css({
 									position: 'absolute',
 									left: bottommostView.x,
+									width: col.width,
 									bottom: 0,
 									cursor: 'default'
 								});
 
-								col._scrollBarController.setBarSize(SCROLL_BAR_THICKNESS);
-								col._scrollBarController.setScrollSize(1000, 10);
+								col._scrollBarController = this._createHScrollBarController(
+										$root[0], col.width, 0);
+
+								//col._scrollBarController.setBarSize(SCROLL_BAR_THICKNESS);
+								//col._scrollBarController.setScrollSize(100, 100);
+								//col._scrollBarController.setScrollPosition(20);
 
 								$root.appendTo(this._stage.rootElement);
 							} else {
@@ -5881,7 +5872,7 @@
 
 							controller.readyPromise.done(function() {
 								this.setScrollSize(width, scrollValue);
-								this.setBarSize(width);
+								this.setBarSize(SCROLL_BAR_THICKNESS);
 							});
 
 							return controller;
@@ -6739,7 +6730,48 @@
 
 		_isMousedown: false,
 
+		_isScrollBarEvent: function(context, $el) {
+			var $scrollbar = $(context.event.target).closest('.h5-stage-scrollbar');
+
+			var dom = $scrollbar[0];
+
+			if (dom && this.rootElement.compareDocumentPosition(dom)
+					& Node.DOCUMENT_POSITION_CONTAINED_BY) {
+				return true;
+			}
+			return false;
+		},
+
+		'{rootElement} h5scroll': function(context, $el) {
+			var $scrollbar = $(context.event.target).closest('.h5-stage-scrollbar');
+
+			var dom = $scrollbar[0];
+			if (!dom
+					|| !(this.rootElement.compareDocumentPosition(dom) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+				return;
+			}
+
+			var idx = $scrollbar.data('h5DynStageIdx');
+			var isVertical = $scrollbar.hasClass('vertical');
+
+			if (isVertical) {
+				var vPos = -context.evArg.vertical.position;
+				this._stageViewCollection.getRow(idx).setScrollY(vPos);
+				console.log('vscr = ' + vPos);
+			} else {
+				var hPos = -context.evArg.horizontal.position;
+				this._stageViewCollection.getColumn(idx).setScrollX(hPos);
+				console.log('hscr = ' + hPos);
+			}
+
+			//			data - h5 - dyn - stage - idx
+		},
+
 		'{rootElement} mousedown': function(context, $el) {
+			if (this._isScrollBarEvent(context, $el)) {
+				return;
+			}
+
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
 
