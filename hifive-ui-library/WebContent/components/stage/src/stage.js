@@ -2298,6 +2298,13 @@
 					}
 
 					this.__onDirtyNotify(this, reasons);
+
+					//TODO Edgeがイベントを拾えるようにするための対応
+					//レイヤー横断でイベントを拾えるようになればレイヤーから拾えばよい
+					var event = DisplayUnitDirtyEvent.create();
+					event.displayUnit = this;
+					event.reason = UpdateReasonSet.create(reasons);
+					this.dispatchEvent(event);
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
@@ -2592,13 +2599,11 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Edge',
 			field: {
-				_svgLine: null,
 				_from: null,
 				_to: null,
 				_endpointFrom: null,
 				_endpointTo: null,
-				_fromSizeChangeHandler: null,
-				_toSizeChangeHandler: null,
+				_duDirtyHandler: null,
 				_classSet: null
 			},
 
@@ -2625,8 +2630,12 @@
 					this._to = duTo;
 
 					var that = this;
-					this._fromSizeChangeHandler = function() {
-						that.requestRender();
+					this._duDirtyHandler = function(event) {
+						var reason = event.reason;
+
+						if (reason.isPositionChanged || reason.isSizeChanged) {
+							that.requestRender();
+						}
 					};
 
 					this._classSet = SimpleSet.create();
@@ -2826,19 +2835,13 @@
 					this._rootStage = stage;
 					this._belongingLayer = belongingLayer;
 
-					this._from.addEventListener('sizeChange', this._fromSizeChangeHandler);
-					this._to.addEventListener('sizeChange', this._fromSizeChangeHandler);
-					this._from.addEventListener('positionChange', this._fromSizeChangeHandler);
-					this._to.addEventListener('positionChange', this._fromSizeChangeHandler);
-
-					this.requestRender();
+					this._from.addEventListener('displayUnitDirty', this._duDirtyHandler);
+					this._to.addEventListener('displayUnitDirty', this._duDirtyHandler);
 				},
 
-				_onRemove: function() {
-					this._from.removeEventListener('sizeChange', this._fromSizeChangeHandler);
-					this._to.removeEventListener('sizeChange', this._fromSizeChangeHandler);
-					this._from.removeEventListener('positionChange', this._fromSizeChangeHandler);
-					this._to.removeEventListener('positionChange', this._fromSizeChangeHandler);
+				_onRemoving: function() {
+					this._from.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+					this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
 				},
 
 				__renderDOM: function(view) {
@@ -3226,8 +3229,8 @@
 
 					//削除されるDU側にクリーンアップのタイミングを与える
 					//TODO ここで記述するのがよいか？
-					if (typeof du._onRemove === 'function') {
-						du._onRemove();
+					if (typeof du._onRemoving === 'function') {
+						du._onRemoving();
 					}
 
 					this._zIndexList.remove(du.zIndex, du);
