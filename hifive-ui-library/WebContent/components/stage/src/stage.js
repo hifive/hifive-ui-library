@@ -6561,11 +6561,14 @@
 			}
 
 			function toggleBoundaryScroll(callback) {
-				var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
-				var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
+				var activeView = this._getActiveView();
 
-				var nineSlice = this._getActiveView()._viewport.getNineSlicePosition(pointerX,
-						pointerY);
+				var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left
+						- activeView.x;
+				var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top
+						- activeView.y;
+
+				var nineSlice = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
 				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
 					this._beginBoundaryScroll(nineSlice, callback);
 				} else {
