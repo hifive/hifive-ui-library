@@ -191,7 +191,7 @@
 
 	var REASON_RENDER_REQUEST = '__duRenderRequest__';
 	var REASON_SIZE_CHANGE = '__duSizeChange__';
-	var REASON_POSITION_CHANGE = '__sduPositionChange__';
+	var REASON_POSITION_CHANGE = '__duPositionChange__';
 	var REASON_VISIBILITY_CHANGE = '__duVisibilityChange__';
 	var REASON_SCALE_CHANGE = '__duScaleChange__';
 	var REASON_Z_INDEX_CHANGE = '__duZIndexChange__';
@@ -2851,7 +2851,7 @@
 
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
-					this._render(view, rootSvg, reason);
+					this.__updateDOM(view, rootSvg, reason);
 
 					return rootSvg;
 				},
@@ -5121,6 +5121,11 @@
 		return desc;
 	});
 
+
+	var SCROLL_BAR_THICKNESS = 16;
+	//var SCROLL_BAR_MODE_NONE = 'none';
+	var SCROLL_BAR_MODE_ALWAYS = 'always';
+
 	var GridStageViewCollection = RootClass
 			.extend(function(super_) {
 
@@ -5525,6 +5530,16 @@
 								var totalWidth = 0;
 								var colIndex = 0;
 
+								var viewH = row._desiredHeight ? row._desiredHeight : rootHeight
+										- totalHeight;
+
+								if ((hDefIndex + 1) === hDefsLen
+										&& hDef.scrollBarMode === SCROLL_BAR_MODE_ALWAYS) {
+									//最後の行のビューで、かつスクロールバーを常に出す指定があった場合は
+									//一番下のビューからスクロールバーの高さを引く
+									viewH -= SCROLL_BAR_THICKNESS;
+								}
+
 								for (var vDefIndex = 0; vDefIndex < vDefsLen; vDefIndex++) {
 									var vDef = verticalSplitDefinitions[vDefIndex];
 									var col = cols[vDefIndex];
@@ -5548,16 +5563,45 @@
 
 									this._addView(theView, rowIndex, colIndex);
 
-									//TODO scrollRange設定、サイズ設定などを行う
-									var viewH = row._desiredHeight ? row._desiredHeight
-											: rootHeight - totalHeight;
 									var viewW = col._desiredWidth ? col._desiredWidth : rootWidth
 											- totalWidth;
+
+									if ((vDefIndex + 1) === vDefsLen
+											&& vDef.scrollBarMode === SCROLL_BAR_MODE_ALWAYS) {
+										viewW -= SCROLL_BAR_THICKNESS;
+									}
 
 									theView.x = totalWidth;
 									theView.y = totalHeight;
 									theView.height = viewH;
 									theView.width = viewW;
+
+									if (hDef.scrollRangeX) {
+										theView.setScrollRangeX(hDef.scrollRangeX.min,
+												hDef.scrollRangeX.max);
+										var scrPos = theView.getScrollPosition();
+										theView.scrollTo(hDef.scrollRangeX.min, scrPos.y);
+									}
+
+									if (hDef.scrollRangeY) {
+										theView.setScrollRangeY(hDef.scrollRangeY.min,
+												hDef.scrollRangeY.max);
+										var scrPos = theView.getScrollPosition();
+										theView.scrollTo(scrPos.x, hDef.scrollRangeY.min);
+									}
+
+									if (vDef.scrollRangeX) {
+										theView.setScrollRangeX(vDef.scrollRangeX.min,
+												vDef.scrollRangeX.max);
+										var scrPos = theView.getScrollPosition();
+										theView.scrollTo(vDef.scrollRangeX.min, scrPos.y);
+									}
+
+									if (vDef.scrollRangeY) {
+										theView.setScrollRangeY(vDef.scrollRangeY.min,
+												vDef.scrollRangeY.max);
+										theView.scrollTo(scrPos.x, vDef.scrollRangeY.min);
+									}
 
 									totalWidth += col._desiredWidth ? col._desiredWidth : 0;
 									colIndex++;
@@ -5585,8 +5629,8 @@
 							this._numberOfColumnSeparators = numOfColSeps;
 							this._columns = cols;
 
-							/* ここまでで、新しいグリッド構造とビューインスタンスの生成が完了 */
-							/* 以下で、スケールやサイズを調整 */
+							/* *** ここまでで、新しいグリッド構造とビューインスタンスの生成が完了 *** */
+							/* *** 以下で、スケールやサイズを調整、およびスクロールバーの生成 *** */
 
 							//もしoldActiveViewがあれば、それのスケールを維持する。
 							//それがなければ、一番左上のスケールを維持する。
@@ -5626,7 +5670,7 @@
 								var topmostView = views[0];
 								var topmostScrollX = topmostView.getScrollPosition().x;
 
-								//同じ列の各ビューのスクロールX座標を、一番左のビューに合わせる
+								//同じ列の各ビューのスクロールX座標を、一番上のビューに合わせる
 								for (var idx = 1, vLen = views.length; idx < vLen; idx++) {
 									var view = views[idx];
 									view._isViewportEventSuppressed = true;
@@ -5645,6 +5689,9 @@
 
 							/** ************************* */
 
+							function createVScrollBar() {
+
+							}
 
 							if (horizontalSplitDefinitions == null) {
 							} else {
