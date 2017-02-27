@@ -4203,10 +4203,7 @@
 								//強制的に元のDUをisVisible = falseにするため
 								//元のisVisibleを覚えておく
 								//TODO isVisibleを内部的なものにした方が良い
-								that._dragTargetDUInfoMap.set(du, {
-									element: element,
-									isVisible: du.isVisible
-								});
+								that._dragTargetDUInfoMap.set(du, element);
 
 								var gpos = du.getWorldGlobalPosition();
 
@@ -4226,9 +4223,9 @@
 						},
 
 						__onDragDUMove: function(dragSession) {
-							this._dragTargetDUInfoMap.forEach(function(duInfo, du) {
+							this._dragTargetDUInfoMap.forEach(function(element, du) {
 								var gpos = du.getWorldGlobalPosition();
-								SvgUtil.setAttributes(duInfo.element, {
+								SvgUtil.setAttributes(element, {
 									x: gpos.x,
 									y: gpos.y
 								});
@@ -4236,8 +4233,8 @@
 						},
 
 						__onDragDUDrop: function(dragSession) {
-							this._dragTargetDUInfoMap.forEach(function(duInfo, du) {
-								du.isVisible = duInfo.isVisible;
+							this._dragTargetDUInfoMap.forEach(function(element, du) {
+								du.isVisible = element.isVisible;
 							});
 
 							this._dragTargetDUInfoMap = null;
@@ -5004,7 +5001,9 @@
 						_activeView: null,
 
 						_viewportRectChangeListener: null,
-						_viewportScaleChangeListener: null
+						_viewportScaleChangeListener: null,
+
+						_draggingTargetDUVisibleMap: null
 					},
 
 					accessor: {
@@ -5544,7 +5543,25 @@
 						},
 
 						__onDragDUStart: function(dragSession) {
+							var targetDUs = dragSession.getTarget();
+							if (!Array.isArray(targetDUs)) {
+								targetDUs = [targetDUs];
+							}
 
+							this._draggingTargetDUVisibleMap = new Map();
+
+							var that = this;
+							targetDUs.forEach(function(du) {
+								//強制的に元のDUをisVisible = falseにするため
+								//元のisVisibleを覚えておく
+								//TODO isVisibleを内部的なものにした方が良い
+								that._draggingTargetDUVisibleMap.set(du, du.isVisible);
+
+								//レイヤーに存在する元々のDUは非表示にする
+								du.isVisible = false;
+							});
+
+							//各ビューのドラッグスタート処理を呼ぶ
 							this.getViewAll().forEach(function(v) {
 								v.__onDragDUStart(dragSession);
 							});
@@ -5559,6 +5576,11 @@
 						__onDragDUDrop: function(dragSession) {
 							this.getViewAll().forEach(function(v) {
 								v.__onDragDUDrop(dragSession);
+							});
+
+							//DUの元のVisibleの状態を復元
+							this._draggingTargetDUVisibleMap.forEach(function(isVisible, du) {
+								du.isVisible = isVisible;
 							});
 						}
 					}
