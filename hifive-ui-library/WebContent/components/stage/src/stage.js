@@ -171,6 +171,8 @@
 (function($) {
 	'use strict';
 
+	var RootClass = h5.cls.RootClass;
+
 	var DragMode = {
 		NONE: 0,
 		AUTO: 1,
@@ -187,26 +189,31 @@
 		XY: 3
 	};
 
+	var REASON_RENDER_REQUEST = '__duRenderRequest__';
+	var REASON_SIZE_CHANGE = '__duSizeChange__';
+	var REASON_POSITION_CHANGE = '__sduPositionChange__';
+	var REASON_VISIBILITY_CHANGE = '__duVisibilityChange__';
+	var REASON_SCALE_CHANGE = '__duScaleChange__';
+	var REASON_Z_INDEX_CHANGE = '__duZIndexChange__';
+	var REASON_INITIAL_RENDER = '__duInitialRender__';
+	var REASON_SCROLL_POSITION_CHANGE = '__duScrollPositionChange__';
+
+	var UpdateReasons = {
+		RENDER_REQUEST: REASON_RENDER_REQUEST,
+		SIZE_CHANGE: REASON_SIZE_CHANGE,
+		POSITION_CHANGE: REASON_POSITION_CHANGE,
+		VISIBILITY_CHANGE: REASON_VISIBILITY_CHANGE,
+		SCALE_CHANGE: REASON_SCALE_CHANGE,
+		Z_INDEX_CHANGE: REASON_Z_INDEX_CHANGE,
+		INITIAL_RENDER: REASON_INITIAL_RENDER,
+		SCROLL_POSITION_CHANGE: REASON_SCROLL_POSITION_CHANGE
+	};
+
 	h5.u.obj.expose('h5.ui.components.stage', {
 		DragMode: DragMode,
-		ScrollDirection: ScrollDirection
+		ScrollDirection: ScrollDirection,
+		UpdateReasons: UpdateReasons
 	});
-
-	var RootClass = h5.cls.RootClass;
-
-
-	//クラスとして作ったものを変える
-	//	RootClass.extend(function() {
-	//		var desc = {
-	//			name: 'h5.ui.components.stage.DragSessionController',
-	//			method: {
-	//				constructor: function DragSessionController() {
-	//					DragSessionController._super.call(this);
-	//				}
-	//			}
-	//		};
-	//		return desc;
-	//	});
 
 
 	/**
@@ -1969,10 +1976,7 @@
 						}
 						this._x = value;
 
-						this._setDirty();
-
-						//						var ev = Event.create('positionChange');
-						//						this.dispatchEvent(ev);
+						this._setDirty(REASON_POSITION_CHANGE);
 					}
 				},
 				y: {
@@ -1985,10 +1989,7 @@
 						}
 						this._y = value;
 
-						this._setDirty();
-
-						//						var ev = Event.create('positionChange');
-						//						this.dispatchEvent(ev);
+						this._setDirty(REASON_POSITION_CHANGE);
 					}
 				},
 
@@ -2003,7 +2004,7 @@
 						var oldValue = this._zIndex;
 						this._zIndex = value;
 
-						this._setDirty();
+						this._setDirty(REASON_Z_INDEX_CHANGE);
 
 						var ev = PropertyChangeEvent.create('zIndex', oldValue, this._zIndex);
 						this.dispatchEvent(ev);
@@ -2020,10 +2021,7 @@
 						}
 						this._width = value;
 
-						this._setDirty();
-
-						//						var ev = Event.create('sizeChange');
-						//						this.dispatchEvent(ev);
+						this._setDirty(REASON_SIZE_CHANGE);
 					}
 				},
 				height: {
@@ -2036,10 +2034,7 @@
 						}
 						this._height = value;
 
-						this._setDirty();
-
-						//						var ev = Event.create('sizeChange');
-						//						this.dispatchEvent(ev);
+						this._setDirty(REASON_SIZE_CHANGE);
 					}
 				},
 				extraData: null,
@@ -2064,7 +2059,7 @@
 							return;
 						}
 						this._isVisible = value;
-						this._setDirty();
+						this._setDirty(REASON_VISIBILITY_CHANGE);
 					}
 				},
 
@@ -2135,10 +2130,11 @@
 
 				setRect: function(rect) {
 					//TODO イベントをあげる回数を減らす（今はセッター側で個別に起きてしまう）。他のAPIも同様
-					this.x = rect.x;
-					this.y = rect.y;
-					this.width = rect.width;
-					this.height = rect.height;
+					this._x = rect.x;
+					this._y = rect.y;
+					this._width = rect.width;
+					this._height = rect.height;
+					this._setDirty([REASON_SIZE_CHANGE, REASON_POSITION_CHANGE]);
 				},
 
 				getRect: function() {
@@ -2147,8 +2143,9 @@
 				},
 
 				setSize: function(width, height) {
-					this.width = width;
-					this.height = height;
+					this._width = width;
+					this._height = height;
+					this._setDirty(REASON_SIZE_CHANGE);
 				},
 
 				remove: function() {
@@ -2158,13 +2155,15 @@
 				},
 
 				moveTo: function(x, y) {
-					this.x = x;
-					this.y = y;
+					this._x = x;
+					this._y = y;
+					this._setDirty(REASON_POSITION_CHANGE);
 				},
 
 				moveBy: function(x, y) {
-					this.x += x;
-					this.y += y;
+					this._x += x;
+					this._y += y;
+					this._setDirty(REASON_POSITION_CHANGE);
 				},
 
 				moveDisplayTo: function(x, y) {
@@ -2293,10 +2292,12 @@
 					this._rootStage.unfocus(andUnselect);
 				},
 
-				_setDirty: function() {
-					if (this._parentDU) {
-						this._parentDU.__onDirtyNotify(this);
+				_setDirty: function(reasons) {
+					if (!reasons) {
+						throw new Error('_setDirty()時は引数のリーズンは必須です。');
 					}
+
+					this.__onDirtyNotify(this, reasons);
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
@@ -2304,18 +2305,35 @@
 					this._belongingLayer = belongingLayer;
 				},
 
-				__updateDOM: function(stageView, element) {
-					setSvgAttributes(element, {
-						x: this.x,
-						y: this.y,
-						width: this.width,
-						height: this.height
-					});
+				__updateDOM: function(stageView, element, reason) {
+					//					if (!this._isVisible) {
+					//						//非表示状態なら他の描画はしない
+					//						return;
+					//					}
 
-					element.style.display = this._isVisible ? '' : 'none';
+					if (reason.isInitialRender || reason.isVisibilityChanged) {
+						element.style.display = this._isVisible ? '' : 'none';
+
+						//表示することになったら再レンダー
+						//this._setDirty(REASON_ALL);
+					}
+
+					if (reason.isInitialRender || reason.isPositionChanged) {
+						setSvgAttributes(element, {
+							x: this.x,
+							y: this.y
+						});
+					}
+
+					if (reason.isInitialRender || reason.isSizeChanged) {
+						setSvgAttributes(element, {
+							width: this.width,
+							height: this.height
+						});
+					}
 				},
 
-				__renderDOM: function() {
+				__renderDOM: function(view) {
 					throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
 				},
 
@@ -2324,15 +2342,121 @@
 				 *
 				 * @param du
 				 */
-				__onDirtyNotify: function(du) {
+				__onDirtyNotify: function(du, reasons) {
 					if (this._parentDU) {
-						this._parentDU.__onDirtyNotify(du);
+						this._parentDU.__onDirtyNotify(du, reasons);
 					}
 				}
 			}
 		};
 
 		return classDesc;
+	});
+
+
+	var UpdateReasonSet = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.UpdateReasonSet',
+
+			field: {
+				_reasonMap: null
+			},
+
+			accessor: {
+
+				isSizeChanged: {
+					get: function() {
+						return this.has(REASON_SIZE_CHANGE);
+					}
+				},
+
+				isPositionChanged: {
+					get: function() {
+						return this.has(REASON_POSITION_CHANGE);
+					}
+				},
+
+				isRenderRequested: {
+					get: function() {
+						return this.has(REASON_RENDER_REQUEST);
+					}
+				},
+
+				isVisibilityChanged: {
+					get: function() {
+						return this.has(REASON_VISIBILITY_CHANGE);
+					}
+				},
+
+				isZIndexChanged: {
+					get: function() {
+						return this.has(REASON_Z_INDEX_CHANGE);
+					}
+				},
+
+				isScaleChanged: {
+					get: function() {
+						return this.has(REASON_SCALE_CHANGE);
+					}
+				},
+
+				isInitialRender: {
+					get: function() {
+						return this.has(REASON_INITIAL_RENDER);
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.UpdateReasonSet
+				 */
+				constructor: function UpdateReasonSet(reasons) {
+					super_.constructor.call(this);
+					this._reasonMap = {};
+
+					this.add(reasons);
+				},
+
+				has: function(type) {
+					return (type in this._reasonMap);
+				},
+
+				get: function(type) {
+					return this._reasonMap[type];
+				},
+
+				getAll: function() {
+					var ret = [];
+					Object.keys(this._reasonMap).forEach(function(key) {
+						ret.push(this._reasonMap[key]);
+					});
+					return ret;
+				},
+
+				//UpdateReasonは 最低限typeを持つ（オブジェクトの場合）、または文字列のみでもよい
+				add: function(reasons) {
+					if (!Array.isArray(reasons)) {
+						reasons = [reasons];
+					}
+
+					var that = this;
+
+					reasons.forEach(function(r) {
+						//既に同じtypeのReasonがあった場合は上書き
+
+						if (typeof r === 'string') {
+							that._reasonMap[r] = {
+								type: r
+							};
+						} else {
+							that._reasonMap[r.type] = r;
+						}
+					});
+				}
+			}
+		};
+		return desc;
 	});
 
 	var BasicDisplayUnit = DisplayUnit.extend(function(super_) {
@@ -2358,7 +2482,6 @@
 					},
 					set: function(value) {
 						super_.width.set.call(this, value);
-						this.requestRender();
 					}
 				},
 				height: {
@@ -2367,7 +2490,6 @@
 					},
 					set: function(value) {
 						super_.height.set.call(this, value);
-						this.requestRender();
 					}
 				},
 				isDragging: {
@@ -2404,10 +2526,7 @@
 						return;
 					}
 
-					this._setDirty();
-
-					//var event = Event.create('renderRequest');
-					//this.dispatchEvent(event);
+					this._setDirty(REASON_RENDER_REQUEST);
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
@@ -2427,16 +2546,18 @@
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
 					root.setAttribute('data-h5-dyn-du-id', this.id);
 
-					this.__updateDOM(view, root);
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					this.__updateDOM(view, root, reason);
 					return root;
 				},
 
-				__updateDOM: function(view, element) {
-					super_.__updateDOM.call(this, view, element);
-					this._update(view, element);
+				__updateDOM: function(view, element, reason) {
+					super_.__updateDOM.call(this, view, element, reason);
+					this._update(view, element, reason);
 				},
 
-				_update: function(view, root) {
+				_update: function(view, root, reason) {
 					if (!this._renderer) {
 						//レンダラがセットされていない場合は空の要素を返す
 						return;
@@ -2446,7 +2567,8 @@
 						displayUnit: this,
 						rootElement: root,
 						rowIndex: view.rowIndex,
-						columnIndex: view.columnIndex
+						columnIndex: view.columnIndex,
+						reason: reason
 					};
 
 					var graphics = this.__createGraphics(view, root);
@@ -2515,7 +2637,12 @@
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
-				_render: function(rootSvg) {
+				_render: function(view, rootSvg, reason) {
+					if (!reason.isInitialRender && !reason.isRenderRequested
+							&& !reason.isPositionChanged) {
+						return;
+					}
+
 					//TODO 仮実装
 					//バインドされているDUの位置が変わったら再描画が必要
 					var fr = this._from.getRect();
@@ -2524,8 +2651,13 @@
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
 
-					var line = createSvgElement('line');
-					rootSvg.appendChild(line);
+					var line;
+					if (rootSvg.firstChild) {
+						line = rootSvg.firstChild;
+					} else {
+						line = createSvgElement('line');
+						rootSvg.appendChild(line);
+					}
 
 					line.className.baseVal = this.getClassSet().toArray().join(' ');
 
@@ -2652,9 +2784,6 @@
 						rh *= -1;
 					}
 
-					//					var rect = Rect.create(rx, ry, rw, rh);
-					//					Edge._super.prototype.setRect.call(this, rect);
-
 					setSvgAttributes(line, {
 						x1: x1,
 						y1: y1,
@@ -2690,13 +2819,7 @@
 						return;
 					}
 
-					this._setDirty();
-
-					//TODO rAFをここで直接使わない
-					//					var that = this;
-					//					requestAnimationFrame(function() {
-					//						that._render(that);
-					//					});
+					this._setDirty(REASON_RENDER_REQUEST);
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
@@ -2726,16 +2849,16 @@
 					//エッジの表示が切れないようにvisibleにする
 					rootSvg.style.overflow = "visible";
 
-					this._render(rootSvg);
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					this._render(view, rootSvg, reason);
 
 					return rootSvg;
 				},
 
-				__updateDOM: function(view, element) {
-					super_.__updateDOM.call(this, view, element);
-					//TODO 毎回emptyしなくて済むようにする
-					$(element).empty();
-					this._render(element);
+				__updateDOM: function(view, element, reason) {
+					super_.__updateDOM.call(this, view, element, reason);
+					this._render(view, element, reason);
 				}
 			}
 		};
@@ -2935,6 +3058,28 @@
 					//このkeyは一番小さい値だった→末尾に追加
 					this._keyArray.push(key);
 				},
+			}
+		};
+		return desc;
+	});
+
+	var DisplayUnitDirtyEvent = Event.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayUnitDirtyEvent',
+
+			field: {
+				reason: null,
+				displayUnit: null,
+				parentDisplayUnit: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayUnitDirtyEvent
+				 */
+				constructor: function DisplayUnitDirtyEvent() {
+					super_.constructor.call(this, 'displayUnitDirty');
+				}
 			}
 		};
 		return desc;
@@ -3149,7 +3294,7 @@
 				scrollTo: function(worldX, worldY) {
 					this._scrollX = worldX;
 					this._scrollY = worldY;
-					this._setDirty();
+					this._setDirty(REASON_SCROLL_POSITION_CHANGE);
 				},
 
 				scrollBy: function(worldX, worldY) {
@@ -3183,7 +3328,7 @@
 					this._scaleY = y;
 
 					if (isScaleChanged) {
-						this._setDirty();
+						this._setDirty(REASON_SCALE_CHANGE);
 					}
 				},
 
@@ -3209,7 +3354,9 @@
 					var rootG = createSvgElement('g');
 					rootSvg.appendChild(rootG);
 
-					this.__updateDOM(view, rootSvg);
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					this.__updateDOM(view, rootSvg, reason);
 
 					var children = this._zIndexList.getAllAcendant();
 
@@ -3233,10 +3380,12 @@
 					containerElement.firstChild.removeChild(targetElement);
 				},
 
-				__updateDOM: function(view, element) {
-					super_.__updateDOM.call(this, view, element);
+				__updateDOM: function(view, element, reason) {
+					super_.__updateDOM.call(this, view, element, reason);
 
-					this._updateTransform(element);
+					if (reason.isScaleChanged || reason.isScrollPositionChanged) {
+						this._updateTransform(element);
+					}
 				},
 
 				/**
@@ -3370,9 +3519,13 @@
 						 *
 						 * @param du
 						 */
-						__onDirtyNotify: function(du) {
-							var event = DisplayUnitContainerEvent.create('displayUnitDirty');
+						__onDirtyNotify: function(du, reasons) {
+							var event = DisplayUnitDirtyEvent.create();
 							event.displayUnit = du;
+
+							var reason = UpdateReasonSet.create(reasons);
+							event.reason = reason;
+
 							this.dispatchEvent(event);
 						},
 
@@ -3520,6 +3673,8 @@
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 	var Layer = h5.cls.manager.getClass('h5.ui.components.stage.Layer');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
+	var UpdateReasonSet = h5.cls.manager.getClass('h5.ui.components.stage.UpdateReasonSet');
+	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
 
@@ -4658,12 +4813,15 @@
 								return;
 							}
 
-							du.__updateDOM(this, $dom[0]);
+							du.__updateDOM(this, $dom[0], event.reason);
 						},
 
 						_onDUAdd: function(event) {
 							var du = event.displayUnit;
-							var dom = du.__renderDOM(this);
+
+							var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
+
+							var dom = du.__renderDOM(this, reason);
 
 							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
 							var $parent = $(this._rootElement).find(
