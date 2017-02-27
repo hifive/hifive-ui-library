@@ -3900,7 +3900,9 @@
 						_viewportScaleChangeListener: null,
 						_isViewportEventSuppressed: null,
 
-						_dragTargetDUInfoMap: null
+						_dragTargetDUInfoMap: null,
+
+						_dragSelectOverlayRect: null
 					},
 
 					accessor: {
@@ -4181,6 +4183,35 @@
 							this._initForemostSvg();
 
 							this._updateLayerScrollPosition();
+						},
+
+						__onSelectDUStart: function(dragSelectStartPos) {
+							var rect = SvgUtil.createElement('rect');
+							this._dragSelectOverlayRect = rect;
+
+							rect.className.baseVal = ('stageDragSelectRangeOverlay');
+							stageModule.SvgUtil.setAttributes(rect, {
+								x: dragSelectStartPos.x,
+								y: dragSelectStartPos.y,
+								width: 0,
+								height: 0,
+								'pointer-events': 'none'
+							});
+
+							this._foremostSvgGroup.appendChild(rect);
+						},
+
+						__onSelectDUMove: function(worldPos, worldWidth, worldHeight) {
+							SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+								x: worldPos.x,
+								y: worldPos.y,
+								width: worldWidth,
+								height: worldHeight
+							});
+						},
+
+						__onSelectDUEnd: function() {
+							$(this._dragSelectOverlayRect).remove();
 						},
 
 						__onDragDUStart: function(dragSession) {
@@ -5542,6 +5573,24 @@
 							}
 						},
 
+						__onSelectDUStart: function(dragStartPos) {
+							this.getViewAll().forEach(function(v) {
+								v.__onSelectDUStart(dragStartPos);
+							});
+						},
+
+						__onSelectDUMove: function(worldPos, worldWidth, worldHeight) {
+							this.getViewAll().forEach(function(v) {
+								v.__onSelectDUMove(worldPos, worldWidth, worldHeight);
+							});
+						},
+
+						__onSelectDUEnd: function() {
+							this.getViewAll().forEach(function(v) {
+								v.__onSelectDUEnd();
+							});
+						},
+
 						__onDragDUStart: function(dragSession) {
 							var targetDUs = dragSession.getTarget();
 							if (!Array.isArray(targetDUs)) {
@@ -5736,9 +5785,16 @@
 		_focusController: h5.ui.FocusController,
 
 		select: function(displayUnit, isExclusive) {
-			if (displayUnit.isSelectable) {
-				this._selectionLogic.select(displayUnit, isExclusive);
+			if (!Array.isArray(displayUnit)) {
+				displayUnit = [displayUnit];
 			}
+
+			//選択可能なDUのみにする
+			var actualSelection = displayUnit.filter(function(du) {
+				return du.isSelectable;
+			});
+
+			this._selectionLogic.select(actualSelection, isExclusive);
 		},
 
 		selectAll: function() {
@@ -5783,9 +5839,9 @@
 
 		getDisplayUnitsInRect: function(displayX, displayY, displayWidth, displayHeight,
 				isSelectableOnly) {
-			var wtl = this._viewport.getWorldPosition(displayX, displayY);
-			var ww = this._viewport.getXLengthOfWorld(displayWidth);
-			var wh = this._viewport.getYLengthOfWorld(displayHeight);
+			var wtl = this._getActiveView()._viewport.getWorldPosition(displayX, displayY);
+			var ww = this._getActiveView()._viewport.getXLengthOfWorld(displayWidth);
+			var wh = this._getActiveView()._viewport.getYLengthOfWorld(displayHeight);
 
 			//ワールド座標系のRectに直す
 			var wRect = stageModule.Rect.create(wtl.x, wtl.y, ww, wh);
@@ -6070,8 +6126,6 @@
 
 		_dragStartRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
 
-		_dragSelectOverlayRect: null,
-
 		_startDrag: function(context) {
 			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
 			if (this._dragSession) {
@@ -6244,6 +6298,7 @@
 						return isDelegatedJQueryEventDefaultPrevented;
 					};
 
+					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
 					var dragStartEvent = this.trigger(delegatedJQueryEvent, {
 						dragSession: this._dragSession
 					});
@@ -6259,10 +6314,6 @@
 					this._dragSession.begin();
 
 					this._stageViewCollection.__onDragDUStart(this._dragSession);
-
-					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
-					//					var op = BulkOperation.create(this._dragSession.getTarget());
-					//					op.moveToForefront();
 
 					//プロキシが設定されたらそれを表示
 					var proxyElem = this._dragSession.getProxyElement();
@@ -6294,16 +6345,7 @@
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
 
-						this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
-						this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
-						stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-							x: this._dragSelectStartPos.x,
-							y: this._dragSelectStartPos.y,
-							width: 0,
-							height: 0,
-							'pointer-events': 'none'
-						});
-						//this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
+						this._stageViewCollection.__onSelectDUStart(this._dragSelectStartPos);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
 
@@ -6537,12 +6579,8 @@
 					dispActualY);
 			var ww = this._getActiveView()._viewport.getXLengthOfWorld(dispW);
 			var wh = this._getActiveView()._viewport.getYLengthOfWorld(dispH);
-			stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-				x: worldPos.x,
-				y: worldPos.y,
-				width: ww,
-				height: wh
-			});
+
+			this._stageViewCollection.__onSelectDUMove(worldPos, ww, wh);
 		},
 
 		_getCurrentDragPosition: function() {
@@ -6594,10 +6632,7 @@
 
 			this._endBoundaryScroll();
 
-			if (this._dragSelectOverlayRect) {
-				this._foremostLayer._rootG.removeChild(this._dragSelectOverlayRect);
-				this._dragSelectOverlayRect = null;
-			}
+			this._stageViewCollection.__onSelectDUEnd();
 
 			if (this._currentDragMode === DRAG_MODE_NONE) {
 				return;
