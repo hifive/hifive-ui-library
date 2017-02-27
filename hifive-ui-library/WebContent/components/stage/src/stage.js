@@ -2852,6 +2852,19 @@
 					//エッジの表示が切れないようにvisibleにする
 					rootSvg.style.overflow = "visible";
 
+					//					/var ns = 'http://www.w3.org/2000/svg';
+
+					//					rootSvg.setAttributeNS(ns, 'width', 1);
+					//					rootSvg.setAttributeNS(ns, 'height', 1);
+
+					//rootSvg.width.baseVal.valueAsString = "1px";
+					//rootSvg.height.baseVal.valueAsString = "1px";
+
+					//					SvgUtil.setAttributes(rootSvg, {
+					//						width: 10,
+					//						height: 1
+					//					});
+
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
 					this.__updateDOM(view, rootSvg, reason);
@@ -4672,11 +4685,19 @@
 							this.setScale(null, this._viewport.scaleY);
 						},
 
+						getScrollRangeX: function() {
+							return this._scrollRangeX;
+						},
+
 						setScrollRangeX: function(minDisplayX, maxDisplayX) {
 							this._scrollRangeX = {
 								min: minDisplayX,
 								max: maxDisplayX
 							};
+						},
+
+						getScrollRangeY: function() {
+							return this._scrollRangeY;
 						},
 
 						setScrollRangeY: function(minDisplayY, maxDisplayY) {
@@ -7419,7 +7440,6 @@
 				wheelDirection = -1;
 			}
 
-			// TODO どの操作でどうするかは要検討
 			if (event.shiftKey) {
 				// シフトキーが押されていたら拡大縮小
 				if (this.isWheelScaleDirectionReversed) {
@@ -7434,8 +7454,8 @@
 				var offsetX = wheelEvent.pageX - rootOffset.left - activeView.x;
 				var offsetY = wheelEvent.pageY - rootOffset.top - activeView.y;
 
-				this.setScale(this._getActiveView()._viewport.scaleX + ds,
-						this._getActiveView()._viewport.scaleY + ds, offsetX, offsetY);
+				activeView.setScale(activeView._viewport.scaleX + ds, activeView._viewport.scaleY
+						+ ds, offsetX, offsetY);
 				return;
 			}
 
