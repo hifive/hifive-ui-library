@@ -2255,7 +2255,9 @@
 					if (!this._rootStage) {
 						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
 					}
-					var worldPos = this._rootStage._viewport.getWorldPosition(x, y);
+					var view = this._rootStage._getActiveView();
+					//TODO 現状DUはどのViewでも同じ位置になるので、アクティブビューのものを使用すればよい
+					var worldPos = view._viewport.getWorldPosition(x, y);
 					this.moveTo(worldPos.x, worldPos.y);
 				},
 
@@ -2263,8 +2265,9 @@
 					if (!this._rootStage) {
 						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
 					}
-					var wx = this._rootStage._viewport.getXLengthOfWorld(x);
-					var wy = this._rootStage._viewport.getYLengthOfWorld(y);
+					var view = this._rootStage._getActiveView();
+					var wx = view._viewport.getXLengthOfWorld(x);
+					var wy = view._viewport.getYLengthOfWorld(y);
 					this.moveBy(wx, wy);
 				},
 
@@ -2274,15 +2277,19 @@
 				 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
 				 * 引数なしの場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
 				 */
-				scrollIntoView: function(mode) {
+				scrollIntoView: function(mode, view) {
 					//TODO 引数に位置を取れるようにする？
 					//TODO BasicDUに持たせる？ContentsDU?
 					if (!this._rootStage) {
 						return;
 					}
 
+					if (!view) {
+						view = this._rootStage._getActiveView();
+					}
+
 					var gpos = this.getWorldGlobalPosition();
-					var wr = this._rootStage._viewport.getWorldRect();
+					var wr = view._viewport.getWorldRect();
 					var moveDx = 0;
 					var moveDy = 0;
 
@@ -2292,7 +2299,7 @@
 						var cy = gpos.y + this.height / 2;
 						moveDx = cx - wr.x - wr.width / 2;
 						moveDy = cy - wr.y - wr.height / 2;
-						this._rootStage.scrollWorldBy(moveDx, moveDy);
+						view.scrollWorldBy(moveDx, moveDy);
 						return;
 					}
 
@@ -2308,7 +2315,7 @@
 					} else if (gpos.y + this.height > wr.y + wr.height) {
 						moveDy = gpos.y + this.height - (wr.y + wr.height);
 					}
-					this._rootStage.scrollWorldBy(moveDx, moveDy);
+					view.scrollWorldBy(moveDx, moveDy);
 				},
 
 				getWorldGlobalPosition: function() {
@@ -3625,8 +3632,9 @@
 	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
 	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
 	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
+	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
 
-	var Viewport = RootClass.extend(function(super_) {
+	var Viewport = EventDispatcher.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
 
 		var desc = {
@@ -3941,7 +3949,7 @@
 		return desc;
 	});
 
-	var StageView = RootClass
+	var StageView = EventDispatcher
 			.extend(function(super_) {
 				var desc = {
 					name: 'h5.ui.components.stage.StageView',
@@ -3968,9 +3976,6 @@
 						_layerElementMap: null,
 
 						_isUpdateTransformReserved: null,
-
-						_width: null,
-						_height: null,
 
 						_scrollRangeX: null,
 						_scrollRangeY: null,
@@ -4019,14 +4024,16 @@
 						},
 						width: {
 							get: function() {
-								return this._width;
+								return this._viewport.displayWidth;
 							},
 							set: function(value) {
-								if (value === this._width) {
+								var currentWidth = this._viewport.displayWidth;
+
+								if (value === currentWidth) {
 									return;
 								}
 
-								this._width = value;
+								this._viewport.setDisplaySize(value, this._viewport.displayHeight);
 
 								if (this._rootElement) {
 									if (value < 0) {
@@ -4047,14 +4054,16 @@
 						},
 						height: {
 							get: function() {
-								return this._height;
+								return this._viewport.displayHeight;
 							},
 							set: function(value) {
-								if (value === this._height) {
+								var currentHeight = this._viewport.displayHeight;
+
+								if (value === currentHeight) {
 									return;
 								}
 
-								this._height = value;
+								this._viewport.setDisplaySize(this._viewport.displayWidth, value);
 
 								if (this._rootElement) {
 									if (value < 0) {
@@ -4071,6 +4080,9 @@
 										});
 									});
 								}
+
+								//								var event = PropertyChangeEvent.create('height', oldValue, value);
+								//								this.dispatchEvent(event);
 							}
 						},
 
@@ -4090,6 +4102,18 @@
 							get: function() {
 								return this._coordinateConverter;
 							}
+						},
+
+						scrollX: {
+							get: function() {
+								return this._viewport.displayX;
+							}
+						},
+
+						scrollY: {
+							get: function() {
+								return this._viewport.displayY;
+							}
 						}
 					},
 
@@ -4102,8 +4126,6 @@
 							this._stage = stage;
 							this._x = 0;
 							this._y = 0;
-							this._width = 0;
-							this._height = 0;
 
 							this._viewport = Viewport.create();
 
@@ -4216,8 +4238,7 @@
 						},
 
 						setSize: function(displayWidth, displayHeight) {
-							this.width = displayWidth;
-							this.height = displayHeight;
+							this._viewport.setDisplaySize(displayWidth, displayHeight);
 						},
 
 						getScrollPosition: function() {
@@ -4466,16 +4487,6 @@
 						},
 
 						_updateLayerScrollPosition: function() {
-							//							if (this._isUpdateTransformReserved) {
-							//								return;
-							//							}
-							//							this._isUpdateTransformReserved = true;
-
-							//							var that = this;
-							//TODO rAFはここで直接呼ばない
-							//							requestAnimationFrame(function() {
-							//								that._isUpdateTransformReserved = false;
-
 							var layers = this._stage._layers;
 
 							for (var i = 0, len = layers.length; i < len; i++) {
@@ -6057,8 +6068,8 @@
 
 				var dispStartOffX = event.pageX - rootOffset.left;
 				var dispStartOffY = event.pageY - rootOffset.top;
-				this._dragSelectStartPos = this._viewport.getDisplayPositionFromDisplayOffset(
-						dispStartOffX, dispStartOffY);
+				this._dragSelectStartPos = this._getActiveView()._viewport
+						.getDisplayPositionFromDisplayOffset(dispStartOffX, dispStartOffY);
 			}
 
 			//注：Chrome51では、cursorの値を変えても、
@@ -6253,7 +6264,8 @@
 				var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
 				var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
 
-				var nineSlice = this._viewport.getNineSlicePosition(pointerX, pointerY);
+				var nineSlice = this._getActiveView()._viewport.getNineSlicePosition(pointerX,
+						pointerY);
 				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
 					this._beginBoundaryScroll(nineSlice, callback);
 				} else {
@@ -6263,9 +6275,10 @@
 		},
 
 		_updateDragOverlay: function(dispActualX, dispActualY, dispW, dispH) {
-			var worldPos = this._viewport.getWorldPosition(dispActualX, dispActualY);
-			var ww = this._viewport.getXLengthOfWorld(dispW);
-			var wh = this._viewport.getYLengthOfWorld(dispH);
+			var worldPos = this._getActiveView()._viewport.getWorldPosition(dispActualX,
+					dispActualY);
+			var ww = this._getActiveView()._viewport.getXLengthOfWorld(dispW);
+			var wh = this._getActiveView()._viewport.getYLengthOfWorld(dispH);
 			stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
 				x: worldPos.x,
 				y: worldPos.y,
@@ -6281,8 +6294,8 @@
 			var dispLastOffY = this._dragLastPagePos.y - rootOffset.top;
 
 			var dispStartPos = this._dragSelectStartPos;
-			var dispLastPos = this._viewport.getDisplayPositionFromDisplayOffset(dispLastOffX,
-					dispLastOffY);
+			var dispLastPos = this._getActiveView()._viewport.getDisplayPositionFromDisplayOffset(
+					dispLastOffX, dispLastOffY);
 
 			var dispW = dispLastPos.x - dispStartPos.x;
 			var dispActualX;
@@ -6341,10 +6354,10 @@
 			if (this._currentDragMode === DRAG_MODE_REGION) {
 				var lastDragPos = this._getCurrentDragPosition();
 
-				var worldPos = this._viewport.getWorldPosition(lastDragPos.dispActualX,
-						lastDragPos.dispActualY);
-				var ww = this._viewport.getXLengthOfWorld(lastDragPos.dispW);
-				var wh = this._viewport.getYLengthOfWorld(lastDragPos.dispH);
+				var worldPos = this._getActiveView()._viewport.getWorldPosition(
+						lastDragPos.dispActualX, lastDragPos.dispActualY);
+				var ww = this._getActiveView()._viewport.getXLengthOfWorld(lastDragPos.dispW);
+				var wh = this._getActiveView()._viewport.getYLengthOfWorld(lastDragPos.dispH);
 
 				var dispRect = stageModule.Rect.create(lastDragPos.dispActualX,
 						lastDragPos.dispActualY, lastDragPos.dispW, lastDragPos.dispH);
@@ -6776,8 +6789,8 @@
 				var offsetX = wheelEvent.pageX - rootOffset.left;
 				var offsetY = wheelEvent.pageY - rootOffset.top;
 
-				this.setScale(this._viewport.scaleX + ds, this._viewport.scaleY + ds, offsetX,
-						offsetY);
+				this.setScale(this._getActiveView()._viewport.scaleX + ds,
+						this._getActiveView()._viewport.scaleY + ds, offsetX, offsetY);
 				return;
 			}
 
