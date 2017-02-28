@@ -4700,9 +4700,9 @@
 								max: maxDisplayX
 							};
 
-							//							var viewCollection = this._stage._stageViewCollection;
-							//							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
-							//									maxDisplayX);
+							var viewCollection = this._stage._stageViewCollection;
+							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
+									maxDisplayX);
 						},
 
 						getScrollRangeY: function() {
@@ -4715,9 +4715,9 @@
 								max: maxDisplayY
 							};
 
-							//							var viewCollection = this._stage._stageViewCollection;
-							//							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
-							//									maxDisplayY);
+							var viewCollection = this._stage._stageViewCollection;
+							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
+									maxDisplayY);
 						},
 
 						getDefsForLayer: function(layer) {
@@ -5104,6 +5104,7 @@
 
 							if (minDisplayY == null || maxDisplayY == null) {
 								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
+								this._scrollRangeY = null;
 								return;
 							}
 
@@ -5111,8 +5112,21 @@
 									maxDisplayY);
 						},
 
-						_getScrollBarPosition: function() {
-							this._scrollRangeY;
+						_getViewportYFromScrollBarPosition: function(value) {
+							if (!this._scrollRangeY) {
+								return 0;
+							}
+							return value + this._scrollRangeY.min;
+						},
+
+						_setScrollBarPosition: function(scrollY) {
+							if (!this._scrollRangeY || !this._scrollBarController) {
+								return;
+							}
+
+							var yMod = scrollY - this._scrollRangeY.min;
+
+							this._scrollBarController.setScrollPosition(yMod);
 						},
 
 						_setScrollBarMode: function(row, mode, minValue, maxValue) {
@@ -5122,6 +5136,14 @@
 
 							if (mode === SCROLL_BAR_MODE_ALWAYS) {
 								var height = leftmostView.height;
+
+								if (this._scrollBarController) {
+									//既にスクロールバーが出ている場合はこのまま
+									return;
+								} else {
+
+								}
+
 
 								rightmostView.width -= SCROLL_BAR_THICKNESS;
 								var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
@@ -5190,7 +5212,8 @@
 						_index: null,
 						_overallIndex: null,
 						_scrollBarMode: null,
-						_scrollBarController: null
+						_scrollBarController: null,
+						_scrollRangeX: null
 					},
 
 					accessor: {
@@ -5287,7 +5310,13 @@
 						},
 
 						setScrollRangeX: function(minDisplayX, maxDisplayX) {
+							this._scrollRangeX = {
+								min: minDisplayX,
+								max: maxDisplayX
+							};
+
 							if (minDisplayX == null || maxDisplayX == null) {
+								this._scrollRangeX = null;
 								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
 								return;
 							}
@@ -5296,10 +5325,31 @@
 									maxDisplayX);
 						},
 
+						_getViewportXFromScrollBarPosition: function(value) {
+							if (!this._scrollRangeX) {
+								return 0;
+							}
+							return value + this._scrollRangeX.min;
+						},
+
+						_setScrollBarPosition: function(x) {
+							if (!this._scrollRangeX || !this._scrollBarController) {
+								return;
+							}
+
+							var xMod = x - this._scrollRangeX.min;
+
+							this._scrollBarController.setScrollPosition(xMod);
+						},
+
 						_setScrollBarMode: function(col, mode, minValue, maxValue) {
 							var bottommostView = col.getView(this._viewCollection.numberOfRows - 1);
 
 							if (mode === SCROLL_BAR_MODE_ALWAYS) {
+								if (this._scrollBarController) {
+
+								}
+
 								bottommostView.height -= SCROLL_BAR_THICKNESS;
 								var $root = $('<div class="h5-stage-scrollbar horizontal" data-h5-dyn-stage-idx="'
 										+ col.index + '"></div>');
@@ -5322,7 +5372,7 @@
 								col._scrollBarController.readyPromise.done(function() {
 									//第1はサムの相対値、第2が最大値
 									this.setScrollSize(col.width, amount);
-									this.setBarSize(col.witdh);
+									this.setBarSize(col.width);
 									this.setScrollPosition(that.getScrollX());
 								});
 
@@ -5972,6 +6022,10 @@
 
 									v._isViewportEventSuppressed = false;
 								});
+
+								if (!this._stage._isInScrollBarScroll) {
+									row._setScrollBarPosition(newScrollPos.y);
+								}
 							}
 
 							var col = this.getColumn(srcView.columnIndex);
@@ -5986,6 +6040,10 @@
 									}
 									v._isViewportEventSuppressed = false;
 								});
+
+								if (!this._stage._isInScrollBarScroll) {
+									col._setScrollBarPosition(newScrollPos.x);
+								}
 							}
 						},
 
@@ -6814,6 +6872,8 @@
 			return false;
 		},
 
+		_isInScrollBarScroll: false,
+
 		'{rootElement} h5scroll': function(context, $el) {
 			var $scrollbar = $(context.event.target).closest('.h5-stage-scrollbar');
 
@@ -6826,17 +6886,21 @@
 			var idx = $scrollbar.data('h5DynStageIdx');
 			var isVertical = $scrollbar.hasClass('vertical');
 
+			this._isInScrollBarScroll = true;
+
 			if (isVertical) {
+				var row = this._stageViewCollection.getRow(idx);
 				var vPos = context.evArg.vertical.position;
-				this._stageViewCollection.getRow(idx).setScrollY(vPos);
-				console.log('vscr = ' + vPos);
+				var scrY = row._getViewportYFromScrollBarPosition(vPos);
+				row.setScrollY(scrY);
 			} else {
+				var col = this._stageViewCollection.getColumn(idx);
 				var hPos = context.evArg.horizontal.position;
-				this._stageViewCollection.getColumn(idx).setScrollX(hPos);
-				console.log('hscr = ' + hPos);
+				var scrX = col._getViewportXFromScrollBarPosition(hPos);
+				col.setScrollX(scrX);
 			}
 
-			//			data - h5 - dyn - stage - idx
+			this._isInScrollBarScroll = false;
 		},
 
 		'{rootElement} mousedown': function(context, $el) {
