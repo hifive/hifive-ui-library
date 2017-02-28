@@ -2631,6 +2631,10 @@
 					this._from = duFrom;
 					this._to = duTo;
 
+					//サイズを0x0にするとFirefoxでは線が描画されないので1x1にしておく
+					this._width = 1;
+					this._height = 1;
+
 					var that = this;
 					this._duDirtyHandler = function(event) {
 						var reason = event.reason;
@@ -2856,8 +2860,8 @@
 
 					//					/var ns = 'http://www.w3.org/2000/svg';
 
-					rootSvg.setAttribute('width', 1); //TODO for debugging
-					rootSvg.setAttribute('height', 1); //TODO for debugging
+					rootSvg.setAttribute('width', 10); //TODO for debugging
+					rootSvg.setAttribute('height', 10); //TODO for debugging
 
 					//					rootSvg.setAttributeNS(ns, 'width', 1);
 					//					rootSvg.setAttributeNS(ns, 'height', 1);
