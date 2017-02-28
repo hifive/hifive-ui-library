@@ -5129,6 +5129,12 @@
 							this._scrollBarController.setScrollPosition(yMod);
 						},
 
+						_setScrollBarHeight: function(height) {
+							if (this._scrollBarController) {
+								this._scrollBarController.setBarSize(height);
+							}
+						},
+
 						_setScrollBarMode: function(row, mode, minValue, maxValue) {
 							var leftmostView = row.getView(0);
 							var rightmostView = row
@@ -5340,6 +5346,12 @@
 							var xMod = x - this._scrollRangeX.min;
 
 							this._scrollBarController.setScrollPosition(xMod);
+						},
+
+						_setScrollBarWidth: function(width) {
+							if (this._scrollBarController) {
+								this._scrollBarController.setBarSize(width);
+							}
 						},
 
 						_setScrollBarMode: function(col, mode, minValue, maxValue) {
@@ -6025,6 +6037,7 @@
 
 								if (!this._stage._isInScrollBarScroll) {
 									row._setScrollBarPosition(newScrollPos.y);
+									row._setScrollBarHeight(srcView.height);
 								}
 							}
 
@@ -6043,6 +6056,7 @@
 
 								if (!this._stage._isInScrollBarScroll) {
 									col._setScrollBarPosition(newScrollPos.x);
+									col._setScrollBarWidth(srcView.width);
 								}
 							}
 						},
