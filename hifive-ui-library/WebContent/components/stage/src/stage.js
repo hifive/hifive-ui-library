@@ -5119,6 +5119,11 @@
 							return value + this._scrollRangeY.min;
 						},
 
+						_getScrollBarPositionFromScrollY: function(scrollY) {
+							var yMod = scrollY - this._scrollRangeY.min;
+							return yMod;
+						},
+
 						_setScrollBarPosition: function(scrollY) {
 							if (!this._scrollRangeY || !this._scrollBarController) {
 								return;
@@ -5170,11 +5175,9 @@
 									this.setScrollSize(height, amount);
 									this.setBarSize(height);
 
-									var scrY = leftmostView.getScrollPosition().y;
+									var scrY = that._getScrollBarPositionFromScrollY(that
+											.getScrollY());
 									this.setScrollPosition(scrY);
-
-									//									var event = Event.create('viewportRectChange');
-									//									that._stage._onViewportRectChange(event);
 								});
 
 								row._scrollBarController = controller;
@@ -5349,6 +5352,11 @@
 							}
 						},
 
+						_getScrollBarPositionFromScrollX: function(scrollX) {
+							var xMod = scrollX - this._scrollRangeX.min;
+							return xMod;
+						},
+
 						_setScrollBarPosition: function(x) {
 							if (!this._scrollRangeX || !this._scrollBarController) {
 								return;
@@ -5396,10 +5404,10 @@
 									//第1はサムの相対値、第2が最大値
 									this.setScrollSize(col.width, amount);
 									this.setBarSize(col.width);
-									this.setScrollPosition(that.getScrollX());
 
-									//									var event = Event.create('viewportRectChange');
-									//									that._stage._onViewportRectChange(event);
+									var scrX = that._getScrollBarPositionFromScrollX(that
+											.getScrollX());
+									this.setScrollPosition(scrX);
 								});
 
 								$root.appendTo(this._viewCollection._stage.rootElement);
