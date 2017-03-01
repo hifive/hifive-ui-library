@@ -15,6 +15,8 @@
  *
  */
 (function() {
+	'use strict';
+
 	//TODO FocusControllerはh5.ui.focusManager()としてグローバルに実装する予定
 	//一時的にこっちに置いている
 
@@ -156,22 +158,17 @@
 
 	h5.core.expose(focusController);
 
-	//	h5.u.obj.expose('h5.ui', {
-	//		focusManager: {
-	//			init: function() {
-	//				h5.core.controller('body', focusController);
-	//			}
-	//		}
-	//	});
-
-	//h5.core.expose(focusController);
-
 })();
 
 (function($) {
 	'use strict';
 
-	var RootClass = h5.cls.RootClass;
+	var classManager = h5.cls.manager;
+
+	var RootClass = classManager.getClass('h5.cls.RootClass');
+	var Event = classManager.getClass('h5.event.Event');
+	var EventDispatcher = classManager.getClass('h5.event.EventDispatcher');
+	var PropertyChangeEvent = classManager.getClass('h5.event.PropertyChangeEvent');
 
 	var DragMode = {
 		NONE: 0,
@@ -243,10 +240,6 @@
 	h5.u.obj.expose('h5.ui.components.stage.StageUtil', {
 		clamp: clamp
 	});
-
-	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
-	var Event = h5.cls.manager.getClass('h5.event.Event');
-	var PropertyChangeEvent = h5.cls.manager.getClass('h5.event.PropertyChangeEvent');
 
 	/**
 	 * DragSession
@@ -2788,8 +2781,8 @@
 						break;
 					}
 
-					var rx = x1 <= x2 ? x1 : x2;
-					var ry = y1 <= y2 ? y1 : y2;
+					//					var rx = x1 <= x2 ? x1 : x2;
+					//					var ry = y1 <= y2 ? y1 : y2;
 					var rw = x2 - x1;
 					if (rw < 0) {
 						rw *= -1;
@@ -3436,165 +3429,161 @@
 
 
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
-	var Layer = DisplayUnitContainer
-			.extend(function(super_) {
-				var desc = {
-					name: 'h5.ui.components.stage.Layer',
-					field: {
-						UIDragScreenScrollDirection: null
-					},
-					method: {
-						/**
-						 * @constructor
-						 * @memberOf h5.ui.components.stage.Layer
-						 */
-						constructor: function Layer(id, stage) {
-							super_.constructor.call(this);
+	var Layer = DisplayUnitContainer.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.Layer',
+			field: {
+				UIDragScreenScrollDirection: null
+			},
+			method: {
+				/**
+				 * @constructor
+				 * @memberOf h5.ui.components.stage.Layer
+				 */
+				constructor: function Layer(id, stage) {
+					super_.constructor.call(this);
 
-							this.id = id;
-							this.UIDragScreenScrollDirection = ScrollDirection.XY;
-							this._rootStage = stage;
-							this._belongingLayer = this;
-						},
+					this.id = id;
+					this.UIDragScreenScrollDirection = ScrollDirection.XY;
+					this._rootStage = stage;
+					this._belongingLayer = this;
+				},
 
-						/**
-						 * オーバーライド
-						 *
-						 * @returns
-						 */
-						getWorldGlobalPosition: function() {
-							var p = WorldPoint.create(this.x, this.y);
-							return p;
-						},
+				/**
+				 * オーバーライド
+				 *
+				 * @returns
+				 */
+				getWorldGlobalPosition: function() {
+					var p = WorldPoint.create(this.x, this.y);
+					return p;
+				},
 
-						/**
-						 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
-						 *
-						 * @param worldX
-						 * @param worldY
-						 */
-						moveTo: function(worldX, worldY) {
-							throw new Error(
-									'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
+				/**
+				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				moveTo: function(worldX, worldY) {
+					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
 
-							//							this.x = worldX;
-							//							this.y = worldY;
-							//							this._updateTransform();
-						},
+					//							this.x = worldX;
+					//							this.y = worldY;
+					//							this._updateTransform();
+				},
 
-						/**
-						 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
-						 *
-						 * @param worldX
-						 * @param worldY
-						 */
-						moveBy: function(worldX, worldY) {
-							throw new Error(
-									'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
+				/**
+				 * オーバーライド。レイヤーのmoveはsvgの属性ではなくtranslateで行う(scaleと合わせて行うため)
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				moveBy: function(worldX, worldY) {
+					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
 
-							//							var x = this.x + worldX;
-							//							var y = this.y + worldY;
-							//							this.scrollTo(x, y);
-						},
+					//							var x = this.x + worldX;
+					//							var y = this.y + worldY;
+					//							this.scrollTo(x, y);
+				},
 
-						__createGraphics: function(view, svgRoot) {
-							var SVGGraphics = h5.cls.manager
-									.getClass('h5.ui.components.stage.SVGGraphics');
+				__createGraphics: function(view, svgRoot) {
+					var SVGGraphics = classManager.getClass('h5.ui.components.stage.SVGGraphics');
 
-							var defs = view.getDefsForLayer(this);
+					var defs = view.getDefsForLayer(this);
 
-							var graphics = SVGGraphics.create(view, svgRoot, defs);
-							return graphics;
-						},
+					var graphics = SVGGraphics.create(view, svgRoot, defs);
+					return graphics;
+				},
 
-						__createRootElement: function(view) {
-							var rootSvg = createSvgElement('svg');
-							rootSvg.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
-							rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
+				__createRootElement: function(view) {
+					var rootSvg = createSvgElement('svg');
+					rootSvg.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
+					rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
 
-							//レイヤーはgをtransformしてスクロールを実現するので
-							//overflowはvisibleである必要がある
-							rootSvg.style.overflow = "visible";
+					//レイヤーはgをtransformしてスクロールを実現するので
+					//overflowはvisibleである必要がある
+					rootSvg.style.overflow = "visible";
 
-							//rootGは<g>要素。transformを一括してかけるため、
-							//子要素は全てこの<g>の下に追加する。
-							var rootG = createSvgElement('g');
-							rootSvg.appendChild(rootG);
+					//rootGは<g>要素。transformを一括してかけるため、
+					//子要素は全てこの<g>の下に追加する。
+					var rootG = createSvgElement('g');
+					rootSvg.appendChild(rootG);
 
-							return rootSvg;
-						},
+					return rootSvg;
+				},
 
-						__renderDOM: function(view) {
-							var children = this._zIndexList.getAllAcendant();
+				__renderDOM: function(view) {
+					var children = this._zIndexList.getAllAcendant();
 
-							var layerElement = view.getElementForLayer(this);
+					var layerElement = view.getElementForLayer(this);
 
-							var childrenLen = children.length;
-							for (var i = 0; i < childrenLen; i++) {
-								var childDU = children[i];
-								var dom = childDU.__renderDOM(view);
-								this.__addDOM(view, layerElement, dom);
-							}
-
-							return null;
-						},
-
-						/**
-						 * オーバーライド
-						 *
-						 * @param du
-						 */
-						__onDirtyNotify: function(du, reasons) {
-							var event = DisplayUnitDirtyEvent.create();
-							event.displayUnit = du;
-
-							var reason = UpdateReasonSet.create(reasons);
-							event.reason = reason;
-
-							this.dispatchEvent(event);
-						},
-
-						/**
-						 * オーバーライド
-						 *
-						 * @param targetDU
-						 * @param parentDU
-						 */
-						__onDescendantAdded: function(displayUnit) {
-							var event = DisplayUnitContainerEvent.create('displayUnitAdd');
-							event.displayUnit = displayUnit;
-							this.dispatchEvent(event);
-						},
-
-						/**
-						 * オーバーライド
-						 *
-						 * @param du 取り外されたDisplayUnit
-						 */
-						__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
-							var event = DisplayUnitContainerEvent.create('displayUnitRemove');
-							event.displayUnit = displayUnit;
-							event.parentDisplayUnit = parentDisplayUnit;
-							this.dispatchEvent(event);
-						},
-
-						/**
-						 * 属するレイヤーは自分自身なので引数は無視する
-						 *
-						 * @param stage
-						 * @param belongingLayer
-						 */
-						_onAddedToRoot: function(stage, belongingLayer) {
-							var children = this._children;
-							for (var i = 0, len = children.length; i < len; i++) {
-								var du = children[i];
-								du._onAddedToRoot(this._rootStage, this._belongingLayer);
-							}
-						}
+					var childrenLen = children.length;
+					for (var i = 0; i < childrenLen; i++) {
+						var childDU = children[i];
+						var dom = childDU.__renderDOM(view);
+						this.__addDOM(view, layerElement, dom);
 					}
-				};
-				return desc;
-			});
+
+					return null;
+				},
+
+				/**
+				 * オーバーライド
+				 *
+				 * @param du
+				 */
+				__onDirtyNotify: function(du, reasons) {
+					var event = DisplayUnitDirtyEvent.create();
+					event.displayUnit = du;
+
+					var reason = UpdateReasonSet.create(reasons);
+					event.reason = reason;
+
+					this.dispatchEvent(event);
+				},
+
+				/**
+				 * オーバーライド
+				 *
+				 * @param targetDU
+				 * @param parentDU
+				 */
+				__onDescendantAdded: function(displayUnit) {
+					var event = DisplayUnitContainerEvent.create('displayUnitAdd');
+					event.displayUnit = displayUnit;
+					this.dispatchEvent(event);
+				},
+
+				/**
+				 * オーバーライド
+				 *
+				 * @param du 取り外されたDisplayUnit
+				 */
+				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
+					var event = DisplayUnitContainerEvent.create('displayUnitRemove');
+					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = parentDisplayUnit;
+					this.dispatchEvent(event);
+				},
+
+				/**
+				 * 属するレイヤーは自分自身なので引数は無視する
+				 *
+				 * @param stage
+				 * @param belongingLayer
+				 */
+				_onAddedToRoot: function(stage, belongingLayer) {
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						var du = children[i];
+						du._onAddedToRoot(this._rootStage, this._belongingLayer);
+					}
+				}
+			}
+		};
+		return desc;
+	});
 
 	var BulkOperation = RootClass.extend(function(super_) {
 		var desc = {
@@ -3661,46 +3650,45 @@
 		return desc;
 	});
 
-	h5.u.obj.expose('h5.ui.components.stage', {
-		BasicDisplayUnit: BasicDisplayUnit,
-		Layer: Layer,
-		DisplayUnitContainer: DisplayUnitContainer,
-		Rect: Rect,
-		Point: Point,
-		WorldPoint: WorldPoint,
-		DisplayPoint: DisplayPoint,
-		Edge: Edge,
-		SVGLinearGradient: SVGLinearGradient
-	});
+	//	h5.u.obj.expose('h5.ui.components.stage', {
+	//		BasicDisplayUnit: BasicDisplayUnit,
+	//		Layer: Layer,
+	//		DisplayUnitContainer: DisplayUnitContainer,
+	//		Rect: Rect,
+	//		Point: Point,
+	//		WorldPoint: WorldPoint,
+	//		DisplayPoint: DisplayPoint,
+	//		Edge: Edge,
+	//		SVGLinearGradient: SVGLinearGradient
+	//	});
 
 })(jQuery);
-
-(function() {
-
-	var stageLogic = {
-		__name: 'h5.ui.components.stage.StageLogic'
-	};
-
-	h5.core.expose(stageLogic);
-
-})();
 
 (function($) {
 	'use strict';
 
-	var RootClass = h5.cls.RootClass;
-	var stageModule = h5.ui.components.stage;
+	var classManager = h5.cls.manager;
 
-	var Event = h5.cls.manager.getClass('h5.event.Event');
-	var EventDispatcher = h5.cls.manager.getClass('h5.event.EventDispatcher');
+	var RootClass = classManager.getClass('h5.cls.RootClass');
 
-	var DisplayPoint = h5.cls.manager.getClass('h5.ui.components.stage.DisplayPoint');
-	var BulkOperation = h5.cls.manager.getClass('h5.ui.components.stage.BulkOperation');
-	var Layer = h5.cls.manager.getClass('h5.ui.components.stage.Layer');
-	var DragSession = h5.cls.manager.getClass('h5.ui.components.stage.DragSession');
-	var UpdateReasonSet = h5.cls.manager.getClass('h5.ui.components.stage.UpdateReasonSet');
+	var Event = classManager.getClass('h5.event.Event');
+	var EventDispatcher = classManager.getClass('h5.event.EventDispatcher');
+
+	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
+	var DisplayPoint = classManager.getClass('h5.ui.components.stage.DisplayPoint');
+	var WorldPoint = classManager.getClass('h5.ui.components.stage.WorldPoint');
+	var Layer = classManager.getClass('h5.ui.components.stage.Layer');
+	var DragSession = classManager.getClass('h5.ui.components.stage.DragSession');
+	var UpdateReasonSet = classManager.getClass('h5.ui.components.stage.UpdateReasonSet');
+
+	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
+	var DisplayUnitContainer = classManager.getClass('h5.ui.components.stage.DisplayUnitContainer');
+	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
+	var SVGDefinitions = classManager.getClass('h5.ui.components.stage.SVGDefinitions');
+
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
-
+	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
+	var DragMode = h5.ui.components.stage.DragMode;
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
 
 	var Viewport = EventDispatcher.extend(function(super_) {
@@ -3776,8 +3764,8 @@
 				 */
 				constructor: function Viewport() {
 					super_.constructor.call(this);
-					this._displayRect = stageModule.Rect.create();
-					this._worldRect = stageModule.Rect.create();
+					this._displayRect = Rect.create();
+					this._worldRect = Rect.create();
 					this._scaleX = 1;
 					this._scaleY = 1;
 					this.boundaryWidth = DEFAULT_BOUNDARY_WIDTH;
@@ -3788,7 +3776,7 @@
 				},
 
 				getDisplayRect: function() {
-					var rect = stageModule.Rect.create(this._displayRect.x, this._displayRect.y,
+					var rect = Rect.create(this._displayRect.x, this._displayRect.y,
 							this._displayRect.width, this._displayRect.height);
 					return rect;
 				},
@@ -3825,7 +3813,7 @@
 				},
 
 				getWorldRect: function() {
-					var rect = stageModule.Rect.create(this._worldRect.x, this._worldRect.y,
+					var rect = Rect.create(this._worldRect.x, this._worldRect.y,
 							this._worldRect.width, this._worldRect.height);
 					return rect;
 				},
@@ -3900,7 +3888,7 @@
 				getWorldPositionFromDisplayOffset: function(displayOffsetX, displayOffsetY) {
 					var wx = this._worldRect.x + displayOffsetX / this._scaleX;
 					var wy = this._worldRect.y + displayOffsetY / this._scaleY;
-					var point = stageModule.WorldPoint.create(wx, wy);
+					var point = WorldPoint.create(wx, wy);
 					return point;
 				},
 
@@ -3930,7 +3918,7 @@
 				getWorldPosition: function(displayX, displayY) {
 					var wx = displayX / this._scaleX;
 					var wy = displayY / this._scaleY;
-					var point = stageModule.WorldPoint.create(wx, wy);
+					var point = WorldPoint.create(wx, wy);
 					return point;
 				},
 
@@ -4015,7 +4003,7 @@
 				toDisplayPosition: function(worldX, worldY) {
 					var x;
 					var y;
-					if (arguments.length === 1 && stageModule.WorldPoint.isClassOf(worldX)) {
+					if (arguments.length === 1 && WorldPoint.isClassOf(worldX)) {
 						x = worldX.x;
 						y = worldX.y;
 					} else {
@@ -4344,7 +4332,7 @@
 									height: 1
 								});
 
-								stageModule.SvgUtil.setAttributes(layerRootElement, {
+								SvgUtil.setAttributes(layerRootElement, {
 									overflow: 'visible'
 								});
 
@@ -4369,7 +4357,7 @@
 							this._dragSelectOverlayRect = rect;
 
 							rect.className.baseVal = ('stageDragSelectRangeOverlay');
-							stageModule.SvgUtil.setAttributes(rect, {
+							SvgUtil.setAttributes(rect, {
 								x: dragSelectStartPos.x,
 								y: dragSelectStartPos.y,
 								width: 0,
@@ -4733,8 +4721,6 @@
 										'http://www.w3.org/2000/svg', 'defs');
 								layerElement.appendChild(element);
 
-								var SVGDefinitions = h5.cls.manager
-										.getClass('h5.ui.components.stage.SVGDefinitions');
 								defs = SVGDefinitions.create(element);
 								this._layerDefsMap.set(layer, defs);
 							}
@@ -6155,9 +6141,6 @@
 
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
-	var BasicDisplayUnit = h5.cls.manager.getClass('h5.ui.components.stage.BasicDisplayUnit');
-	var Edge = h5.cls.manager.getClass('h5.ui.components.stage.Edge');
-
 	/**
 	 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
 	 *
@@ -6208,17 +6191,17 @@
 		return ret;
 	}
 
-	var DRAG_MODE_NONE = stageModule.DragMode.NONE;
-	var DRAG_MODE_AUTO = stageModule.DragMode.AUTO;
-	var DRAG_MODE_SCREEN = stageModule.DragMode.SCREEN;
-	var DRAG_MODE_DU = stageModule.DragMode.DU;
-	var DRAG_MODE_SELECT = stageModule.DragMode.SELECT;
-	var DRAG_MODE_REGION = stageModule.DragMode.REGION;
+	var DRAG_MODE_NONE = DragMode.NONE;
+	var DRAG_MODE_AUTO = DragMode.AUTO;
+	var DRAG_MODE_SCREEN = DragMode.SCREEN;
+	var DRAG_MODE_DU = DragMode.DU;
+	var DRAG_MODE_SELECT = DragMode.SELECT;
+	var DRAG_MODE_REGION = DragMode.REGION;
 
-	var SCROLL_DIRECTION_NONE = stageModule.ScrollDirection.NONE;
-	var SCROLL_DIRECTION_X = stageModule.ScrollDirection.X;
-	var SCROLL_DIRECTION_Y = stageModule.ScrollDirection.Y;
-	var SCROLL_DIRECTION_XY = stageModule.ScrollDirection.XY;
+	var SCROLL_DIRECTION_NONE = ScrollDirection.NONE;
+	var SCROLL_DIRECTION_X = ScrollDirection.X;
+	var SCROLL_DIRECTION_Y = ScrollDirection.Y;
+	var SCROLL_DIRECTION_XY = ScrollDirection.XY;
 
 	var BOUNDARY_SCROLL_INTERVAL = 20;
 	var BOUNDARY_SCROLL_INCREMENT = 10;
@@ -6360,7 +6343,7 @@
 			var wh = this._getActiveView()._viewport.getYLengthOfWorld(displayHeight);
 
 			//ワールド座標系のRectに直す
-			var wRect = stageModule.Rect.create(wtl.x, wtl.y, ww, wh);
+			var wRect = Rect.create(wtl.x, wtl.y, ww, wh);
 
 			if (isSelectableOnly === undefined) {
 				//isSelectableOnlyはデフォルト：true
@@ -6374,8 +6357,8 @@
 			for (var i = 0, len = allDU.length; i < len; i++) {
 				var du = allDU[i];
 				var worldGlobalPos = du.getWorldGlobalPosition();
-				var duGlobalRect = stageModule.Rect.create(worldGlobalPos.x, worldGlobalPos.y,
-						du.width, du.height);
+				var duGlobalRect = Rect.create(worldGlobalPos.x, worldGlobalPos.y, du.width,
+						du.height);
 				if (wRect.contains(duGlobalRect)) {
 					ret.push(du);
 				}
@@ -6742,9 +6725,9 @@
 				});
 				setCursor('default');
 
-				this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
+				this._dragSelectOverlayRect = SvgUtil.createElement('rect');
 				this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
-				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+				SvgUtil.setAttributes(this._dragSelectOverlayRect, {
 					x: this._dragSelectStartPos.x,
 					y: this._dragSelectStartPos.y,
 					width: 0,
@@ -6762,9 +6745,9 @@
 				this._currentDragMode = DRAG_MODE_REGION;
 				saveDragSelectStartPos.call(this);
 
-				this._dragSelectOverlayRect = stageModule.SvgUtil.createElement('rect');
+				this._dragSelectOverlayRect = SvgUtil.createElement('rect');
 				this._dragSelectOverlayRect.className.baseVal = ('stageDragRegionOverlay');
-				stageModule.SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+				SvgUtil.setAttributes(this._dragSelectOverlayRect, {
 					x: this._dragSelectStartPos.x,
 					y: this._dragSelectStartPos.y,
 					width: 0,
@@ -7231,9 +7214,9 @@
 				var ww = this._getActiveView()._viewport.getXLengthOfWorld(lastDragPos.dispW);
 				var wh = this._getActiveView()._viewport.getYLengthOfWorld(lastDragPos.dispH);
 
-				var dispRect = stageModule.Rect.create(lastDragPos.dispActualX,
-						lastDragPos.dispActualY, lastDragPos.dispW, lastDragPos.dispH);
-				var worldRect = stageModule.Rect.create(worldPos.x, worldPos.y, ww, wh);
+				var dispRect = Rect.create(lastDragPos.dispActualX, lastDragPos.dispActualY,
+						lastDragPos.dispW, lastDragPos.dispH);
+				var worldRect = Rect.create(worldPos.x, worldPos.y, ww, wh);
 
 				this.trigger(EVENT_DRAG_REGION_END, {
 					stageController: this,

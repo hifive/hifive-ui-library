@@ -20,11 +20,13 @@
 	var LAYER_ID_MAIN = 'main';
 	var LAYER_ID_EDGE = 'edge';
 
-	var BasicDisplayUnit = h5.ui.components.stage.BasicDisplayUnit;
-	var DisplayUnitContainer = h5.ui.components.stage.DisplayUnitContainer;
-	var Layer = h5.ui.components.stage.Layer;
-	var Rect = h5.ui.components.stage.Rect;
-	var Edge = h5.ui.components.stage.Edge;
+	var classManager = h5.cls.manager;
+
+	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
+	var DisplayUnitContainer = classManager.getClass('h5.ui.components.stage.DisplayUnitContainer');
+	//var Layer = classManager.getClass('h5.ui.components.stage.Layer');
+	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
+	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
 	var stageInitParam = {
 		layers: [{
@@ -174,6 +176,13 @@
 
 			//TODO 引数はsvgではなくこのUnitインスタンス
 			unit.setRenderer(function(context, graphics) {
+				var reason = context.reason;
+
+				if (!reason.isRenderRequested && !reason.isInitialRender) {
+					//初回描画もしくはリクエスト以外では再描画の必要はない
+					return;
+				}
+
 				var du = context.displayUnit;
 
 				graphics.clear();
@@ -252,7 +261,7 @@
 
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
-			container.setRect(Rect.create(0, 100, 100, 100));
+			container.setRect(Rect.create(200, 100, 100, 100));
 
 			for (var i = 0, len = 20; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
@@ -274,7 +283,7 @@
 
 			//var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
 
-			this._stageController.setScrollRangeY(-200, 200);
+			//this._stageController.setScrollRangeY(-200, 200);
 		},
 
 		'{rootElement} duClick': function(context) {
@@ -402,44 +411,69 @@
 
 		'input[name="splitView"] click': function(context) {
 			var hDef = [{
-				height: 300
+				height: 300,
+				scrollBarMode: 'always'
 			}, {
 				type: 'separator',
 				height: 5
 			}, {}];
 
-			hDef = [{
-				"height": 369,
-				"scrollRangeY": {
-					"min": 0,
-					"max": 369
-				},
-				"scrollBarMode": "always"
-			}, {
-				"type": "separator",
-				"height": 2
-			}, {
-				"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
-				"scrollRangeY": {
-					"min": 369,
-					"max": 2000
-				}
-			}];
+//			hDef = [{
+//				"height": 369,
+//				"scrollRangeY": {
+//					"min": -1000,
+//					"max": 2000
+//				},
+//				"scrollBarMode": "always"
+//			}, {
+//				"type": "separator",
+//				"height": 4
+//			}, {
+//				//"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
+//				"scrollRangeY": {
+//					"min": -1000,
+//					"max": 2000
+//				},
+//				scrollBarMode: 'always'
+//			}];
 
 			var vDef = null; //[{}];
 
 			//			vDef = [{
-			//				width: 300
+			//				width: 300,
+			//				scrollBarMode: 'always',
+			//				scrollRangeX: {
+			//					min: -1000,
+			//					max: 1000
+			//				}
 			//			}, {
 			//				type: 'separator',
 			//				width: 5
-			//			}, {}];
+			//			}, {
+			//				scrollBarMode: 'always',
+			//				scrollRangeX: {
+			//					min: -1000,
+			//					max: 1000
+			//				}
+			//			}];
 
 			this._stageController.splitView(hDef, vDef);
 		},
 
+		'input[name="scrollRangeY"] click': function() {
+			this._stageController._getActiveView().setScrollRangeY(-1000, 1000);
+		},
+
+		'input[name="scrollRangeX"] click': function() {
+			this._stageController._getActiveView().setScrollRangeX(-2000, 2000);
+		},
+
 		'input[name="clearSplitView"] click': function(context) {
 			this._stageController.splitView(null, null);
+		},
+
+		'input[name="removeDU"] click': function(context) {
+
 		}
 
 	};

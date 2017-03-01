@@ -22,6 +22,10 @@
 <title>ハイパフォーマンス描画</title>
 
 <link rel="stylesheet" href="/hifive-res/fw/1.2.2/h5.css">
+
+<link rel="stylesheet" href="../src/scrollbar.css">
+
+
 <!-- <link rel="stylesheet" href="index.css"> -->
 
 <script src="/hifive-res/ext/jquery/jquery-2.js"></script>
@@ -36,6 +40,7 @@
 <script src="/hifive/src/h5.ui.focusManager.js"></script>
 
 <script src="../src/stage.js"></script>
+<script src="../src/scrollbar.js"></script>
 
 <script src="init.js"></script>
 
@@ -81,7 +86,7 @@ text {
 	height: 30px;
 }
 
-.stageDragSelectRangeOverlay, .stageDragRegionOverlay {
+.stageDragSelectRangeOverlay,.stageDragRegionOverlay {
 	opacity: 0.3;
 	fill: #7ff;
 	stroke: #00f;
@@ -106,7 +111,6 @@ text {
 .stageGridSeparator.vertical {
 	cursor: w-resize;
 }
-
 </style>
 
 </head>
@@ -120,11 +124,12 @@ text {
 				value="Stage scrollTo"> <input type="button" name="stageScrollBy" value="Stage scrollBy"> ScaleX:<input
 				type="range" name="scaleX" min="1" max="500" value="100"> ScaleY:<input type="range" name="scaleY" min="1"
 				max="500" value="100"> <input type="button" name="getScrollPosition" value="getScrollPosition"> <span
-				id="scrollPos"></span> <input type="button" name="scrollIntoView" value="scrollIntoView(center)=duid_4">
-				<input type="button" name="scrollIntoView_glance" value="scrollIntoView(glance)=duid_5">
-				<input type="button" name="dragRegion" value="dragRegion">
-				<input type="button" name="splitView" value="splitView">
-				<input type="button" name="clearSplitView" value="split全解除">
+				id="scrollPos"></span> <input type="button" name="scrollIntoView" value="scrollIntoView(center)=duid_4"> <input
+				type="button" name="scrollIntoView_glance" value="scrollIntoView(glance)=duid_5"> <input type="button"
+				name="dragRegion" value="dragRegion"> <input type="button" name="splitView" value="splitView"> <input
+				type="button" name="clearSplitView" value="split全解除"> <input type="button" name="removeDU" value="remove()">
+			<input type="button" name="scrollRangeY" value="scrollRangeY"> <input type="button" name="scrollRangeX"
+				value="scrollRangeX">
 		</div>
 		<div id="stageRoot"></div>
 
