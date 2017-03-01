@@ -6139,8 +6139,6 @@
 				return desc;
 			});
 
-	var EVENT_SIGHT_CHANGE = 'stageSightChange';
-
 	/**
 	 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
 	 *
@@ -6205,6 +6203,8 @@
 
 	var BOUNDARY_SCROLL_INTERVAL = 20;
 	var BOUNDARY_SCROLL_INCREMENT = 10;
+
+	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var EVENT_DU_CLICK = 'duClick';
 	var EVENT_DU_DBLCLICK = 'duDblclick';
@@ -7182,31 +7182,23 @@
 		},
 
 		'{document} mouseup': function(context) {
-			// （同期、非同期に関わらず）マウスを離した瞬間にすべき終了処理
-			this._isMousedown = false;
-
-			if (this._isGridSeparatorDragging) {
-				//グリッドセパレータのドラッグの場合は
-				//処理を委譲して終了
-				this._endGridSeparatorDrag(context);
-				return;
-			}
 
 			this._endBoundaryScroll();
 
-			this._stageViewCollection.__onSelectDUEnd();
-
-			if (this._currentDragMode === DRAG_MODE_NONE) {
-				return;
+			if (this._isGridSeparatorDragging) {
+				//グリッドセパレータのドラッグの場合
+				this._endGridSeparatorDrag(context);
 			}
 
+			//this._currentDragMode === DRAG_MODE_NONEの場合は何もしない
+
 			if (this._currentDragMode === DRAG_MODE_SELECT) {
+				this._stageViewCollection.__onSelectDUEnd();
+
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
 				});
-			}
-
-			if (this._currentDragMode === DRAG_MODE_REGION) {
+			} else if (this._currentDragMode === DRAG_MODE_REGION) {
 				var lastDragPos = this._getCurrentDragPosition();
 
 				var worldPos = this._getActiveView()._viewport.getWorldPosition(
@@ -7223,9 +7215,7 @@
 					displayRect: dispRect,
 					worldRect: worldRect
 				});
-			}
-
-			if (this._currentDragMode === DRAG_MODE_DU) {
+			} else if (this._currentDragMode === DRAG_MODE_DU) {
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
 				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
@@ -7251,25 +7241,31 @@
 					}
 				}
 			}
+
+			this._cleanUpDragStates();
+		},
+
+		/**
+		 * 同期、非同期に関わらず、マウスを離した瞬間にすべきクリーンアップ処理。DragSessionは非同期の場合があるのでここでは削除処理を行わない。
+		 *
+		 * @private
+		 */
+		_cleanUpDragStates: function() {
+			this._isMousedown = false;
+			this._dragStartRootOffset = null;
+			this._currentDragMode = DRAG_MODE_NONE;
+			this._dragSelectStartPos = null;
+			this._dragSelectStartSelectedDU = null;
+			this._dragLastPagePos = null;
+			$(this.rootElement).css('cursor', 'auto');
 		},
 
 		_disposeDragSession: function() {
-			this._isMousedown = false;
-			this._dragStartRootOffset = null;
-
 			this._dragSession.removeEventListener('dragSessionEnd',
 					this._dragSessionEndHandlerWrapper);
 			this._dragSession.removeEventListener('dragSessionCancel',
 					this._dragSessionCancelHandlerWrapper);
-
 			this._dragSession = null; //TODO dragSessionをdisposeする
-			// this._currentDragMode = DRAG_MODE_NONE;
-			this._currentDragMode = DRAG_MODE_NONE;
-			this._dragSelectStartPos = null;
-			this._dragSelectStartSelectedDU = null;
-			//			this._dragStartPagePos = null;
-			this._dragLastPagePos = null;
-			$(this.rootElement).css('cursor', 'auto');
 		},
 
 
