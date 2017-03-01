@@ -4575,11 +4575,10 @@
 						 *
 						 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
 						 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
-						 * @param displayOffsetX
-						 *            拡縮時の中心点のx（ディスプレイ座標系におけるoffsetX(stageのルート要素の左上を基準とした座標)）
-						 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
+						 * @param displayPageX 拡縮時の中心点のx（ドキュメントを基準とした座標。マウスイベント等のpageXと同じ)
+						 * @param displayPageY 拡縮時の中心点のy（仕様はxと同じ）
 						 */
-						setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
+						setScale: function(scaleX, scaleY, displayPageX, displayPageY) {
 							var actualScaleX = StageUtil.clamp(scaleX, this._scaleRangeX.min,
 									this._scaleRangeX.max);
 							var actualScaleY = StageUtil.clamp(scaleY, this._scaleRangeY.min,
@@ -4597,17 +4596,25 @@
 								return;
 							}
 
-							var offX = displayOffsetX;
-							var offY = displayOffsetY;
-
-							if (displayOffsetX == null && displayOffsetY == null) {
+							if (displayPageX == null && displayPageY == null) {
+								//rootOffsetが使われるのは、どちらかの変数が非nullの場合のみ
 								var rootOffset = $(this._rootElement).offset();
-								if (displayOffsetX == null) {
-									offX = rootOffset.left + this._viewport.displayWidth / 2;
-								}
-								if (displayOffsetY == null) {
-									offY = rootOffset.top + this._viewport.displayHeight / 2;
-								}
+							}
+
+							var offX, offY;
+
+							if (displayPageX == null) {
+								//xが指定されていない場合はこのビューの中心とする
+								offX = this._viewport.displayWidth / 2;
+							} else {
+								offX = displayPageX - rootOffset.left;
+							}
+
+							if (displayPageY == null) {
+								//Xと同様このビューの中心にする
+								offY = this._viewport.displayHeight / 2;
+							} else {
+								offY = displayPageY - rootOffset.top;
 							}
 
 							var scaleCenter = this._viewport.getWorldPositionFromDisplayOffset(
@@ -7482,11 +7489,11 @@
 		 *
 		 * @param scaleX X軸方向の拡大率。nullの場合は現在のまま変更しない。
 		 * @param scaleY Y軸方向の拡大率。nullの場合は現在のまま変更しない。
-		 * @param displayOffsetX 拡縮時の中心点のx（ディスプレイ座標系におけるoffsetX(stageのルート要素の左上を基準とした座標)）
-		 * @param displayOffsetY 拡縮時の中心点のy（仕様はxと同じ）
+		 * @param displayPageX 拡縮時の中心点のx（ディスプレイ座標系におけるpageX(ドキュメントを基準とした座標。マウスイベント等に含まれるpageXと同じ)）
+		 * @param displayPageY 拡縮時の中心点のy（仕様はxと同じ）
 		 */
-		setScale: function(scaleX, scaleY, displayOffsetX, displayOffsetY) {
-			return this._getActiveView().setScale(scaleX, scaleY, displayOffsetX, displayOffsetY);
+		setScale: function(scaleX, scaleY, displayPageX, displayPageY) {
+			return this._getActiveView().setScale(scaleX, scaleY, displayPageX, displayPageY);
 		},
 
 		_getActiveView: function() {
@@ -7691,12 +7698,8 @@
 
 				var activeView = this._getActiveView();
 
-				var rootOffset = $(this.rootElement).offset();
-				var offsetX = wheelEvent.pageX - rootOffset.left - activeView.x;
-				var offsetY = wheelEvent.pageY - rootOffset.top - activeView.y;
-
 				activeView.setScale(activeView._viewport.scaleX + ds, activeView._viewport.scaleY
-						+ ds, offsetX, offsetY);
+						+ ds, wheelEvent.pageX, wheelEvent.pageY);
 				return;
 			}
 
