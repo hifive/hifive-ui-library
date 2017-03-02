@@ -194,6 +194,8 @@
 	var REASON_Z_INDEX_CHANGE = '__duZIndexChange__';
 	var REASON_INITIAL_RENDER = '__duInitialRender__';
 	var REASON_SCROLL_POSITION_CHANGE = '__duScrollPositionChange__';
+	var REASON_SELECTION_CHANGE = '__duSelectionChange__';
+	var REASON_FOCUS_CHANGE = '__duFocusChange__';
 
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
@@ -203,7 +205,9 @@
 		SCALE_CHANGE: REASON_SCALE_CHANGE,
 		Z_INDEX_CHANGE: REASON_Z_INDEX_CHANGE,
 		INITIAL_RENDER: REASON_INITIAL_RENDER,
-		SCROLL_POSITION_CHANGE: REASON_SCROLL_POSITION_CHANGE
+		SCROLL_POSITION_CHANGE: REASON_SCROLL_POSITION_CHANGE,
+		SELECTION_CHANGE: REASON_SELECTION_CHANGE,
+		FOCUS_CHANGE: REASON_FOCUS_CHANGE
 	};
 
 	h5.u.obj.expose('h5.ui.components.stage', {
@@ -770,9 +774,10 @@
 				constructor: function SVGPoint(x, y) {
 					super_.constructor.call(this, x, y);
 				},
-				toString: function() {
-					return this.x + ',' + this.y;
-				}
+			//TODO toStringを定義しようとするとh5.cls側でエラーになるので一旦コメントアウト
+			//				toString: function() {
+			//					return this.x + ',' + this.y;
+			//				}
 			}
 		};
 		return desc;
@@ -2405,6 +2410,18 @@
 				isInitialRender: {
 					get: function() {
 						return this.has(REASON_INITIAL_RENDER);
+					}
+				},
+
+				isSelectionChanged: {
+					get: function() {
+						return this.has(REASON_SELECTION_CHANGE);
+					}
+				},
+
+				isFocusChanged: {
+					get: function() {
+						return this.has(REASON_FOCUS_CHANGE);
 					}
 				}
 			},
@@ -6477,34 +6494,65 @@
 
 		'{this._selectionLogic} selectionChange': function(context) {
 			var ev = context.event;
+			var focusedDU = ev.focused;
+
+			var isFocusDirtyNotified = false;
 
 			//今回新たに選択されたDUの選択フラグをONにする
 			var selected = ev.changes.selected;
 			for (var i = 0, len = selected.length; i < len; i++) {
 				var newSelectedDU = selected[i];
 				newSelectedDU._isSelected = true;
-				newSelectedDU.requestRender();
+
+				var reasons = [UpdateReasons.SELECTION_CHANGE];
+				if (newSelectedDU === focusedDU) {
+					//あるDUが選択され同時にフォーカスも得た場合には
+					//Dirtyの通知回数を減らすためreasonに追加
+					reasons.push(UpdateReasons.FOCUS_CHANGE);
+
+					//先に状態を変更してからsetDirty()する
+					focusedDU._isFocused = true;
+					this._focusController.setFocusedElement(focusedDU._domRoot);
+
+					isFocusDirtyNotified = true;
+				}
+				newSelectedDU._setDirty(reasons);
 			}
+
+			var unfocusedDU = ev.changes.unfocused;
+			var isUnfocusDirtyNotified = false;
 
 			//今回非選択状態になったDUの選択フラグをOFFにする
 			var unselected = ev.changes.unselected;
 			for (var i = 0, len = unselected.length; i < len; i++) {
 				var unselectedDU = unselected[i];
 				unselectedDU._isSelected = false;
-				unselectedDU.requestRender();
+
+				var reasons = [UpdateReasons.SELECTION_CHANGE];
+				if (unselectedDU === unfocusedDU) {
+					//newSelectedと同様、Dirtyの回数を最適化
+					reasons.push(UpdateReasons.FOCUS_CHANGE);
+
+					//先に状態を変更してからsetDirty()する
+					unfocusedDU._isFocused = false;
+
+					isUnfocusDirtyNotified = true;
+				}
+				unselectedDU._setDirty(reasons);
 			}
 
-			var focused = ev.focused;
-			if (focused) {
-				focused._isFocused = true;
-				this._focusController.setFocusedElement(focused._domRoot);
-				focused.requestRender();
+			if (focusedDU && !isFocusDirtyNotified) {
+				//すでに選択状態で、今回はフォーカスが当たっただけ
+				//selectionChangeの方でfocusChangeも通知済みなら
+				//こちらではsetDirtyしない（Dirty回数の最適化）
+				focusedDU._isFocused = true;
+				this._focusController.setFocusedElement(focusedDU._domRoot);
+				focusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
 			}
 
-			var unfocusedDU = ev.changes.unfocused;
-			if (unfocusedDU) {
+			if (unfocusedDU && !isUnfocusDirtyNotified) {
 				unfocusedDU._isFocused = false;
-				unfocusedDU.requestRender();
+				unfocusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
 			}
 
 			var evArg = {
@@ -7564,10 +7612,10 @@
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
 			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
-//			if (Edge.isClassOf(du)) {
-//				this._temporarilyProcessEdgeContextmenu(context, du);
-//				return;
-//			}
+			//			if (Edge.isClassOf(du)) {
+			//				this._temporarilyProcessEdgeContextmenu(context, du);
+			//				return;
+			//			}
 
 			var orgEvent = context.event.originalEvent;
 
@@ -7614,19 +7662,18 @@
 		/*
 		 * TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
 		 */
-//		_temporarilyProcessEdgeContextmenu: function(context, du) {
-//			var orgEvent = context.event.originalEvent;
-//			var fixedEvent = $.event.fix(orgEvent);
-//			fixedEvent.type = EVENT_DU_CONTEXTMENU;
-//			var duEv = this.trigger(fixedEvent, {
-//				stageController: this,
-//				displayUnit: du
-//			});
-//			if (duEv.isDefaultPrevented()) {
-//				context.event.preventDefault();
-//			}
-//		},
-
+		//		_temporarilyProcessEdgeContextmenu: function(context, du) {
+		//			var orgEvent = context.event.originalEvent;
+		//			var fixedEvent = $.event.fix(orgEvent);
+		//			fixedEvent.type = EVENT_DU_CONTEXTMENU;
+		//			var duEv = this.trigger(fixedEvent, {
+		//				stageController: this,
+		//				displayUnit: du
+		//			});
+		//			if (duEv.isDefaultPrevented()) {
+		//				context.event.preventDefault();
+		//			}
+		//		},
 		/**
 		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
 		 *
