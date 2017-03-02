@@ -6634,6 +6634,8 @@
 
 		_dragSelectStartSelectedDU: null,
 
+		_dragStartPagePos: null,
+
 		_dragLastPagePos: null,
 
 		_dragSession: null,
@@ -6937,13 +6939,24 @@
 
 		'{rootElement} mousedown': function(context, $el) {
 			if (this._isScrollBarEvent(context, $el)) {
+				//スクロールバー操作については直接関知しない
 				return;
 			}
+
+			var event = context.event;
 
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
 
-			var event = context.event;
+			this._dragStartPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
+
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
 
 			var view = this._getActiveViewFromElement(event.target);
 			if (view) {
@@ -6955,11 +6968,6 @@
 				//グリッドのサイズ変更とみなす
 				this._startGridSeparatorDrag(context);
 			}
-
-			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
-			};
 
 			//TODO 初回のmousemoveのタイミングで
 			//動作対象を決めると、DUの端の方にカーソルがあったときに
@@ -7263,6 +7271,7 @@
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
 			this._dragSelectStartSelectedDU = null;
+			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
 			$(this.rootElement).css('cursor', 'auto');
 		},
@@ -7555,10 +7564,10 @@
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
 			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
-			if (Edge.isClassOf(du)) {
-				this._temporarilyProcessEdgeContextmenu(context, du);
-				return;
-			}
+//			if (Edge.isClassOf(du)) {
+//				this._temporarilyProcessEdgeContextmenu(context, du);
+//				return;
+//			}
 
 			var orgEvent = context.event.originalEvent;
 
@@ -7582,7 +7591,7 @@
 				return;
 			}
 
-			if (!du.isSelected) {
+			if (du.isSelectable && !du.isSelected) {
 				//非選択状態のDUで右クリック(コンテキストメニュー)されたら、
 				//そのDUを単独選択＆フォーカス状態にしてイベントをあげる。
 				//予め選択されているDUで右クリックされた場合はそのままにする。
@@ -7605,18 +7614,18 @@
 		/*
 		 * TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
 		 */
-		_temporarilyProcessEdgeContextmenu: function(context, du) {
-			var orgEvent = context.event.originalEvent;
-			var fixedEvent = $.event.fix(orgEvent);
-			fixedEvent.type = EVENT_DU_CONTEXTMENU;
-			var duEv = this.trigger(fixedEvent, {
-				stageController: this,
-				displayUnit: du
-			});
-			if (duEv.isDefaultPrevented()) {
-				context.event.preventDefault();
-			}
-		},
+//		_temporarilyProcessEdgeContextmenu: function(context, du) {
+//			var orgEvent = context.event.originalEvent;
+//			var fixedEvent = $.event.fix(orgEvent);
+//			fixedEvent.type = EVENT_DU_CONTEXTMENU;
+//			var duEv = this.trigger(fixedEvent, {
+//				stageController: this,
+//				displayUnit: du
+//			});
+//			if (duEv.isDefaultPrevented()) {
+//				context.event.preventDefault();
+//			}
+//		},
 
 		/**
 		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
@@ -7842,9 +7851,10 @@
 			var info = this._gridSeparatorDragInfo;
 
 			if (info.isHorizontal) {
-				//水平分割(上下に分割)しているので、横方向には動かさない
+				//水平分割(上下に分割)しているので、X方向には動かさない
 				dispDx = 0;
 			} else {
+				//垂直分割（左右に分割）なのでY方向には動かさない
 				dispDy = 0;
 			}
 
