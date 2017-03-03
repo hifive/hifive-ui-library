@@ -20,8 +20,6 @@
 	//TODO FocusControllerはh5.ui.focusManager()としてグローバルに実装する予定
 	//一時的にこっちに置いている
 
-	var DATA_FOCUS_GROUP = 'data-h5-focus-group';
-
 	function FocusGroup(elem, groupName) {
 		this.element = elem;
 		this.name = groupName;
@@ -253,6 +251,7 @@
 	 *
 	 * @class
 	 * @name DragSession
+	 * @param super_ スーパーオブジェクト
 	 * @returns クラス定義
 	 */
 	EventDispatcher.extend(function(super_) {
@@ -752,7 +751,7 @@
 		return desc;
 	});
 
-	var DisplayPoint = Point.extend(function(super_) {
+	Point.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayPoint',
 			method: {
@@ -774,10 +773,9 @@
 				constructor: function SVGPoint(x, y) {
 					super_.constructor.call(this, x, y);
 				},
-			//TODO toStringを定義しようとするとh5.cls側でエラーになるので一旦コメントアウト
-			//				toString: function() {
-			//					return this.x + ',' + this.y;
-			//				}
+				toString: function() {
+					return this.x + ',' + this.y;
+				}
 			}
 		};
 		return desc;
@@ -1103,7 +1101,7 @@
 
 	/**
 	 * @param {Object} target
-	 * @param {string[]} attrNames
+	 * @param {String[]} attrNames
 	 */
 	function addSimpleXLinkAccessor(target, attrNames) {
 		for (var i = 0; i < attrNames.length; i++) {
@@ -1112,15 +1110,15 @@
 				return match.charAt(1).toUpperCase();
 			});
 
-			target[name] = (function(attrName) {
+			target[name] = (function(attr) {
 				return {
 					get: function() {
-						return this.getXLinkAttribute(attrName);
+						return this.getXLinkAttribute(attr);
 					},
 					set: function(value) {
-						this.setXLinkAttribute(attrName, value);
+						this.setXLinkAttribute(attr, value);
 					}
-				}
+				};
 			})(attrName);
 		}
 	}
@@ -1493,8 +1491,7 @@
 		return desc;
 	});
 
-
-	var SVGDefinitions = SVGElementWrapper.extend(function(super_) {
+	SVGElementWrapper.extend(function(super_) {
 		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
 		var desc = {
 			/**
@@ -3179,8 +3176,6 @@
 			return null;
 		}
 
-		var StageUtil = h5.ui.components.stage.StageUtil;
-
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
@@ -4034,6 +4029,36 @@
 		return desc;
 	});
 
+	var SightChangeEvent = Event.extend(function(super_) {
+		var EVENT_SIGHT_CHANGE = 'sightChange';
+
+		var desc = {
+			name: 'h5.ui.components.stage.SightChangeEvent',
+
+			field: {
+				view: null,
+
+				scrollPosition: null,
+
+				scale: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SightChangeEvent
+				 */
+				constructor: function SightChangeEvent(view, scrollPositionChange, scaleChange) {
+					super_.constructor.call(this, EVENT_SIGHT_CHANGE);
+
+					this.view = view;
+					this.scrollPosition = scrollPositionChange;
+					this.scale = scaleChange;
+				}
+			}
+		};
+		return desc;
+	});
+
 	var StageView = EventDispatcher
 			.extend(function(super_) {
 				var desc = {
@@ -4079,10 +4104,6 @@
 						_duAddListener: null,
 						_duRemoveListener: null,
 						_duDirtyListener: null,
-
-						_viewportRectChangeListener: null,
-						_viewportScaleChangeListener: null,
-						_isViewportEventSuppressed: null,
 
 						_dragTargetDUInfoMap: null,
 
@@ -4217,9 +4238,6 @@
 							this._x = 0;
 							this._y = 0;
 
-							var viewport = Viewport.create();
-							this._viewport = viewport;
-
 							this._layerDOMs = [];
 
 							this._layerElementMap = new Map();
@@ -4250,20 +4268,8 @@
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
 
-							var that = this;
-							this._viewportRectChangeListener = function(event) {
-								that._onViewportRectChange(event);
-							};
-							this._viewportScaleChangeListener = function(event) {
-								that._onViewportScaleChange(event);
-							};
-							viewport.addEventListener('rectChange',
-									this._viewportRectChangeListener);
-							viewport.addEventListener('scaleChange',
-									this._viewportScaleChangeListener);
-
-							//TODO 別の方法があれば
-							this._isViewportEventSuppressed = false;
+							var viewport = Viewport.create();
+							this._viewport = viewport;
 						},
 
 						_initForemostSvg: function() {
@@ -4491,6 +4497,14 @@
 							this._scrollTo(dispX, dispY);
 						},
 
+						/**
+						 * scrollXXX系のメソッドは、最終的に必ずこのメソッドを呼び出している。
+						 *
+						 * @private
+						 * @param dispX
+						 * @param dispY
+						 * @returns {___anonymous112058_112171}
+						 */
 						_scrollTo: function(dispX, dispY) {
 							var oldPos = DisplayPoint.create(this._viewport.displayX,
 									this._viewport.displayY);
@@ -4516,6 +4530,27 @@
 							this._updateLayerScrollPosition();
 
 							var newPos = DisplayPoint.create(actualDispX, actualDispY);
+
+							var scrPosChange = {
+								oldValue: oldPos,
+								newValue: newPos,
+								isChanged: true
+							};
+
+							var scaleChange = {
+								oldValue: {
+									x: this._viewport.scaleX,
+									y: this._viewport.scaleY
+								},
+								newValue: {
+									x: this._viewport.scaleX,
+									y: this._viewport.scaleY
+								},
+								isChanged: false
+							};
+
+							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
+							this.dispatchEvent(event);
 
 							//TODO 現在はこの場所でイベントを出しているが、
 							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
@@ -4613,7 +4648,7 @@
 								return;
 							}
 
-							if (displayPageX == null && displayPageY == null) {
+							if (displayPageX != null || displayPageY != null) {
 								//rootOffsetが使われるのは、どちらかの変数が非nullの場合のみ
 								var rootOffset = $(this._rootElement).offset();
 							}
@@ -4656,6 +4691,27 @@
 							}
 
 							this._updateLayerScrollPosition();
+
+							var scrPosChange = {
+								oldValue: oldScrollPos,
+								newValue: newScrollPos,
+								isChanged: isScrollPoisitionChanged
+							};
+
+							var scaleChange = {
+								oldValue: {
+									x: oldScaleX,
+									y: oldScaleY
+								},
+								newValue: {
+									x: actualScaleX,
+									y: actualScaleY
+								},
+								isChanged: true
+							};
+
+							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
+							this.dispatchEvent(event);
 
 							//TODO 現在はこの場所でイベントを出しているが、
 							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
@@ -4716,6 +4772,7 @@
 								max: maxDisplayX
 							};
 
+							//TODO イベントをあげる
 							var viewCollection = this._stage._stageViewCollection;
 							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
 									maxDisplayX);
@@ -4768,12 +4825,25 @@
 								return true;
 							}
 
+							//TODO 途中に別のStageがある場合にはfalseにする（Stageのネスト対応）
+
 							if (this._rootElement.compareDocumentPosition(element)
 									& Node.DOCUMENT_POSITION_CONTAINED_BY) {
 								//ルート要素の子要素ならtrue
 								return true;
 							}
 							return false;
+						},
+
+						getPagePosition: function() {
+							var offset = $(this._rootElement).offset();
+							var pos = DisplayPoint.create(offset.left, offset.top);
+							return pos;
+						},
+
+						update: function(isImmediate) {
+						//TODO rAFでdirtyなものを全て処理する
+						//isImmedaite === trueならすぐに処理する
 						},
 
 						_updateLayerScrollPosition: function() {
@@ -4928,25 +4998,8 @@
 							}
 
 							parentDU.__removeDOM(this, parentDOM, targetElement);
-						},
-
-						_onViewportRectChange: function(event) {
-							if (this._isViewportEventSuppressed) {
-								return;
-							}
-
-							var event = Event.create('viewportRectChange');
-							this.dispatchEvent(event);
-						},
-
-						_onViewportScaleChange: function(event) {
-							if (this._isViewportEventSuppressed) {
-								return;
-							}
-
-							var event = Event.create('viewportScaleChange');
-							this.dispatchEvent(event);
 						}
+
 					}
 				};
 				return desc;
@@ -5110,18 +5163,27 @@
 							firstColumnView.scrollTo(scrPos.x, value);
 						},
 
+						getScrollRangeY: function() {
+							return this._scrollRangeY;
+						},
+
 						setScrollRangeY: function(minDisplayY, maxDisplayY) {
 							this._scrollRangeY = {
 								min: minDisplayY,
 								max: maxDisplayY
 							};
 
+							this.getViewAll().forEach(function(v) {
+								v.setScrollRangeY(minDisplayY, maxDisplayY);
+							});
+
 							if (minDisplayY == null || maxDisplayY == null) {
+								//TODO 内部フラグ
 								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
-								this._scrollRangeY = null;
 								return;
 							}
 
+							//TODO scrollBarModeの設定は別途
 							this._setScrollBarMode(this, SCROLL_BAR_MODE_ALWAYS, minDisplayY,
 									maxDisplayY);
 						},
@@ -5335,14 +5397,23 @@
 							firstView.scrollTo(value, scrPos.y);
 						},
 
+						getScrollRangeX: function() {
+							return this._scrollRangeX;
+						},
+
 						setScrollRangeX: function(minDisplayX, maxDisplayX) {
 							this._scrollRangeX = {
 								min: minDisplayX,
 								max: maxDisplayX
 							};
 
+							this.getViewAll().forEach(function(v) {
+								v.setScrollRangeX(minDisplayX, maxDisplayX);
+							});
+
 							if (minDisplayX == null || maxDisplayX == null) {
-								this._scrollRangeX = null;
+								//TODO スクロールバーモード自体を変えるのではなく
+								//内部フラグを持たせてそれを変える
 								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
 								return;
 							}
@@ -5518,10 +5589,12 @@
 						/** アクティブビュー */
 						_activeView: null,
 
-						_viewportRectChangeListener: null,
-						_viewportScaleChangeListener: null,
+						_view_sightChangeListener: null,
 
-						_draggingTargetDUVisibleMap: null
+						_draggingTargetDUVisibleMap: null,
+
+						_isSightChangePropagationSuppressed: null
+
 					},
 
 					accessor: {
@@ -5577,15 +5650,14 @@
 							this._numberOfRowSeparators = 0;
 							this._numberOfColumnSeparators = 0;
 
+							this._isSightChangePropagationSuppressed = false;
+
 							this._rows = [];
 							this._columns = [];
 
 							var that = this;
-							this._viewportRectChangeListener = function(event) {
-								that._onViewportRectChange(event);
-							};
-							this._viewportScaleChangeListener = function(event) {
-								that._onViewportScaleChange(event);
+							this._view_sightChangeListener = function(event) {
+								that._onSightChange(event);
 							};
 						},
 
@@ -5692,14 +5764,23 @@
 							return this._columns;
 						},
 
+						update: function(isImmediate) {
+							this.getViewAll().forEach(function(v) {
+								v.update(isImmediate);
+							});
+						},
+
+						moveSeparator: function(isRowSeparator, overallIndex, displayDiff) {
+						//indexは、overallIndex
+						},
+
 						_clear: function() {
 							var views = this.getViewAll();
 							var that = this;
 							views.forEach(function(v) {
-								v.removeEventListener('viewportRectChange',
-										that._viewportRectChangeListener);
-								v.removeEventListener('viewportScaleChange',
-										that._viewportScaleChangeListener);
+								v
+										.removeEventListener('sightChange',
+												that._view_sightChangeListener);
 							});
 
 							this.getRows().forEach(function(row) {
@@ -5731,10 +5812,7 @@
 							view._rowIndex = rowIndex;
 							view._columnIndex = columnIndex;
 
-							view.addEventListener('viewportRectChange',
-									this._viewportRectChangeListener);
-							view.addEventListener('viewportScaleChange',
-									this._viewportScaleChangeListener);
+							view.addEventListener('sightChange', this._view_sightChangeListener);
 						},
 
 						_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
@@ -5873,13 +5951,6 @@
 								var viewH = row._desiredHeight ? row._desiredHeight : rootHeight
 										- totalHeight;
 
-								//								if ((hDefIndex + 1) === hDefsLen
-								//										&& hDef.scrollBarMode === SCROLL_BAR_MODE_ALWAYS) {
-								//									//最後の行のビューで、かつスクロールバーを常に出す指定があった場合は
-								//									//一番下のビューからスクロールバーの高さを引く
-								//									viewH -= SCROLL_BAR_THICKNESS;
-								//								}
-
 								for (var vDefIndex = 0; vDefIndex < vDefsLen; vDefIndex++) {
 									var vDef = verticalSplitDefinitions[vDefIndex];
 									var col = cols[vDefIndex];
@@ -5905,11 +5976,6 @@
 
 									var viewW = col._desiredWidth ? col._desiredWidth : rootWidth
 											- totalWidth;
-
-									//									if ((vDefIndex + 1) === vDefsLen
-									//											&& vDef.scrollBarMode === SCROLL_BAR_MODE_ALWAYS) {
-									//										viewW -= SCROLL_BAR_THICKNESS;
-									//									}
 
 									theView.x = totalWidth;
 									theView.y = totalHeight;
@@ -5952,6 +6018,10 @@
 								newScale = oldActiveView.getScale();
 							}
 
+							//ループで各ビューのスケール・スクロール位置を個別に設定していくので
+							//あるビューのsightChangeを他に反映させるのは抑制する
+							this._isSightChangePropagationSuppressed = true;
+
 							//全てのビューのスケールを合わせる
 							for (var rowIndex = 0, rowLen = rows.length; rowIndex < rowLen; rowIndex++) {
 								var row = rows[rowIndex];
@@ -5963,20 +6033,16 @@
 								var views = row.getViewAll();
 
 								var leftmostView = views[0];
-								leftmostView._isViewportEventSuppressed = true;
 								leftmostView.setScale(newScale.x, newScale.y);
-								leftmostView._isViewportEventSuppressed = false;
 
 								var leftmostScrollY = leftmostView.getScrollPosition().y;
 
 								//同じ行の各ビューのスクロールY座標を、一番左のビューに合わせる
 								for (var idx = 1, vLen = views.length; idx < vLen; idx++) {
 									var view = views[idx];
-									view._isViewportEventSuppressed = true;
 									view.setScale(newScale.x, newScale.y);
 									var vScrPos = view.getScrollPosition();
 									view.scrollTo(vScrPos.x, leftmostScrollY);
-									view._isViewportEventSuppressed = false;
 								}
 
 
@@ -6026,51 +6092,41 @@
 								//同じ列の各ビューのスクロールX座標を、一番上のビューに合わせる
 								for (var idx = 1, vLen = views.length; idx < vLen; idx++) {
 									var view = views[idx];
-									view._isViewportEventSuppressed = true;
 									var vScrPos = view.getScrollPosition();
 									view.scrollTo(topmostScrollX, vScrPos.y);
-									view._isViewportEventSuppressed = false;
 								}
 
 								//this._setColumnScrollBarMode(col, col.scrollBarMode);
 							}
+
+							this._isSightChangePropagationSuppressed = false;
 
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
 							this.setActiveView(topLeftView);
 						},
 
-						_onViewportScaleChange: function(event) {
-							var srcView = event.target;
-							var newScale = srcView.getScale();
-
-							var views = this.getViewAll();
-							views.forEach(function(v) {
-								if (v !== srcView) {
-									v.setScale(newScale.x, newScale.y);
-								}
-							});
-						},
-
-						_onViewportRectChange: function(event) {
-							var srcView = event.target;
-							var newScrollPos = srcView.getScrollPosition();
-
+						/**
+						 * 指定されたソースビューと同じ行・列のビューのスクロール位置をソースビューの位置と合わせます。
+						 * 同じ行の場合はscrollYを、同じ列の場合はscrollXを合わせます。
+						 *
+						 * @param srcView ソースビュー
+						 * @param newScrollPos 合わせるスクロール位置
+						 */
+						_applyScrollPositionToOthers: function(srcView, newScrollPos) {
 							//rowがnullの場合＝ビューがない
 							var row = this.getRow(srcView.rowIndex);
 							if (row) {
 								row.getViewAll().forEach(function(v) {
-									v._isViewportEventSuppressed = true;
-
 									if (v !== srcView) {
 										//同じ行の他のビューについて、スクロールYの値のみ揃える
 										var vScrPos = v.getScrollPosition();
 										v.scrollTo(vScrPos.x, newScrollPos.y);
 									}
-
-									v._isViewportEventSuppressed = false;
 								});
 
+								//TODO CollectionからunifiedSightChangeイベントをあげて
+								//stage側で処理する、か、Collectionでスクロールバーを処理する
 								if (!this._stage._isInScrollBarScroll) {
 									row._setScrollBarPosition(newScrollPos.y);
 									row._setScrollBarHeight(srcView.height);
@@ -6081,14 +6137,11 @@
 							var col = this.getColumn(srcView.columnIndex);
 							if (col) {
 								col.getViewAll().forEach(function(v) {
-									v._isViewportEventSuppressed = true;
-
 									if (v !== srcView) {
 										//同じ行の他のビューについて、スクロールYの値のみ揃える
 										var vScrPos = v.getScrollPosition();
 										v.scrollTo(newScrollPos.x, vScrPos.y);
 									}
-									v._isViewportEventSuppressed = false;
 								});
 
 								if (!this._stage._isInScrollBarScroll) {
@@ -6097,6 +6150,66 @@
 									col._setScrollBarLeft(srcView.x);
 								}
 							}
+						},
+
+						_onSightChange: function(event) {
+							if (this._isSightChangePropagationSuppressed) {
+								//あるビューのsightChangeに伴って他のビューを変更している最中の場合、
+								//それによる連鎖的なsightChangeには反応しないようにする
+								return;
+							}
+
+							var srcView = event.target;
+							var newScrollPos = event.scrollPosition.newValue;
+
+							this._isSightChangePropagationSuppressed = true;
+
+							if (!event.scale.isChanged) {
+								//スケールが変わっていない場合は
+								//同じ行or列のビューのスクロール位置だけを合わせる
+								this._applyScrollPositionToOthers(srcView, newScrollPos);
+							} else {
+								//スケールが変わった場合
+
+								var newScaleX = event.scale.newValue.x;
+								var newScaleY = event.scale.newValue.y;
+
+								this.getViewAll().forEach(function(v) {
+									if (v === srcView) {
+										//自分自身は再度変更しない
+										return;
+									}
+
+									var scaleCenterX = null;
+									var scaleCenterY = null;
+
+									var viewPagePos = v.getPagePosition();
+
+									if (v.columnIndex < srcView.columnIndex) {
+										//自分より左の列だったら、scaleCenterXはそのビューの右端
+										scaleCenterX = viewPagePos.x + v.width;
+									} else if (v.columnIndex > srcView.columnIndex) {
+										//変更が起きたビューより右の列だったら、scaleCenterXはそのビューの左端
+										scaleCenterX = viewPagePos.x;
+									}
+
+									if (v.rowIndex < srcView.rowIndex) {
+										//自分より上の行だったら、scaleCenterYはそのビューの下端
+										scaleCenterY = viewPagePos.y + v.height;
+									} else if (v.rowIndex > srcView.rowIndex) {
+										//変更が起きたビューよりと同じ行だったら、scollYは自分と同じにする
+										scaleCenterY = viewPagePos.y;
+									}
+
+									//scaleCenterはPage座標で渡す必要がある
+									v.setScale(newScaleX, newScaleY, scaleCenterX, scaleCenterY);
+								});
+							}
+
+							//同じ行・列についてスクロール位置を合わせる
+							this._applyScrollPositionToOthers(srcView, newScrollPos);
+
+							this._isSightChangePropagationSuppressed = false;
 						},
 
 						__onSelectDUStart: function(dragStartPos) {
@@ -6249,7 +6362,7 @@
 	var EVENT_DRAG_REGION_END = 'stageDragRegionEnd';
 
 	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
-	var EVENT_VIEW_SIZE_CHANGE = 'stageViewSizeChange';
+	var EVENT_VIEW_REGION_CHANGE = 'stageViewRegionChange';
 
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
@@ -6270,8 +6383,6 @@
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
 	var SELECTION_CHANGE = 'stageSelectionChange';
-
-	var LAYER_ID_FOREMOST = '_foremost_layer_';
 
 	var PROXY_DEFAULT_CURSOR_OFFSET = 3;
 
@@ -7976,7 +8087,7 @@
 			//				rowSeparatorIndices: null,
 			//				columnSeparatorIndices: null,
 			};
-			this.trigger(EVENT_VIEW_SIZE_CHANGE, evArg);
+			this.trigger(EVENT_VIEW_REGION_CHANGE, evArg);
 		},
 
 		_endGridSeparatorDrag: function(context, $el) {
@@ -7986,7 +8097,7 @@
 			var evArg = {
 				isLive: false
 			};
-			this.trigger(EVENT_VIEW_SIZE_CHANGE, evArg);
+			this.trigger(EVENT_VIEW_REGION_CHANGE, evArg);
 		}
 	};
 
