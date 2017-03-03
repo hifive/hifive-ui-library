@@ -178,7 +178,8 @@
 			unit.setRenderer(function(context, graphics) {
 				var reason = context.reason;
 
-				if (!reason.isRenderRequested && !reason.isInitialRender) {
+				if (!reason.isRenderRequested && !reason.isInitialRender && !reason.isFocusChanged
+						&& !reason.isSelectionChanged) {
 					//初回描画もしくはリクエスト以外では再描画の必要はない
 					return;
 				}
@@ -418,28 +419,61 @@
 				height: 5
 			}, {}];
 
-//			hDef = [{
-//				"height": 369,
-//				"scrollRangeY": {
-//					"min": -1000,
-//					"max": 2000
-//				},
-//				"scrollBarMode": "always"
-//			}, {
-//				"type": "separator",
-//				"height": 4
-//			}, {
-//				//"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
-//				"scrollRangeY": {
-//					"min": -1000,
-//					"max": 2000
-//				},
-//				scrollBarMode: 'always'
-//			}];
+			//3行
+			//			hDef = [{
+			//				height: 300,
+			//				scrollBarMode: 'always'
+			//			}, {
+			//				type: 'separator',
+			//				height: 5
+			//			},
+			//
+			//			{
+			//				height: 300,
+			//				scrollBarMode: 'always'
+			//			},
+			//
+			//			{
+			//				type: 'separator',
+			//				height: 5
+			//			},
+			//
+			//			{}
+			//			];
 
-			var vDef = null; //[{}];
+			//			hDef = [{
+			//				"height": 369,
+			//				"scrollRangeY": {
+			//					"min": -1000,
+			//					"max": 2000
+			//				},
+			//				"scrollBarMode": "always"
+			//			}, {
+			//				"type": "separator",
+			//				"height": 4
+			//			}, {
+			//				//"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
+			//				"scrollRangeY": {
+			//					"min": -1000,
+			//					"max": 2000
+			//				},
+			//				scrollBarMode: 'always'
+			//			}];
 
+			var vDef = null;
+
+			//3列
 			//			vDef = [{
+			//				width: 300,
+			//				scrollBarMode: 'always',
+			//				scrollRangeX: {
+			//					min: -1000,
+			//					max: 1000
+			//				}
+			//			}, {
+			//				type: 'separator',
+			//				width: 5
+			//			}, {
 			//				width: 300,
 			//				scrollBarMode: 'always',
 			//				scrollRangeX: {
