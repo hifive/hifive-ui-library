@@ -4149,7 +4149,18 @@
 								return this._x;
 							},
 							set: function(value) {
+								var oldValue = this._x;
+
+								if (oldValue === value) {
+									return;
+								}
+
 								this._x = value;
+
+								//this._desiredRect.x = value;
+
+
+								//TODO x,y,w,hを設定した時は、GridCollectionの updateGridSize()によりサイズが変わる可能性がある
 
 								if (this._rootElement) {
 									$(this._rootElement).css({
@@ -4163,6 +4174,12 @@
 								return this._y;
 							},
 							set: function(value) {
+								var oldValue = this._y;
+
+								if (value === oldValue) {
+									return;
+								}
+
 								this._y = value;
 
 								if (this._rootElement) {
@@ -4177,25 +4194,10 @@
 								return this._viewport.displayWidth;
 							},
 							set: function(value) {
-								var currentWidth = this._viewport.displayWidth;
+								var oldValue = this._viewport.displayWidth;
 
-								if (value === currentWidth) {
+								if (value === oldValue) {
 									return;
-								}
-
-								this._viewport.setDisplaySize(value, this._viewport.displayHeight);
-
-								if (this._rootElement) {
-									if (value < 0) {
-										value = 0;
-									}
-
-									$(this._rootElement).css({
-										width: value
-									});
-
-									//注：レイヤーに対してはサイズを設定してはいけない。
-									//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 								}
 							}
 						},
@@ -4204,29 +4206,11 @@
 								return this._viewport.displayHeight;
 							},
 							set: function(value) {
-								var currentHeight = this._viewport.displayHeight;
+								var oldValue = this._viewport.displayHeight;
 
-								if (value === currentHeight) {
+								if (value === oldValue) {
 									return;
 								}
-
-								this._viewport.setDisplaySize(this._viewport.displayWidth, value);
-
-								if (this._rootElement) {
-									if (value < 0) {
-										value = 0;
-									}
-
-									$(this._rootElement).css({
-										height: value
-									});
-
-									//注：レイヤーに対してはサイズを設定してはいけない。
-									//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
-								}
-
-								//								var event = PropertyChangeEvent.create('height', oldValue, value);
-								//								this.dispatchEvent(event);
 							}
 						},
 
@@ -4542,10 +4526,13 @@
 							var oldPos = DisplayPoint.create(this._viewport.displayX,
 									this._viewport.displayY);
 
-							var actualDispX = StageUtil.clamp(dispX, this._scrollRangeX.min,
-									this._scrollRangeX.max);
-							var actualDispY = StageUtil.clamp(dispY, this._scrollRangeY.min,
-									this._scrollRangeY.max);
+							var scrollRangeX = this.getScrollRangeX();
+							var scrollRangeY = this.getScrollRangeY();
+
+							var actualDispX = StageUtil.clamp(dispX, scrollRangeX.min,
+									scrollRangeX.max);
+							var actualDispY = StageUtil.clamp(dispY, scrollRangeY.min,
+									scrollRangeY.max);
 
 							var actualDiff = {
 								dx: actualDispX - this._viewport.displayX,
@@ -4796,7 +4783,9 @@
 						},
 
 						getScrollRangeX: function() {
-							return this._scrollRangeX;
+							var ret = this._stage._stageViewCollection.getColumn(this.columnIndex)
+									.getScrollRangeX();
+							return ret;
 						},
 
 						setScrollRangeX: function(minDisplayX, maxDisplayX) {
@@ -4805,31 +4794,19 @@
 								max: maxDisplayX
 							};
 
-							//TODO 一時的に無効化
-							return;
-
-							//TODO イベントをあげる
-							var viewCollection = this._stage._stageViewCollection;
-							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
-									maxDisplayX);
+							this._stage._stageViewCollection.getColumn(this.columnIndex)
+									.setScrollRangeX(minDisplayX, maxDisplayX);
 						},
 
 						getScrollRangeY: function() {
-							return this._scrollRangeY;
+							var ret = this._stage._stageViewCollection.getRow(this.rowIndex)
+									.getScrollRangeY();
+							return ret;
 						},
 
 						setScrollRangeY: function(minDisplayY, maxDisplayY) {
-							this._scrollRangeY = {
-								min: minDisplayY,
-								max: maxDisplayY
-							};
-
-							//TODO 一時的に無効化
-							return;
-
-							var viewCollection = this._stage._stageViewCollection;
-							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
-									maxDisplayY);
+							this._stage._stageViewCollection.getRow(this.rowIndex).setScrollRangeY(
+									minDisplayY, maxDisplayY);
 						},
 
 						getDefsForLayer: function(layer) {
@@ -5041,8 +5018,42 @@
 
 							//Eclipseのエディタが .delete でエラーとみなすのでこうしている
 							this._duidElementMap['delete'](du.id);
-						}
+						},
 
+						_setWidth: function(width) {
+							this._viewport.setDisplaySize(width, this._viewport.displayHeight);
+
+							if (this._rootElement) {
+								//Collectionから呼ばれるので制約は調整済み
+								//								if (width < 0) {
+								//									width = 0;
+								//								}
+
+								$(this._rootElement).css({
+									width: width
+								});
+
+								//注：レイヤーに対してはサイズを設定してはいけない。
+								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
+							}
+						},
+
+						_setHeight: function(height) {
+							this._viewport.setDisplaySize(this._viewport.displayWidth, height);
+
+							if (this._rootElement) {
+								//								if (value < 0) {
+								//									value = 0;
+								//								}
+
+								$(this._rootElement).css({
+									height: height
+								});
+
+								//注：レイヤーに対してはサイズを設定してはいけない。
+								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
+							}
+						}
 					}
 				};
 				return desc;
@@ -5166,6 +5177,11 @@
 							this._index = index;
 							this._overallIndex = overallIndex;
 							this._scrollBarMode = scrollBarMode;
+
+							this._scrollRangeY = {
+								min: null,
+								max: null
+							};
 						},
 
 						getView: function(columnIndex) {
@@ -5216,19 +5232,7 @@
 								max: maxDisplayY
 							};
 
-							this.getViewAll().forEach(function(v) {
-								v.setScrollRangeY(minDisplayY, maxDisplayY);
-							});
-
-							if (minDisplayY == null || maxDisplayY == null) {
-								//TODO 内部フラグ
-								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
-								return;
-							}
-
-							//TODO scrollBarModeの設定は別途
-							this._setScrollBarMode(this, SCROLL_BAR_MODE_ALWAYS, minDisplayY,
-									maxDisplayY);
+							this._viewCollection._updateGridRegion();
 						},
 
 						_getViewportYFromScrollBarPosition: function(value) {
@@ -5244,7 +5248,7 @@
 						},
 
 						_setScrollBarPosition: function(scrollY) {
-							if (!this._scrollRangeY || !this._scrollBarController) {
+							if (!this._scrollBarController) {
 								return;
 							}
 
@@ -5267,69 +5271,100 @@
 							}
 						},
 
-						_setScrollBarMode: function(row, mode, minValue, maxValue) {
-							var leftmostView = row.getView(0);
-							var rightmostView = row
+						_showScrollBar: function() {
+							if (this._scrollBarController) {
+								//既にスクロールバーが出ている場合はこのまま
+								return;
+							}
+
+							var leftmostView = this.getView(0);
+							var rightmostView = this
 									.getView(this._viewCollection.numberOfColumns - 1);
 
-							if (mode === SCROLL_BAR_MODE_ALWAYS) {
-								var height = leftmostView.height;
+							var height = leftmostView.height;
 
-								if (this._scrollBarController) {
-									//既にスクロールバーが出ている場合はこのまま
-									return;
-								}
+							rightmostView.width -= SCROLL_BAR_THICKNESS;
+							var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
+									+ this.index + '"></div>');
 
-								rightmostView.width -= SCROLL_BAR_THICKNESS;
-								var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
-										+ row.index + '"></div>');
+							var that = this;
 
-								var that = this;
+							var amount = Math.abs(this._scrollRangeY.max - this._scrollRangeY.min);
 
-								var amount = maxValue - minValue;
+							var controller = this._createVScrollBarController($root[0],
+									this.height, amount);
+							controller.readyPromise
+									.done(function() {
+										this.setScrollSize(height, amount);
+										this.setBarSize(height);
 
-								var controller = this._createVScrollBarController($root[0],
-										row.height, amount);
-								controller.readyPromise.done(function() {
-									this.setScrollSize(height, amount);
-									this.setBarSize(height);
+										var scrY = that._getScrollBarPositionFromScrollY(that
+												.getScrollY());
+										this.setScrollPosition(scrY);
+									});
 
-									var scrY = that._getScrollBarPositionFromScrollY(that
-											.getScrollY());
-									this.setScrollPosition(scrY);
-								});
+							this._scrollBarController = controller;
 
-								row._scrollBarController = controller;
+							$root.css({
+								position: 'absolute',
+								top: rightmostView.y,
+								right: 0,
+								cursor: 'default'
+							});
 
-								$root.css({
-									position: 'absolute',
-									top: rightmostView.y,
-									right: 0,
-									cursor: 'default'
-								});
+							$root.appendTo(this._viewCollection._stage.rootElement);
+						},
 
-								$root.appendTo(this._viewCollection._stage.rootElement);
-							} else {
-								if (row._scrollBarController) {
-									//noneの場合はスクロールバーを削除する
-									row._scrollBarController.dispose();
-									$(row._scrollBarController.rootElement).remove();
-									row._scrollBarController = null;
-
-									rightmostView += SCROLL_BAR_THICKNESS;
-								}
+						_hideScrollBar: function() {
+							if (!this._scrollBarController) {
+								return;
 							}
+							this._scrollBarController.dispose();
+							$(this._scrollBarController.rootElement).remove();
+							this._scrollBarController = null;
 						},
 
 						_createVScrollBarController: function(rootElement) {
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.VerticalScrollBarController);
 							return controller;
+						},
+
+						_isScrollRangeFinite: function() {
+							return this._scrollRangeY.min != null && this._scrollRangeY.max != null;
 						}
 					}
 				};
 				return desc;
 			});
+
+	var StageSeparatorGridRow = StageGridRow.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.StageSeparatorGridRow',
+
+			field: {
+				_element: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StageSeparatorGridRow
+				 */
+				constructor: function StageSeparatorGridRow(viewCollection, index, overallIndex,
+						separatorElement) {
+					super_.constructor.call(this, viewCollection, GRID_TYPE_SEPARATOR, index,
+							overallIndex, SCROLL_BAR_MODE_NONE);
+
+					this._element = separatorElement;
+				},
+
+				getElement: function() {
+					return this._element;
+				}
+			}
+		};
+		return desc;
+	});
 
 	var StageGridColumn = RootClass
 			.extend(function(super_) {
@@ -5400,6 +5435,11 @@
 							this._index = index;
 							this._overallIndex = overallIndex;
 							this._scrollBarMode = scrollBarMode;
+
+							this._scrollRangeX = {
+								min: null,
+								max: null
+							};
 						},
 
 						getView: function(rowIndex) {
@@ -5450,19 +5490,11 @@
 								max: maxDisplayX
 							};
 
-							this.getViewAll().forEach(function(v) {
-								v.setScrollRangeX(minDisplayX, maxDisplayX);
-							});
+							this._viewCollection._updateGridRegion();
+						},
 
-							if (minDisplayX == null || maxDisplayX == null) {
-								//TODO スクロールバーモード自体を変えるのではなく
-								//内部フラグを持たせてそれを変える
-								this._setScrollBarMode(this, SCROLL_BAR_MODE_NONE);
-								return;
-							}
-
-							this._setScrollBarMode(this, SCROLL_BAR_MODE_ALWAYS, minDisplayX,
-									maxDisplayX);
+						_isScrollRangeFinite: function() {
+							return this._scrollRangeX.min != null && this._scrollRangeX.max != null;
 						},
 
 						_getViewportXFromScrollBarPosition: function(value) {
@@ -5486,7 +5518,7 @@
 						},
 
 						_setScrollBarPosition: function(x) {
-							if (!this._scrollRangeX || !this._scrollBarController) {
+							if (!this._scrollBarController) {
 								return;
 							}
 
@@ -5501,52 +5533,54 @@
 							}
 						},
 
-						_setScrollBarMode: function(col, mode, minValue, maxValue) {
-							var bottommostView = col.getView(this._viewCollection.numberOfRows - 1);
-
-							if (mode === SCROLL_BAR_MODE_ALWAYS) {
-								if (this._scrollBarController) {
-									return;
-								}
-
-								bottommostView.height -= SCROLL_BAR_THICKNESS;
-								var $root = $('<div class="h5-stage-scrollbar horizontal" data-h5-dyn-stage-idx="'
-										+ col.index + '"></div>');
-								$root.css({
-									position: 'absolute',
-									left: bottommostView.x,
-									width: col.width,
-									height: SCROLL_BAR_THICKNESS,
-									bottom: 0,
-									cursor: 'default'
-								});
-
-								var amount = maxValue - minValue;
-
-								col._scrollBarController = this
-										._createHScrollBarController($root[0]);
-
-								var that = this;
-
-								col._scrollBarController.readyPromise.done(function() {
-									//第1はサムの相対値、第2が最大値
-									this.setScrollSize(col.width, amount);
-									this.setBarSize(col.width);
-
-									var scrX = that._getScrollBarPositionFromScrollX(that
-											.getScrollX());
-									this.setScrollPosition(scrX);
-								});
-
-								$root.appendTo(this._viewCollection._stage.rootElement);
-							} else {
-								if (col._scrollBarController) {
-									//noneの場合はスクロールバーを削除する
-									col._scrollBarController.dispose();
-									$(col._scrollBarController.rootElement).remove();
-									col._scrollBarController = null;
-								}
+						_showScrollBar: function() {
+							if (this._scrollBarController) {
+								//既にスクロールバーが出ている場合はこのまま
+								return;
 							}
+
+							var bottommostView = this
+									.getView(this._viewCollection.numberOfRows - 1);
+
+							bottommostView.height -= SCROLL_BAR_THICKNESS;
+							var $root = $('<div class="h5-stage-scrollbar horizontal" data-h5-dyn-stage-idx="'
+									+ this.index + '"></div>');
+							$root.css({
+								position: 'absolute',
+								left: bottommostView.x,
+								width: this.width,
+								height: SCROLL_BAR_THICKNESS,
+								bottom: 0,
+								cursor: 'default'
+							});
+
+							var amount = Math.abs(this._scrollRangeX.max - this._scrollRangeX.min);
+
+							this._scrollBarController = this._createHScrollBarController($root[0]);
+
+							var that = this;
+
+							this._scrollBarController.readyPromise
+									.done(function() {
+										//第1はサムの相対値、第2が最大値
+										this.setScrollSize(that.width, amount);
+										this.setBarSize(that.width);
+
+										var scrX = that._getScrollBarPositionFromScrollX(that
+												.getScrollX());
+										this.setScrollPosition(scrX);
+									});
+
+							$root.appendTo(this._viewCollection._stage.rootElement);
+						},
+
+						_hideScrollBar: function() {
+							if (!this._scrollBarController) {
+								return;
+							}
+							this._scrollBarController.dispose();
+							$(this._scrollBarController.rootElement).remove();
+							this._scrollBarController = null;
 						},
 
 						_createHScrollBarController: function(rootElement) {
@@ -5560,6 +5594,33 @@
 				return desc;
 			});
 
+	var StageSeparatorGridColumn = StageGridColumn.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.StageSeparatorGridColumn',
+
+			field: {
+				_element: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StageSeparatorGridColumn
+				 */
+				constructor: function StageSeparatorGridColumn(viewCollection, index, overallIndex,
+						separatorElement) {
+					super_.constructor.call(this, viewCollection, GRID_TYPE_SEPARATOR, index,
+							overallIndex, SCROLL_BAR_MODE_NONE);
+
+					this._element = separatorElement;
+				},
+
+				getElement: function() {
+					return this._element;
+				}
+			}
+		};
+		return desc;
+	});
 
 	var SCROLL_BAR_THICKNESS = 17;
 	var SCROLL_BAR_MODE_NONE = 'none';
@@ -5604,6 +5665,12 @@
 						 */
 						_stage: null,
 
+						/** このグリッド全体の幅 */
+						_width: null,
+
+						/** このグリッド全体の高さ */
+						_height: null,
+
 						/**
 						 * @private setActiveView()で設定したビューを、UI操作に関係なく常にアクティブなビューとするかどうか。
 						 */
@@ -5637,7 +5704,6 @@
 						_draggingTargetDUVisibleMap: null,
 
 						_isSightChangePropagationSuppressed: null
-
 					},
 
 					accessor: {
@@ -5684,6 +5750,9 @@
 
 							// 行番号 -> { 列番号 -> StageView } という二次元マップ
 							this._viewMap = {};
+
+							this._width = 0;
+							this._height = 0;
 
 							//初期状態では「何もない」ことにする
 							this._numberOfOverallRows = 0;
@@ -5827,11 +5896,11 @@
 							});
 
 							this.getRows().forEach(function(row) {
-								row._setScrollBarMode(row, SCROLL_BAR_MODE_NONE);
+								row._hideScrollBar();
 							});
 
 							this.getColumns().forEach(function(col) {
-								col._setScrollBarMode(col, SCROLL_BAR_MODE_NONE);
+								col._hideScrollBar();
 							});
 
 							this._numberOfOverallRows = 0;
@@ -5861,6 +5930,14 @@
 						_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
 								rootWidth, rootHeight) {
 
+							if (rootWidth != null) {
+								this._width = rootWidth;
+							}
+
+							if (rootHeight != null) {
+								this._height = rootHeight;
+							}
+
 							//セパレータは一旦削除し、グリッド構成時に改めて作成
 							$(this._stage.rootElement).find('.stageGridSeparator').remove();
 
@@ -5889,16 +5966,18 @@
 								var def = horizontalSplitDefinitions[rowOverallIndex];
 								var stageGridRow;
 								if (def.type === GRID_TYPE_SEPARATOR) {
-									stageGridRow = StageGridRow.create(this, GRID_TYPE_SEPARATOR,
-											numOfRowSeps, rowOverallIndex, SCROLL_BAR_MODE_NONE);
-									var desiredHeight = def.height != null ? def.height
-											: DEFAULT_GRID_SEPARATOR_THICKNESS;
-									stageGridRow._desiredHeight = desiredHeight;
-
 									//セパレータは縦・横にまたがって作るので、このループの中で作ってしまう
 									//セパレータにはoverallIndexを持たせる
-									$createGridSeparator(rowOverallIndex, true, desiredHeight,
-											totalHeight).appendTo(this._stage.rootElement);
+									var desiredHeight = def.height != null ? def.height
+											: DEFAULT_GRID_SEPARATOR_THICKNESS;
+									var $separator = $createGridSeparator(rowOverallIndex, true,
+											desiredHeight, totalHeight);
+
+									$separator.appendTo(this._stage.rootElement);
+
+									stageGridRow = StageSeparatorGridRow.create(this, numOfRowSeps,
+											rowOverallIndex, $separator[0]);
+									stageGridRow._desiredHeight = desiredHeight;
 
 									numOfRowSeps++;
 								} else {
@@ -5931,17 +6010,19 @@
 								var def = verticalSplitDefinitions[colOverallIndex];
 								var stageGridCol;
 								if (def.type === GRID_TYPE_SEPARATOR) {
-									stageGridCol = StageGridColumn.create(this,
-											GRID_TYPE_SEPARATOR, numOfColSeps, colOverallIndex,
-											SCROLL_BAR_MODE_NONE);
-									stageGridCol._desiredWidth = def.width != null ? def.width
-											: DEFAULT_GRID_SEPARATOR_THICKNESS;
-
 									//セパレータは縦・横にまたがって作るので、このループの中で作ってしまう
 									//セパレータにはoverallIndexを持たせる
-									$createGridSeparator(colOverallIndex, false,
-											stageGridCol._desiredWidth, totalWidth).appendTo(
-											this._stage.rootElement);
+									var desiredWidth = def.width != null ? def.width
+											: DEFAULT_GRID_SEPARATOR_THICKNESS;
+
+									var $separator = $createGridSeparator(colOverallIndex, false,
+											desiredWidth, totalWidth);
+
+									$separator.appendTo(this._stage.rootElement);
+
+									stageGridCol = StageSeparatorGridColumn.create(this,
+											numOfColSeps, colOverallIndex, $separator[0]);
+									stageGridCol._desiredWidth = desiredWidth;
 
 									numOfColSeps++;
 								} else {
@@ -6007,10 +6088,10 @@
 									var viewW = col._desiredWidth ? col._desiredWidth : rootWidth
 											- totalWidth;
 
-									theView.x = totalWidth;
-									theView.y = totalHeight;
-									theView.height = viewH;
-									theView.width = viewW;
+									//									theView.x = totalWidth;
+									//									theView.y = totalHeight;
+									//									theView.height = viewH;
+									//									theView.width = viewW;
 
 									totalWidth += col._desiredWidth ? col._desiredWidth : 0;
 									colIndex++;
@@ -6040,6 +6121,8 @@
 
 							/* *** ここまでで、新しいグリッド構造とビューインスタンスの生成が完了 *** */
 							/* *** 以下で、スケールやサイズを調整、およびスクロールバーの生成 *** */
+
+							this._updateGridRegion();
 
 							//もしoldActiveViewがあれば、それのスケールを維持する。
 							//それがなければ、一番左上のスケールを維持する。
@@ -6134,6 +6217,188 @@
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
 							this.setActiveView(topLeftView);
+						},
+
+						_updateGridRegion: function() {
+							this._updateGridRegionRow();
+							this._updateGridRegionColumn();
+						},
+
+						_willHScrollBarShow: function() {
+							var columns = this.getColumns();
+							for (var i = 0, len = columns.length; i < len; i++) {
+								var column = columns[i];
+								if (column._scrollBarMode !== SCROLL_BAR_MODE_NONE
+										&& column._isScrollRangeFinite()) {
+									return true;
+								}
+							}
+							return false;
+						},
+
+						_willVScrollBarShow: function() {
+							var rows = this.getRows();
+							for (var i = 0, len = rows.length; i < len; i++) {
+								var row = rows[i];
+								if (row._scrollBarMode !== SCROLL_BAR_MODE_NONE
+										&& row._isScrollRangeFinite()) {
+									return true;
+								}
+							}
+							return false;
+						},
+
+						_updateGridRegionRow: function() {
+							var totalY = 0;
+
+							var that = this;
+
+							this.getRowsOfAllTypes().forEach(
+									function(row) {
+										if (row.type === GRID_TYPE_SEPARATOR) {
+											var sepTop = totalY;
+											//セパレータがビューの範囲を超えないようにする
+											if (totalY > that._height - row._desiredHeight) {
+												sepTop = that._height - row._desiredHeight;
+												if (sepTop < 0) {
+													//ただしビューの高さがセパレータの高さよりも小さい場合はビューの上端＝セパレータの上端とする
+													sepTop = 0;
+												}
+											}
+
+											var $separator = $(row.getElement());
+											$separator.css('top', sepTop);
+											totalY += row._desiredHeight;
+											return;
+										}
+
+										var actualHeight = 0;
+										if (row.overallIndex + 1 === that.numberOfOverallRows) {
+											//最後の行は、制約を無視して残りの高さを設定する
+											actualHeight = that._height - totalY;
+
+											if (that._willHScrollBarShow()) {
+												//水平スクロールバーが下端に出る場合には、その分一番下の行のビューの高さを減らしておく
+												actualHeight -= SCROLL_BAR_THICKNESS;
+											}
+										} else {
+											var maxHeight = Number.MAX_VALUE;
+
+											var scrollRangeY = row.getScrollRangeY();
+
+											if (row._isScrollRangeFinite()) {
+												maxHeight = Math.abs(scrollRangeY.max
+														- scrollRangeY.min);
+											}
+
+											actualHeight = Math.min(row._desiredHeight, maxHeight);
+										}
+
+										if (actualHeight < 0) {
+											actualHeight = 0;
+										} else if (totalY + actualHeight > that._height) {
+											actualHeight = 0;
+										}
+
+										row.getViewAll().forEach(function(v) {
+											v.y = totalY;
+											v._setHeight(actualHeight);
+										});
+
+										row._desiredHeight = actualHeight;
+
+										if (row._scrollBarMode !== SCROLL_BAR_MODE_NONE
+												&& row._isScrollRangeFinite()) {
+											row._showScrollBar();
+										} else {
+											row._hideScrollBar();
+										}
+
+										//スクロールバーの位置とサイズを調整
+										row._setScrollBarHeight(actualHeight);
+										row._setScrollBarTop(totalY);
+
+										totalY += actualHeight;
+									});
+						},
+
+						_updateGridRegionColumn: function() {
+							var totalX = 0;
+
+							var that = this;
+
+							this
+									.getColumnsOfAllTypes()
+									.forEach(
+											function(column) {
+												if (column.type === GRID_TYPE_SEPARATOR) {
+													var sepLeft = totalX;
+													//セパレータがビューの範囲を超えないようにする
+													if (totalX > that._height
+															- column._desiredWidth) {
+														sepLeft = that._height
+																- column._desiredWidth;
+														if (sepLeft < 0) {
+															//ただしビューの幅がセパレータの高さよりも小さい場合はビューの上端＝セパレータの上端とする
+															sepLeft = 0;
+														}
+													}
+
+													var $separator = $(column.getElement());
+													$separator.css('top', sepLeft);
+													totalX += column._desiredWidth;
+													return;
+												}
+
+												var actualWidth = 0;
+												if (column.overallIndex + 1 === that.numberOfOverallColumns) {
+													//最後の行は、制約を無視して残りの高さを設定する
+													actualWidth = that._width - totalX;
+
+													if (that._willVScrollBarShow()) {
+														//水平スクロールバーが下端に出る場合には、その分一番下の行のビューの高さを減らしておく
+														actualWidth -= SCROLL_BAR_THICKNESS;
+													}
+												} else {
+													var maxWidth = Number.MAX_VALUE;
+
+													var scrollRangeX = column.getScrollRangeX();
+
+													if (column._isScrollRangeFinite()) {
+														maxWidth = Math.abs(scrollRangeX.max
+																- scrollRangeX.min);
+													}
+
+													actualWidth = Math.min(column._desiredWidth,
+															maxWidth);
+												}
+
+												if (actualWidth < 0) {
+													actualWidth = 0;
+												} else if (totalX + actualWidth > that._width) {
+													actualWidth = 0;
+												}
+
+												column.getViewAll().forEach(function(v) {
+													v.x = totalX;
+													v._setWidth(actualWidth);
+												});
+
+												column._desiredWidth = actualWidth;
+
+												//スクロールバーの位置とサイズを調整
+												column._setScrollBarWidth(actualWidth);
+												column._setScrollBarLeft(totalX);
+
+												totalX += actualWidth;
+
+												if (column._scrollBarMode !== SCROLL_BAR_MODE_NONE
+														&& column._isScrollRangeFinite()) {
+													column._showScrollBar();
+												} else {
+													column._hideScrollBar();
+												}
+											});
 						},
 
 						/**
@@ -8076,9 +8341,9 @@
 					newTop = 0;
 				}
 
-				info.$target.css({
-					top: newTop
-				});
+				//				info.$target.css({
+				//					top: newTop
+				//				});
 
 				//自分（セパレータ）の上下のRowの高さと位置を変更
 				var allRows = this._stageViewCollection.getRowsOfAllTypes();
@@ -8086,14 +8351,17 @@
 				var aboveRow = allRows[info.index - 1];
 				var belowRow = allRows[info.index + 1];
 
-				aboveRow.getViewAll().forEach(function(view) {
-					view.height += dispDy;
-				});
+				aboveRow._desiredHeight += dispDy;
+				belowRow._desiredHeight -= dispDy;
 
-				belowRow.getViewAll().forEach(function(view) {
-					view.y = newTop + info.separator.height;
-					view.height -= dispDy;
-				});
+				//				aboveRow.getViewAll().forEach(function(view) {
+				//					view.height += dispDy;
+				//				});
+
+				//				belowRow.getViewAll().forEach(function(view) {
+				//					view.y = newTop + info.separator.height;
+				//					view.height -= dispDy;
+				//				});
 
 			} else {
 				var currLeft = info.$target.position().left;
@@ -8104,24 +8372,29 @@
 					newLeft = 0;
 				}
 
-				info.$target.css({
-					left: newLeft
-				});
+				//				info.$target.css({
+				//					left: newLeft
+				//				});
 
 				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
 
 				var leftCol = allCols[info.index - 1];
 				var rightCol = allCols[info.index + 1];
 
-				leftCol.getViewAll().forEach(function(view) {
-					view.width += dispDx;
-				});
+				leftCol._desiredWidth += dispDx;
+				rightCol._desiredWidth -= dispDx;
 
-				rightCol.getViewAll().forEach(function(view) {
-					view.x = newLeft + info.separator.width;
-					view.width -= dispDx;
-				});
+				//				leftCol.getViewAll().forEach(function(view) {
+				//					view.width += dispDx;
+				//				});
+				//
+				//				rightCol.getViewAll().forEach(function(view) {
+				//					view.x = newLeft + info.separator.width;
+				//					view.width -= dispDx;
+				//				});
 			}
+
+			this._stageViewCollection._updateGridRegion();
 
 			this._isDraggingStarted = true;
 
