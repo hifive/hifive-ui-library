@@ -4117,8 +4117,6 @@
 						 */
 						_renderRect: null,
 
-						_layerDOMs: null,
-
 						_layerElementMap: null,
 
 						_isUpdateTransformReserved: null,
@@ -4272,8 +4270,6 @@
 							this._stage = stage;
 							this._x = 0;
 							this._y = 0;
-
-							this._layerDOMs = [];
 
 							this._layerElementMap = new Map();
 
@@ -4512,10 +4508,10 @@
 												that._duDirtyListener);
 							});
 
-							this._viewport.removeEventListener('rectChange',
-									this._viewportRectChangeListener);
-							this._viewport.removeEventListener('scaleChange',
-									this._viewportScaleChangeListener);
+							this._layerElementMap.clear();
+							this._layerDefsMap.clear();
+
+							this._duidElementMap.clear();
 
 							$(this._rootElement).remove();
 						},
@@ -5861,19 +5857,6 @@
 
 							//セパレータは一旦削除し、グリッド構成時に改めて作成
 							$(this._stage.rootElement).find('.stageGridSeparator').remove();
-
-							//一度ビューを作成済みで、すべての分割を解除する場合
-							//					if (!horizontalSplitDefinitions && !verticalSplitDefinitions
-							//							&& this._activeView) {
-							//						//分割・複製を解除完全に解除する場合、直前のActiveViewを残す
-							//						var topLeftView = this.getView(0, 0);
-							//						this._clear();
-							//						this._addView(topLeftView, 0, 0);
-							//						this.setActiveView(topLeftView, true);
-							//						//TODO サイズ変更
-							//						//this._updateRootSize();
-							//						return;
-							//					}
 
 							//ビューを使いまわせるように直前のマップと行数・列数を保持しておく
 							var oldViewMap = this._viewMap;
