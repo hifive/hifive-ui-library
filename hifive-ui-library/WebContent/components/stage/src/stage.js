@@ -4651,10 +4651,13 @@
 						 * @param displayPageY 拡縮時の中心点のy（仕様はxと同じ）
 						 */
 						setScale: function(scaleX, scaleY, displayPageX, displayPageY) {
-							var actualScaleX = StageUtil.clamp(scaleX, this._scaleRangeX.min,
-									this._scaleRangeX.max);
-							var actualScaleY = StageUtil.clamp(scaleY, this._scaleRangeY.min,
-									this._scaleRangeY.max);
+							var scaleRangeX = this.getScaleRangeX();
+							var scaleRangeY = this.getScaleRangeY();
+
+							var actualScaleX = StageUtil.clamp(scaleX, scaleRangeX.min,
+									scaleRangeX.max);
+							var actualScaleY = StageUtil.clamp(scaleY, scaleRangeY.min,
+									scaleRangeY.max);
 
 							if (scaleX == null) {
 								actualScaleX = this._viewport.scaleX;
@@ -4770,26 +4773,42 @@
 							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 						},
 
+						getScaleRangeX: function() {
+							return this._stage._scaleRangeX;
+						},
+
 						setScaleRangeX: function(min, max) {
 							var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
 
-							this._scaleRangeX = {
+							this._stage._scaleRangeX = {
 								min: actualMin,
 								max: max
 							};
 
-							this.setScale(this._viewport.scaleX, null);
+							var newScaleX = StageUtil.clamp(this._viewport.scaleX, actualMin, max);
+
+							if (newScaleX != this._viewport.scaleX) {
+								this.setScale(newScaleX, null);
+							}
+						},
+
+						getScaleRangeY: function() {
+							return this._stage._scaleRangeY;
 						},
 
 						setScaleRangeY: function(min, max) {
 							var actualMin = StageUtil.clamp(min, ABSOLUTE_SCALE_MIN, null);
 
-							this._scaleRangeY = {
+							this._stage._scaleRangeY = {
 								min: actualMin,
 								max: max
 							};
 
-							this.setScale(null, this._viewport.scaleY);
+							var newScaleY = StageUtil.clamp(this._viewport.scaleY, actualMin, max);
+
+							if (newScaleY != this._viewport.scaleY) {
+								this.setScale(null, newScaleY);
+							}
 						},
 
 						getScrollRangeX: function() {
@@ -6719,6 +6738,10 @@
 
 		_defs: null,
 
+		_scaleRangeX: null,
+
+		_scaleRangeY: null,
+
 		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
 
 		isWheelScrollDirectionReversed: false,
@@ -6897,6 +6920,16 @@
 			this._units = new Map();
 			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
+
+			this._scaleRangeX = {
+				min: null,
+				max: null
+			};
+
+			this._scaleRangeY = {
+				min: null,
+				max: null
+			};
 
 			var that = this;
 			this._duAddListener = function(ev) {
