@@ -6683,6 +6683,8 @@
 
 	var StageUtil = h5.ui.components.stage.StageUtil;
 
+	var SCROLL_BAR_ARROW_DIFF = 100;
+
 	var stageController = {
 		/**
 		 * @memberOf h5.ui.components.stage.StageController
@@ -7380,13 +7382,49 @@
 
 			if (isVertical) {
 				var row = this._stageViewCollection.getRow(idx);
-				var vPos = context.evArg.vertical.position;
-				var scrY = row._getViewportYFromScrollBarPosition(vPos);
+
+				var newPos = row._scrollBarController.getScrollPosition();
+				var isIndexScroll = context.evArg.vertical.type === 'indexDiff';
+				if (isIndexScroll) {
+					newPos += SCROLL_BAR_ARROW_DIFF * context.evArg.vertical.diff;
+
+					var vScrollSize = row._scrollBarController.getScrollSize();
+
+					if (newPos < 0) {
+						newPos = 0;
+					} else if (newPos > vScrollSize) {
+						newPos = vScrollSize;
+					}
+
+					row._scrollBarController.setScrollPosition(newPos);
+				} else {
+					newPos = context.evArg.vertical.position;
+				}
+
+				var scrY = row._getViewportYFromScrollBarPosition(newPos);
 				row.setScrollY(scrY);
 			} else {
 				var col = this._stageViewCollection.getColumn(idx);
-				var hPos = context.evArg.horizontal.position;
-				var scrX = col._getViewportXFromScrollBarPosition(hPos);
+
+				var newPos = col._scrollBarController.getScrollPosition();
+				var isIndexScroll = context.evArg.horizontal.type === 'indexDiff';
+				if (isIndexScroll) {
+					newPos += SCROLL_BAR_ARROW_DIFF * context.evArg.horizontal.diff;
+
+					var hScrollSize = col._scrollBarController.getScrollSize();
+
+					if (newPos < 0) {
+						newPos = 0;
+					} else if (newPos > hScrollSize) {
+						newPos = hScrollSize;
+					}
+
+					col._scrollBarController.setScrollPosition(newPos);
+				} else {
+					newPos = context.evArg.horizontal.position;
+				}
+
+				var scrX = col._getViewportXFromScrollBarPosition(newPos);
 				col.setScrollX(scrX);
 			}
 
@@ -8341,10 +8379,6 @@
 					newTop = 0;
 				}
 
-				//				info.$target.css({
-				//					top: newTop
-				//				});
-
 				//自分（セパレータ）の上下のRowの高さと位置を変更
 				var allRows = this._stageViewCollection.getRowsOfAllTypes();
 
@@ -8353,16 +8387,6 @@
 
 				aboveRow._desiredHeight += dispDy;
 				belowRow._desiredHeight -= dispDy;
-
-				//				aboveRow.getViewAll().forEach(function(view) {
-				//					view.height += dispDy;
-				//				});
-
-				//				belowRow.getViewAll().forEach(function(view) {
-				//					view.y = newTop + info.separator.height;
-				//					view.height -= dispDy;
-				//				});
-
 			} else {
 				var currLeft = info.$target.position().left;
 				var newLeft = currLeft + dispDx;
@@ -8372,10 +8396,6 @@
 					newLeft = 0;
 				}
 
-				//				info.$target.css({
-				//					left: newLeft
-				//				});
-
 				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
 
 				var leftCol = allCols[info.index - 1];
@@ -8383,15 +8403,6 @@
 
 				leftCol._desiredWidth += dispDx;
 				rightCol._desiredWidth -= dispDx;
-
-				//				leftCol.getViewAll().forEach(function(view) {
-				//					view.width += dispDx;
-				//				});
-				//
-				//				rightCol.getViewAll().forEach(function(view) {
-				//					view.x = newLeft + info.separator.width;
-				//					view.width -= dispDx;
-				//				});
 			}
 
 			this._stageViewCollection._updateGridRegion();
