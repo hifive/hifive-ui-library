@@ -39,7 +39,16 @@
 
 		_lastClickElement: null,
 
+		_focusRootElement: null,
+
+		_hasFocus: null,
+
 		isKeyEventEmulationEnabled: true,
+
+		__ready: function() {
+			this._focusRootElement = null;
+			this._hasFocus = false;
+		},
 
 		'{document} mousedown': function(context, $el) {
 			this._updateFocus(context.event.target);
@@ -63,8 +72,9 @@
 
 		_processKeyEvent: function(event) {
 			if (!this.isKeyEventEmulationEnabled || event.originalEvent.isFocusEmulated === true
-					|| event.isFocusEmulated === true) {
-				//エミュレーションして出したイベントの場合は二重処理しない
+					|| event.isFocusEmulated === true || !this._hasFocus) {
+				//エミュレーションして出したイベントの場合、または
+				//現在指定した要素がフォーカスを持っていない場合は二重処理しない
 				return;
 			}
 
@@ -121,7 +131,21 @@
 		},
 
 		_updateFocus: function(element) {
+			if (!element) {
+				this.log.debug('_updateFocus: フォーカス要素がnullです。フォーカスは変更されませんでした。');
+				return;
+			}
+
 			this._lastClickElement = element;
+
+			var focusRoot = this._focusRootElement ? this._focusRootElement : this.rootElement;
+			if (element === focusRoot
+					|| (focusRoot.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+				//ルート要素またはその子要素ならフォーカスを持つ
+				this._hasFocus = true;
+			} else {
+				this._hasFocus = false;
+			}
 
 			var $t = $(element);
 
@@ -151,6 +175,14 @@
 
 		getFocusedElement: function() {
 			return this._lastClickElement;
+		},
+
+		setFocusRootElement: function(element) {
+			this._focusRootElement = element;
+		},
+
+		hasFocus: function(rootElement) {
+			return this._hasFocus;
 		}
 	};
 
@@ -3395,18 +3427,19 @@
 						var childDU = children[i];
 						var dom = childDU.__renderDOM(view);
 						rootG.appendChild(dom);
+
+						//TODO ここでやらない方が良い
+						view._duidElementMap.set(childDU.id, dom);
 					}
 
 					return rootSvg;
 				},
 
 				__addDOM: function(view, containerElement, targetElement) {
-					//TODO zIndex対応
 					containerElement.firstChild.appendChild(targetElement);
 				},
 
 				__removeDOM: function(view, containerElement, targetElement) {
-					//TODO zIndex対応
 					containerElement.firstChild.removeChild(targetElement);
 				},
 
@@ -3528,7 +3561,7 @@
 				__renderDOM: function(view) {
 					var children = this._zIndexList.getAllAcendant();
 
-					var layerElement = view.getElementForLayer(this);
+					var layerElement = view._getElementForLayer(this);
 
 					var childrenLen = children.length;
 					for (var i = 0; i < childrenLen; i++) {
@@ -4107,7 +4140,9 @@
 
 						_dragTargetDUInfoMap: null,
 
-						_dragSelectOverlayRect: null
+						_dragSelectOverlayRect: null,
+
+						_duidElementMap: null
 					},
 
 					accessor: {
@@ -4243,6 +4278,8 @@
 							this._layerElementMap = new Map();
 
 							this._layerDefsMap = new Map();
+
+							this._duidElementMap = new Map();
 
 							this._isUpdateTransformReserved = false;
 
@@ -4809,9 +4846,16 @@
 							return defs;
 						},
 
-						getElementForLayer: function(layer) {
+						_getElementForLayer: function(layer) {
 							var elem = this._layerElementMap.get(layer);
 							return elem;
+						},
+
+						getElementForDisplayUnit: function(displayUnit) {
+							if (!displayUnit) {
+								throw new Error('DisplayUnitが指定されていません。');
+							}
+							return this._duidElementMap.get(displayUnit.id);
 						},
 
 						/**
@@ -4928,15 +4972,14 @@
 						_onDUDirty: function(event) {
 							var du = event.displayUnit;
 
-							//TODO findでなくDOMマップを持つ
-							var $dom = $(this._rootElement).find(
-									'[data-h5-dyn-du-id="' + du.id + '"]');
-							if (!$dom[0]) {
+							var dom = this._duidElementMap.get(du.id);
+
+							if (!dom) {
 								//対応するDOMが存在しない
 								return;
 							}
 
-							du.__updateDOM(this, $dom[0], event.reason);
+							du.__updateDOM(this, dom, event.reason);
 						},
 
 						_onDUAdd: function(event) {
@@ -4946,14 +4989,11 @@
 
 							var dom = du.__renderDOM(this, reason);
 
-							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
-							var $parent = $(this._rootElement).find(
-									'[data-h5-dyn-du-id="' + du.parentDisplayUnit.id + '"]');
+							this._duidElementMap.set(du.id, dom);
 
 							//DOMの追加方法は
 							var parentDU = du.parentDisplayUnit;
-
-							var parentDOM = $parent[0];
+							var parentDOM = this._duidElementMap.get(du.parentDisplayUnit.id);
 
 							if (parentDOM === undefined) {
 								//親に対応するDOMが見つからなかったということは
@@ -4970,8 +5010,9 @@
 						_onDURemove: function(event) {
 							var du = event.displayUnit;
 
-							var targetElement = $(this._rootElement).find(
-									'[data-h5-dyn-du-id="' + du.id + '"]')[0];
+							//TODO 外したDUがDUContainerの場合、子孫要素も外す必要がある
+
+							var targetElement = this._duidElementMap.get(du.id);
 
 							if (!targetElement) {
 								//対象のDOMを描画していなければ何もしない
@@ -4983,10 +5024,7 @@
 							//parentDisplayUnitを参照してもnullなので注意。
 							var parentDU = event.parentDisplayUnit;
 
-							//TODO DOMから探すのではなく、DUID -> Element のMapを持つ
-							var $parent = $(this._rootElement).find(
-									'[data-h5-dyn-du-id="' + parentDU.id + '"]');
-							var parentDOM = $parent[0];
+							var parentDOM = this._duidElementMap.get(parentDU.id);
 
 							if (parentDOM === undefined) {
 								//親に対応するDOMが見つからなかったということは
@@ -4998,6 +5036,9 @@
 							}
 
 							parentDU.__removeDOM(this, parentDOM, targetElement);
+
+							//Eclipseのエディタが .delete でエラーとみなすのでこうしている
+							this._duidElementMap['delete'](du.id);
 						}
 
 					}
@@ -6623,7 +6664,9 @@
 
 					//先に状態を変更してからsetDirty()する
 					focusedDU._isFocused = true;
-					this._focusController.setFocusedElement(focusedDU._domRoot);
+
+					//TODO フォーカス変更後、再描画が発生するのでここでfocusedElementを設定してもダメ
+					//this._focusController.setFocusedElement(focusedDU._domRoot);
 
 					isFocusDirtyNotified = true;
 				}
@@ -6657,7 +6700,7 @@
 				//selectionChangeの方でfocusChangeも通知済みなら
 				//こちらではsetDirtyしない（Dirty回数の最適化）
 				focusedDU._isFocused = true;
-				this._focusController.setFocusedElement(focusedDU._domRoot);
+				//this._focusController.setFocusedElement(focusedDU._domRoot);
 				focusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
 			}
 
@@ -7137,7 +7180,7 @@
 			//mousedownのタイミングで決定しつつ、
 			//実際にdragStartとみなす（イベントを発生させる）のは
 			//moveのタイミングにするのがよい。
-			event.preventDefault();
+			//event.preventDefault();
 		},
 
 		_processDragMove: function(context) {
@@ -7827,13 +7870,20 @@
 			}
 		},
 
+		/**
+		 * ホイールイベントハンドラ。 イベント発生時にマウスカーソルがあった位置のビューでホイール操作を行う。ただし、ホイールではアクティブビューは変更しない。
+		 *
+		 * @param context
+		 * @param $el
+		 */
 		'{rootElement} wheel': function(context, $el) {
 			var event = context.event;
 			var wheelEvent = event.originalEvent;
 
 			var view = this._getActiveViewFromElement(event.target);
-			if (view) {
-				this._stageViewCollection.setActiveView(view);
+
+			if (!view) {
+				return;
 			}
 
 			//画面のスクロールをキャンセル
@@ -7863,10 +7913,8 @@
 
 				var ds = -0.1 * wheelDirection;
 
-				var activeView = this._getActiveView();
-
-				activeView.setScale(activeView._viewport.scaleX + ds, activeView._viewport.scaleY
-						+ ds, wheelEvent.pageX, wheelEvent.pageY);
+				view.setScale(view._viewport.scaleX + ds, view._viewport.scaleY + ds,
+						wheelEvent.pageX, wheelEvent.pageY);
 				return;
 			}
 
@@ -7876,7 +7924,7 @@
 			}
 			var dy = 40 * wheelDirection;
 
-			this.scrollBy(0, dy);
+			view.scrollBy(0, dy);
 		},
 
 		'{document} keydown': function(context) {
@@ -7892,21 +7940,30 @@
 		},
 
 		_processKeyEvent: function(event, eventName) {
-			if (this._isInputTag(event.target)) {
+			var eventTarget = event.target;
+
+			if (this._isInputTag(eventTarget) || !this._focusController.hasFocus()
+					|| this._focusController.getFocusedElement() === this.rootElement) {
+				//inputタグ、またはStageがフォーカスを持っていない、または
+				//フォーカスをDUが持っていない場合は何もしない
 				return;
 			}
 
-			var du = this._getIncludingDisplayUnit(event.target);
+			var du = this.getFocusedDisplayUnit();
 
-			if (!du || du !== this.getFocusedDisplayUnit()) {
-				//DUがない（＝ステージをクリックした後キー入力した、等）または
-				//現在Stageとしてフォーカスが当たっている要素以外からのキーイベントの場合は何もしない
+			if (!du) {
+				//DUにフォーカスが当たっていない場合は何もしない
 				return;
 			}
 
-			//TODO domRootがスクロールしても消えないことを保証する
-			//TODO DOMからDUのルートを取れるようにする
-			var eventSource = event.target; //du._domRoot;
+			var activeView = this._getActiveView();
+			var duDOM = activeView.getElementForDisplayUnit(du);
+
+			//duKey*イベントの発生元は、現在アクティブなビューのDUのルート要素またはその子孫要素とする
+			//なお、再描画が適宜発生するため、
+			//input要素が子孫の場合はその要素になるが、それ以外の場合は
+			//DUのrootElementがそうなる場合が多い
+			var eventSource = duDOM;
 
 			var ev = $.event.fix(event.originalEvent);
 			ev.type = eventName;
