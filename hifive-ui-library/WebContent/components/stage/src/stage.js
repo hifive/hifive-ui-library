@@ -4805,6 +4805,9 @@
 								max: maxDisplayX
 							};
 
+							//TODO 一時的に無効化
+							return;
+
 							//TODO イベントをあげる
 							var viewCollection = this._stage._stageViewCollection;
 							viewCollection.getColumn(this.columnIndex).setScrollRangeX(minDisplayX,
@@ -4820,6 +4823,9 @@
 								min: minDisplayY,
 								max: maxDisplayY
 							};
+
+							//TODO 一時的に無効化
+							return;
 
 							var viewCollection = this._stage._stageViewCollection;
 							viewCollection.getRow(this.rowIndex).setScrollRangeY(minDisplayY,
