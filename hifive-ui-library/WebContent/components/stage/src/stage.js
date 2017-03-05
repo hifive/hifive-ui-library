@@ -5268,6 +5268,10 @@
 						_setScrollBarHeight: function(height) {
 							if (this._scrollBarController) {
 								this._scrollBarController.setBarSize(height);
+
+								var amount = Math.abs(this._scrollRangeY.max
+										- this._scrollRangeY.min);
+								this._scrollBarController.setScrollSize(height, amount);
 							}
 						},
 
@@ -5530,6 +5534,10 @@
 						_setScrollBarWidth: function(width) {
 							if (this._scrollBarController) {
 								this._scrollBarController.setBarSize(width);
+
+								var amount = Math.abs(this._scrollRangeX.max
+										- this._scrollRangeX.min);
+								this._scrollBarController.setScrollSize(width, amount);
 							}
 						},
 
