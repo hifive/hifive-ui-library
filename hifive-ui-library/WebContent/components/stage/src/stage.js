@@ -4131,11 +4131,6 @@
 
 								this._x = value;
 
-								//this._desiredRect.x = value;
-
-
-								//TODO x,y,w,hを設定した時は、GridCollectionの updateGridSize()によりサイズが変わる可能性がある
-
 								if (this._rootElement) {
 									$(this._rootElement).css({
 										left: value
@@ -4168,6 +4163,8 @@
 								return this._viewport.displayWidth;
 							},
 							set: function(value) {
+								throw new Error('StageViewのwidthは直接設定できません。');
+
 								var oldValue = this._viewport.displayWidth;
 
 								if (value === oldValue) {
@@ -4180,6 +4177,8 @@
 								return this._viewport.displayHeight;
 							},
 							set: function(value) {
+								throw new Error('StageViewのheightは直接設定できません。');
+
 								var oldValue = this._viewport.displayHeight;
 
 								if (value === oldValue) {
@@ -4228,6 +4227,8 @@
 							this._stage = stage;
 							this._x = 0;
 							this._y = 0;
+
+							this._renderRect = Rect.create();
 
 							this._layerElementMap = new Map();
 
@@ -4475,7 +4476,13 @@
 						},
 
 						setSize: function(displayWidth, displayHeight) {
-							this._viewport.setDisplaySize(displayWidth, displayHeight);
+							var row = this._stage._stageViewCollection.getRow(this.rowIndex);
+							row._desiredHeight = displayHeight;
+
+							var col = this._stage._stageViewCollection.getColumn(this.columnIndex);
+							col._desiredWidth = displayWidth;
+
+							this._stage._stageViewCollection._updateGridRegion();
 						},
 
 						getScrollPosition: function() {
@@ -5027,11 +5034,6 @@
 							this._viewport.setDisplaySize(width, this._viewport.displayHeight);
 
 							if (this._rootElement) {
-								//Collectionから呼ばれるので制約は調整済み
-								//								if (width < 0) {
-								//									width = 0;
-								//								}
-
 								$(this._rootElement).css({
 									width: width
 								});
@@ -5045,10 +5047,6 @@
 							this._viewport.setDisplaySize(this._viewport.displayWidth, height);
 
 							if (this._rootElement) {
-								//								if (value < 0) {
-								//									value = 0;
-								//								}
-
 								$(this._rootElement).css({
 									height: height
 								});
