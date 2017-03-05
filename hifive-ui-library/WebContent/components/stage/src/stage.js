@@ -4700,9 +4700,19 @@
 							this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x,
 									scaleCenter.y);
 
-							//TODO clampする、もしくはscrollTo()する
-							var newScrollPos = DisplayPoint.create(this._viewport.displayX,
-									this._viewport.displayY);
+							//scrollRangeでclampする
+							var scrollRangeX = this.getScrollRangeX();
+							var scrollRangeY = this.getScrollRangeY();
+							var actualScrollPosX = StageUtil.clamp(this._viewport.displayX,
+									scrollRangeX.min, scrollRangeX.max);
+							var actualScrollPosY = StageUtil.clamp(this._viewport.displayY,
+									scrollRangeY.min, scrollRangeY.max);
+
+							//clampされた位置にスクロールする
+							this._viewport.scrollTo(actualScrollPosX, actualScrollPosY);
+
+							var newScrollPos = DisplayPoint.create(actualScrollPosX,
+									actualScrollPosY);
 
 							var isScrollPoisitionChanged = true;
 							if (oldScrollPos.x === newScrollPos.x
