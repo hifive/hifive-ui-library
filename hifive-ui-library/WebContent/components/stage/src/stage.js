@@ -4299,10 +4299,10 @@
 								max: null
 							};
 
-							this._coordinateConverter = CoordinateConverter.create(this._viewport);
-
 							var viewport = Viewport.create();
 							this._viewport = viewport;
+
+							this._coordinateConverter = CoordinateConverter.create(this._viewport);
 						},
 
 						_initForemostSvg: function() {
