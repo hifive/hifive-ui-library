@@ -2691,27 +2691,17 @@
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
-				_render: function(view, rootSvg, reason) {
+				_render: function(view, line, reason) {
 					if (!reason.isInitialRender && !reason.isRenderRequested
 							&& !reason.isPositionChanged) {
 						return;
 					}
 
-					//TODO 仮実装
-					//バインドされているDUの位置が変わったら再描画が必要
 					var fr = this._from.getRect();
 					var tr = this._to.getRect();
 
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
-
-					var line;
-					if (rootSvg.firstChild) {
-						line = rootSvg.firstChild;
-					} else {
-						line = createSvgElement('line');
-						rootSvg.appendChild(line);
-					}
 
 					line.className.baseVal = this.getClassSet().toArray().join(' ');
 
@@ -2890,28 +2880,9 @@
 				},
 
 				__renderDOM: function(view) {
-					var rootSvg = createSvgElement('svg');
+					var rootSvg = createSvgElement('line');
 					rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
 					rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
-
-					//エッジの表示が切れないようにvisibleにする
-					rootSvg.style.overflow = "visible";
-
-					//					/var ns = 'http://www.w3.org/2000/svg';
-
-					rootSvg.setAttribute('width', 10); //TODO for debugging
-					rootSvg.setAttribute('height', 10); //TODO for debugging
-
-					//					rootSvg.setAttributeNS(ns, 'width', 1);
-					//					rootSvg.setAttributeNS(ns, 'height', 1);
-
-					//rootSvg.width.baseVal.valueAsString = "1px";
-					//rootSvg.height.baseVal.valueAsString = "1px";
-
-					//					SvgUtil.setAttributes(rootSvg, {
-					//						width: 10,
-					//						height: 1
-					//					});
 
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
@@ -2921,7 +2892,10 @@
 				},
 
 				__updateDOM: function(view, element, reason) {
-					super_.__updateDOM.call(this, view, element, reason);
+					if (reason.isInitialRender || reason.isVisibilityChanged) {
+						element.style.display = this._isVisible ? '' : 'none';
+					}
+
 					this._render(view, element, reason);
 				}
 			}
@@ -7512,6 +7486,13 @@
 				//ドラッグ対象がグリッドセパレータの場合は
 				//グリッドのサイズ変更とみなす
 				this._startGridSeparatorDrag(context);
+			}
+
+			var targetDU = this._getIncludingDisplayUnit(context.event.target);
+			if (targetDU) {
+				//DUのドラッグの場合、Firefoxではmousedownの場合textなどでドラッグすると
+				//文字列選択になってしまうのでキャンセルする
+				context.event.preventDefault();
 			}
 
 			//TODO 初回のmousemoveのタイミングで
