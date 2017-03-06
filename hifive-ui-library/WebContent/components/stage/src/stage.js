@@ -2372,6 +2372,11 @@
 					this._belongingLayer = belongingLayer;
 				},
 
+				_onRemovedFromRoot: function() {
+					this._rootStage = null;
+					this._belongingLayer = null;
+				},
+
 				__updateDOM: function(stageView, element, reason) {
 					//					if (!this._isVisible) {
 					//						//非表示状態なら他の描画はしない
@@ -2612,10 +2617,6 @@
 					}
 
 					this._setDirty(REASON_RENDER_REQUEST);
-				},
-
-				_onAddedToRoot: function(stage, belongingLayer) {
-					super_._onAddedToRoot.call(this, stage, belongingLayer);
 				},
 
 				__createGraphics: function(view, svgElement) {
@@ -2958,11 +2959,17 @@
 				},
 
 				_onAddedToRoot: function(stage, belongingLayer) {
-					this._rootStage = stage;
-					this._belongingLayer = belongingLayer;
+					super_._onAddedToRoot.call(this, stage, belongingLayer);
 
 					this._from.addEventListener('displayUnitDirty', this._duDirtyHandler);
 					this._to.addEventListener('displayUnitDirty', this._duDirtyHandler);
+				},
+
+				_onRemovedFromRoot: function() {
+					super_._onRemovedFromRoot.call(this);
+
+					this._from.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+					this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
 				},
 
 				_onRemoving: function() {
@@ -3486,6 +3493,17 @@
 						var du = children[i];
 						du._onAddedToRoot(rootStage, belongingLayer);
 					}
+				},
+
+				_onRemovedFromRoot: function() {
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						var du = children[i];
+						du._onRemovedFromRoot();
+					}
+
+					//先に子供をパージしてから自分からStageへの参照を外す
+					super_._onRemovedFromRoot.call(this);
 				},
 
 				setMinScale: function(minScaleX, minScaleY) {
@@ -6481,18 +6499,8 @@
 							});
 						},
 
-						moveSeparator: function(isRowSeparator, overallIndex, displayDiff) {
-						//indexは、overallIndex
-						},
-
-						_clear: function() {
+						_clear: function(andDisposeView) {
 							var views = this.getViewAll();
-							var that = this;
-							views.forEach(function(v) {
-								v
-										.removeEventListener('sightChange',
-												that._view_sightChangeListener);
-							});
 
 							this.getRows().forEach(function(row) {
 								row._hideScrollBar();
@@ -6502,6 +6510,9 @@
 								col._hideScrollBar();
 							});
 
+							this._width = 0;
+							this._height = 0;
+
 							this._numberOfOverallRows = 0;
 							this._numberOfOverallColumns = 0;
 							this._numberOfRows = 0;
@@ -6509,8 +6520,24 @@
 							this._numberOfRowSeparators = 0;
 							this._numberOfColumnSeparators = 0;
 
+							this._rows = [];
+							this._columns = [];
+
+							this._isSightChangePropagationSuppressed = false;
+
 							this._activeView = null;
 							this._viewMap = {};
+
+							var that = this;
+							views.forEach(function(v) {
+								v
+										.removeEventListener('sightChange',
+												that._view_sightChangeListener);
+
+								if (andDisposeView === true) {
+									v.dispose();
+								}
+							});
 						},
 
 						_addView: function(view, rowIndex, columnIndex) {
@@ -6528,15 +6555,6 @@
 
 						_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
 								rootWidth, rootHeight) {
-
-							if (rootWidth != null) {
-								this._width = rootWidth;
-							}
-
-							if (rootHeight != null) {
-								this._height = rootHeight;
-							}
-
 							//セパレータは一旦削除し、グリッド構成時に改めて作成
 							$(this._stage.rootElement).find('.stageGridSeparator').remove();
 
@@ -6549,6 +6567,14 @@
 
 							//内部状態をクリア
 							this._clear();
+
+							if (rootWidth != null) {
+								this._width = rootWidth;
+							}
+
+							if (rootHeight != null) {
+								this._height = rootHeight;
+							}
 
 							if (!horizontalSplitDefinitions) {
 								horizontalSplitDefinitions = [{}];
@@ -8503,6 +8529,11 @@
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
 
+			//現在保持しているすべてのビューを破棄する
+			this._stageViewCollection._clear(true);
+
+			this._clearLayers();
+
 			this._initData = initData;
 
 			if (initData.layers) {
@@ -8559,6 +8590,27 @@
 				this._layers.push(layer);
 			}
 			layer._onAddedToRoot(this);
+		},
+
+		_removeLayer: function(layer) {
+			var idx = this._layers.indexOf(layer);
+
+			if (idx === -1) {
+				return;
+			}
+
+			//TODO レイヤーを外したときにStageViewのリスナーを削除する
+
+			layer._onRemovedFromRoot();
+			this._layers.splice(idx, 1);
+		},
+
+		_clearLayers: function() {
+			var layers = this._layers.slice(0);
+			var that = this;
+			layers.forEach(function(layer) {
+				that._removeLayer(layer);
+			});
 		},
 
 		getLayer: function(id) {
