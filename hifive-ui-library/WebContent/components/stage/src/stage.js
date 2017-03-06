@@ -5432,11 +5432,13 @@
 							//Eclipseのエディタが .delete でエラーとみなすのでこうしている
 							this._duidElementMap['delete'](du.id);
 
-							//子孫のDUに対応するElementのマップを削除
-							var allChildren = du.getDisplayUnitAll(true);
-							allChildren.forEach(function(childDU) {
-								this._duidElementMap['delete'](childDU.id);
-							});
+							if (DisplayUnitContainer.isClassOf(du)) {
+								//コンテナの場合は子孫のDUに対応するElementのマップを削除
+								var allChildren = du.getDisplayUnitAll(true);
+								allChildren.forEach(function(childDU) {
+									this._duidElementMap['delete'](childDU.id);
+								});
+							}
 						},
 
 						_setWidth: function(width) {
