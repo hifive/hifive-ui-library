@@ -7682,17 +7682,27 @@
 
 			//以下はDUがクリックまたはダブルクリックされた場合
 
+			//下のduClickイベントのハンドラ内で再描画が発生する可能性があるので、
+			//イベント発火前にどのビューの要素がクリックされたか、
+			//およびクリックされたDUのルート要素をキャッシュしておく
+
+			//TODO rAFで実際の再描画を遅延させると
+			//イベントのタイミングではrequestRender()が呼ばれるだけなので
+			//要素は消えなくなるはず
+
+			var view = this._getActiveViewFromElement(event.target);
+
 			//duClickイベントは、DUがselectableかどうかに関係なく発生させる
 			var evArg = {
 				stageController: this,
 				displayUnit: du
 			};
-			var bizEvent = $.event.fix(event.originalEvent);
-			bizEvent.type = triggerEventName;
-			bizEvent.target = event.target;
-			bizEvent.currentTarget = event.target;
+			var duClickEvent = $.event.fix(event.originalEvent);
+			duClickEvent.type = triggerEventName;
+			duClickEvent.target = event.target;
+			duClickEvent.currentTarget = event.target;
 
-			$(event.target).trigger(bizEvent, evArg);
+			$(event.target).trigger(duClickEvent, evArg);
 
 			if (this._isDblclickEmulationEnabled) {
 				if (this._dblclickWaitTimer) {
@@ -7700,7 +7710,6 @@
 					clearTimeout(this._dblclickWaitTimer);
 					this._dblclickWaitTimer = null;
 
-					var view = this._getActiveViewFromElement(event.target);
 					if (view) {
 						var duRootElement = view.getElementForDisplayUnit(du);
 
@@ -7730,7 +7739,7 @@
 				}
 			}
 
-			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
+			if (!du.isSelectable || duClickEvent.isDefaultPrevented()) {
 				//DUがselectableでない場合は選択処理はしない。
 				//また、イベントのデフォルト処理がキャンセルされた場合も
 				//clickイベントの場合の選択処理は行わない
