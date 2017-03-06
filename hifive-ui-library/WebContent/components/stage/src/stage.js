@@ -740,6 +740,14 @@
 								return true;
 							}
 							return false;
+						},
+
+						containsPoint: function(x, y) {
+							if (this.x <= x && x <= (this.x + this.width) && this.y <= y
+									&& y <= (this.y + this.height)) {
+								return true;
+							}
+							return false;
 						}
 					}
 				};
@@ -1982,7 +1990,10 @@
 				_rootStage: null,
 
 				_groupTag: null,
+
 				_isVisible: null,
+
+				_isSystemVisible: null,
 
 				_belongingLayer: null,
 
@@ -2151,6 +2162,8 @@
 					this._height = 0;
 
 					this._isVisible = true;
+
+					this._isSystemVisible = true;
 
 					this._groupTag = SimpleSet.create();
 
@@ -2348,10 +2361,8 @@
 					//					}
 
 					if (reason.isInitialRender || reason.isVisibilityChanged) {
-						element.style.display = this._isVisible ? '' : 'none';
-
-						//表示することになったら再レンダー
-						//this._setDirty(REASON_ALL);
+						element.style.display = this._isVisible && this._isSystemVisible ? ''
+								: 'none';
 					}
 
 					if (reason.isInitialRender || reason.isPositionChanged) {
@@ -2381,6 +2392,14 @@
 				__onDirtyNotify: function(du, reasons) {
 					if (this._parentDU) {
 						this._parentDU.__onDirtyNotify(du, reasons);
+					}
+				},
+
+				_setSystemVisible: function(value, element) {
+					this._isSystemVisible = value;
+					if (element) {
+						element.style.display = this._isVisible && this._isSystemVisible ? ''
+								: 'none';
 					}
 				}
 			}
@@ -2817,8 +2836,6 @@
 						break;
 					}
 
-					//					var rx = x1 <= x2 ? x1 : x2;
-					//					var ry = y1 <= y2 ? y1 : y2;
 					var rw = x2 - x1;
 					if (rw < 0) {
 						rw *= -1;
@@ -2834,6 +2851,14 @@
 						x2: x2,
 						y2: y2
 					});
+
+					//EdgeDUのサイズをアップデート
+					var left = x1 <= x2 ? x1 : x2;
+					var top = y1 <= y2 ? y1 : y2;
+					this._x = left;
+					this._y = top;
+					this._width = Math.abs(x2 - x1);
+					this._height = Math.abs(y2 - y1);
 				},
 
 				hasClass: function(cssClass) {
@@ -2893,7 +2918,8 @@
 
 				__updateDOM: function(view, element, reason) {
 					if (reason.isInitialRender || reason.isVisibilityChanged) {
-						element.style.display = this._isVisible ? '' : 'none';
+						element.style.display = this._isVisible && this._isSystemVisible ? ''
+								: 'none';
 					}
 
 					this._render(view, element, reason);
@@ -3182,6 +3208,26 @@
 			return null;
 		}
 
+		var arrayPush = Array.prototype.push;
+
+		function getChildrenAll(duContainer) {
+			var ret = [];
+
+			var children = duContainer._children;
+			for (var i = 0, len = children.length; i < len; i++) {
+				var child = children[i];
+
+				if (DisplayUnitContainer.isClassOf(child)) {
+					var cc = getChildrenAll(child);
+					arrayPush.apply(ret, cc);
+				} else {
+					ret.push(child);
+				}
+			}
+
+			return ret;
+		}
+
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
@@ -3247,11 +3293,6 @@
 					//Layerなど、自分の__onDescendantAdded()をオーバーライドしている場合に
 					//正しく動作しなくなるため。
 					this.__onDescendantAdded(du);
-
-					//TODO コンテナごとにはイベントをあげず、Layerで集約する
-					//					var event = DisplayUnitContainerEvent.create('add');
-					//					event.displayUnit = du;
-					//					this.dispatchEvent(event);
 				},
 
 				removeDisplayUnit: function(du) {
@@ -3276,11 +3317,6 @@
 					du._rootStage = null;
 
 					this.__onDescendantRemoved(du, this);
-
-					//TODO イベントは直接あげずLayerで集約
-					//var event = DisplayUnitContainerEvent.create('remove');
-					//event.displayUnit = du;
-					//this.dispatchEvent(event);
 				},
 
 				getDisplayUnitById: function(id) {
@@ -3288,7 +3324,11 @@
 					return ret;
 				},
 
-				getDisplayUnitAll: function() {
+				getDisplayUnitAll: function(includesDescendant) {
+					if (includesDescendant === true) {
+						return getChildrenAll(this);
+					}
+					//デフォルトでは子要素のみ取得
 					return this._children;
 				},
 
@@ -3402,7 +3442,7 @@
 						var dom = childDU.__renderDOM(view);
 						rootG.appendChild(dom);
 
-						//TODO ここでやらない方が良い
+						//ここでやらない方が良いが、一旦ここでマップに登録する
 						view._duidElementMap.set(childDU.id, dom);
 					}
 
@@ -3501,9 +3541,6 @@
 				moveBy: function(worldX, worldY) {
 					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
 
-					//							var x = this.x + worldX;
-					//							var y = this.y + worldY;
-					//							this.scrollTo(x, y);
 				},
 
 				__createGraphics: function(view, svgRoot) {
@@ -3542,6 +3579,9 @@
 						var childDU = children[i];
 						var dom = childDU.__renderDOM(view);
 						this.__addDOM(view, layerElement, dom);
+
+						//ここでやらない方が良いが、一旦ここでマップに登録する
+						view._duidElementMap.set(childDU.id, dom);
 					}
 
 					return null;
@@ -3709,6 +3749,97 @@
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
+
+	var SortedList = RootClass.extend(function(super_) {
+		function getInsertionIndex(array, target, compareFunc, start, end) {
+			var len = array.length;
+
+			if (len == 0) {
+				return 0;
+			}
+
+			if (start === undefined) {
+				start = 0;
+			}
+			if (end === undefined) {
+				end = len - 1;
+			}
+
+			if (end <= start) {
+				if (compareFunc(target, array[start]) < 0) {
+					return start;
+				}
+				return start + 1;
+			}
+
+			var mid = start + ((end - start) >>> 1);
+
+			var comp = compareFunc(target, array[mid]);
+
+			if (comp == 0) {
+				return mid + 1;
+			} else if (comp < 0) {
+				return getInsertionIndex(array, target, compareFunc, start, mid - 1);
+			} else {
+				return getInsertionIndex(array, target, compareFunc, mid + 1, end);
+			}
+		}
+
+		function sortedInsert(array, target, compareFunc) {
+			array.splice(getInsertionIndex(array, target, compareFunc), 0, target);
+		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.SortedList',
+
+			field: {
+				_array: null,
+				_comparator: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SortedList
+				 */
+				constructor: function SortedList(comparator) {
+					super_.constructor.call(this);
+
+					this._array = [];
+					this._comparator = comparator;
+				},
+
+				getArray: function() {
+					return this._array;
+				},
+
+				add: function(value) {
+					if (!Array.isArray(value)) {
+						value = [value];
+					}
+
+					//valueは常に配列
+
+					for (var i = 0, len = value.length; i < len; i++) {
+						var val = value[i];
+						sortedInsert(this._array, val, this._comparator);
+					}
+				},
+
+				remove: function(value) {
+					var idx = this._array.indexOf(value);
+					if (idx === -1) {
+						return;
+					}
+					this._array.splice(idx, 1);
+				},
+
+				clear: function() {
+					this._array = [];
+				}
+			}
+		};
+		return desc;
+	});
 
 	var Viewport = EventDispatcher.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
@@ -4431,7 +4562,7 @@
 								that._foremostSvgGroup.appendChild(element);
 
 								//レイヤーに存在する元々のDUは非表示にする
-								du.isVisible = false;
+								du._setSystemVisible(false);
 							});
 						},
 
@@ -4447,13 +4578,15 @@
 
 						__onDragDUDrop: function(dragSession) {
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
-								du.isVisible = element.isVisible;
+								du._setSystemVisible(true);
 							});
 
 							this._dragTargetDUInfoMap = null;
 
 							//フォアレイヤーのDOMを削除する
 							$(this._foremostSvgGroup).empty();
+
+							this._updateRender();
 						},
 
 						dispose: function() {
@@ -4906,15 +5039,80 @@
 
 								var dom = this._layerElementMap.get(layer);
 								this._updateTransform(dom, scrollX, scrollY);
-
-								//								layer.setScale(that._viewport.scaleX, that._viewport.scaleY);
-								//								layer.moveTo(scrollX, scrollY);
 							}
+
+							this._updateRender();
 
 							//フォアレイヤーのスクロール位置も移動させる
 							this._updateTransform(this._foremostSvg, scrollX, scrollY);
 						},
 
+						_updateRender: function(rootDU) {
+							var renderRect = this._viewport.getWorldRect();
+							renderRect.width *= 1.0; //どの範囲まで描画範囲とみなすか
+							renderRect.height *= 1.0;
+							renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
+							renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+
+							var that = this;
+
+							if (rootDU) {
+								updateSystemVisible(rootDU, true);
+							} else {
+								this._stage._layers.forEach(function(layer) {
+									updateSystemVisible(layer, false);
+								});
+							}
+
+							function updateSystemVisible(rootDU, includesRoot) {
+								var duArray;
+								if (includesRoot === true) {
+									duArray = [rootDU];
+								} else {
+									duArray = [];
+								}
+
+								if (DisplayUnitContainer.isClassOf(rootDU)) {
+									duArray = rootDU.getDisplayUnitAll(true);
+								}
+
+								for (var i = 0, len = duArray.length; i < len; i++) {
+									var du = duArray[i];
+
+									var element = that._duidElementMap.get(du.id);
+
+									if (DisplayUnitContainer.isClassOf(du)) {
+										//DUコンテナは現状常に表示とする
+										du._setSystemVisible(true, element);
+									}
+
+									var duGlobalPos = du.getWorldGlobalPosition();
+
+									//描画領域にDUの4つ角のどこかがかかっていれば表示
+									if (renderRect.containsPoint(duGlobalPos.x, duGlobalPos.y)
+											|| renderRect.containsPoint(duGlobalPos.x + du.width,
+													duGlobalPos.y)
+											|| renderRect.containsPoint(duGlobalPos.x,
+													duGlobalPos.y + du.height)
+											|| renderRect.containsPoint(duGlobalPos.x + du.width,
+													duGlobalPos.y + du.height)) {
+										du._setSystemVisible(true, element);
+										continue;
+									}
+
+									//描画領域全体を覆うほど大きなDUの場合も表示
+									var duRect = Rect.create(duGlobalPos.x, duGlobalPos.y,
+											du.width, du.height);
+									if (duRect.contains(renderRect)) {
+										du._setSystemVisible(true, element);
+										continue;
+									}
+
+									//見えないので非表示
+									du._setSystemVisible(false, element);
+								}
+							}
+						},
 
 						/**
 						 * レイヤーではtranslate量にDUのx,yの値を用いる。
@@ -4969,6 +5167,8 @@
 							}
 
 							du.__updateDOM(this, dom, event.reason);
+
+							this._updateRender(du, true);
 						},
 
 						_onDUAdd: function(event) {
@@ -4994,12 +5194,12 @@
 								parentDOM = this._layerElementMap.get(parentDU);
 							}
 							parentDU.__addDOM(this, parentDOM, dom);
+
+							this._updateRender(du, true);
 						},
 
 						_onDURemove: function(event) {
 							var du = event.displayUnit;
-
-							//TODO 外したDUがDUContainerの場合、子孫要素も外す必要がある
 
 							var targetElement = this._duidElementMap.get(du.id);
 
@@ -5018,7 +5218,7 @@
 							if (parentDOM === undefined) {
 								//親に対応するDOMが見つからなかったということは
 								//レイヤーに直接追加されたもの
-								//TODO 現時点では、コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する
+								//現時点では、コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する
 
 								//このparentDUは必ずLayer
 								parentDOM = this._layerElementMap.get(parentDU);
@@ -5028,6 +5228,12 @@
 
 							//Eclipseのエディタが .delete でエラーとみなすのでこうしている
 							this._duidElementMap['delete'](du.id);
+
+							//子孫のDUに対応するElementのマップを削除
+							var allChildren = du.getDisplayUnitAll(true);
+							allChildren.forEach(function(childDU) {
+								this._duidElementMap['delete'](childDU.id);
+							});
 						},
 
 						_setWidth: function(width) {
@@ -5041,6 +5247,8 @@
 								//注：レイヤーに対してはサイズを設定してはいけない。
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
+
+							this._updateRender();
 						},
 
 						_setHeight: function(height) {
@@ -5054,6 +5262,8 @@
 								//注：レイヤーに対してはサイズを設定してはいけない。
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
+
+							this._updateRender();
 						}
 					}
 				};
@@ -5288,7 +5498,6 @@
 
 							var height = leftmostView.height;
 
-							rightmostView.width -= SCROLL_BAR_THICKNESS;
 							var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
 									+ this.index + '"></div>');
 
@@ -5551,7 +5760,6 @@
 							var bottommostView = this
 									.getView(this._viewCollection.numberOfRows - 1);
 
-							bottommostView.height -= SCROLL_BAR_THICKNESS;
 							var $root = $('<div class="h5-stage-scrollbar horizontal" data-h5-dyn-stage-idx="'
 									+ this.index + '"></div>');
 							$root.css({
@@ -6903,14 +7111,6 @@
 				max: null
 			};
 
-			var that = this;
-			this._duAddListener = function(ev) {
-				that._onDUAdd(ev);
-			};
-			this._duRemoveListener = function(ev) {
-				that._onDURemove(ev);
-			};
-
 			this._stageViewCollection = GridStageViewCollection.create(this);
 		},
 
@@ -7927,53 +8127,10 @@
 			bottom: Number.MIN_VALUE
 		},
 
-		_onDUAdd: function(event) {
-			var du = event.displayUnit;
-
-			var size = this._worldWholeSize;
-
-			var nleft = size.left;
-			if (du.x < size.left) {
-				nleft = du.x;
-			}
-
-			var nright = size.right;
-			if (du.x + du.width > size.right) {
-				nright = du.x + du.width;
-			}
-
-			var ntop = size.top;
-			if (du.y < size.top) {
-				ntop = du.y;
-			}
-
-			var nbottom = size.bottom;
-			if (du.y + du.height > size.bottom) {
-				nbottom = du.y + du.height;
-			}
-
-			this._worldWholeSize = {
-				left: nleft,
-				right: nright,
-				top: ntop,
-				bottom: nbottom
-			};
-		},
-
-		_onDURemove: function(event) {
-
-		},
-
-		_duAddListener: null,
-		_duRemoveListener: null,
-
 		addLayer: function(layer, index, isDefault) {
 			if (this._layers.length === 0 || isDefault === true) {
 				this._defaultLayer = layer;
 			}
-
-			layer.addEventListener('displayUnitAdd', this._duAddListener);
-			layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 
 			if (index != null) {
 				this._layers.splice(index, 0, layer);
