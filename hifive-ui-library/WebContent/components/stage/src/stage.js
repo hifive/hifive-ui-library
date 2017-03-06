@@ -6136,7 +6136,7 @@
 						},
 
 						_getViewportXFromScrollBarPosition: function(value) {
-							if (!this._visibleRangeX.left) {
+							if (!this._scrollBarController) {
 								return 0;
 							}
 							return value + this._visibleRangeX.left;
