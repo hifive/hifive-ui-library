@@ -2664,7 +2664,14 @@
 				_endpointFrom: null,
 				_endpointTo: null,
 				_duDirtyHandler: null,
-				_classSet: null
+				_classSet: null,
+
+				_endpoint_propertyChangeListener: null,
+
+				_x1: null,
+				_x2: null,
+				_y1: null,
+				_y2: null
 			},
 
 			accessor: {
@@ -2694,10 +2701,12 @@
 					this._height = 1;
 
 					var that = this;
+
 					this._duDirtyHandler = function(event) {
 						var reason = event.reason;
 
 						if (reason.isPositionChanged || reason.isSizeChanged) {
+							that._updateLinePosition();
 							that.requestRender();
 						}
 					};
@@ -2706,23 +2715,29 @@
 
 					this._endpointFrom = EdgeEndpoint.create();
 					this._endpointTo = EdgeEndpoint.create();
+
+					this._endpoint_propertyChangeListener = function(event) {
+						that._updateLinePosition();
+						that.requestRender();
+					};
+
+					this._endpointFrom.addEventListener('propertyChange',
+							this._endpoint_propertyChangeListener);
+					this._endpointTo.addEventListener('propertyChange',
+							this._endpoint_propertyChangeListener);
+
+					this._updateLinePosition();
 				},
 				setRect: function() {
 					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
 				},
-				_render: function(view, line, reason) {
-					if (!reason.isInitialRender && !reason.isRenderRequested
-							&& !reason.isPositionChanged) {
-						return;
-					}
 
+				_updateLinePosition: function() {
 					var fr = this._from.getRect();
 					var tr = this._to.getRect();
 
 					var fwPos = this._from.getWorldGlobalPosition();
 					var twPos = this._to.getWorldGlobalPosition();
-
-					line.className.baseVal = this.getClassSet().toArray().join(' ');
 
 					var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
 					var toHAlign = this.endpointTo.junctionHorizontalAlign;
@@ -2836,21 +2851,10 @@
 						break;
 					}
 
-					var rw = x2 - x1;
-					if (rw < 0) {
-						rw *= -1;
-					}
-					var rh = y2 - y1;
-					if (rh < 0) {
-						rh *= -1;
-					}
-
-					setSvgAttributes(line, {
-						x1: x1,
-						y1: y1,
-						x2: x2,
-						y2: y2
-					});
+					this._x1 = x1;
+					this._x2 = x2;
+					this._y1 = y1;
+					this._y2 = y2;
 
 					//EdgeDUのサイズをアップデート
 					var left = x1 <= x2 ? x1 : x2;
@@ -2861,20 +2865,39 @@
 					this._height = Math.abs(y2 - y1);
 				},
 
+				_render: function(view, line, reason) {
+					if (!reason.isInitialRender && !reason.isRenderRequested
+							&& !reason.isPositionChanged) {
+						return;
+					}
+
+					line.className.baseVal = this.getClassSet().toArray().join(' ');
+
+					setSvgAttributes(line, {
+						x1: this._x1,
+						y1: this._y1,
+						x2: this._x2,
+						y2: this._y2
+					});
+				},
+
 				hasClass: function(cssClass) {
 					return this._classSet.has(cssClass);
 				},
 
 				addClass: function(cssClass) {
 					this._classSet.add(cssClass);
+					this.requestRender();
 				},
 
 				removeClass: function(cssClass) {
 					this._classSet.remove(cssClass);
+					this.requestRender();
 				},
 
 				clearClass: function() {
 					this._classSet.clear();
+					this.requestRender();
 				},
 
 				getClassSet: function() {
@@ -2888,6 +2911,7 @@
 						return;
 					}
 
+					this._updateLinePosition();
 					this._setDirty(REASON_RENDER_REQUEST);
 				},
 
@@ -2929,20 +2953,93 @@
 		return desc;
 	});
 
-	var EdgeEndpoint = RootClass.extend(function(super_) {
+	var EdgeEndpoint = EventDispatcher.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
+			field: {
+				_junctionVerticalAlign: null,
+				_junctionHorizontalAlign: null,
+				_junctionOffsetX: null,
+				_junctionOffsetY: null
+			},
+
 			accessor: {
 				//top, middle, bottom, offset, nearest, null
-				junctionVerticalAlign: null,
+				junctionVerticalAlign: {
+					get: function() {
+						return this._junctionVerticalAlign;
+					},
+					set: function(value) {
+						var oldValue = this._junctionVerticalAlign;
+
+						if (value === oldValue) {
+							return;
+						}
+
+						this._junctionVerticalAlign = value;
+
+						var ev = PropertyChangeEvent.create('junctionVerticalAlign', oldValue,
+								value);
+						this.dispatchEvent(ev);
+					}
+				},
 
 				//left, center, right, offset, nearest, null
-				junctionHorizontalAlign: null,
+				junctionHorizontalAlign: {
+					get: function() {
+						return this._junctionHorizontalAlign;
+					},
+					set: function(value) {
+						var oldValue = this._junctionHorizontalAlign;
+
+						if (value === oldValue) {
+							return;
+						}
+
+						this._junctionHorizontalAlign = value;
+
+						var ev = PropertyChangeEvent.create('junctionHorizontalAlign', oldValue,
+								value);
+						this.dispatchEvent(ev);
+					}
+				},
 
 				//Alignがoffsetの場合のみ有効
-				junctionOffsetX: null,
-				junctionOffsetY: null
+				junctionOffsetX: {
+					get: function() {
+						return this._junctionOffsetX;
+					},
+					set: function(value) {
+						var oldValue = this._junctionOffsetX;
+
+						if (value === oldValue) {
+							return;
+						}
+
+						this._junctionOffsetX = value;
+
+						var ev = PropertyChangeEvent.create('junctionOffsetX', oldValue, value);
+						this.dispatchEvent(ev);
+					}
+				},
+				junctionOffsetY: {
+					get: function() {
+						return this._junctionOffsetY;
+					},
+					set: function(value) {
+						var oldValue = this._junctionOffsetY;
+
+						if (value === oldValue) {
+							return;
+						}
+
+						this._junctionOffsetY = value;
+
+						var ev = PropertyChangeEvent.create('junctionOffsetY', oldValue, value);
+						this.dispatchEvent(ev);
+					}
+				}
 			},
 
 			method: {
