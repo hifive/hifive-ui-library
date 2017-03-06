@@ -7253,6 +7253,9 @@
 
 	var SCROLL_BAR_ARROW_DIFF = 100;
 
+	/* ダブルクリックとみなす最大の待ち時間 */
+	var DBLCLICK_WAIT = 280; // ms
+
 	var stageController = {
 		/**
 		 * @memberOf h5.ui.components.stage.StageController
@@ -7452,6 +7455,8 @@
 			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
 
+			this._isDblclickEmulationEnabled = true;
+
 			this._scaleRangeX = {
 				min: null,
 				max: null
@@ -7582,6 +7587,10 @@
 			return ret;
 		},
 
+		_isDblclickEmulationEnabled: null,
+
+		_dblclickWaitTimer: null,
+
 		_processClick: function(event, triggerEventName) {
 			if (this._isDraggingStarted) {
 				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
@@ -7629,11 +7638,46 @@
 			};
 			var bizEvent = $.event.fix(event.originalEvent);
 			bizEvent.type = triggerEventName;
-			bizEvent.target = event.target; //null; //du._domRoot; //TODO 仮想化対応
-			bizEvent.currentTarget = event.target; // du._domRoot;
+			bizEvent.target = event.target;
+			bizEvent.currentTarget = event.target;
 
-			//TODO クリックされたDUの実DOMからイベントをあげるのが元々の仕様。ただし、分割が入ったのでDOM依存はよくないかも？
 			$(event.target).trigger(bizEvent, evArg);
+
+			if (this._isDblclickEmulationEnabled) {
+				if (this._dblclickWaitTimer) {
+					//指定時間内に2回目のクリックがあった＝ダブルクリックとみなす
+					clearTimeout(this._dblclickWaitTimer);
+					this._dblclickWaitTimer = null;
+
+					var view = this._getActiveViewFromElement(event.target);
+					if (view) {
+						var duRootElement = view.getElementForDisplayUnit(du);
+
+						if (duRootElement) {
+							var duDblclickEvent = $.event.fix(event.originalEvent);
+							duDblclickEvent.type = EVENT_DU_DBLCLICK;
+							duDblclickEvent.target = duRootElement;
+							duDblclickEvent.currentTarget = duRootElement;
+
+							var evArg = {
+								stageController: this,
+								displayUnit: du
+							};
+
+							$(duRootElement).trigger(duDblclickEvent, evArg);
+						}
+					}
+				} else {
+					var that = this;
+
+					//最初のクリック＝タイマーをセットする
+					this._dblclickWaitTimer = setTimeout(function() {
+						//タイムアウトした＝指定時間内に2度目のクリックがなかったので
+						//一度タイマーID（フラグ）を解除する
+						that._dblclickWaitTimer = null;
+					}, DBLCLICK_WAIT);
+				}
+			}
 
 			if (!du.isSelectable || bizEvent.isDefaultPrevented()) {
 				//DUがselectableでない場合は選択処理はしない。
@@ -8580,11 +8624,19 @@
 			this._disposeDragSession();
 		},
 
+		_dblclickWaitTimer: null,
+
 		'{rootElement} click': function(context) {
 			this._processClick(context.event, EVENT_DU_CLICK);
 		},
 
 		'{rootElement} dblclick': function(context) {
+			if (this._isDblclickEmulationEnabled) {
+				//ダブルクリックのエミュレーションが有効な場合は
+				//ネイティブのdblclickイベントは無視する
+				//（二重にイベントが発生する、挙動が一貫しないなどの問題を避けるため）
+				return;
+			}
 			this._processClick(context.event, EVENT_DU_DBLCLICK);
 		},
 
