@@ -5466,7 +5466,8 @@
 									var rLeft = effectiveRenderRect.x;
 									var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
 									var rTop = effectiveRenderRect.y;
-									var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
+									var rBottom = effectiveRenderRect.y
+											+ effectiveRenderRect.height;
 
 									//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
 									//DUの左右の辺がともに描画領域の左または右にある、もしくは
