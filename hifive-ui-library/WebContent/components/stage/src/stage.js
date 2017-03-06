@@ -25,6 +25,11 @@
 		this.name = groupName;
 	}
 
+	function contains(element, containerElement) {
+		return containerElement.compareDocumentPosition(element)
+				& Node.DOCUMENT_POSITION_CONTAINED_BY;
+	}
+
 	var isKeyboardEventCtorSupported = typeof KeyboardEvent === 'function';
 
 	var focusController = {
@@ -118,8 +123,6 @@
 
 			$(eventSource).trigger(pseudoEvent);
 
-			return;
-
 			//IE11, Chrome51
 			//Chrome, Safari(WebKit系ブラウザ)は、initKeyboardEvent()にバグがあり
 			//keyやkeyCodeなどが正しくセットされず、実質使用できない。
@@ -139,12 +142,20 @@
 			this._lastClickElement = element;
 
 			var focusRoot = this._focusRootElement ? this._focusRootElement : this.rootElement;
-			if (element === focusRoot
-					|| (focusRoot.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+			if (element === focusRoot || contains(element, focusRoot)) {
 				//ルート要素またはその子要素ならフォーカスを持つ
 				this._hasFocus = true;
 			} else {
 				this._hasFocus = false;
+			}
+
+			var activeElement = document.activeElement;
+
+			if (this._hasFocus && !contains(activeElement, focusRoot)) {
+				//自分が疑似フォーカスを獲得し、かつ
+				//直前のactiveElementが自分の範囲外の要素だったら
+				//その要素のフォーカスを外す
+				activeElement.blur();
 			}
 
 			var $t = $(element);
@@ -247,6 +258,11 @@
 	});
 
 
+	function containsElement(element, containerElement) {
+		return containerElement.compareDocumentPosition(element)
+				& Node.DOCUMENT_POSITION_CONTAINED_BY;
+	}
+
 	/**
 	 * 指定された範囲内の値を返す。min,maxの値は含む(value > maxの場合、返る値はmax)。<br>
 	 * min,maxにnullを指定した場合はその方向の上/下限は無視する。<br>
@@ -272,7 +288,8 @@
 	}
 
 	h5.u.obj.expose('h5.ui.components.stage.StageUtil', {
-		clamp: clamp
+		clamp: clamp,
+		containsElement: containsElement
 	});
 
 	/**
@@ -742,6 +759,13 @@
 							return false;
 						},
 
+						/**
+						 * 引数で指定された点がこのRectに含まれるかどうかを判定します。辺の上の場合も「含まれる」と判定します。
+						 *
+						 * @param x X座標
+						 * @param y Y座標
+						 * @returns {Boolean} 引数で指定された点がこのRectに含まれるかどうか
+						 */
 						containsPoint: function(x, y) {
 							if (this.x <= x && x <= (this.x + this.width) && this.y <= y
 									&& y <= (this.y + this.height)) {
@@ -823,12 +847,6 @@
 
 	function createSvgElement(name) {
 		return document.createElementNS('http://www.w3.org/2000/svg', name);
-	}
-
-	//TODO 削除予定
-	function isHifiveClass(target) {
-		return target && typeof target.getFullName === 'function'
-				&& typeof target.getParentClass === 'function';
 	}
 
 	function setSvgAttribute(element, key, value) {
