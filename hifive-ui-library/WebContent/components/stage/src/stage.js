@@ -3665,10 +3665,6 @@
 				 */
 				moveTo: function(worldX, worldY) {
 					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
-
-					//							this.x = worldX;
-					//							this.y = worldY;
-					//							this._updateTransform();
 				},
 
 				/**
@@ -4621,7 +4617,7 @@
 
 							this._initForemostSvg();
 
-							this._updateLayerScrollPosition();
+							//this._updateLayerScrollPosition();
 						},
 
 						__onSelectDUStart: function(dragSelectStartPos) {
@@ -4778,6 +4774,9 @@
 								rightLimit = this._viewport
 										.getXLengthOfDisplay(visibleRangeX.right)
 										- this._viewport.displayWidth;
+								if (rightLimit < 0) {
+									rightLimit = leftLimit != null ? leftLimit : 0;
+								}
 							}
 
 							var visibleRangeY = this.getVisibleRangeY();
@@ -4792,6 +4791,9 @@
 								bottomLimit = this._viewport
 										.getXLengthOfDisplay(visibleRangeY.bottom)
 										- this._viewport.displayHeight;
+								if (bottomLimit < 0) {
+									bottomLimit = topLimit != null ? topLimit : 0;
+								}
 							}
 
 							var actualDispX = StageUtil.clamp(dispX, leftLimit, rightLimit);
@@ -4980,6 +4982,9 @@
 								rightLimit = this._viewport
 										.getXLengthOfDisplay(visibleRangeX.right)
 										- this._viewport.displayWidth;
+								if (rightLimit < 0) {
+									rightLimit = leftLimit != null ? leftLimit : 0;
+								}
 							}
 
 							var visibleRangeY = this.getVisibleRangeY();
@@ -4994,6 +4999,9 @@
 								bottomLimit = this._viewport
 										.getXLengthOfDisplay(visibleRangeY.bottom)
 										- this._viewport.displayHeight;
+								if (bottomLimit < 0) {
+									bottomLimit = topLimit != null ? topLimit : 0;
+								}
 							}
 
 							var actualScrollPosX = StageUtil.clamp(this._viewport.displayX,
@@ -5194,8 +5202,8 @@
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 
-								var scrollX = -this._viewport.worldX;
-								var scrollY = -this._viewport.worldY;
+								var scrollX = this._viewport.worldX;
+								var scrollY = this._viewport.worldY;
 
 								switch (layer.UIDragScreenScrollDirection) {
 								case SCROLL_DIRECTION_XY:
@@ -5213,14 +5221,54 @@
 									break;
 								}
 
+								var visibleRangeX = this.getVisibleRangeX();
+
+								var leftLimit = null;
+								if (visibleRangeX.left != null) {
+									leftLimit = visibleRangeX.left;
+								}
+
+								var rightLimit = null;
+								if (visibleRangeX.right != null) {
+									rightLimit = visibleRangeX.right - this._viewport.worldWidth;
+									if (rightLimit < 0) {
+										//ビューポートの幅がVisibleRangeの右端を超えているので、
+										//左端の制限がある場合はright=leftとしてつねにleftの位置にスクロールが固定されるようにし、
+										//左端の制限がない場合はスクロール位置はゼロにする
+										rightLimit = leftLimit != null ? leftLimit : 0;
+									}
+								}
+
+								var visibleRangeY = this.getVisibleRangeY();
+
+								var topLimit = null;
+								if (visibleRangeY.top != null) {
+									topLimit = visibleRangeY.top;
+								}
+
+								var bottomLimit = null;
+								if (visibleRangeY.bottom != null) {
+									bottomLimit = visibleRangeY.bottom - this._viewport.worldHeight;
+									if (bottomLimit < 0) {
+										bottomLimit = topLimit != null ? topLimit : 0;
+									}
+								}
+
+								//レイヤーのスクロールはビューポートX,Yの逆方向
+								var actualScrollWorldX = -StageUtil.clamp(scrollX, leftLimit,
+										rightLimit);
+								var actualScrollWorldY = -StageUtil.clamp(scrollY, topLimit,
+										bottomLimit);
+
 								var dom = this._layerElementMap.get(layer);
-								this._updateTransform(dom, scrollX, scrollY);
+								this._updateTransform(dom, actualScrollWorldX, actualScrollWorldY);
 							}
 
 							this._updateRender();
 
 							//フォアレイヤーのスクロール位置も移動させる
-							this._updateTransform(this._foremostSvg, scrollX, scrollY);
+							this._updateTransform(this._foremostSvg, actualScrollWorldX,
+									actualScrollWorldY);
 						},
 
 						/**
@@ -5500,6 +5548,8 @@
 						_setWidth: function(width) {
 							this._viewport.setDisplaySize(width, this._viewport.displayHeight);
 
+							this._scrollTo(this._viewport.displayX, this._viewport.displayY);
+
 							if (this._rootElement) {
 								$(this._rootElement).css({
 									width: width
@@ -5514,6 +5564,8 @@
 
 						_setHeight: function(height) {
 							this._viewport.setDisplaySize(this._viewport.displayWidth, height);
+
+							this._scrollTo(this._viewport.displayX, this._viewport.displayY);
 
 							if (this._rootElement) {
 								$(this._rootElement).css({
@@ -6880,9 +6932,8 @@
 												if (column.type === GRID_TYPE_SEPARATOR) {
 													var sepLeft = totalX;
 													//セパレータがビューの範囲を超えないようにする
-													if (totalX > that._height
-															- column._desiredWidth) {
-														sepLeft = that._height
+													if (totalX > that._width - column._desiredWidth) {
+														sepLeft = that._width
 																- column._desiredWidth;
 														if (sepLeft < 0) {
 															//ただしビューの幅がセパレータの高さよりも小さい場合はビューの上端＝セパレータの上端とする
@@ -6891,7 +6942,7 @@
 													}
 
 													var $separator = $(column.getElement());
-													$separator.css('top', sepLeft);
+													$separator.css('left', sepLeft);
 													totalX += column._desiredWidth;
 													return;
 												}
