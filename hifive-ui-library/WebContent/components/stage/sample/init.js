@@ -277,6 +277,10 @@
 
 			var edge = this._createEdge(this._units[1], this._units[3]);
 			this._edges.push(edge);
+			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			var edge = this._createEdge(this._units[3], this._units[6]);
+			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
 
@@ -284,7 +288,7 @@
 
 			//var worldPos = this._stageController.coordinateConverter.toWorldPosition(1, 1);
 
-			//this._stageController.setScrollRangeY(-200, 200);
+			//this._stageController.setvisibleRangeY(-200, 200);
 		},
 
 		'{rootElement} duClick': function(context) {
@@ -334,23 +338,23 @@
 		},
 
 		'{rootElement} duKeyDown': function(context) {
-		//最新のWeb仕様(DOM4, Dom Level3 Events)では、
-		//キーボードイベントでは key か code を使用すべきとされている。IE9,FF23, Ch51以降で対応。
-		//charCode, keyCode, whichはDeprecatedなので使用しない。
-		//なお、keyboardEvent.key において矢印キーの値は
-		//IE,FF36-は"Right"、FF37+,Chは"ArrowRight"のような文字列になるので注意。
-		//詳細：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
-		//			this.log.debug('duKeyDown tagName={0}, key={1}', context.event.target.tagName,
-		//					context.event.key);
+			//最新のWeb仕様(DOM4, Dom Level3 Events)では、
+			//キーボードイベントでは key か code を使用すべきとされている。IE9,FF23, Ch51以降で対応。
+			//charCode, keyCode, whichはDeprecatedなので使用しない。
+			//なお、keyboardEvent.key において矢印キーの値は
+			//IE,FF36-は"Right"、FF37+,Chは"ArrowRight"のような文字列になるので注意。
+			//詳細：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+			this.log.debug('duKeyDown tagName={0}, key={1}', context.event.target.tagName,
+					context.event.key);
 		},
 
 		'{rootElement} duKeyPress': function(context) {
-		//			this.log.debug('duKeyPress tagName={0}, key={1}', context.event.target.tagName,
-		//					context.event.key);
+			this.log.debug('duKeyPress tagName={0}, key={1}', context.event.target.tagName,
+					context.event.key);
 		},
 
 		'{rootElement} duKeyUp': function(context) {
-		//			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
+			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
 		},
 
 		'{rootElement} stageDragStart': function(context) {
@@ -441,32 +445,53 @@
 			//			{}
 			//			];
 
-			//			hDef = [{
-			//				"height": 369,
-			//				"scrollRangeY": {
-			//					"min": -1000,
-			//					"max": 2000
-			//				},
-			//				"scrollBarMode": "always"
-			//			}, {
-			//				"type": "separator",
-			//				"height": 4
-			//			}, {
-			//				//"height": 300, // 末尾のcontentsのheightは省略できるんでしたっけ？
-			//				"scrollRangeY": {
-			//					"min": -1000,
-			//					"max": 2000
-			//				},
-			//				scrollBarMode: 'always'
-			//			}];
+			hDef = [{
+				"height": 369,
+				"visibleRangeY": {
+					"min": -1000,
+					"max": 2000
+				},
+				"scrollBarMode": "always"
+			}, {
+				"type": "separator",
+				"height": 4
+			}, {
+				//"height": 300, // 末尾のcontentsのheightは省略可能
+				"visibleRangeY": {
+					"min": -1000,
+					"max": 2000
+				},
+				scrollBarMode: 'always'
+			}];
 
-			var vDef = null;
+			var vDef = [{
+				scrollBarMode: 'always'
+			}];
+
+			//2列
+			//			vDef = [{
+			//				width: 300,
+			//				scrollBarMode: 'always'
+			//				visibleRangeX: {
+			//					min: -1000,
+			//					max: 1000
+			//				}
+			//			}, {
+			//				type: 'separator',
+			//				width: 5
+			//			}, {
+			//				scrollBarMode: 'always'
+			//				visibleRangeX: {
+			//					min: -1000,
+			//					max: 1000
+			//				}
+			//			}];
 
 			//3列
 			//			vDef = [{
 			//				width: 300,
 			//				scrollBarMode: 'always',
-			//				scrollRangeX: {
+			//				visibleRangeX: {
 			//					min: -1000,
 			//					max: 1000
 			//				}
@@ -476,7 +501,7 @@
 			//			}, {
 			//				width: 300,
 			//				scrollBarMode: 'always',
-			//				scrollRangeX: {
+			//				visibleRangeX: {
 			//					min: -1000,
 			//					max: 1000
 			//				}
@@ -485,7 +510,7 @@
 			//				width: 5
 			//			}, {
 			//				scrollBarMode: 'always',
-			//				scrollRangeX: {
+			//				visibleRangeX: {
 			//					min: -1000,
 			//					max: 1000
 			//				}
@@ -494,12 +519,12 @@
 			this._stageController.splitView(hDef, vDef);
 		},
 
-		'input[name="scrollRangeY"] click': function() {
-			this._stageController._getActiveView().setScrollRangeY(-1000, 1000);
+		'input[name="visibleRangeY"] click': function() {
+			this._stageController._getActiveView().setVisibleRangeY(0, 500);
 		},
 
-		'input[name="scrollRangeX"] click': function() {
-			this._stageController._getActiveView().setScrollRangeX(-2000, 2000);
+		'input[name="visibleRangeX"] click': function() {
+			this._stageController._getActiveView().setVisibleRangeX(-1000, 200000);
 		},
 
 		'input[name="clearSplitView"] click': function(context) {
@@ -509,11 +534,14 @@
 		'input[name="removeDU"] click': function(context) {
 
 		}
-
 	};
+
 
 	$(function() {
 		h5.core.controller('#appRoot', controller);
+
+		var stage = h5.cls.manager.getNamespaceObject('h5.ui.components.stage');
+		console.log(stage);
 
 		//TOOD classとして作ったコントローラはチェックでconstructorプロパティが重複すると言われる
 		//		var dscClass = h5.cls.manager.getClass('h5.ui.components.stage.DragSessionController');
