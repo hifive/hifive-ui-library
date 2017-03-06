@@ -7891,12 +7891,9 @@
 				this._startGridSeparatorDrag(context);
 			}
 
-			var targetDU = this._getIncludingDisplayUnit(context.event.target);
-			if (targetDU) {
-				//DUのドラッグの場合、Firefoxではmousedownの場合textなどでドラッグすると
-				//文字列選択になってしまうのでキャンセルする
-				context.event.preventDefault();
-			}
+			//DUのドラッグの場合、IE、Firefoxではmousedownの場合textなどでドラッグすると
+			//文字列選択になってしまうのでキャンセルする
+			context.event.preventDefault();
 
 			//TODO 初回のmousemoveのタイミングで
 			//動作対象を決めると、DUの端の方にカーソルがあったときに
@@ -7907,7 +7904,6 @@
 			//mousedownのタイミングで決定しつつ、
 			//実際にdragStartとみなす（イベントを発生させる）のは
 			//moveのタイミングにするのがよい。
-			//event.preventDefault();
 		},
 
 		_processDragMove: function(context) {
