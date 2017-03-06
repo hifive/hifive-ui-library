@@ -4834,6 +4834,31 @@
 
 							var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
+							//TODO 現在はこの場所でイベントを出しているが、
+							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
+							//描画更新後にイベントをあげるようにする可能性がある
+//							var evArg = {
+//								view: this,
+//
+//								scrollPosition: {
+//									oldValue: oldPos,
+//									newValue: newPos,
+//									isChanged: true
+//								},
+//								scale: {
+//									oldValue: {
+//										x: this._viewport.scaleX,
+//										y: this._viewport.scaleY
+//									},
+//									newValue: {
+//										x: this._viewport.scaleX,
+//										y: this._viewport.scaleY
+//									},
+//									isChanged: false
+//								}
+//							};
+//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
+
 							var scrPosChange = {
 								oldValue: oldPos,
 								newValue: newPos,
@@ -4854,32 +4879,6 @@
 
 							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
 							this.dispatchEvent(event);
-
-							//TODO 現在はこの場所でイベントを出しているが、
-							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
-							//描画更新後にイベントをあげるようにする
-							var evArg = {
-								view: this,
-
-								scrollPosition: {
-									oldValue: oldPos,
-									newValue: newPos,
-									isChanged: true
-								},
-								scale: {
-									oldValue: {
-										x: this._viewport.scaleX,
-										y: this._viewport.scaleY
-									},
-									newValue: {
-										x: this._viewport.scaleX,
-										y: this._viewport.scaleY
-									},
-									isChanged: false
-								}
-							};
-
-							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 
 							return actualDiff;
 						},
@@ -5066,27 +5065,27 @@
 							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
 							//描画更新後にイベントをあげるようにする
 							//TODO StageView側からイベントをあげて、それをさらにStageControllerであげる
-							var evArg = {
-								view: this,
-
-								scrollPosition: {
-									oldValue: oldScrollPos,
-									newValue: newScrollPos,
-									isChanged: isScrollPoisitionChanged
-								},
-								scale: {
-									oldValue: {
-										x: oldScaleX,
-										y: oldScaleY
-									},
-									newValue: {
-										x: actualScaleX,
-										y: actualScaleY
-									},
-									isChanged: true
-								}
-							};
-							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
+							//							var evArg = {
+							//								view: this,
+							//
+							//								scrollPosition: {
+							//									oldValue: oldScrollPos,
+							//									newValue: newScrollPos,
+							//									isChanged: isScrollPoisitionChanged
+							//								},
+							//								scale: {
+							//									oldValue: {
+							//										x: oldScaleX,
+							//										y: oldScaleY
+							//									},
+							//									newValue: {
+							//										x: actualScaleX,
+							//										y: actualScaleY
+							//									},
+							//									isChanged: true
+							//								}
+							//							};
+							//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 						},
 
 						getScaleRangeX: function() {
@@ -7192,12 +7191,15 @@
 									//scaleCenterはPage座標で渡す必要がある
 									v.setScale(newScaleX, newScaleY, scaleCenterX, scaleCenterY);
 								});
+
+								//同じ行・列についてスクロール位置を合わせる
+								this._applyScrollPositionToOthers(srcView, newScrollPos);
 							}
 
-							//同じ行・列についてスクロール位置を合わせる
-							this._applyScrollPositionToOthers(srcView, newScrollPos);
-
 							this._isSightChangePropagationSuppressed = false;
+
+							//このイベントは、全てのビューのsightChangeが完了した後に一度だけ発生させる
+							this._stage.trigger(EVENT_VIEW_UNIFIED_SIGHT_CHANGE);
 						},
 
 						__onSelectDUStart: function(dragStartPos) {
@@ -7330,6 +7332,8 @@
 	var BOUNDARY_SCROLL_INCREMENT = 10;
 
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
+
+	var EVENT_VIEW_UNIFIED_SIGHT_CHANGE = 'stageViewUnifiedSightChange';
 
 	var EVENT_DU_CLICK = 'duClick';
 	var EVENT_DU_DBLCLICK = 'duDblclick';
