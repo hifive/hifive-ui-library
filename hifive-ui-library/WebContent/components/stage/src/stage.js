@@ -5309,14 +5309,13 @@
 										continue;
 									} else if (Edge.isClassOf(du)) {
 										//エッジの場合、表示領域の各辺と線分の交差判定を行い、
-										//いずれかの辺と交差していたら描画する
-										//いずれの辺とも交差していなければ描画しない
+										//いずれかの辺と交差しているか、
+										//表示領域にEdgeが完全に内包されている場合のみ描画する
 
 										var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
 
 										if (isRenderRectCrossing(du)
-												|| renderRect.contains(edgeRect)
-												|| edgeRect.contains(renderRect)) {
+												|| renderRect.contains(edgeRect)) {
 											du._setSystemVisible(true, element);
 										} else {
 											du._setSystemVisible(false, element);
@@ -5328,28 +5327,30 @@
 
 									var duGlobalPos = du.getWorldGlobalPosition();
 
-									//描画領域にDUの4つ角のどこかがかかっていれば表示
-									if (renderRect.containsPoint(duGlobalPos.x, duGlobalPos.y)
-											|| renderRect.containsPoint(duGlobalPos.x + du.width,
-													duGlobalPos.y)
-											|| renderRect.containsPoint(duGlobalPos.x,
-													duGlobalPos.y + du.height)
-											|| renderRect.containsPoint(duGlobalPos.x + du.width,
-													duGlobalPos.y + du.height)) {
+									var duLeft = duGlobalPos.x;
+									var duRight = duGlobalPos.x + du.width;
+									var duTop = duGlobalPos.y;
+									var duBottom = duGlobalPos.y + du.height;
+
+									var rLeft = renderRect.x;
+									var rRight = renderRect.x + renderRect.width;
+									var rTop = renderRect.y;
+									var rBottom = renderRect.y + renderRect.height;
+
+									//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
+									//DUの左右の辺がともに描画領域の左または右にある、もしくは
+									//DUの上下の辺がともに描画領域の上または下にあること。
+
+									//right, bottomは必ずleft, topより大きいと保証されているので
+									//一部の条件は省略できる
+									if ((duLeft < rLeft && duRight < rLeft) || (duLeft > rRight)
+											|| (duTop < rTop && duBottom < rTop)
+											|| (duTop > rBottom)) {
+										du._setSystemVisible(false, element);
+									} else {
 										du._setSystemVisible(true, element);
-										continue;
 									}
 
-									//描画領域全体を覆うほど大きなDUの場合も表示
-									var duRect = Rect.create(duGlobalPos.x, duGlobalPos.y,
-											du.width, du.height);
-									if (duRect.contains(renderRect)) {
-										du._setSystemVisible(true, element);
-										continue;
-									}
-
-									//見えないので非表示
-									du._setSystemVisible(false, element);
 								}
 							}
 						},
