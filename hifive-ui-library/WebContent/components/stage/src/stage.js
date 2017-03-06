@@ -2684,6 +2684,30 @@
 					get: function() {
 						return this._endpointTo;
 					}
+				},
+
+				x1: {
+					get: function() {
+						return this._x1;
+					}
+				},
+
+				x2: {
+					get: function() {
+						return this._x2;
+					}
+				},
+
+				y1: {
+					get: function() {
+						return this._y1;
+					}
+				},
+
+				y2: {
+					get: function() {
+						return this._y2;
+					}
 				}
 			},
 
@@ -5144,12 +5168,50 @@
 							this._updateTransform(this._foremostSvg, scrollX, scrollY);
 						},
 
+						/**
+						 * 線分1-2 と 線分3-4 が交差しているかどうかを判定します。端点で交差する場合もtrueを返します。
+						 *
+						 * @param x1
+						 * @param y1
+						 * @param x2
+						 * @param y2
+						 * @param x3
+						 * @param y3
+						 * @param x4
+						 * @param y4
+						 * @returns {Boolean}
+						 */
+						_isLineCrossing: function(x1, y1, x2, y2, x3, y3, x4, y4) {
+							//参考：http://www5d.biglobe.ne.jp/~tomoya03/shtml/algorithm/Intersection.htm
+							var ta = (x3 - x4) * (y1 - y3) + (y3 - y4) * (x3 - x1);
+							var tb = (x3 - x4) * (y2 - y3) + (y3 - y4) * (x3 - x2);
+							var tc = (x1 - x2) * (y3 - y1) + (y1 - y2) * (x1 - x3);
+							var td = (x1 - x2) * (y4 - y1) + (y1 - y2) * (x1 - x4);
+
+							//端点を含まない場合はイコールを外す
+							return tc * td <= 0 && ta * tb <= 0;
+						},
+
 						_updateRender: function(rootDU) {
 							var renderRect = this._viewport.getWorldRect();
 							renderRect.width *= 1.0; //どの範囲まで描画範囲とみなすか
 							renderRect.height *= 1.0;
 							renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
 							renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+
+							//エッジの交差判定で使用する、描画領域の4つ角の座標
+							//左上
+							var leftTopX = renderRect.x;
+							var leftTopY = renderRect.y;
+							//右上
+							var rightTopX = renderRect.x + renderRect.width;
+							var rightTopY = renderRect.y;
+							//左下
+							var leftBottomX = renderRect.x;
+							var leftBottomY = renderRect.y + renderRect.height;
+							//右下
+							var rightBottomX = renderRect.x + renderRect.width;
+							var rightBottomY = renderRect.y + renderRect.height;
 
 							var that = this;
 
@@ -5159,6 +5221,32 @@
 								this._stage._layers.forEach(function(layer) {
 									updateSystemVisible(layer, false);
 								});
+							}
+
+							function isRenderRectCrossing(edgeDU) {
+								var ex1 = edgeDU.x1;
+								var ey1 = edgeDU.y1;
+								var ex2 = edgeDU.x2;
+								var ey2 = edgeDU.y2;
+
+								if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
+										rightTopX, rightTopY)) {
+									//上辺とエッジが交差している
+									return true;
+								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX,
+										leftTopY, leftBottomX, leftBottomY)) {
+									//左辺と交差している
+									return true;
+								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftBottomX,
+										leftBottomY, rightBottomX, rightBottomY)) {
+									//下辺と交差している
+									return true;
+								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, rightBottomX,
+										rightBottomY, rightTopX, rightTopY)) {
+									//右辺と交差している
+									return true;
+								}
+								return false;
 							}
 
 							function updateSystemVisible(rootDU, includesRoot) {
@@ -5181,7 +5269,25 @@
 									if (DisplayUnitContainer.isClassOf(du)) {
 										//DUコンテナは現状常に表示とする
 										du._setSystemVisible(true, element);
+										continue;
+									} else if (Edge.isClassOf(du)) {
+										//エッジの場合、表示領域の各辺と線分の交差判定を行い、
+										//いずれかの辺と交差していたら描画する
+										//いずれの辺とも交差していなければ描画しない
+
+										var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
+
+										if (isRenderRectCrossing(du)
+												|| renderRect.contains(edgeRect)
+												|| edgeRect.contains(renderRect)) {
+											du._setSystemVisible(true, element);
+										} else {
+											du._setSystemVisible(false, element);
+										}
+										continue;
 									}
+
+									/* ---- 以下、通常のDUの場合 ---- */
 
 									var duGlobalPos = du.getWorldGlobalPosition();
 
