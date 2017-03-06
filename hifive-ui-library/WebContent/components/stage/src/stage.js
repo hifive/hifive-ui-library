@@ -4837,27 +4837,27 @@
 							//TODO 現在はこの場所でイベントを出しているが、
 							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
 							//描画更新後にイベントをあげるようにする可能性がある
-//							var evArg = {
-//								view: this,
-//
-//								scrollPosition: {
-//									oldValue: oldPos,
-//									newValue: newPos,
-//									isChanged: true
-//								},
-//								scale: {
-//									oldValue: {
-//										x: this._viewport.scaleX,
-//										y: this._viewport.scaleY
-//									},
-//									newValue: {
-//										x: this._viewport.scaleX,
-//										y: this._viewport.scaleY
-//									},
-//									isChanged: false
-//								}
-//							};
-//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
+							//							var evArg = {
+							//								view: this,
+							//
+							//								scrollPosition: {
+							//									oldValue: oldPos,
+							//									newValue: newPos,
+							//									isChanged: true
+							//								},
+							//								scale: {
+							//									oldValue: {
+							//										x: this._viewport.scaleX,
+							//										y: this._viewport.scaleY
+							//									},
+							//									newValue: {
+							//										x: this._viewport.scaleX,
+							//										y: this._viewport.scaleY
+							//									},
+							//									isChanged: false
+							//								}
+							//							};
+							//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 
 							var scrPosChange = {
 								oldValue: oldPos,
@@ -6367,7 +6367,9 @@
 
 						_draggingTargetDUVisibleMap: null,
 
-						_isSightChangePropagationSuppressed: null
+						_isSightChangePropagationSuppressed: null,
+
+						_sightChangeEvents: null
 					},
 
 					accessor: {
@@ -7143,6 +7145,7 @@
 							if (this._isSightChangePropagationSuppressed) {
 								//あるビューのsightChangeに伴って他のビューを変更している最中の場合、
 								//それによる連鎖的なsightChangeには反応しないようにする
+								this._sightChangeEvents.push(event);
 								return;
 							}
 
@@ -7150,6 +7153,8 @@
 							var newScrollPos = event.scrollPosition.newValue;
 
 							this._isSightChangePropagationSuppressed = true;
+
+							this._sightChangeEvents = [event];
 
 							if (!event.scale.isChanged) {
 								//スケールが変わっていない場合は
@@ -7198,8 +7203,24 @@
 
 							this._isSightChangePropagationSuppressed = false;
 
+							//最後に、変更が起きたすべてのビューの変更をまとめて一つのイベントとして出す
+							var unifiedSightChangeEvArg = {
+								changes: []
+							};
+							this._sightChangeEvents.forEach(function(ev) {
+								var e = {
+									view: ev.target,
+									scrollPosition: ev.scrollPosition,
+									scale: ev.scale
+								};
+								unifiedSightChangeEvArg.changes.push(e);
+							});
+
 							//このイベントは、全てのビューのsightChangeが完了した後に一度だけ発生させる
-							this._stage.trigger(EVENT_VIEW_UNIFIED_SIGHT_CHANGE);
+							this._stage.trigger(EVENT_VIEW_UNIFIED_SIGHT_CHANGE,
+									unifiedSightChangeEvArg);
+
+							this._sightChangeEvents = null;
 						},
 
 						__onSelectDUStart: function(dragStartPos) {
