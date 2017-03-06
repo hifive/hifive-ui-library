@@ -7526,8 +7526,6 @@
 			$(this.rootElement).css({
 				position: 'absolute'
 			});
-
-			this.refresh(true);
 		},
 
 		'{this._selectionLogic} selectionChange': function(context) {
@@ -8502,32 +8500,6 @@
 			}
 		},
 
-		_updateRootSize: function(width, height) {
-			//TODO 仮実装。Viewの分割に対応。
-			//			if (this._t_splitHeight != null) {
-			//				height = this._t_splitHeight;
-			//			}
-			//			if (this._t_splitWidth != null) {
-			//				width = this._t_splitWidth;
-			//			}
-
-			var w = width !== undefined ? width : $(this.rootElement).width();
-			var h = height !== undefined ? height : $(this.rootElement).height();
-
-			//一番下・右のビューに対して差分を与える
-
-			//			var views = this._stageViewCollection.getViewAll();
-			//			var len = views.length;
-			//			for (var i = 0; i < len; i++) {
-			//				var view = views[i];
-			//
-			//				view.width = w;
-			//				view.height = h;
-			//				//TODO viewportの値はStageView側で更新すべき
-			//				view._viewport.setDisplaySize(w, h);
-			//			}
-		},
-
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
 
@@ -8543,8 +8515,6 @@
 
 			//初期状態では分割のない表示を行う
 			this._resetGridView(null, null);
-
-			this._updateRootSize();
 		},
 
 		addDisplayUnit: function(displayUnit) {
@@ -8658,10 +8628,6 @@
 
 		setScaleRangeY: function(min, max) {
 			this._getActiveView().setScaleRangeY(min, max);
-		},
-
-		refresh: function(immediate) {
-			this._updateRootSize();
 		},
 
 		getScrollPosition: function() {
@@ -8940,8 +8906,6 @@
 
 			var evArg = this._createViewStructureChangeEventArg();
 			this.trigger(EVENT_VIEW_STRUCTURE_CHANGE, evArg);
-
-			this.refresh(true);
 		},
 
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
