@@ -2014,6 +2014,8 @@
 
 						_isSystemVisible: null,
 
+						_isForceHidden: null,
+
 						_belongingLayer: null,
 
 						/**
@@ -2184,6 +2186,8 @@
 							this._isVisible = true;
 
 							this._isSystemVisible = true;
+
+							this._isForceHidden = false;
 
 							this._groupTag = SimpleSet.create();
 
@@ -2380,7 +2384,9 @@
 						},
 
 						_updateActualDisplayStyle: function(element) {
-							var desiredVisible = this._isVisible && this._isSystemVisible;
+							//forceHiddenがtrueの場合は必ずdipslay:noneにする
+							var desiredVisible = this._isForceHidden ? false : this._isVisible
+									&& this._isSystemVisible;
 
 							var isElementDisplayVisible = window.getComputedStyle(element, '').display !== 'none';
 
@@ -4708,7 +4714,6 @@
 
 								//強制的に元のDUをisVisible = falseにするため
 								//元のisVisibleを覚えておく
-								//TODO isVisibleを内部的なものにした方が良い
 								that._dragTargetDUInfoMap.set(du, element);
 
 								var gpos = du.getWorldGlobalPosition();
@@ -4724,23 +4729,33 @@
 								that._foremostSvgGroup.appendChild(element);
 
 								//レイヤーに存在する元々のDUは非表示にする
-								du._setSystemVisible(false);
+								var originalDOM = that._duidElementMap.get(du.id);
+								if (originalDOM) {
+									du._updateActualDisplayStyle(originalDOM);
+								}
 							});
 						},
 
 						__onDragDUMove: function(dragSession) {
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
 								var gpos = du.getWorldGlobalPosition();
+								//TODO rAFで遅延させる
 								SvgUtil.setAttributes(element, {
 									x: gpos.x,
 									y: gpos.y
 								});
 							});
+
+							this._update();
 						},
 
 						__onDragDUDrop: function(dragSession) {
+							var that = this;
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
-								du._setSystemVisible(true);
+								var originalDOM = that._duidElementMap.get(du.id);
+								if (originalDOM) {
+									du._updateActualDisplayStyle(originalDOM);
+								}
 							});
 
 							this._dragTargetDUInfoMap = null;
@@ -7231,17 +7246,9 @@
 								targetDUs = [targetDUs];
 							}
 
-							this._draggingTargetDUVisibleMap = new Map();
-
-							var that = this;
 							targetDUs.forEach(function(du) {
-								//強制的に元のDUをisVisible = falseにするため
-								//元のisVisibleを覚えておく
-								//TODO isVisibleを内部的なものにした方が良い
-								that._draggingTargetDUVisibleMap.set(du, du.isVisible);
-
-								//レイヤーに存在する元々のDUは非表示にする
-								du.isVisible = false;
+								//強制的に元のDUを非表示にする
+								du._isForceHidden = true;
 							});
 
 							//各ビューのドラッグスタート処理を呼ぶ
@@ -7257,13 +7264,18 @@
 						},
 
 						__onDragDUDrop: function(dragSession) {
-							this.getViewAll().forEach(function(v) {
-								v.__onDragDUDrop(dragSession);
+							var targetDUs = dragSession.getTarget();
+							if (!Array.isArray(targetDUs)) {
+								targetDUs = [targetDUs];
+							}
+
+							targetDUs.forEach(function(du) {
+								//レイヤーに元々属するDUを強制的に非表示にしていたのを解除
+								du._isForceHidden = false;
 							});
 
-							//DUの元のVisibleの状態を復元
-							this._draggingTargetDUVisibleMap.forEach(function(isVisible, du) {
-								du.isVisible = isVisible;
+							this.getViewAll().forEach(function(v) {
+								v.__onDragDUDrop(dragSession);
 							});
 						}
 					}
@@ -7600,6 +7612,11 @@
 				min: null,
 				max: null
 			};
+
+			var that = this;
+			this._dragMoveWrapper = function() {
+				that._doDragMove();
+			},
 
 			this._stageViewCollection = GridStageViewCollection.create(this);
 		},
@@ -8237,6 +8254,8 @@
 			//moveのタイミングにするのがよい。
 		},
 
+		_throttledLastDragMoveContext: null,
+
 		_processDragMove: function(context) {
 			if (!this._isMousedown) {
 				//mousedownしていない＝ドラッグ操作でない場合
@@ -8269,6 +8288,24 @@
 				return;
 			}
 
+			this._throttledLastDragMoveContext = context;
+
+			if (this._rafId) {
+				return;
+			}
+
+			this._rafId = requestAnimationFrame(this._dragMoveWrapper);
+		},
+
+		_dragMoveWrapper: null,
+
+		_doDragMove: function() {
+			this._rafId = null;
+
+			var context = this._throttledLastDragMoveContext;
+
+			this._throttledLastDragMoveContext = null;
+
 			var event = context.event;
 
 			var dispDx = event.pageX - this._dragLastPagePos.x;
@@ -8291,7 +8328,7 @@
 
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU:
-				toggleBoundaryScroll.call(this, function(dispScrX, dispScrY) {
+				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
 					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
 				});
 
@@ -8324,7 +8361,7 @@
 				this._dragSession.doMove(context.event);
 				break;
 			case DRAG_MODE_REGION:
-				toggleBoundaryScroll.call(this, function() {
+				this.toggleBoundaryScroll(function() {
 					var dragPos = that._getCurrentDragPosition();
 
 					//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
@@ -8339,13 +8376,13 @@
 						dragPos.dispH);
 				break;
 			case DRAG_MODE_SELECT:
-				toggleBoundaryScroll.call(this, function() {
-					var dragSelectedDU = dragSelect.call(that);
+				this.toggleBoundaryScroll(function() {
+					var dragSelectedDU = that.dragSelect();
 					var tempSelection = that._dragSelectStartSelectedDU.concat(dragSelectedDU);
 					that.select(tempSelection, true);
 				});
 
-				var dragSelectedDU = dragSelect.call(this);
+				var dragSelectedDU = this.dragSelect();
 				var tempSelection = this._dragSelectStartSelectedDU.concat(dragSelectedDU);
 				this.select(tempSelection, true);
 				break;
@@ -8375,32 +8412,30 @@
 			default:
 				break;
 			}
+		},
 
-			function dragSelect() {
-				var pos = this._getCurrentDragPosition();
+		dragSelect: function() {
+			var pos = this._getCurrentDragPosition();
 
-				//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
-				this._updateDragOverlay(pos.dispActualX, pos.dispActualY, pos.dispW, pos.dispH);
+			//ドラッグ範囲を示す半透明のオーバーレイのサイズを更新
+			this._updateDragOverlay(pos.dispActualX, pos.dispActualY, pos.dispW, pos.dispH);
 
-				//TODO isSelectableがfalseなものを除く
-				return this.getDisplayUnitsInRect(pos.dispActualX, pos.dispActualY, pos.dispW,
-						pos.dispH, true);
-			}
+			//TODO isSelectableがfalseなものを除く
+			return this.getDisplayUnitsInRect(pos.dispActualX, pos.dispActualY, pos.dispW,
+					pos.dispH, true);
+		},
 
-			function toggleBoundaryScroll(callback) {
-				var activeView = this._getActiveView();
+		toggleBoundaryScroll: function(callback) {
+			var activeView = this._getActiveView();
 
-				var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left
-						- activeView.x;
-				var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top
-						- activeView.y;
+			var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left - activeView.x;
+			var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top - activeView.y;
 
-				var nineSlice = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
-				if (nineSlice.x !== 0 || nineSlice.y !== 0) {
-					this._beginBoundaryScroll(nineSlice, callback);
-				} else {
-					this._endBoundaryScroll();
-				}
+			var nineSlice = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
+			if (nineSlice.x !== 0 || nineSlice.y !== 0) {
+				this._beginBoundaryScroll(nineSlice, callback);
+			} else {
+				this._endBoundaryScroll();
 			}
 		},
 
@@ -8453,6 +8488,11 @@
 		},
 
 		'{document} mouseup': function(context) {
+
+			if (this._rafId) {
+				cancelAnimationFrame(this._rafId);
+				this._rafId = null;
+			}
 
 			this._endBoundaryScroll();
 
