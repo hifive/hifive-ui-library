@@ -5367,18 +5367,21 @@
 									//まず、エッジの両端（＝2つのDU）がビューポート外で、かつ
 									//両方とも同じサイドかどうかを判定する
 
-									var fromDURelPos = this._isOutOfViewport(du._from, rLeft, rTop,
-											rRight, rBottom);
+									//TODO 現状では効果がある場合と逆に計算量が増える場合があり
+									//かつそれほど大きな効果が見込めないので一旦この判定は行わないようにする
 
-									if (fromDURelPos !== DU_POSITION_INTERSECT) {
-										var toDURelPos = this._isOutOfViewport(du._to, rLeft, rTop,
-												rRight, rBottom);
-										if (fromDURelPos === toDURelPos) {
-											//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
-											du._setSystemVisible(false, element);
-											continue;
-										}
-									}
+									//									var fromDURelPos = this._isOutOfViewport(du._from, rLeft, rTop,
+									//											rRight, rBottom);
+									//
+									//									if (fromDURelPos !== DU_POSITION_INTERSECT) {
+									//										var toDURelPos = this._isOutOfViewport(du._to, rLeft, rTop,
+									//												rRight, rBottom);
+									//										if (fromDURelPos === toDURelPos) {
+									//											//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
+									//											du._setSystemVisible(false, element);
+									//											continue;
+									//										}
+									//									}
 
 									//DUの位置関係上エッジがビューポートを交差する可能性があるので
 									//実際に交差するかどうかを判定
