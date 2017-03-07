@@ -5331,35 +5331,25 @@
 							return tc * td <= 0 && ta * tb <= 0;
 						},
 
-						_isRenderRectCrossing: function(edgeDU, effectiveRenderRectCorner) {
+						_isRenderRectCrossing: function(edgeDU, left, top, right, bottom) {
 							var ex1 = edgeDU.x1;
 							var ey1 = edgeDU.y1;
 							var ex2 = edgeDU.x2;
 							var ey2 = edgeDU.y2;
 
-							var leftTopX = effectiveRenderRectCorner.leftTopX;
-							var leftTopY = effectiveRenderRectCorner.leftTopY;
-							var rightTopX = effectiveRenderRectCorner.rightTopX;
-							var rightTopY = effectiveRenderRectCorner.rightTopY;
-							var leftBottomX = effectiveRenderRectCorner.leftBottomX;
-							var leftBottomY = effectiveRenderRectCorner.leftBottomY;
-							var rightBottomX = effectiveRenderRectCorner.rightBottomX;
-							var rightBottomY = effectiveRenderRectCorner.rightBottomY;
-
-							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
-									rightTopX, rightTopY)) {
+							if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, top, right, top)) {
 								//上辺とエッジが交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
-									leftBottomX, leftBottomY)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, top, right,
+									bottom)) {
 								//左辺と交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftBottomX,
-									leftBottomY, rightBottomX, rightBottomY)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, bottom,
+									right, bottom)) {
 								//下辺と交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, rightBottomX,
-									rightBottomY, rightTopX, rightTopY)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, right, bottom,
+									right, top)) {
 								//右辺と交差している
 								return true;
 							}
@@ -5398,29 +5388,10 @@
 							}
 
 							//エッジの交差判定で使用する、描画領域の4つ角の座標
-							//左上
-							var leftTopX = effectiveRenderRect.x;
-							var leftTopY = effectiveRenderRect.y;
-							//右上
-							var rightTopX = effectiveRenderRect.x + effectiveRenderRect.width;
-							var rightTopY = effectiveRenderRect.y;
-							//左下
-							var leftBottomX = effectiveRenderRect.x;
-							var leftBottomY = effectiveRenderRect.y + effectiveRenderRect.height;
-							//右下
-							var rightBottomX = effectiveRenderRect.x + effectiveRenderRect.width;
-							var rightBottomY = effectiveRenderRect.y + effectiveRenderRect.height;
-
-							var effectiveRenderRectCorner = {
-								leftTopX: leftTopX,
-								leftTopY: leftTopY,
-								rightTopX: rightTopX,
-								rightTopY: rightTopY,
-								leftBottomX: leftBottomX,
-								leftBottomY: leftBottomY,
-								rightBottomX: rightBottomX,
-								rightBottomY: rightBottomY
-							};
+							var rLeft = effectiveRenderRect.x;
+							var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
+							var rTop = effectiveRenderRect.y;
+							var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
 
 							for (var i = 0, len = duArray.length; i < len; i++) {
 								var du = duArray[i];
@@ -5443,7 +5414,8 @@
 
 									var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
 
-									if (this._isRenderRectCrossing(du, effectiveRenderRectCorner)
+									if (this
+											._isRenderRectCrossing(du, rLeft, rTop, rRight, rBottom)
 											|| effectiveRenderRect.contains(edgeRect)) {
 										du._setSystemVisible(true, element);
 									} else {
@@ -5460,11 +5432,6 @@
 								var duRight = duGlobalPos.x + du.width;
 								var duTop = duGlobalPos.y;
 								var duBottom = duGlobalPos.y + du.height;
-
-								var rLeft = effectiveRenderRect.x;
-								var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
-								var rTop = effectiveRenderRect.y;
-								var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
 
 								//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
 								//DUの左右の辺がともに描画領域の左または右にある、もしくは
