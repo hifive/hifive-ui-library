@@ -4395,7 +4395,9 @@
 
 						_dragSelectOverlayRect: null,
 
-						_duidElementMap: null
+						_duidElementMap: null,
+
+						_isUpdateSuppressed: null
 					},
 
 					accessor: {
@@ -4533,6 +4535,8 @@
 							this._viewport = viewport;
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
+
+							this._isUpdateSuppressed = false;
 						},
 
 						_initForemostSvg: function() {
@@ -4726,7 +4730,7 @@
 							//フォアレイヤーのDOMを削除する
 							$(this._foremostSvgGroup).empty();
 
-							this._updateRender();
+							this._update();
 						},
 
 						dispose: function() {
@@ -5208,10 +5212,10 @@
 							return pos;
 						},
 
-						update: function(isImmediate) {
+						//update: function(isImmediate) {
 						//TODO rAFでdirtyなものを全て処理する
 						//isImmedaite === trueならすぐに処理する
-						},
+						//},
 
 						_updateLayerScrollPosition: function() {
 							var layers = this._stage._layers;
@@ -5281,7 +5285,7 @@
 								this._updateTransform(dom, actualScrollWorldX, actualScrollWorldY);
 							}
 
-							this._updateRender();
+							this._update();
 
 							//フォアレイヤーのスクロール位置も移動させる
 							this._updateTransform(this._foremostSvg, actualScrollWorldX,
@@ -5312,177 +5316,177 @@
 							return tc * td <= 0 && ta * tb <= 0;
 						},
 
-						_updateRender: function(rootDU) {
-							var renderRect = this._viewport.getWorldRect();
-							renderRect.width *= 1.0; //どの範囲まで描画範囲とみなすか
-							renderRect.height *= 1.0;
-							renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
-							renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+						_isRenderRectCrossing: function(edgeDU, effectiveRenderRectCorner) {
+							var ex1 = edgeDU.x1;
+							var ey1 = edgeDU.y1;
+							var ex2 = edgeDU.x2;
+							var ey2 = edgeDU.y2;
 
-							var that = this;
+							var leftTopX = effectiveRenderRectCorner.leftTopX;
+							var leftTopY = effectiveRenderRectCorner.leftTopY;
+							var rightTopX = effectiveRenderRectCorner.rightTopX;
+							var rightTopY = effectiveRenderRectCorner.rightTopY;
+							var leftBottomX = effectiveRenderRectCorner.leftBottomX;
+							var leftBottomY = effectiveRenderRectCorner.leftBottomY;
+							var rightBottomX = effectiveRenderRectCorner.rightBottomX;
+							var rightBottomY = effectiveRenderRectCorner.rightBottomY;
+
+							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
+									rightTopX, rightTopY)) {
+								//上辺とエッジが交差している
+								return true;
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
+									leftBottomX, leftBottomY)) {
+								//左辺と交差している
+								return true;
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftBottomX,
+									leftBottomY, rightBottomX, rightBottomY)) {
+								//下辺と交差している
+								return true;
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, rightBottomX,
+									rightBottomY, rightTopX, rightTopY)) {
+								//右辺と交差している
+								return true;
+							}
+							return false;
+						},
+
+						_updateSystemVisible: function(renderRect, rootDU, includesRoot) {
+							var duArray;
+							if (includesRoot === true) {
+								duArray = [rootDU];
+							} else {
+								duArray = [];
+							}
+
+							if (DisplayUnitContainer.isClassOf(rootDU)) {
+								duArray = rootDU.getDisplayUnitAll(true);
+							}
+
+							var belongingLayer = rootDU._belongingLayer;
+
+							var effectiveRenderRect = Rect.create(renderRect.x, renderRect.y,
+									renderRect.width, renderRect.height);
+
+							switch (belongingLayer.UIDragScreenScrollDirection) {
+							case SCROLL_DIRECTION_X:
+								//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
+								effectiveRenderRect.y = 0;
+								break;
+							case SCROLL_DIRECTION_Y:
+								effectiveRenderRect.x = 0;
+								break;
+							case SCROLL_DIRECTION_NONE:
+								effectiveRenderRect.x = 0;
+								effectiveRenderRect.y = 0;
+								break;
+							}
+
+							//エッジの交差判定で使用する、描画領域の4つ角の座標
+							//左上
+							var leftTopX = effectiveRenderRect.x;
+							var leftTopY = effectiveRenderRect.y;
+							//右上
+							var rightTopX = effectiveRenderRect.x + effectiveRenderRect.width;
+							var rightTopY = effectiveRenderRect.y;
+							//左下
+							var leftBottomX = effectiveRenderRect.x;
+							var leftBottomY = effectiveRenderRect.y + effectiveRenderRect.height;
+							//右下
+							var rightBottomX = effectiveRenderRect.x + effectiveRenderRect.width;
+							var rightBottomY = effectiveRenderRect.y + effectiveRenderRect.height;
+
+							var effectiveRenderRectCorner = {
+								leftTopX: leftTopX,
+								leftTopY: leftTopY,
+								rightTopX: rightTopX,
+								rightTopY: rightTopY,
+								leftBottomX: leftBottomX,
+								leftBottomY: leftBottomY,
+								rightBottomX: rightBottomX,
+								rightBottomY: rightBottomY
+							};
+
+							for (var i = 0, len = duArray.length; i < len; i++) {
+								var du = duArray[i];
+
+								var element = this._duidElementMap.get(du.id);
+
+								if (!element) {
+									//対応するDOMが描画されていない場合（可視範囲外である、などの理由で）は無視
+									continue;
+								}
+
+								if (DisplayUnitContainer.isClassOf(du)) {
+									//DUコンテナは現状常に表示とする
+									du._setSystemVisible(true, element);
+									continue;
+								} else if (Edge.isClassOf(du)) {
+									//エッジの場合、表示領域の各辺と線分の交差判定を行い、
+									//いずれかの辺と交差しているか、
+									//表示領域にEdgeが完全に内包されている場合のみ描画する
+
+									var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
+
+									if (this._isRenderRectCrossing(du, effectiveRenderRectCorner)
+											|| effectiveRenderRect.contains(edgeRect)) {
+										du._setSystemVisible(true, element);
+									} else {
+										du._setSystemVisible(false, element);
+									}
+									continue;
+								}
+
+								/* ---- 以下、通常のDUの場合 ---- */
+
+								var duGlobalPos = du.getWorldGlobalPosition();
+
+								var duLeft = duGlobalPos.x;
+								var duRight = duGlobalPos.x + du.width;
+								var duTop = duGlobalPos.y;
+								var duBottom = duGlobalPos.y + du.height;
+
+								var rLeft = effectiveRenderRect.x;
+								var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
+								var rTop = effectiveRenderRect.y;
+								var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
+
+								//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
+								//DUの左右の辺がともに描画領域の左または右にある、もしくは
+								//DUの上下の辺がともに描画領域の上または下にあること。
+
+								//right, bottomは必ずleft, topより大きいと保証されているので
+								//一部の条件は省略できる
+								if ((duLeft < rLeft && duRight < rLeft) || (duLeft > rRight)
+										|| (duTop < rTop && duBottom < rTop) || (duTop > rBottom)) {
+									du._setSystemVisible(false, element);
+								} else {
+									du._setSystemVisible(true, element);
+								}
+							}
+						},
+
+						_update: function(rootDU, renderRect) {
+							if (this._isUpdateSuppressed) {
+								return;
+							}
+
+							if (!renderRect) {
+								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
+								renderRect = this._viewport.getWorldRect();
+								//renderRect.width *= 1.0;
+								//renderRect.height *= 1.0;
+								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
+								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+							}
 
 							if (rootDU) {
-								updateSystemVisible(rootDU, true);
+								this._updateSystemVisible(renderRect, rootDU, true);
 							} else {
+								var that = this;
 								this._stage._layers.forEach(function(layer) {
-									updateSystemVisible(layer, false);
+									that._updateSystemVisible(renderRect, layer, false);
 								});
-							}
-
-							function isRenderRectCrossing(edgeDU, effectiveRenderRectCorner) {
-								var ex1 = edgeDU.x1;
-								var ey1 = edgeDU.y1;
-								var ex2 = edgeDU.x2;
-								var ey2 = edgeDU.y2;
-
-								var leftTopX = effectiveRenderRectCorner.leftTopX;
-								var leftTopY = effectiveRenderRectCorner.leftTopY;
-								var rightTopX = effectiveRenderRectCorner.rightTopX;
-								var rightTopY = effectiveRenderRectCorner.rightTopY;
-								var leftBottomX = effectiveRenderRectCorner.leftBottomX;
-								var leftBottomY = effectiveRenderRectCorner.leftBottomY;
-								var rightBottomX = effectiveRenderRectCorner.rightBottomX;
-								var rightBottomY = effectiveRenderRectCorner.rightBottomY;
-
-								if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX, leftTopY,
-										rightTopX, rightTopY)) {
-									//上辺とエッジが交差している
-									return true;
-								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftTopX,
-										leftTopY, leftBottomX, leftBottomY)) {
-									//左辺と交差している
-									return true;
-								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, leftBottomX,
-										leftBottomY, rightBottomX, rightBottomY)) {
-									//下辺と交差している
-									return true;
-								} else if (that._isLineCrossing(ex1, ey1, ex2, ey2, rightBottomX,
-										rightBottomY, rightTopX, rightTopY)) {
-									//右辺と交差している
-									return true;
-								}
-								return false;
-							}
-
-							function updateSystemVisible(rootDU, includesRoot) {
-								var duArray;
-								if (includesRoot === true) {
-									duArray = [rootDU];
-								} else {
-									duArray = [];
-								}
-
-								if (DisplayUnitContainer.isClassOf(rootDU)) {
-									duArray = rootDU.getDisplayUnitAll(true);
-								}
-
-								var belongingLayer = rootDU._belongingLayer;
-
-								var effectiveRenderRect = Rect.create(renderRect.x, renderRect.y,
-										renderRect.width, renderRect.height);
-
-								switch (belongingLayer.UIDragScreenScrollDirection) {
-								case SCROLL_DIRECTION_X:
-									//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
-									effectiveRenderRect.y = 0;
-									break;
-								case SCROLL_DIRECTION_Y:
-									effectiveRenderRect.x = 0;
-									break;
-								case SCROLL_DIRECTION_NONE:
-									effectiveRenderRect.x = 0;
-									effectiveRenderRect.y = 0;
-									break;
-								}
-
-								//エッジの交差判定で使用する、描画領域の4つ角の座標
-								//左上
-								var leftTopX = effectiveRenderRect.x;
-								var leftTopY = effectiveRenderRect.y;
-								//右上
-								var rightTopX = effectiveRenderRect.x + effectiveRenderRect.width;
-								var rightTopY = effectiveRenderRect.y;
-								//左下
-								var leftBottomX = effectiveRenderRect.x;
-								var leftBottomY = effectiveRenderRect.y
-										+ effectiveRenderRect.height;
-								//右下
-								var rightBottomX = effectiveRenderRect.x
-										+ effectiveRenderRect.width;
-								var rightBottomY = effectiveRenderRect.y
-										+ effectiveRenderRect.height;
-
-								var effectiveRenderRectCorner = {
-									leftTopX: leftTopX,
-									leftTopY: leftTopY,
-									rightTopX: rightTopX,
-									rightTopY: rightTopY,
-									leftBottomX: leftBottomX,
-									leftBottomY: leftBottomY,
-									rightBottomX: rightBottomX,
-									rightBottomY: rightBottomY
-								};
-
-								for (var i = 0, len = duArray.length; i < len; i++) {
-									var du = duArray[i];
-
-									var element = that._duidElementMap.get(du.id);
-
-									if (!element) {
-										//対応するDOMが描画されていない場合（可視範囲外である、などの理由で）は無視
-										continue;
-									}
-
-									if (DisplayUnitContainer.isClassOf(du)) {
-										//DUコンテナは現状常に表示とする
-										du._setSystemVisible(true, element);
-										continue;
-									} else if (Edge.isClassOf(du)) {
-										//エッジの場合、表示領域の各辺と線分の交差判定を行い、
-										//いずれかの辺と交差しているか、
-										//表示領域にEdgeが完全に内包されている場合のみ描画する
-
-										var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
-
-										if (isRenderRectCrossing(du, effectiveRenderRectCorner)
-												|| effectiveRenderRect.contains(edgeRect)) {
-											du._setSystemVisible(true, element);
-										} else {
-											du._setSystemVisible(false, element);
-										}
-										continue;
-									}
-
-									/* ---- 以下、通常のDUの場合 ---- */
-
-									var duGlobalPos = du.getWorldGlobalPosition();
-
-									var duLeft = duGlobalPos.x;
-									var duRight = duGlobalPos.x + du.width;
-									var duTop = duGlobalPos.y;
-									var duBottom = duGlobalPos.y + du.height;
-
-									var rLeft = effectiveRenderRect.x;
-									var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
-									var rTop = effectiveRenderRect.y;
-									var rBottom = effectiveRenderRect.y
-											+ effectiveRenderRect.height;
-
-									//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
-									//DUの左右の辺がともに描画領域の左または右にある、もしくは
-									//DUの上下の辺がともに描画領域の上または下にあること。
-
-									//right, bottomは必ずleft, topより大きいと保証されているので
-									//一部の条件は省略できる
-									if ((duLeft < rLeft && duRight < rLeft) || (duLeft > rRight)
-											|| (duTop < rTop && duBottom < rTop)
-											|| (duTop > rBottom)) {
-										du._setSystemVisible(false, element);
-									} else {
-										du._setSystemVisible(true, element);
-									}
-
-								}
 							}
 						},
 
@@ -5538,9 +5542,14 @@
 								return;
 							}
 
-							du.__updateDOM(this, dom, event.reason);
+							var reason = event.reason;
 
-							this._updateRender(du, true);
+							du.__updateDOM(this, dom, reason);
+
+							if (reason.isPositionChanged || reason.isSizeChanged
+									|| reason.isScaleChanged) {
+								this._update(du);
+							}
 						},
 
 						_onDUAdd: function(event) {
@@ -5567,7 +5576,7 @@
 							}
 							parentDU.__addDOM(this, parentDOM, dom);
 
-							this._updateRender(du, true);
+							this._update(du);
 						},
 
 						_onDURemove: function(event) {
@@ -5624,7 +5633,7 @@
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
 
-							this._updateRender();
+							this._update();
 						},
 
 						_setHeight: function(height) {
@@ -5641,7 +5650,7 @@
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
 
-							this._updateRender();
+							this._update();
 						}
 					}
 				};
@@ -9070,6 +9079,20 @@
 				sep = allCols[index];
 			}
 
+			//セパレータドラッグ中は、ドラッグで見える可能性がある範囲を一度だけ描画し、ドラッグ完了まで可視範囲判定を抑制する
+			//TODO ドラッグ対象のセパレータのindexに応じて描画範囲をより最適化する
+			//TODO ドラッグ中にもDUが追加されたりrequestRender()が呼ばれる可能性もあるのでそれらは描画する（今は全てのアップデートを止めている）
+			this._stageViewCollection.getViewAll().forEach(this.own(function(view) {
+				//TODO private APIを呼んでいるが、将来的にはpublicでできるように検討
+				// TODO 全てのビューのスケールは同一。
+				var renderRect = view._viewport.getWorldRect();
+				var worldW = view._viewport.getXLengthOfWorld(this._stageViewCollection._width);
+				var worldH = view._viewport.getYLengthOfWorld(this._stageViewCollection._height);
+				renderRect.setSize(worldW, worldH);
+				view._update(null, renderRect);
+				view._isUpdateSuppressed = true;
+			}));
+
 			this._gridSeparatorDragInfo = {
 				$target: $el,
 				index: index,
@@ -9158,6 +9181,12 @@
 		_endGridSeparatorDrag: function(context, $el) {
 			this._isGridSeparatorDragging = false;
 			this._gridSeparatorDragInfo = null;
+
+			//ビューの更新を有効にする
+			this._stageViewCollection.getViewAll().forEach(function(view) {
+				view._isUpdateSuppressed = false;
+				view._update();
+			});
 
 			var evArg = {
 				isLive: false
