@@ -1986,450 +1986,465 @@
 	//TODO layouter(仮)を差し込めるようにし、
 	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
 	//layouterがフックして強制ブロック・別の値をセット等できるようにする
-	var DisplayUnit = EventDispatcher.extend(function(super_) {
-		var duIdSequence = 0;
+	var DisplayUnit = EventDispatcher
+			.extend(function(super_) {
+				var duIdSequence = 0;
 
-		var classDesc = {
-			name: 'h5.ui.components.stage.DisplayUnit',
-			isAbstract: true,
-			field: {
-				id: null,
+				var classDesc = {
+					name: 'h5.ui.components.stage.DisplayUnit',
+					isAbstract: true,
+					field: {
+						id: null,
 
-				_x: null,
-				_y: null,
+						_x: null,
+						_y: null,
 
-				_zIndex: null,
+						_zIndex: null,
 
-				_width: null,
-				_height: null,
+						_width: null,
+						_height: null,
 
-				_parentDU: null,
+						_parentDU: null,
 
-				_rootStage: null,
+						_rootStage: null,
 
-				_groupTag: null,
+						_groupTag: null,
 
-				_isVisible: null,
+						_isVisible: null,
 
-				_isSystemVisible: null,
+						_isSystemVisible: null,
 
-				_belongingLayer: null,
+						_belongingLayer: null,
 
-				/**
-				 * この要素を現在選択可能かどうか
-				 */
-				_isSelectable: null,
+						/**
+						 * この要素を現在選択可能かどうか
+						 */
+						_isSelectable: null,
 
-				_isSelected: null,
-				_isFocused: null
-			},
-			accessor: {
-				x: {
-					get: function() {
-						return this._x;
+						_isSelected: null,
+						_isFocused: null
 					},
-					set: function(value) {
-						if (value === this._x) {
-							return;
-						}
-						this._x = value;
+					accessor: {
+						x: {
+							get: function() {
+								return this._x;
+							},
+							set: function(value) {
+								if (value === this._x) {
+									return;
+								}
+								this._x = value;
 
-						this._setDirty(REASON_POSITION_CHANGE);
-					}
-				},
-				y: {
-					get: function() {
-						return this._y;
+								this._setDirty(REASON_POSITION_CHANGE);
+							}
+						},
+						y: {
+							get: function() {
+								return this._y;
+							},
+							set: function(value) {
+								if (value === this._y) {
+									return;
+								}
+								this._y = value;
+
+								this._setDirty(REASON_POSITION_CHANGE);
+							}
+						},
+
+						zIndex: {
+							get: function() {
+								return this._zIndex;
+							},
+							set: function(value) {
+								if (value === this._zIndex) {
+									return;
+								}
+								var oldValue = this._zIndex;
+								this._zIndex = value;
+
+								this._setDirty(REASON_Z_INDEX_CHANGE);
+
+								var ev = PropertyChangeEvent.create('zIndex', oldValue,
+										this._zIndex);
+								this.dispatchEvent(ev);
+							}
+						},
+
+						width: {
+							get: function() {
+								return this._width;
+							},
+							set: function(value) {
+								if (value === this._width) {
+									return;
+								}
+								this._width = value;
+
+								this._setDirty(REASON_SIZE_CHANGE);
+							}
+						},
+						height: {
+							get: function() {
+								return this._height;
+							},
+							set: function(value) {
+								if (value === this._height) {
+									return;
+								}
+								this._height = value;
+
+								this._setDirty(REASON_SIZE_CHANGE);
+							}
+						},
+						extraData: null,
+						groupTag: {
+							get: function() {
+								return this._groupTag;
+							}
+						},
+						parentDisplayUnit: {
+							get: function() {
+								return this._parentDU;
+							}
+						},
+						//TODO isVisibleがfalseになったら、DOMごと消す。
+						//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
+						isVisible: {
+							get: function() {
+								return this._isVisible;
+							},
+							set: function(value) {
+								if (value === this._isVisible) {
+									return;
+								}
+								this._isVisible = value;
+								this._setDirty(REASON_VISIBILITY_CHANGE);
+							}
+						},
+
+						isSelectable: {
+							get: function() {
+								return this._isSelectable;
+							},
+							set: function(value) {
+								if (this._isSelectable === value) {
+									return;
+								}
+								this._isSelectable = value;
+								if (value === false) {
+									//選択不能になったので、選択状態を解除
+									this.unselect();
+								}
+							}
+						},
+
+						isSelected: {
+							get: function() {
+								return this._isSelected;
+							}
+						},
+
+						isFocused: {
+							get: function() {
+								return this._isFocused;
+							}
+						}
 					},
-					set: function(value) {
-						if (value === this._y) {
-							return;
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.DisplayUnit
+						 */
+						constructor: function DisplayUnit(id) {
+							super_.constructor.call(this);
+							//TODO 引数のIDは必須にする？？
+							if (id == null) {
+								//TODO ただの連番でなくGUID等にする
+								this.id = 'duid_' + duIdSequence;
+								duIdSequence++;
+							} else {
+								//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
+								this.id = id;
+							}
+
+							this._isSelectable = true;
+							this._isSelected = false;
+							this._isFocused = false;
+
+							//コンストラクタではバッキングストアを直接初期化するが、
+							//他の場所では必ずアクセサ経由で呼び出すこと。
+							//子クラスにて位置やサイズが変わった場合に
+							//再レンダリングなどを起こすフックが含まれる場合があるため。
+							this._x = 0;
+							this._y = 0;
+							this._zIndex = 0;
+							this._width = 0;
+							this._height = 0;
+
+							this._isVisible = true;
+
+							this._isSystemVisible = true;
+
+							this._groupTag = SimpleSet.create();
+
+							this._belongingLayer = null;
+						},
+
+						setRect: function(rect) {
+							//TODO イベントをあげる回数を減らす（今はセッター側で個別に起きてしまう）。他のAPIも同様
+							this._x = rect.x;
+							this._y = rect.y;
+							this._width = rect.width;
+							this._height = rect.height;
+							this._setDirty([REASON_SIZE_CHANGE, REASON_POSITION_CHANGE]);
+						},
+
+						getRect: function() {
+							var rect = Rect.create(this.x, this.y, this.width, this.height);
+							return rect;
+						},
+
+						setSize: function(width, height) {
+							this._width = width;
+							this._height = height;
+							this._setDirty(REASON_SIZE_CHANGE);
+						},
+
+						remove: function() {
+							if (this._parentDU) {
+								this._parentDU.removeDisplayUnit(this);
+							}
+						},
+
+						moveTo: function(x, y) {
+							this._x = x;
+							this._y = y;
+							this._setDirty(REASON_POSITION_CHANGE);
+						},
+
+						moveBy: function(x, y) {
+							this._x += x;
+							this._y += y;
+							this._setDirty(REASON_POSITION_CHANGE);
+						},
+
+						moveDisplayTo: function(x, y) {
+							if (!this._rootStage) {
+								throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
+							}
+							var view = this._rootStage._getActiveView();
+							//TODO 現状DUはどのViewでも同じ位置になるので、アクティブビューのものを使用すればよい
+							var worldPos = view._viewport.getWorldPosition(x, y);
+							this.moveTo(worldPos.x, worldPos.y);
+						},
+
+						moveDisplayBy: function(x, y) {
+							if (!this._rootStage) {
+								throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
+							}
+							var view = this._rootStage._getActiveView();
+							var wx = view._viewport.getXLengthOfWorld(x);
+							var wy = view._viewport.getYLengthOfWorld(y);
+							this.moveBy(wx, wy);
+						},
+
+						/**
+						 * このDUが可視範囲に入るように、ステージをスクロールします。<br>
+						 * "center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
+						 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
+						 * 引数なしの場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
+						 */
+						scrollIntoView: function(mode, view) {
+							//TODO 引数に位置を取れるようにする？
+							//TODO BasicDUに持たせる？ContentsDU?
+							if (!this._rootStage) {
+								return;
+							}
+
+							if (!view) {
+								view = this._rootStage._getActiveView();
+							}
+
+							var gpos = this.getWorldGlobalPosition();
+							var wr = view._viewport.getWorldRect();
+							var moveDx = 0;
+							var moveDy = 0;
+
+							if (mode == 'center') {
+								//centerモード
+								var cx = gpos.x + this.width / 2;
+								var cy = gpos.y + this.height / 2;
+								moveDx = cx - wr.x - wr.width / 2;
+								moveDy = cy - wr.y - wr.height / 2;
+								view.scrollWorldBy(moveDx, moveDy);
+								return;
+							}
+
+							//glanceモード
+							if (gpos.x < wr.x) {
+								moveDx = gpos.x - wr.x;
+							} else if (gpos.x + this.width > wr.x + wr.width) {
+								moveDx = gpos.x + this.width - (wr.x + wr.width);
+							}
+
+							if (gpos.y < wr.y) {
+								moveDy = gpos.y - wr.y;
+							} else if (gpos.y + this.height > wr.y + wr.height) {
+								moveDy = gpos.y + this.height - (wr.y + wr.height);
+							}
+							view.scrollWorldBy(moveDx, moveDy);
+						},
+
+						getWorldGlobalPosition: function() {
+							if (!this._parentDU) {
+								return null;
+							}
+
+							var wgx = this.x;
+							var wgy = this.y;
+
+							var parentDU = this._parentDU;
+							while (!Layer.isClassOf(parentDU)) {
+								var parentPos = parentDU.getWorldGlobalPosition();
+								wgx += parentPos.x;
+								wgy += parentPos.y;
+								parentDU = this._parentDU._parentDU;
+							}
+
+							var wpos = WorldPoint.create(wgx, wgy);
+							return wpos;
+						},
+
+						select: function(isExclusive) {
+							if (!this._rootStage) {
+								return;
+							}
+
+							if (!this._isSelectable) {
+								//TODO ログを出すべきか
+								return;
+							}
+
+							this._rootStage.select(this, isExclusive);
+						},
+
+						unselect: function() {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.unselect(this);
+						},
+
+						focus: function() {
+							if (!this._rootStage) {
+								return;
+							}
+
+							if (!this._isSelectable) {
+								return;
+							}
+
+							this._rootStage.focus(this);
+						},
+
+						unfocus: function(andUnselect) {
+							if (!this._rootStage) {
+								return;
+							}
+							this._rootStage.unfocus(andUnselect);
+						},
+
+						_setDirty: function(reasons) {
+							if (!reasons) {
+								throw new Error('_setDirty()時は引数のリーズンは必須です。');
+							}
+
+							this.__onDirtyNotify(this, reasons);
+
+							//TODO Edgeがイベントを拾えるようにするための対応
+							//レイヤー横断でイベントを拾えるようになればレイヤーから拾えばよい
+							var event = DisplayUnitDirtyEvent.create();
+							event.displayUnit = this;
+							event.reason = UpdateReasonSet.create(reasons);
+							this.dispatchEvent(event);
+						},
+
+						_onAddedToRoot: function(stage, belongingLayer) {
+							this._rootStage = stage;
+							this._belongingLayer = belongingLayer;
+						},
+
+						_onRemovedFromRoot: function() {
+							this._rootStage = null;
+							this._belongingLayer = null;
+						},
+
+						_updateActualDisplayStyle: function(element) {
+							var desiredVisible = this._isVisible && this._isSystemVisible;
+
+							var isElementDisplayVisible = window.getComputedStyle(element, '').display !== 'none';
+
+							if (desiredVisible !== isElementDisplayVisible) {
+								element.style.display = desiredVisible ? '' : 'none';
+							}
+						},
+
+						__updateDOM: function(stageView, element, reason) {
+							//					if (!this._isVisible) {
+							//						//非表示状態なら他の描画はしない
+							//						return;
+							//					}
+
+							if (reason.isInitialRender || reason.isVisibilityChanged) {
+								this._updateActualDisplayStyle(element);
+							}
+
+							if (reason.isInitialRender || reason.isPositionChanged) {
+								setSvgAttributes(element, {
+									x: this.x,
+									y: this.y
+								});
+							}
+
+							if (reason.isInitialRender || reason.isSizeChanged) {
+								setSvgAttributes(element, {
+									width: this.width,
+									height: this.height
+								});
+							}
+						},
+
+						__renderDOM: function(view) {
+							throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
+						},
+
+						/**
+						 * 子孫の要素がdirtyになった場合に子→親に向かって呼び出されるコールバック
+						 *
+						 * @param du
+						 */
+						__onDirtyNotify: function(du, reasons) {
+							if (this._parentDU) {
+								this._parentDU.__onDirtyNotify(du, reasons);
+							}
+						},
+
+						_setSystemVisible: function(value, element) {
+							if (this._isSystemVisible === value) {
+								return;
+							}
+
+							this._isSystemVisible = value;
+
+							if (element) {
+								this._updateActualDisplayStyle(element);
+							}
 						}
-						this._y = value;
-
-						this._setDirty(REASON_POSITION_CHANGE);
 					}
-				},
+				};
 
-				zIndex: {
-					get: function() {
-						return this._zIndex;
-					},
-					set: function(value) {
-						if (value === this._zIndex) {
-							return;
-						}
-						var oldValue = this._zIndex;
-						this._zIndex = value;
-
-						this._setDirty(REASON_Z_INDEX_CHANGE);
-
-						var ev = PropertyChangeEvent.create('zIndex', oldValue, this._zIndex);
-						this.dispatchEvent(ev);
-					}
-				},
-
-				width: {
-					get: function() {
-						return this._width;
-					},
-					set: function(value) {
-						if (value === this._width) {
-							return;
-						}
-						this._width = value;
-
-						this._setDirty(REASON_SIZE_CHANGE);
-					}
-				},
-				height: {
-					get: function() {
-						return this._height;
-					},
-					set: function(value) {
-						if (value === this._height) {
-							return;
-						}
-						this._height = value;
-
-						this._setDirty(REASON_SIZE_CHANGE);
-					}
-				},
-				extraData: null,
-				groupTag: {
-					get: function() {
-						return this._groupTag;
-					}
-				},
-				parentDisplayUnit: {
-					get: function() {
-						return this._parentDU;
-					}
-				},
-				//TODO isVisibleがfalseになったら、DOMごと消す。
-				//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
-				isVisible: {
-					get: function() {
-						return this._isVisible;
-					},
-					set: function(value) {
-						if (value === this._isVisible) {
-							return;
-						}
-						this._isVisible = value;
-						this._setDirty(REASON_VISIBILITY_CHANGE);
-					}
-				},
-
-				isSelectable: {
-					get: function() {
-						return this._isSelectable;
-					},
-					set: function(value) {
-						if (this._isSelectable === value) {
-							return;
-						}
-						this._isSelectable = value;
-						if (value === false) {
-							//選択不能になったので、選択状態を解除
-							this.unselect();
-						}
-					}
-				},
-
-				isSelected: {
-					get: function() {
-						return this._isSelected;
-					}
-				},
-
-				isFocused: {
-					get: function() {
-						return this._isFocused;
-					}
-				}
-			},
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.DisplayUnit
-				 */
-				constructor: function DisplayUnit(id) {
-					super_.constructor.call(this);
-					//TODO 引数のIDは必須にする？？
-					if (id == null) {
-						//TODO ただの連番でなくGUID等にする
-						this.id = 'duid_' + duIdSequence;
-						duIdSequence++;
-					} else {
-						//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
-						this.id = id;
-					}
-
-					this._isSelectable = true;
-					this._isSelected = false;
-					this._isFocused = false;
-
-					//コンストラクタではバッキングストアを直接初期化するが、
-					//他の場所では必ずアクセサ経由で呼び出すこと。
-					//子クラスにて位置やサイズが変わった場合に
-					//再レンダリングなどを起こすフックが含まれる場合があるため。
-					this._x = 0;
-					this._y = 0;
-					this._zIndex = 0;
-					this._width = 0;
-					this._height = 0;
-
-					this._isVisible = true;
-
-					this._isSystemVisible = true;
-
-					this._groupTag = SimpleSet.create();
-
-					this._belongingLayer = null;
-				},
-
-				setRect: function(rect) {
-					//TODO イベントをあげる回数を減らす（今はセッター側で個別に起きてしまう）。他のAPIも同様
-					this._x = rect.x;
-					this._y = rect.y;
-					this._width = rect.width;
-					this._height = rect.height;
-					this._setDirty([REASON_SIZE_CHANGE, REASON_POSITION_CHANGE]);
-				},
-
-				getRect: function() {
-					var rect = Rect.create(this.x, this.y, this.width, this.height);
-					return rect;
-				},
-
-				setSize: function(width, height) {
-					this._width = width;
-					this._height = height;
-					this._setDirty(REASON_SIZE_CHANGE);
-				},
-
-				remove: function() {
-					if (this._parentDU) {
-						this._parentDU.removeDisplayUnit(this);
-					}
-				},
-
-				moveTo: function(x, y) {
-					this._x = x;
-					this._y = y;
-					this._setDirty(REASON_POSITION_CHANGE);
-				},
-
-				moveBy: function(x, y) {
-					this._x += x;
-					this._y += y;
-					this._setDirty(REASON_POSITION_CHANGE);
-				},
-
-				moveDisplayTo: function(x, y) {
-					if (!this._rootStage) {
-						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
-					}
-					var view = this._rootStage._getActiveView();
-					//TODO 現状DUはどのViewでも同じ位置になるので、アクティブビューのものを使用すればよい
-					var worldPos = view._viewport.getWorldPosition(x, y);
-					this.moveTo(worldPos.x, worldPos.y);
-				},
-
-				moveDisplayBy: function(x, y) {
-					if (!this._rootStage) {
-						throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
-					}
-					var view = this._rootStage._getActiveView();
-					var wx = view._viewport.getXLengthOfWorld(x);
-					var wy = view._viewport.getYLengthOfWorld(y);
-					this.moveBy(wx, wy);
-				},
-
-				/**
-				 * このDUが可視範囲に入るように、ステージをスクロールします。<br>
-				 * "center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
-				 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
-				 * 引数なしの場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
-				 */
-				scrollIntoView: function(mode, view) {
-					//TODO 引数に位置を取れるようにする？
-					//TODO BasicDUに持たせる？ContentsDU?
-					if (!this._rootStage) {
-						return;
-					}
-
-					if (!view) {
-						view = this._rootStage._getActiveView();
-					}
-
-					var gpos = this.getWorldGlobalPosition();
-					var wr = view._viewport.getWorldRect();
-					var moveDx = 0;
-					var moveDy = 0;
-
-					if (mode == 'center') {
-						//centerモード
-						var cx = gpos.x + this.width / 2;
-						var cy = gpos.y + this.height / 2;
-						moveDx = cx - wr.x - wr.width / 2;
-						moveDy = cy - wr.y - wr.height / 2;
-						view.scrollWorldBy(moveDx, moveDy);
-						return;
-					}
-
-					//glanceモード
-					if (gpos.x < wr.x) {
-						moveDx = gpos.x - wr.x;
-					} else if (gpos.x + this.width > wr.x + wr.width) {
-						moveDx = gpos.x + this.width - (wr.x + wr.width);
-					}
-
-					if (gpos.y < wr.y) {
-						moveDy = gpos.y - wr.y;
-					} else if (gpos.y + this.height > wr.y + wr.height) {
-						moveDy = gpos.y + this.height - (wr.y + wr.height);
-					}
-					view.scrollWorldBy(moveDx, moveDy);
-				},
-
-				getWorldGlobalPosition: function() {
-					if (!this._parentDU) {
-						return null;
-					}
-
-					var wgx = this.x;
-					var wgy = this.y;
-
-					var parentDU = this._parentDU;
-					while (!Layer.isClassOf(parentDU)) {
-						var parentPos = parentDU.getWorldGlobalPosition();
-						wgx += parentPos.x;
-						wgy += parentPos.y;
-						parentDU = this._parentDU._parentDU;
-					}
-
-					var wpos = WorldPoint.create(wgx, wgy);
-					return wpos;
-				},
-
-				select: function(isExclusive) {
-					if (!this._rootStage) {
-						return;
-					}
-
-					if (!this._isSelectable) {
-						//TODO ログを出すべきか
-						return;
-					}
-
-					this._rootStage.select(this, isExclusive);
-				},
-
-				unselect: function() {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.unselect(this);
-				},
-
-				focus: function() {
-					if (!this._rootStage) {
-						return;
-					}
-
-					if (!this._isSelectable) {
-						return;
-					}
-
-					this._rootStage.focus(this);
-				},
-
-				unfocus: function(andUnselect) {
-					if (!this._rootStage) {
-						return;
-					}
-					this._rootStage.unfocus(andUnselect);
-				},
-
-				_setDirty: function(reasons) {
-					if (!reasons) {
-						throw new Error('_setDirty()時は引数のリーズンは必須です。');
-					}
-
-					this.__onDirtyNotify(this, reasons);
-
-					//TODO Edgeがイベントを拾えるようにするための対応
-					//レイヤー横断でイベントを拾えるようになればレイヤーから拾えばよい
-					var event = DisplayUnitDirtyEvent.create();
-					event.displayUnit = this;
-					event.reason = UpdateReasonSet.create(reasons);
-					this.dispatchEvent(event);
-				},
-
-				_onAddedToRoot: function(stage, belongingLayer) {
-					this._rootStage = stage;
-					this._belongingLayer = belongingLayer;
-				},
-
-				_onRemovedFromRoot: function() {
-					this._rootStage = null;
-					this._belongingLayer = null;
-				},
-
-				__updateDOM: function(stageView, element, reason) {
-					//					if (!this._isVisible) {
-					//						//非表示状態なら他の描画はしない
-					//						return;
-					//					}
-
-					if (reason.isInitialRender || reason.isVisibilityChanged) {
-						element.style.display = this._isVisible && this._isSystemVisible ? ''
-								: 'none';
-					}
-
-					if (reason.isInitialRender || reason.isPositionChanged) {
-						setSvgAttributes(element, {
-							x: this.x,
-							y: this.y
-						});
-					}
-
-					if (reason.isInitialRender || reason.isSizeChanged) {
-						setSvgAttributes(element, {
-							width: this.width,
-							height: this.height
-						});
-					}
-				},
-
-				__renderDOM: function(view) {
-					throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
-				},
-
-				/**
-				 * 子孫の要素がdirtyになった場合に子→親に向かって呼び出されるコールバック
-				 *
-				 * @param du
-				 */
-				__onDirtyNotify: function(du, reasons) {
-					if (this._parentDU) {
-						this._parentDU.__onDirtyNotify(du, reasons);
-					}
-				},
-
-				_setSystemVisible: function(value, element) {
-					this._isSystemVisible = value;
-					if (element) {
-						element.style.display = this._isVisible && this._isSystemVisible ? ''
-								: 'none';
-					}
-				}
-			}
-		};
-
-		return classDesc;
-	});
+				return classDesc;
+			});
 
 
 	var UpdateReasonSet = RootClass.extend(function(super_) {
@@ -8783,8 +8798,6 @@
 			this.trigger(EVENT_DRAG_DU_CANCEL);
 			this._disposeDragSession();
 		},
-
-		_dblclickWaitTimer: null,
 
 		'{rootElement} click': function(context) {
 			this._processClick(context.event, EVENT_DU_CLICK);
