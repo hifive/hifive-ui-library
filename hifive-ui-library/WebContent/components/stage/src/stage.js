@@ -9149,28 +9149,30 @@
 			//セパレータドラッグ中は、ドラッグで見える可能性がある範囲を一度だけ描画し、ドラッグ完了まで可視範囲判定を抑制する
 			//TODO ドラッグ対象のセパレータのindexに応じて描画範囲をより最適化する
 			//TODO ドラッグ中にもDUが追加されたりrequestRender()が呼ばれる可能性もあるのでそれらは描画する（今は全てのアップデートを止めている）
-			this._stageViewCollection.getViewAll().forEach(this.own(function(view) {
+			this._stageViewCollection.getViewAll().forEach(
+					this.own(function(view) {
+						var vpwRect = view._viewport.getWorldRect();
 
-				var vpwRect = view._viewport.getWorldRect();
+						var worldW = view.coordinateConverter
+								.toWorldXLength(this._stageViewCollection._width);
+						var worldH = view.coordinateConverter
+								.toWorldYLength(this._stageViewCollection._height);
 
-				//TODO private APIを呼んでいるが、将来的にはpublicでできるように検討
-				var worldW = view._viewport.getXLengthOfWorld(this._stageViewCollection._width);
-				var worldH = view._viewport.getYLengthOfWorld(this._stageViewCollection._height);
+						//セパレータ操作中に可視範囲に入り得る最大は
+						//「現在のスクロール位置を中心に、上下左右に"現在のViewCollection全体の幅/高さ"分だけ広げた領域」となる。
+						//VisibleRangeが設定されている場合や現在のスクロール位置によっては
+						//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
+						var renderX = vpwRect.x - (worldW - vpwRect.width);
+						var renderY = vpwRect.y - (worldH - vpwRect.height);
+						//「幅」でRectを指定するので、ずらしたX座標の分追加で足す必要がある
+						var renderW = vpwRect.x + vpwRect.width + worldW * 2;
+						var renderH = vpwRect.y + vpwRect.height + worldH * 2;
 
-				//セパレータ操作中に可視範囲に入り得る最大は
-				//「現在のスクロール位置 - (画面の幅/高さ - 今見えている領域の幅/高さ)」（全てワールド座標系）
-				//VisibleRangeが設定されている場合や現在のスクロール位置によっては
-				//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
-				var renderX = vpwRect.x - (worldH - vpwRect.width);
-				var renderY = vpwRect.y - (worldW - vpwRect.height);
-				var renderW = vpwRect.x + vpwRect.width + worldW;
-				var renderH = vpwRect.y + vpwRect.height + worldH;
+						var renderRect = Rect.create(renderX, renderY, renderW, renderH);
 
-				var renderRect = Rect.create(renderX, renderY, renderW, renderH);
-
-				view._update(null, renderRect);
-				view._isUpdateSuppressed = true;
-			}));
+						view._update(null, renderRect);
+						view._isUpdateSuppressed = true;
+					}));
 
 			this._gridSeparatorDragInfo = {
 				$target: $el,
