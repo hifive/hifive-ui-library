@@ -5331,25 +5331,25 @@
 							return tc * td <= 0 && ta * tb <= 0;
 						},
 
-						_isRenderRectCrossing: function(edgeDU, left, top, right, bottom) {
+						_isRenderRectCrossing: function(edgeDU, leftX, topY, rightX, bottomY) {
 							var ex1 = edgeDU.x1;
 							var ey1 = edgeDU.y1;
 							var ex2 = edgeDU.x2;
 							var ey2 = edgeDU.y2;
 
-							if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, top, right, top)) {
+							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX, topY)) {
 								//上辺とエッジが交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, top, right,
-									bottom)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX,
+									bottomY)) {
 								//左辺と交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, left, bottom,
-									right, bottom)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, bottomY,
+									rightX, bottomY)) {
 								//下辺と交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, right, bottom,
-									right, top)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, rightX, bottomY,
+									rightX, topY)) {
 								//右辺と交差している
 								return true;
 							}
