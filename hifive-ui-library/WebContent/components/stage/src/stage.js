@@ -4853,31 +4853,6 @@
 
 							var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
-							//TODO 現在はこの場所でイベントを出しているが、
-							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
-							//描画更新後にイベントをあげるようにする可能性がある
-							//							var evArg = {
-							//								view: this,
-							//
-							//								scrollPosition: {
-							//									oldValue: oldPos,
-							//									newValue: newPos,
-							//									isChanged: true
-							//								},
-							//								scale: {
-							//									oldValue: {
-							//										x: this._viewport.scaleX,
-							//										y: this._viewport.scaleY
-							//									},
-							//									newValue: {
-							//										x: this._viewport.scaleX,
-							//										y: this._viewport.scaleY
-							//									},
-							//									isChanged: false
-							//								}
-							//							};
-							//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
-
 							var scrPosChange = {
 								oldValue: oldPos,
 								newValue: newPos,
@@ -5079,32 +5054,6 @@
 
 							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
 							this.dispatchEvent(event);
-
-							//TODO 現在はこの場所でイベントを出しているが、
-							//将来的にはrefresh()のスロットの中で（非同期化された描画更新フレーム処理の中で）
-							//描画更新後にイベントをあげるようにする
-							//TODO StageView側からイベントをあげて、それをさらにStageControllerであげる
-							//							var evArg = {
-							//								view: this,
-							//
-							//								scrollPosition: {
-							//									oldValue: oldScrollPos,
-							//									newValue: newScrollPos,
-							//									isChanged: isScrollPoisitionChanged
-							//								},
-							//								scale: {
-							//									oldValue: {
-							//										x: oldScaleX,
-							//										y: oldScaleY
-							//									},
-							//									newValue: {
-							//										x: actualScaleX,
-							//										y: actualScaleY
-							//									},
-							//									isChanged: true
-							//								}
-							//							};
-							//							this._stage.trigger(EVENT_SIGHT_CHANGE, evArg);
 						},
 
 						getScaleRangeX: function() {
@@ -5340,8 +5289,8 @@
 							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX, topY)) {
 								//上辺とエッジが交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX,
-									bottomY)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY,
+									rightX, bottomY)) {
 								//左辺と交差している
 								return true;
 							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, bottomY,
@@ -5412,6 +5361,15 @@
 									//いずれかの辺と交差しているか、
 									//表示領域にEdgeが完全に内包されている場合のみ描画する
 
+									//									if (this._isOutOfViewport(du._from, rLeft, rTop, rRight,
+									//											rBottom)
+									//											&& this._isOutOfViewport(du._to, rLeft, rTop, rRight,
+									//													rBottom)) {
+									//										//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
+
+									//										du._setSystemVisible(false, element);
+									//									}
+
 									var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
 
 									if (this
@@ -5426,26 +5384,30 @@
 
 								/* ---- 以下、通常のDUの場合 ---- */
 
-								var duGlobalPos = du.getWorldGlobalPosition();
-
-								var duLeft = duGlobalPos.x;
-								var duRight = duGlobalPos.x + du.width;
-								var duTop = duGlobalPos.y;
-								var duBottom = duGlobalPos.y + du.height;
-
 								//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
 								//DUの左右の辺がともに描画領域の左または右にある、もしくは
 								//DUの上下の辺がともに描画領域の上または下にあること。
-
 								//right, bottomは必ずleft, topより大きいと保証されているので
 								//一部の条件は省略できる
-								if ((duLeft < rLeft && duRight < rLeft) || (duLeft > rRight)
-										|| (duTop < rTop && duBottom < rTop) || (duTop > rBottom)) {
+								if (this._isOutOfViewport(du, rLeft, rTop, rRight, rBottom)) {
 									du._setSystemVisible(false, element);
 								} else {
 									du._setSystemVisible(true, element);
 								}
 							}
+						},
+
+						_isOutOfViewport: function(du, rLeft, rTop, rRight, rBottom) {
+							var duGlobalPos = du.getWorldGlobalPosition();
+
+							var duRight = duGlobalPos.x + du.width;
+							var duBottom = duGlobalPos.y + du.height;
+
+							if ((duRight < rLeft) || (duGlobalPos.x > rRight) || (duBottom < rTop)
+									|| (duGlobalPos.y > rBottom)) {
+								return true;
+							}
+							return false;
 						},
 
 						_update: function(rootDU, renderRect) {
@@ -6877,6 +6839,7 @@
 							}
 
 							this._isSightChangePropagationSuppressed = false;
+							this._sightChangeEvents = null;
 
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
@@ -7136,6 +7099,10 @@
 							if (this._isSightChangePropagationSuppressed) {
 								//あるビューのsightChangeに伴って他のビューを変更している最中の場合、
 								//それによる連鎖的なsightChangeには反応しないようにする
+
+								if (!this._sightChangeEvents) {
+									this._sightChangeEvents = [];
+								}
 								this._sightChangeEvents.push(event);
 								return;
 							}
