@@ -2430,10 +2430,6 @@
 						},
 
 						_setSystemVisible: function(value, element) {
-							if (this._isSystemVisible === value) {
-								return;
-							}
-
 							this._isSystemVisible = value;
 
 							if (element) {
@@ -4367,6 +4363,13 @@
 
 	var StageView = EventDispatcher
 			.extend(function(super_) {
+				//DUとViewportの位置関係を表す定数
+				var DU_POSITION_INTERSECT = 0;
+				var DU_POSITION_BEYOND_LEFT = 1;
+				var DU_POSITION_BEYOND_TOP = 2;
+				var DU_POSITION_BEYOND_RIGHT = 3;
+				var DU_POSITION_BEYOND_BOTTOM = 4;
+
 				var desc = {
 					name: 'h5.ui.components.stage.StageView',
 
@@ -5289,8 +5292,8 @@
 							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX, topY)) {
 								//上辺とエッジが交差している
 								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY,
-									rightX, bottomY)) {
+							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, leftX,
+									bottomY)) {
 								//左辺と交差している
 								return true;
 							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, bottomY,
@@ -5361,14 +5364,24 @@
 									//いずれかの辺と交差しているか、
 									//表示領域にEdgeが完全に内包されている場合のみ描画する
 
-									//									if (this._isOutOfViewport(du._from, rLeft, rTop, rRight,
-									//											rBottom)
-									//											&& this._isOutOfViewport(du._to, rLeft, rTop, rRight,
-									//													rBottom)) {
-									//										//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
+									//まず、エッジの両端（＝2つのDU）がビューポート外で、かつ
+									//両方とも同じサイドかどうかを判定する
 
-									//										du._setSystemVisible(false, element);
-									//									}
+									var fromDURelPos = this._isOutOfViewport(du._from, rLeft, rTop,
+											rRight, rBottom);
+
+									if (fromDURelPos !== DU_POSITION_INTERSECT) {
+										var toDURelPos = this._isOutOfViewport(du._to, rLeft, rTop,
+												rRight, rBottom);
+										if (fromDURelPos === toDURelPos) {
+											//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
+											du._setSystemVisible(false, element);
+											continue;
+										}
+									}
+
+									//DUの位置関係上エッジがビューポートを交差する可能性があるので
+									//実際に交差するかどうかを判定
 
 									var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
 
@@ -5400,14 +5413,24 @@
 						_isOutOfViewport: function(du, rLeft, rTop, rRight, rBottom) {
 							var duGlobalPos = du.getWorldGlobalPosition();
 
-							var duRight = duGlobalPos.x + du.width;
-							var duBottom = duGlobalPos.y + du.height;
-
-							if ((duRight < rLeft) || (duGlobalPos.x > rRight) || (duBottom < rTop)
-									|| (duGlobalPos.y > rBottom)) {
-								return true;
+							if (duGlobalPos.x > rRight) {
+								return DU_POSITION_BEYOND_RIGHT;
 							}
-							return false;
+
+							var duRight = duGlobalPos.x + du.width;
+							if (duRight < rLeft) {
+								return DU_POSITION_BEYOND_LEFT;
+							}
+
+							var duBottom = duGlobalPos.y + du.height;
+							if (duBottom < rTop) {
+								return DU_POSITION_BEYOND_TOP;
+							}
+							if (duGlobalPos.y > rBottom) {
+								return DU_POSITION_BEYOND_BOTTOM;
+							}
+
+							return DU_POSITION_INTERSECT;
 						},
 
 						_update: function(rootDU, renderRect) {
