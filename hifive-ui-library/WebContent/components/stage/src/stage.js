@@ -4332,6 +4332,12 @@
 					}
 					return this._viewport.getDisplayPosition(x, y);
 				},
+				toDisplayXLength: function(worldXLength) {
+					return this._viewport.getXLengthOfDisplay(worldXLength);
+				},
+				toDisplayYLength: function(worldYLength) {
+					return this._viewport.getYLengthOfDisplay(worldYLength);
+				}
 			}
 		};
 		return desc;
@@ -5827,6 +5833,23 @@
 							this._viewCollection._updateGridRegion();
 						},
 
+						getVisibleHeight: function() {
+							if (!this._isVisibleRangeFinite()) {
+								return Number.MAX_VALUE;
+							}
+							var visibleRangeY = this._visibleRangeY;
+							return Math.abs(visibleRangeY.bottom - visibleRangeY.top);
+						},
+
+						getVisibleHeightOfDisplay: function() {
+							if (!this._isVisibleRangeFinite()) {
+								return Number.MAX_VALUE;
+							}
+							var ret = this.getView(0).coordinateConverter.toDisplayYLength(this
+									.getVisibleHeight());
+							return ret;
+						},
+
 						_getViewportYFromScrollBarPosition: function(value) {
 							if (!this._scrollBarController) {
 								return 0;
@@ -5850,14 +5873,27 @@
 							this._scrollBarController.setScrollSize(logicalViewSize, amount);
 						},
 
-						_setScrollBarPosition: function(scrollY) {
+						_setScrollBarPosition: function(worldY) {
+							if (!this._scrollBarController) {
+								return;
+							}
+							var yMod = worldY - this._visibleRangeY.top;
+							this._scrollBarController.setScrollPosition(yMod);
+						},
+
+						_updateScrollBarLogicalValues: function() {
 							if (!this._scrollBarController) {
 								return;
 							}
 
-							var yMod = scrollY - this._visibleRangeY.top;
+							var reprView = this.getView(0);
 
-							this._scrollBarController.setScrollPosition(yMod);
+							var worldHeight = reprView._viewport.worldHeight;
+							var scrollWorldAmount = this.getVisibleHeight() - worldHeight;
+							var worldY = reprView._viewport.worldY;
+
+							this._setScrollBarSetting(worldHeight, scrollWorldAmount);
+							this._setScrollBarPosition(worldY);
 						},
 
 						_setScrollBarTop: function(top) {
@@ -5894,32 +5930,18 @@
 								return;
 							}
 
-							var leftmostView = this.getView(0);
-							var rightmostView = this
-									.getView(this._viewCollection.numberOfColumns - 1);
-
-							var height = leftmostView.height;
-
 							var $root = $('<div class="h5-stage-scrollbar vertical" data-h5-dyn-stage-idx="'
 									+ this.index + '"></div>');
 
+							var rightmostView = this
+									.getView(this._viewCollection.numberOfColumns - 1);
 							var that = this;
 
-							var worldHeight = rightmostView._viewport
-									.getYLengthOfWorld(this.height);
-							var worldAmount = Math.abs(this._visibleRangeY.bottom
-									- this._visibleRangeY.top);
-
 							var controller = this._createVScrollBarController($root[0]);
-							controller.readyPromise
-									.done(function() {
-										this.setScrollSize(worldHeight, worldAmount - worldHeight);
-										this.setBarSize(height);
-
-										var scrY = that._getScrollBarPositionFromScrollY(that
-												.getScrollY());
-										this.setScrollPosition(scrY);
-									});
+							controller.readyPromise.done(function() {
+								this.setBarSize(rightmostView.height);
+								that._updateScrollBarLogicalValues();
+							});
 
 							this._scrollBarController = controller;
 
@@ -6122,6 +6144,24 @@
 							this._viewCollection._updateGridRegion();
 						},
 
+
+						getVisibleWidth: function() {
+							if (!this._isVisibleRangeFinite()) {
+								return Number.MAX_VALUE;
+							}
+							var visibleRangeX = this._visibleRangeX;
+							return Math.abs(visibleRangeX.right - visibleRangeX.left);
+						},
+
+						getVisibleWidthOfDisplay: function() {
+							if (!this._isVisibleRangeFinite()) {
+								return Number.MAX_VALUE;
+							}
+							var ret = this.getView(0).coordinateConverter.toDisplayYLength(this
+									.getVisibleWidth());
+							return ret;
+						},
+
 						_isVisibleRangeFinite: function() {
 							var ret = this._visibleRangeX.left != null
 									&& this._visibleRangeX.right != null;
@@ -6161,13 +6201,26 @@
 							this._scrollBarController.setScrollSize(logicalViewSize, amount);
 						},
 
-						_setScrollBarPosition: function(x) {
+						_updateScrollBarLogicalValues: function() {
 							if (!this._scrollBarController) {
 								return;
 							}
 
-							var xMod = x - this._visibleRangeX.left;
+							var reprView = this.getView(0);
 
+							var worldWidth = reprView._viewport.worldWidth;
+							var scrollWorldAmount = this.getVisibleWidth() - worldWidth;
+							var worldX = reprView._viewport.worldX;
+
+							this._setScrollBarSetting(worldWidth, scrollWorldAmount);
+							this._setScrollBarPosition(worldX);
+						},
+
+						_setScrollBarPosition: function(worldX) {
+							if (!this._scrollBarController) {
+								return;
+							}
+							var xMod = worldX - this._visibleRangeX.left;
 							this._scrollBarController.setScrollPosition(xMod);
 						},
 
@@ -6208,26 +6261,14 @@
 								cursor: 'default'
 							});
 
-							var worldVisibleLen = Math.abs(this._visibleRangeX.right
-									- this._visibleRangeX.left);
-							var worldWidth = bottommostView._viewport.getXLengthOfWorld(this.width);
-
 							this._scrollBarController = this._createHScrollBarController($root[0]);
 
 							var that = this;
 
-							this._scrollBarController.readyPromise
-									.done(function() {
-										//第1はサムの相対値、第2が最大値
-										this
-												.setScrollSize(worldWidth, worldVisibleLen
-														- worldWidth);
-										this.setBarSize(that.width);
-
-										var scrX = that._getScrollBarPositionFromScrollX(that
-												.getScrollX());
-										this.setScrollPosition(scrX);
-									});
+							this._scrollBarController.readyPromise.done(function() {
+								this.setBarSize(bottommostView.width);
+								that._updateScrollBarLogicalValues();
+							});
 
 							$root.appendTo(this._viewCollection._stage.rootElement);
 						},
@@ -6952,11 +6993,10 @@
 										} else {
 											var maxHeight = Number.MAX_VALUE;
 
-											var visibleRangeY = row.getVisibleRangeY();
-
 											if (row._isVisibleRangeFinite()) {
-												maxHeight = Math.abs(visibleRangeY.bottom
-														- visibleRangeY.top);
+												//拡大縮小を行っている場合、例えば拡大時だと
+												//見かけの表示サイズ（表示量）は小さくなっているのでビューの最大サイズは大きくなる
+												maxHeight = row.getVisibleHeightOfDisplay();
 											}
 
 											actualHeight = Math.min(row._desiredHeight, maxHeight);
@@ -6978,13 +7018,15 @@
 										if (row._scrollBarMode !== SCROLL_BAR_MODE_NONE
 												&& row._isVisibleRangeFinite()) {
 											row._showScrollBar();
+
+											//スクロールバーの物理的な位置とサイズを調整。
+											//論理的な位置・サイズは、この処理の中では
+											//showScrollBar()の中で初期化される。
+											row._setScrollBarHeight(actualHeight);
+											row._setScrollBarTop(totalY);
 										} else {
 											row._hideScrollBar();
 										}
-
-										//スクロールバーの位置とサイズを調整
-										row._setScrollBarHeight(actualHeight);
-										row._setScrollBarTop(totalY);
 
 										totalY += actualHeight;
 									});
@@ -7029,11 +7071,9 @@
 												} else {
 													var maxWidth = Number.MAX_VALUE;
 
-													var visibleRangeX = column.getVisibleRangeX();
-
 													if (column._isVisibleRangeFinite()) {
-														maxWidth = Math.abs(visibleRangeX.right
-																- visibleRangeX.left);
+														maxWidth = column
+																.getVisibleWidthOfDisplay();
 													}
 
 													actualWidth = Math.min(column._desiredWidth,
@@ -7053,18 +7093,18 @@
 
 												column._desiredWidth = actualWidth;
 
-												//スクロールバーの位置とサイズを調整
-												column._setScrollBarWidth(actualWidth);
-												column._setScrollBarLeft(totalX);
-
-												totalX += actualWidth;
-
 												if (column._scrollBarMode !== SCROLL_BAR_MODE_NONE
 														&& column._isVisibleRangeFinite()) {
 													column._showScrollBar();
+
+													//スクロールバーの位置とサイズを調整
+													column._setScrollBarWidth(actualWidth);
+													column._setScrollBarLeft(totalX);
 												} else {
 													column._hideScrollBar();
 												}
+
+												totalX += actualWidth;
 											});
 						},
 
@@ -7075,7 +7115,8 @@
 						 * @param srcView ソースビュー
 						 * @param newScrollPos 合わせるスクロール位置
 						 */
-						_applyScrollPositionToOthers: function(srcView, newScrollPos) {
+						_applyScrollPositionToOthers: function(srcView, newScrollPos,
+								suppressScrollBarUpdate) {
 							//rowがnullの場合＝ビューがない
 							var row = this.getRow(srcView.rowIndex);
 							if (row) {
@@ -7089,21 +7130,9 @@
 
 								//TODO CollectionからunifiedSightChangeイベントをあげて
 								//stage側で処理する、か、Collectionでスクロールバーを処理する
-								if (!this._stage._isInScrollBarScroll) {
-									var leftmostView = row.getView(0);
-
-									var worldHeight = leftmostView._viewport.worldHeight;
-									var visibleRangeY = leftmostView.getVisibleRangeY();
-									var amount = visibleRangeY.bottom - visibleRangeY.top
-											- worldHeight;
-
-									var worldScrollY = leftmostView._viewport
-											.getYLengthOfWorld(newScrollPos.y);
-
-									row._setScrollBarSetting(worldHeight, amount);
-									row._setScrollBarPosition(worldScrollY);
-									row._setScrollBarHeight(srcView.height);
-									row._setScrollBarTop(srcView.y);
+								if (suppressScrollBarUpdate !== false
+										&& !this._stage._isInScrollBarScroll) {
+									row._updateScrollBarLogicalValues();
 								}
 							}
 
@@ -7117,21 +7146,9 @@
 									}
 								});
 
-								if (!this._stage._isInScrollBarScroll) {
-									var topmostView = col.getView(0);
-
-									var worldWidth = topmostView._viewport.worldWidth;
-									var visibleRangeX = col.getVisibleRangeX();
-									var amount = visibleRangeX.right - visibleRangeX.left
-											- worldWidth;
-
-									var worldScrollX = topmostView._viewport
-											.getXLengthOfWorld(newScrollPos.x);
-
-									col._setScrollBarSetting(worldWidth, amount);
-									col._setScrollBarPosition(worldScrollX);
-									col._setScrollBarWidth(srcView.width);
-									col._setScrollBarLeft(srcView.x);
+								if (suppressScrollBarUpdate !== false
+										&& !this._stage._isInScrollBarScroll) {
+									col._updateScrollBarLogicalValues();
 								}
 							}
 						},
@@ -7196,8 +7213,13 @@
 									v.setScale(newScaleX, newScaleY, scaleCenterX, scaleCenterY);
 								});
 
-								//同じ行・列についてスクロール位置を合わせる
-								this._applyScrollPositionToOthers(srcView, newScrollPos);
+								//同じ行・列についてスクロール位置を合わせる。
+								//ただし、スクロールバーの位置はこの後全体で合わせるので
+								//ここでは行わない（第3引数＝false）
+								this._applyScrollPositionToOthers(srcView, newScrollPos, false);
+
+								//スケールが変わった場合はスクロールバーの論理サイズとポジションも調整する
+								this._updateAllScrollBars();
 							}
 
 							this._isSightChangePropagationSuppressed = false;
@@ -7220,6 +7242,23 @@
 									unifiedSightChangeEvArg);
 
 							this._sightChangeEvents = null;
+						},
+
+						/**
+						 * sightChange時、スケールが変更されていた場合に全てのスクロールバーのスクロールサイズを更新します。
+						 */
+						_updateAllScrollBars: function() {
+							var rows = this.getRows();
+							for (var i = 0, rowLen = rows.length; i < rowLen; i++) {
+								var row = rows[i];
+								row._updateScrollBarLogicalValues();
+							}
+
+							var columns = this.getColumns();
+							for (var i = 0, colLen = columns.length; i < colLen; i++) {
+								var column = columns[i];
+								column._updateScrollBarLogicalValues();
+							}
 						},
 
 						__onSelectDUStart: function(dragStartPos) {
@@ -8159,10 +8198,12 @@
 			if (isVertical) {
 				var row = this._stageViewCollection.getRow(idx);
 
-				var newPos = row._scrollBarController.getScrollPosition();
+				var newPos = 0;
 				var isIndexScroll = context.evArg.vertical.type === 'indexDiff';
 				if (isIndexScroll) {
-					newPos += SCROLL_BAR_ARROW_DIFF * context.evArg.vertical.diff;
+					//diffは正方向なら1、逆方向なら-1
+					newPos = row._scrollBarController.getScrollPosition() + SCROLL_BAR_ARROW_DIFF
+							* context.evArg.vertical.diff;
 
 					var vScrollSize = row._scrollBarController.getScrollSize();
 
@@ -8174,18 +8215,23 @@
 
 					row._scrollBarController.setScrollPosition(newPos);
 				} else {
+					//このpositionはワールド座標系の値
 					newPos = context.evArg.vertical.position;
 				}
 
+				//ここではnewPosはワールド座標
 				var scrY = row._getViewportYFromScrollBarPosition(newPos);
-				row.setScrollY(scrY);
+				var scrDispY = row.getView(0)._viewport.getYLengthOfDisplay(scrY);
+				//setScrollYに渡す座標はディスプレイ座標
+				row.setScrollY(scrDispY);
 			} else {
 				var col = this._stageViewCollection.getColumn(idx);
 
-				var newPos = col._scrollBarController.getScrollPosition();
+				var newPos = 0;
 				var isIndexScroll = context.evArg.horizontal.type === 'indexDiff';
 				if (isIndexScroll) {
-					newPos += SCROLL_BAR_ARROW_DIFF * context.evArg.horizontal.diff;
+					newPos = col._scrollBarController.getScrollPosition() + SCROLL_BAR_ARROW_DIFF
+							* context.evArg.horizontal.diff;
 
 					var hScrollSize = col._scrollBarController.getScrollSize();
 
@@ -8200,8 +8246,10 @@
 					newPos = context.evArg.horizontal.position;
 				}
 
+				//ここではnewPosはワールド座標
 				var scrX = col._getViewportXFromScrollBarPosition(newPos);
-				col.setScrollX(scrX);
+				var scrDispX = col.getView(0)._viewport.getXLengthOfDisplay(scrX);
+				col.setScrollX(scrDispX);
 			}
 
 			this._isInScrollBarScroll = false;
