@@ -9163,8 +9163,8 @@
 				//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
 				var renderX = vpwRect.x - (worldH - vpwRect.width);
 				var renderY = vpwRect.y - (worldW - vpwRect.height);
-				var renderW = vpwRect.x + worldW;
-				var renderH = vpwRect.y + worldH;
+				var renderW = vpwRect.x + vpwRect.width + worldW;
+				var renderH = vpwRect.y + vpwRect.height + worldH;
 
 				var renderRect = Rect.create(renderX, renderY, renderW, renderH);
 
