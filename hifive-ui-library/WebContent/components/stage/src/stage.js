@@ -7213,12 +7213,18 @@
 									v.setScale(newScaleX, newScaleY, scaleCenterX, scaleCenterY);
 								});
 
+								//スケールが変わった場合、VisibleRangeが設定されていると
+								//現在のサイズがVisibleRangeの大きさより大きい状態になってしまう場合がある。
+								//そのため、グリッドの領域を再度調整する。
+								this._updateGridRegion();
+
 								//同じ行・列についてスクロール位置を合わせる。
 								//ただし、スクロールバーの位置はこの後全体で合わせるので
 								//ここでは行わない（第3引数＝false）
 								this._applyScrollPositionToOthers(srcView, newScrollPos, false);
 
-								//スケールが変わった場合はスクロールバーの論理サイズとポジションも調整する
+								//スケールが変わった場合は全てのスクロールバーの論理サイズとポジションが変わる
+								//（可能性がある）ので調整する
 								this._updateAllScrollBars();
 							}
 
@@ -9144,12 +9150,24 @@
 			//TODO ドラッグ対象のセパレータのindexに応じて描画範囲をより最適化する
 			//TODO ドラッグ中にもDUが追加されたりrequestRender()が呼ばれる可能性もあるのでそれらは描画する（今は全てのアップデートを止めている）
 			this._stageViewCollection.getViewAll().forEach(this.own(function(view) {
+
+				var vpwRect = view._viewport.getWorldRect();
+
 				//TODO private APIを呼んでいるが、将来的にはpublicでできるように検討
-				// TODO 全てのビューのスケールは同一。
-				var renderRect = view._viewport.getWorldRect();
 				var worldW = view._viewport.getXLengthOfWorld(this._stageViewCollection._width);
 				var worldH = view._viewport.getYLengthOfWorld(this._stageViewCollection._height);
-				renderRect.setSize(worldW, worldH);
+
+				//セパレータ操作中に可視範囲に入り得る最大は
+				//「現在のスクロール位置 - (画面の幅/高さ - 今見えている領域の幅/高さ)」（全てワールド座標系）
+				//VisibleRangeが設定されている場合や現在のスクロール位置によっては
+				//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
+				var renderX = vpwRect.x - (worldH - vpwRect.width);
+				var renderY = vpwRect.y - (worldW - vpwRect.height);
+				var renderW = vpwRect.x + worldW;
+				var renderH = vpwRect.y + worldH;
+
+				var renderRect = Rect.create(renderX, renderY, renderW, renderH);
+
 				view._update(null, renderRect);
 				view._isUpdateSuppressed = true;
 			}));
