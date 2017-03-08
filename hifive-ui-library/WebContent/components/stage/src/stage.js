@@ -7073,6 +7073,12 @@
 							return false;
 						},
 
+						_isHScrollBarShow: function() {
+							//厳密には「出る可能性がある」と「今出ている」は異なる。
+							//こちらは「今出ているかどうか」を表す。ただし今はalways/noneだけなのでこれでよい。
+							return this._willHScrollBarShow();
+						},
+
 						_willVScrollBarShow: function() {
 							var rows = this.getRows();
 							for (var i = 0, len = rows.length; i < len; i++) {
@@ -7083,6 +7089,10 @@
 								}
 							}
 							return false;
+						},
+
+						_isVScrollBarShow: function() {
+							return this._willVScrollBarShow();
 						},
 
 						_updateGridRegionRow: function() {
@@ -9256,7 +9266,7 @@
 
 		_isGridSeparatorDragging: false,
 
-		_gridSeparatorDragInfo: null,
+		_gridSeparatorDragContext: null,
 
 		_startGridSeparatorDrag: function(context) {
 			var $el = $(context.event.target);
@@ -9265,49 +9275,62 @@
 			var isHorizontal = $el.hasClass('horizontal');
 
 			var sep;
+			var prevView, nextView;
+			var prevDesiredSize, nextDesiredSize;
 
 			//TODO StageViewCollection側にseparatorをIndex指定で取得するAPIを作るべき
 			if (isHorizontal) {
 				var allRows = this._stageViewCollection.getRowsOfAllTypes();
 				sep = allRows[index];
+				prevView = allRows[index - 1];
+				prevDesiredSize = prevView._desiredHeight;
+				nextView = allRows[index + 1];
+				nextDesiredSize = nextView._desiredHeight;
 			} else {
 				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
 				sep = allCols[index];
+				prevView = allCols[index - 1];
+				prevDesiredSize = prevView._desiredWidth;
+				nextView = allCols[index + 1];
+				nextDesiredSize = nextView._desiredWidth;
 			}
 
 			//セパレータドラッグ中は、ドラッグで見える可能性がある範囲を一度だけ描画し、ドラッグ完了まで可視範囲判定を抑制する
 			//TODO ドラッグ対象のセパレータのindexに応じて描画範囲をより最適化する
 			//TODO ドラッグ中にもDUが追加されたりrequestRender()が呼ばれる可能性もあるのでそれらは描画する（今は全てのアップデートを止めている）
-			this._stageViewCollection.getViewAll().forEach(
-					this.own(function(view) {
-						var vpwRect = view._viewport.getWorldRect();
+			//MEMO: visibleの制御をおこなわないこととしたので、下記のコードは不要。
+			//			this._stageViewCollection.getViewAll().forEach(
+			//					this.own(function(view) {
+			//						var vpwRect = view._viewport.getWorldRect();
+			//
+			//						var worldW = view.coordinateConverter
+			//								.toWorldXLength(this._stageViewCollection._width);
+			//						var worldH = view.coordinateConverter
+			//								.toWorldYLength(this._stageViewCollection._height);
+			//
+			//						//セパレータ操作中に可視範囲に入り得る最大は
+			//						//「現在のスクロール位置を中心に、上下左右に"現在のViewCollection全体の幅/高さ"分だけ広げた領域」となる。
+			//						//VisibleRangeが設定されている場合や現在のスクロール位置によっては
+			//						//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
+			//						var renderX = vpwRect.x - (worldW - vpwRect.width);
+			//						var renderY = vpwRect.y - (worldH - vpwRect.height);
+			//						//「幅」でRectを指定するので、ずらしたX座標の分追加で足す必要がある
+			//						var renderW = vpwRect.x + vpwRect.width + worldW * 2;
+			//						var renderH = vpwRect.y + vpwRect.height + worldH * 2;
+			//
+			//						var renderRect = Rect.create(renderX, renderY, renderW, renderH);
+			//
+			//						view._update(null, renderRect);
+			//						view._isUpdateSuppressed = true;
+			//					}));
 
-						var worldW = view.coordinateConverter
-								.toWorldXLength(this._stageViewCollection._width);
-						var worldH = view.coordinateConverter
-								.toWorldYLength(this._stageViewCollection._height);
-
-						//セパレータ操作中に可視範囲に入り得る最大は
-						//「現在のスクロール位置を中心に、上下左右に"現在のViewCollection全体の幅/高さ"分だけ広げた領域」となる。
-						//VisibleRangeが設定されている場合や現在のスクロール位置によっては
-						//多少無駄な領域が発生する可能性はあるが、それほど大きなペナルティではないと考える。
-						var renderX = vpwRect.x - (worldW - vpwRect.width);
-						var renderY = vpwRect.y - (worldH - vpwRect.height);
-						//「幅」でRectを指定するので、ずらしたX座標の分追加で足す必要がある
-						var renderW = vpwRect.x + vpwRect.width + worldW * 2;
-						var renderH = vpwRect.y + vpwRect.height + worldH * 2;
-
-						var renderRect = Rect.create(renderX, renderY, renderW, renderH);
-
-						view._update(null, renderRect);
-						view._isUpdateSuppressed = true;
-					}));
-
-			this._gridSeparatorDragInfo = {
-				$target: $el,
-				index: index,
+			this._gridSeparatorDragContext = {
 				isHorizontal: isHorizontal,
-				separator: sep
+				separator: sep,
+				prevView: prevView,
+				prevDesiredSize: prevDesiredSize,
+				nextView: nextView,
+				nextDesiredSize: nextDesiredSize
 			};
 			this._isGridSeparatorDragging = true;
 		},
@@ -9315,17 +9338,44 @@
 		_processGridSeparatorDragMove: function(context) {
 			var event = context.event;
 
-			var dispDx = event.pageX - this._dragLastPagePos.x;
-			var dispDy = event.pageY - this._dragLastPagePos.y;
+			var cursorPageX = event.pageX;
+			var cursorPageY = event.pageY;
 
-			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
-			};
+			var dragContext = this._gridSeparatorDragContext;
 
-			var info = this._gridSeparatorDragInfo;
+			var $root = $(this.rootElement);
 
-			if (info.isHorizontal) {
+			var rootOffset = $root.offset();
+			var rootRight = rootOffset.left + $root.width() - dragContext.separator.width;
+			var rootBottom = rootOffset.top + $root.height() - dragContext.separator.height;
+
+			if (this._stageViewCollection._isHScrollBarShow()) {
+				//下に水平スクロールバーが表示されている場合、
+				//セパレータが動く最大の位置はStageのルートのbottomから
+				//スクロールバーの高さを引いた位置になる
+				rootBottom -= SCROLL_BAR_THICKNESS;
+			}
+
+			if (cursorPageY > rootBottom) {
+				cursorPageY = rootBottom;
+			} else if (cursorPageY < rootOffset.top) {
+				cursorPageY = rootOffset.top;
+			}
+
+			if (this._stageViewCollection._isVScrollBarShow()) {
+				rootRight -= SCROLL_BAR_THICKNESS;
+			}
+
+			if (cursorPageX > rootRight) {
+				cursorPageX = rootRight;
+			} else if (cursorPageX < rootOffset.left) {
+				cursorPageX = rootOffset.left;
+			}
+
+			var dispDx = cursorPageX - this._dragStartPagePos.x;
+			var dispDy = cursorPageY - this._dragStartPagePos.y;
+
+			if (dragContext.isHorizontal) {
 				//水平分割(上下に分割)しているので、X方向には動かさない
 				dispDx = 0;
 			} else {
@@ -9338,39 +9388,12 @@
 				return;
 			}
 
-			if (info.isHorizontal) {
-				var currTop = info.$target.position().top;
-				var newTop = currTop + dispDy;
-
-				//TODO マウスが突き抜けた場合にずれないようにする必要がある
-				if (newTop < 0) {
-					newTop = 0;
-				}
-
-				//自分（セパレータ）の上下のRowの高さと位置を変更
-				var allRows = this._stageViewCollection.getRowsOfAllTypes();
-
-				var aboveRow = allRows[info.index - 1];
-				var belowRow = allRows[info.index + 1];
-
-				aboveRow._desiredHeight += dispDy;
-				belowRow._desiredHeight -= dispDy;
+			if (dragContext.isHorizontal) {
+				dragContext.prevView._desiredHeight = dragContext.prevDesiredSize + dispDy;
+				dragContext.nextView._desiredHeight = dragContext.nextDesiredSize - dispDy;
 			} else {
-				var currLeft = info.$target.position().left;
-				var newLeft = currLeft + dispDx;
-
-				//TODO マウスが突き抜けた場合にずれないようにする必要がある
-				if (newLeft < 0) {
-					newLeft = 0;
-				}
-
-				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
-
-				var leftCol = allCols[info.index - 1];
-				var rightCol = allCols[info.index + 1];
-
-				leftCol._desiredWidth += dispDx;
-				rightCol._desiredWidth -= dispDx;
+				dragContext.prevView._desiredWidth = dragContext.prevDesiredSize + dispDx;
+				dragContext.nextView._desiredWidth = dragContext.nextDesiredSize - dispDx;
 			}
 
 			this._stageViewCollection._updateGridRegion();
@@ -9390,7 +9413,7 @@
 
 		_endGridSeparatorDrag: function(context, $el) {
 			this._isGridSeparatorDragging = false;
-			this._gridSeparatorDragInfo = null;
+			this._gridSeparatorDragContext = null;
 
 			//ビューの更新を有効にする
 			this._stageViewCollection.getViewAll().forEach(function(view) {
