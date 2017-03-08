@@ -8514,16 +8514,8 @@
 					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
 				});
 
-				var dragOverDU = this._getDragOverDisplayUnit(context.event);
-
-				delegatedJQueryEvent.type = EVENT_DRAG_DU_MOVE;
-				delegatedJQueryEvent.target = this.rootElement;
-				delegatedJQueryEvent.currentTarget = this.rootElement;
-
-				this.trigger(delegatedJQueryEvent, {
-					dragSession: this._dragSession,
-					dragOverDisplayUnit: dragOverDU
-				});
+				//doMoveの中でStageViewCollection.__onDragDUMoveが呼ばれる
+				this._dragSession.doMove(context.event);
 
 				//プロキシが設定されたらそれを表示
 				//TODO プロキシの移動はDragSessionに任せる方向で。constructorでドラッグのルート(Stage)を渡せば可能のはず
@@ -8539,8 +8531,17 @@
 					});
 				}
 
-				//doMoveの中でStageViewCollection.__onDragDUMoveが呼ばれる
-				this._dragSession.doMove(context.event);
+				var dragOverDU = this._getDragOverDisplayUnit(context.event);
+
+				delegatedJQueryEvent.type = EVENT_DRAG_DU_MOVE;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this.trigger(delegatedJQueryEvent, {
+					dragSession: this._dragSession,
+					dragOverDisplayUnit: dragOverDU
+				});
+
 				break;
 			case DRAG_MODE_REGION:
 				this.toggleBoundaryScroll(function() {
