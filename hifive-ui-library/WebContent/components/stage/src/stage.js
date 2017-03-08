@@ -2024,7 +2024,9 @@
 						_isSelectable: null,
 
 						_isSelected: null,
-						_isFocused: null
+						_isFocused: null,
+
+						_worldGlobalPositionCache: null
 					},
 					accessor: {
 						x: {
@@ -2036,6 +2038,7 @@
 									return;
 								}
 								this._x = value;
+								this._worldGlobalPositionCache = null;
 
 								this._setDirty(REASON_POSITION_CHANGE);
 							}
@@ -2049,6 +2052,7 @@
 									return;
 								}
 								this._y = value;
+								this._worldGlobalPositionCache = null;
 
 								this._setDirty(REASON_POSITION_CHANGE);
 							}
@@ -2195,12 +2199,39 @@
 						},
 
 						setRect: function(rect) {
-							//TODO イベントをあげる回数を減らす（今はセッター側で個別に起きてしまう）。他のAPIも同様
-							this._x = rect.x;
-							this._y = rect.y;
-							this._width = rect.width;
-							this._height = rect.height;
-							this._setDirty([REASON_SIZE_CHANGE, REASON_POSITION_CHANGE]);
+							var isSizeChanged = false;
+							var isPositionChanged = false;
+
+							if (this._x !== rect.x) {
+								this._x = rect.x;
+								isPositionChanged = true;
+							}
+
+							if (this._y !== rect.y) {
+								this._y = rect.y;
+								isPositionChanged = true;
+							}
+
+							if (this._width !== rect.width) {
+								this._width = rect.width;
+								isSizeChanged = true;
+							}
+
+							if (this._height !== rect.height) {
+								this._height = rect.height;
+								isSizeChanged = true;
+							}
+
+							var reasons = [];
+							if (isPositionChanged) {
+								reasons.push(REASON_POSITION_CHANGE);
+								this._worldGlobalPositionCache = null;
+							}
+							if (isSizeChanged) {
+								reasons.push(REASON_SIZE_CHANGE);
+							}
+
+							this._setDirty(reasons);
 						},
 
 						getRect: function() {
@@ -2209,9 +2240,22 @@
 						},
 
 						setSize: function(width, height) {
-							this._width = width;
-							this._height = height;
-							this._setDirty(REASON_SIZE_CHANGE);
+							var isSizeChanged = false;
+
+							if (this._width !== width) {
+								this._width = width;
+								isSizeChanged = true;
+							}
+
+							if (this._height !== height) {
+								this._height = height;
+								isSizeChanged = true;
+							}
+
+							if (isSizeChanged) {
+								//実際にサイズが変更された場合に限りdirtyにする
+								this._setDirty(REASON_SIZE_CHANGE);
+							}
 						},
 
 						remove: function() {
@@ -2220,15 +2264,34 @@
 							}
 						},
 
-						moveTo: function(x, y) {
-							this._x = x;
-							this._y = y;
-							this._setDirty(REASON_POSITION_CHANGE);
+						moveTo: function(worldX, worldY) {
+							var isPositionChanged = false;
+
+							if (this._x !== worldX) {
+								this._x = worldX;
+								isPositionChanged = true;
+							}
+
+							if (this._y !== worldY) {
+								this._y = worldY;
+								isPositionChanged = true;
+							}
+
+							if (isPositionChanged) {
+								this._worldGlobalPositionCache = null;
+								this._setDirty(REASON_POSITION_CHANGE);
+							}
 						},
 
-						moveBy: function(x, y) {
-							this._x += x;
-							this._y += y;
+						moveBy: function(worldDx, worldDy) {
+							if (worldDx === 0 && worldDy === 0) {
+								//差分なので、移動量がどちらも0なら何もしない
+								return;
+							}
+
+							this._x += worldDx;
+							this._y += worldDy;
+							this._worldGlobalPositionCache = null;
 							this._setDirty(REASON_POSITION_CHANGE);
 						},
 
@@ -2246,6 +2309,11 @@
 							if (!this._rootStage) {
 								throw new Error(ERR_CANNOT_MOVE_OFFSTAGE_DU);
 							}
+
+							if (x === 0 && y === 0) {
+								return;
+							}
+
 							var view = this._rootStage._getActiveView();
 							var wx = view._viewport.getXLengthOfWorld(x);
 							var wy = view._viewport.getYLengthOfWorld(y);
@@ -2304,19 +2372,22 @@
 								return null;
 							}
 
+							if (this._worldGlobalPositionCache) {
+								return this._worldGlobalPositionCache;
+							}
+
 							var wgx = this.x;
 							var wgy = this.y;
 
 							var parentDU = this._parentDU;
 							while (!Layer.isClassOf(parentDU)) {
-								var parentPos = parentDU.getWorldGlobalPosition();
-								wgx += parentPos.x;
-								wgy += parentPos.y;
+								wgx += parentDU._x;
+								wgy += parentDU._y;
 								parentDU = this._parentDU._parentDU;
 							}
 
-							var wpos = WorldPoint.create(wgx, wgy);
-							return wpos;
+							this._worldGlobalPositionCache = WorldPoint.create(wgx, wgy);
+							return this._worldGlobalPositionCache;
 						},
 
 						select: function(isExclusive) {
@@ -2384,23 +2455,41 @@
 						},
 
 						_updateActualDisplayStyle: function(element) {
-							//forceHiddenがtrueの場合は必ずdipslay:noneにする
-							var desiredVisible = this._isForceHidden ? false : this._isVisible
-									&& this._isSystemVisible;
+							//MEMO: 個別要素にdisplay:noneを設定するよりも、
+							//表示非表示の制御を完全にブラウザに任せる（＝displayの制御をまったくしない）方が高速だった。
+							//（制御をしないようにすることで、displayの制御によるブラウザ自体のツリー計算や
+							//レンダリングが最適化されるのに加え、
+							//「可視範囲に入っているかどうか」の計算自体が省略できる（これが結構大きい）。
+							//ただし、初期表示時は制御した方が多少速い。
+							//また、IEでは初期表示の速度低下が激しいが、これを改善するためには
+							//DOMツリー自体を小さくする（DOMの生成を表示範囲のみにしてappend/removeを動的に行う）が
+							//必要と思われる。
 
 							var isElementDisplayVisible = window.getComputedStyle(element, '').display !== 'none';
 
-							if (desiredVisible !== isElementDisplayVisible) {
-								element.style.display = desiredVisible ? '' : 'none';
+							if (isElementDisplayVisible !== this._isVisible) {
+								//現時点では、単純にユーザーによる表示制御だけを行う
+								element.style.display = this._isVisible ? '' : 'none';
 							}
+
+							//forceHiddenがtrueの場合は必ずdipslay:noneにする
+							//							var desiredVisible = this._isForceHidden ? false : this._isVisible
+							//									&& this._isSystemVisible;
+
+							//							var isElementDisplayVisible = element.classList.contains('h5-stage-invisible-du');
+
+							//							if (desiredVisible !== isElementDisplayVisible) {
+							//								if(desiredVisible) {
+							//									element.classList.remove('h5-stage-invisible-du');
+							//}
+							//								else {
+							//									element.classList.add('h5-stage-invisible-du');
+							//}
+							//element.style.display = desiredVisible ? '' : 'none';
+							//							}
 						},
 
 						__updateDOM: function(stageView, element, reason) {
-							//					if (!this._isVisible) {
-							//						//非表示状態なら他の描画はしない
-							//						return;
-							//					}
-
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
 								this._updateActualDisplayStyle(element);
 							}
@@ -4283,6 +4372,38 @@
 
 					return nineSlice;
 				}
+
+			//将来追加予定だが現時点では使っていないのでコメントアウト
+			//				getRelativePosition: function(displayUnit) {
+			//					var duGlobalPos = displayUnit.getWorldGlobalPosition();
+			//
+			//					var rRight = this.worldX + this.worldWidth;
+			//
+			//					if (duGlobalPos.x > rRight) {
+			//						return DU_POSITION_BEYOND_RIGHT;
+			//					}
+			//
+			//					var duRight = duGlobalPos.x + du.width;
+			//					if (duRight < this.worldX) {
+			//						return DU_POSITION_BEYOND_LEFT;
+			//					}
+			//
+			//					var duBottom = duGlobalPos.y + du.height;
+			//					if (duBottom < this.worldY) {
+			//						return DU_POSITION_BEYOND_TOP;
+			//					}
+			//
+			//					var rBottom = this.worldY + this.worldHeight;
+			//					if (duGlobalPos.y > rBottom) {
+			//						return DU_POSITION_BEYOND_BOTTOM;
+			//					}
+			//
+			//					return DU_POSITION_INTERSECT;
+			//				},
+			//
+			//				isOutOfView: function(du) {
+			//					return this.getRelativePosition(du) !== DU_POSITION_INTERSECT;
+			//				}
 			}
 		};
 		return desc;
@@ -5329,156 +5450,163 @@
 							return false;
 						},
 
-						_updateSystemVisible: function(renderRect, rootDU, includesRoot) {
-							var duArray;
-							if (includesRoot === true) {
-								duArray = [rootDU];
-							} else {
-								duArray = [];
-							}
-
-							if (DisplayUnitContainer.isClassOf(rootDU)) {
-								duArray = rootDU.getDisplayUnitAll(true);
-							}
-
-							var belongingLayer = rootDU._belongingLayer;
-
-							var effectiveRenderRect = Rect.create(renderRect.x, renderRect.y,
-									renderRect.width, renderRect.height);
-
-							switch (belongingLayer.UIDragScreenScrollDirection) {
-							case SCROLL_DIRECTION_X:
-								//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
-								effectiveRenderRect.y = 0;
-								break;
-							case SCROLL_DIRECTION_Y:
-								effectiveRenderRect.x = 0;
-								break;
-							case SCROLL_DIRECTION_NONE:
-								effectiveRenderRect.x = 0;
-								effectiveRenderRect.y = 0;
-								break;
-							}
-
-							//エッジの交差判定で使用する、描画領域の4つ角の座標
-							var rLeft = effectiveRenderRect.x;
-							var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
-							var rTop = effectiveRenderRect.y;
-							var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
-
-							for (var i = 0, len = duArray.length; i < len; i++) {
-								var du = duArray[i];
-
-								var element = this._duidElementMap.get(du.id);
-
-								if (!element) {
-									//対応するDOMが描画されていない場合（可視範囲外である、などの理由で）は無視
-									continue;
-								}
-
-								if (DisplayUnitContainer.isClassOf(du)) {
-									//DUコンテナは現状常に表示とする
-									du._setSystemVisible(true, element);
-									continue;
-								} else if (Edge.isClassOf(du)) {
-									//エッジの場合、表示領域の各辺と線分の交差判定を行い、
-									//いずれかの辺と交差しているか、
-									//表示領域にEdgeが完全に内包されている場合のみ描画する
-
-									//まず、エッジの両端（＝2つのDU）がビューポート外で、かつ
-									//両方とも同じサイドかどうかを判定する
-
-									//TODO 現状では効果がある場合と逆に計算量が増える場合があり
-									//かつそれほど大きな効果が見込めないので一旦この判定は行わないようにする
-
-									//									var fromDURelPos = this._isOutOfViewport(du._from, rLeft, rTop,
-									//											rRight, rBottom);
-									//
-									//									if (fromDURelPos !== DU_POSITION_INTERSECT) {
-									//										var toDURelPos = this._isOutOfViewport(du._to, rLeft, rTop,
-									//												rRight, rBottom);
-									//										if (fromDURelPos === toDURelPos) {
-									//											//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
-									//											du._setSystemVisible(false, element);
-									//											continue;
-									//										}
-									//									}
-
-									//DUの位置関係上エッジがビューポートを交差する可能性があるので
-									//実際に交差するかどうかを判定
-
-									var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
-
-									if (this
-											._isRenderRectCrossing(du, rLeft, rTop, rRight, rBottom)
-											|| effectiveRenderRect.contains(edgeRect)) {
-										du._setSystemVisible(true, element);
-									} else {
-										du._setSystemVisible(false, element);
-									}
-									continue;
-								}
-
-								/* ---- 以下、通常のDUの場合 ---- */
-
-								//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
-								//DUの左右の辺がともに描画領域の左または右にある、もしくは
-								//DUの上下の辺がともに描画領域の上または下にあること。
-								//right, bottomは必ずleft, topより大きいと保証されているので
-								//一部の条件は省略できる
-								if (this._isOutOfViewport(du, rLeft, rTop, rRight, rBottom)) {
-									du._setSystemVisible(false, element);
-								} else {
-									du._setSystemVisible(true, element);
-								}
-							}
-						},
-
-						_isOutOfViewport: function(du, rLeft, rTop, rRight, rBottom) {
-							var duGlobalPos = du.getWorldGlobalPosition();
-
-							if (duGlobalPos.x > rRight) {
-								return DU_POSITION_BEYOND_RIGHT;
-							}
-
-							var duRight = duGlobalPos.x + du.width;
-							if (duRight < rLeft) {
-								return DU_POSITION_BEYOND_LEFT;
-							}
-
-							var duBottom = duGlobalPos.y + du.height;
-							if (duBottom < rTop) {
-								return DU_POSITION_BEYOND_TOP;
-							}
-							if (duGlobalPos.y > rBottom) {
-								return DU_POSITION_BEYOND_BOTTOM;
-							}
-
-							return DU_POSITION_INTERSECT;
-						},
+						//MEMO: 最適化の結果、現時点では個別に表示制御しない方がよいので、一旦コードをコメントアウト。
+						//ただし、今後DOMを動的に生成・削除する場合には同様のアルゴリズムを実装する可能性があるので
+						//現時点ではコードは残しておく。
+						//						_updateSystemVisible: function(renderRect, rootDU, includesRoot) {
+						//							var duArray;
+						//							if (includesRoot === true) {
+						//								duArray = [rootDU];
+						//							} else {
+						//								duArray = [];
+						//							}
+						//
+						//							if (DisplayUnitContainer.isClassOf(rootDU)) {
+						//								duArray = rootDU.getDisplayUnitAll(true);
+						//							}
+						//
+						//							var belongingLayer = rootDU._belongingLayer;
+						//
+						//							var effectiveRenderRect = Rect.create(renderRect.x, renderRect.y,
+						//									renderRect.width, renderRect.height);
+						//
+						//							switch (belongingLayer.UIDragScreenScrollDirection) {
+						//							case SCROLL_DIRECTION_X:
+						//								//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
+						//								effectiveRenderRect.y = 0;
+						//								break;
+						//							case SCROLL_DIRECTION_Y:
+						//								effectiveRenderRect.x = 0;
+						//								break;
+						//							case SCROLL_DIRECTION_NONE:
+						//								effectiveRenderRect.x = 0;
+						//								effectiveRenderRect.y = 0;
+						//								break;
+						//							}
+						//
+						//							//エッジの交差判定で使用する、描画領域の4つ角の座標
+						//							var rLeft = effectiveRenderRect.x;
+						//							var rRight = effectiveRenderRect.x + effectiveRenderRect.width;
+						//							var rTop = effectiveRenderRect.y;
+						//							var rBottom = effectiveRenderRect.y + effectiveRenderRect.height;
+						//
+						//							for (var i = 0, len = duArray.length; i < len; i++) {
+						//								var du = duArray[i];
+						//
+						//								var element = this._duidElementMap.get(du.id);
+						//
+						//								if (!element) {
+						//									//対応するDOMが描画されていない場合（可視範囲外である、などの理由で）は無視
+						//									continue;
+						//								}
+						//
+						//								if (DisplayUnitContainer.isClassOf(du)) {
+						//									//DUコンテナは現状常に表示とする
+						//									du._setSystemVisible(true, element);
+						//									continue;
+						//								} else if (Edge.isClassOf(du)) {
+						//									//エッジの場合、表示領域の各辺と線分の交差判定を行い、
+						//									//いずれかの辺と交差しているか、
+						//									//表示領域にEdgeが完全に内包されている場合のみ描画する
+						//
+						//									//まず、エッジの両端（＝2つのDU）がビューポート外で、かつ
+						//									//両方とも同じサイドかどうかを判定する
+						//
+						//									//TODO 現状では効果がある場合と逆に計算量が増える場合があり
+						//									//かつそれほど大きな効果が見込めないので一旦この判定は行わないようにする
+						//
+						//									//									var fromDURelPos = this._isOutOfViewport(du._from, rLeft, rTop,
+						//									//											rRight, rBottom);
+						//									//
+						//									//									if (fromDURelPos !== DU_POSITION_INTERSECT) {
+						//									//										var toDURelPos = this._isOutOfViewport(du._to, rLeft, rTop,
+						//									//												rRight, rBottom);
+						//									//										if (fromDURelPos === toDURelPos) {
+						//									//											//エッジの両端がともに同じサイドにある場合エッジはビューポートをまたぐことはないので非表示にできる
+						//									//											du._setSystemVisible(false, element);
+						//									//											continue;
+						//									//										}
+						//									//									}
+						//
+						//									//DUの位置関係上エッジがビューポートを交差する可能性があるので
+						//									//実際に交差するかどうかを判定
+						//
+						//									//var edgeRect = Rect.create(du.x, du.y, du.width, du.height);
+						//
+						//									//									if (this
+						//									//											._isRenderRectCrossing(du, rLeft, rTop, rRight, rBottom)
+						//									//											|| effectiveRenderRect.contains(edgeRect)) {
+						//									if (this._isOutOfViewport(du, rLeft, rTop, rRight, rBottom) === DU_POSITION_INTERSECT) {
+						//										du._setSystemVisible(true, element);
+						//									} else {
+						//										du._setSystemVisible(false, element);
+						//									}
+						//									continue;
+						//								}
+						//
+						//								/* ---- 以下、通常のDUの場合 ---- */
+						//
+						//								//あるDUを「表示しない」条件は、描画領域の「外側」にDUがある、つまり
+						//								//DUの左右の辺がともに描画領域の左または右にある、もしくは
+						//								//DUの上下の辺がともに描画領域の上または下にあること。
+						//								//right, bottomは必ずleft, topより大きいと保証されているので
+						//								//一部の条件は省略できる
+						//								if (this._isOutOfViewport(du, rLeft, rTop, rRight, rBottom)) {
+						//									du._setSystemVisible(false, element);
+						//								} else {
+						//									du._setSystemVisible(true, element);
+						//								}
+						//							}
+						//						},
+						//
+						//						_isOutOfViewport: function(du, rLeft, rTop, rRight, rBottom) {
+						//							var duGlobalPos = du.getWorldGlobalPosition();
+						//
+						//							if (duGlobalPos.x > rRight) {
+						//								return DU_POSITION_BEYOND_RIGHT;
+						//							}
+						//
+						//							var duRight = duGlobalPos.x + du.width;
+						//							if (duRight < rLeft) {
+						//								return DU_POSITION_BEYOND_LEFT;
+						//							}
+						//
+						//							var duBottom = duGlobalPos.y + du.height;
+						//							if (duBottom < rTop) {
+						//								return DU_POSITION_BEYOND_TOP;
+						//							}
+						//							if (duGlobalPos.y > rBottom) {
+						//								return DU_POSITION_BEYOND_BOTTOM;
+						//							}
+						//
+						//							return DU_POSITION_INTERSECT;
+						//						},
 
 						_update: function(rootDU, renderRect) {
-							if (this._isUpdateSuppressed) {
-								return;
-							}
-
-							if (!renderRect) {
-								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
-								renderRect = this._viewport.getWorldRect();
-								//renderRect.width *= 1.0;
-								//renderRect.height *= 1.0;
-								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
-								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
-							}
-
-							if (rootDU) {
-								this._updateSystemVisible(renderRect, rootDU, true);
-							} else {
-								var that = this;
-								this._stage._layers.forEach(function(layer) {
-									that._updateSystemVisible(renderRect, layer, false);
-								});
-							}
+						//MEMO: 最適化の結果、現時点では個別に非表示制御をする必要はなくなった。
+						//ただし、今後DOMの追加・削除を動的に行う等を行う可能性があるので
+						//APIとしては残しておく。
+						//							if (this._isUpdateSuppressed) {
+						//								return;
+						//							}
+						//
+						//							if (!renderRect) {
+						//								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
+						//								renderRect = this._viewport.getWorldRect();
+						//								//renderRect.width *= 1.0;
+						//								//renderRect.height *= 1.0;
+						//								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
+						//								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+						//							}
+						//
+						//							if (rootDU) {
+						//								this._updateSystemVisible(renderRect, rootDU, true);
+						//							} else {
+						//								var that = this;
+						//								this._stage._layers.forEach(function(layer) {
+						//									that._updateSystemVisible(renderRect, layer, false);
+						//								});
+						//							}
 						},
 
 						/**
