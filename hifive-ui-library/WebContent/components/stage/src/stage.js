@@ -4225,16 +4225,8 @@
 					this._viewport = viewport;
 				},
 
-				getDisplayPosition: function(worldX, worldY) {
-					return this._viewport.getDisplayPosition(worldX, worldY);
-				},
-
 				getDisplayRect: function() {
 					return this._viewport.getDisplayRect();
-				},
-
-				getWorldPosition: function(displayX, displayY) {
-					return this._viewport.getWorldPosition(displayX, displayY);
 				},
 
 				getWorldRect: function() {
