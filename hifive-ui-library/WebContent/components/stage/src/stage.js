@@ -3105,6 +3105,7 @@
 
 					this._from.addEventListener('displayUnitDirty', this._duDirtyHandler);
 					this._to.addEventListener('displayUnitDirty', this._duDirtyHandler);
+					this.requestRender();
 				},
 
 				_onRemovedFromRoot: function() {
@@ -4737,29 +4738,11 @@
 						width: {
 							get: function() {
 								return this._viewport.displayWidth;
-							},
-							set: function(value) {
-								throw new Error('StageViewのwidthは直接設定できません。');
-
-								var oldValue = this._viewport.displayWidth;
-
-								if (value === oldValue) {
-									return;
-								}
 							}
 						},
 						height: {
 							get: function() {
 								return this._viewport.displayHeight;
-							},
-							set: function(value) {
-								throw new Error('StageViewのheightは直接設定できません。');
-
-								var oldValue = this._viewport.displayHeight;
-
-								if (value === oldValue) {
-									return;
-								}
 							}
 						},
 
