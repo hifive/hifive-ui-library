@@ -2791,10 +2791,9 @@
 					}
 
 					var context = {
+						view: view,
 						displayUnit: this,
 						rootElement: root,
-						rowIndex: view.rowIndex,
-						columnIndex: view.columnIndex,
 						reason: reason
 					};
 
