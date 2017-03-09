@@ -37,6 +37,18 @@
 		}]
 	};
 
+
+	var stageInitParam2 = {
+		layers: [{
+			id: 'background'
+		}, {
+			id: LAYER_ID_MAIN,
+			isDefault: true
+		}, {
+			id: LAYER_ID_EDGE
+		}]
+	};
+
 	function keyGen() {
 		var key = 'abfajafja-' + new Date().getTime() + '-' + parseInt(Math.random() * 100000);
 		return key;
@@ -264,6 +276,8 @@
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(200, 100, 100, 100));
 
+			this._container = container;
+
 			for (var i = 0, len = 20; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._createDU(rect);
@@ -464,28 +478,32 @@
 				scrollBarMode: 'always'
 			}];
 
+			//			hDef = [{
+			//				scrollBarMode: 'always'
+			//			}];
+
 			var vDef = [{
 				scrollBarMode: 'always'
 			}];
 
 			//2列
-			//			vDef = [{
-			//				width: 300,
-			//				scrollBarMode: 'always'
-			//				visibleRangeX: {
-			//					min: -1000,
-			//					max: 1000
-			//				}
-			//			}, {
-			//				type: 'separator',
-			//				width: 5
-			//			}, {
-			//				scrollBarMode: 'always'
-			//				visibleRangeX: {
-			//					min: -1000,
-			//					max: 1000
-			//				}
-			//			}];
+			vDef = [{
+				width: 300,
+				scrollBarMode: 'always',
+				visibleRangeX: {
+					min: -1000,
+					max: 1000
+				}
+			}, {
+				type: 'separator',
+				width: 5
+			}, {
+				scrollBarMode: 'always',
+				visibleRangeX: {
+					min: -1000,
+					max: 1000
+				}
+			}];
 
 			//3列
 			//			vDef = [{
@@ -519,12 +537,16 @@
 			this._stageController.splitView(hDef, vDef);
 		},
 
+		'input[name="setup"] click': function() {
+			this._stageController.setup(stageInitParam2);
+		},
+
 		'input[name="visibleRangeY"] click': function() {
-			this._stageController._getActiveView().setVisibleRangeY(0, 500);
+			this._stageController._getActiveView().setVisibleRangeY(0, 1000);
 		},
 
 		'input[name="visibleRangeX"] click': function() {
-			this._stageController._getActiveView().setVisibleRangeX(-1000, 200000);
+			this._stageController._getActiveView().setVisibleRangeX(-500, 2000);
 		},
 
 		'input[name="clearSplitView"] click': function(context) {
@@ -532,7 +554,16 @@
 		},
 
 		'input[name="removeDU"] click': function(context) {
+			this._container.moveTo(200, 10);
+		},
 
+		'input[name="cascadeRemove"] click': function(context) {
+			this._edges[0]._from.remove();
+		},
+
+		'{rootElement} duCascadeRemoving': function(context) {
+			context.event.preventDefault();
+			console.log(context);
 		}
 	};
 

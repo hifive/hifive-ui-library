@@ -2444,14 +2444,20 @@
 							this.dispatchEvent(event);
 						},
 
-						_onAddedToRoot: function(stage, belongingLayer) {
+						_onAddedToStage: function(stage, belongingLayer) {
 							this._rootStage = stage;
 							this._belongingLayer = belongingLayer;
+
+							var event = Event.create('addToStage');
+							this.dispatchEvent(event);
 						},
 
-						_onRemovedFromRoot: function() {
+						_onRemovedFromStage: function() {
 							this._rootStage = null;
 							this._belongingLayer = null;
+
+							var event = Event.create('removeFromStage');
+							this.dispatchEvent(event);
 						},
 
 						_updateActualDisplayStyle: function(element) {
@@ -2810,340 +2816,422 @@
 		return desc;
 	});
 
-	//TODO Path <- Edge などとする
-	//TODO DUからrect系をはずすか
-	var Edge = DisplayUnit.extend(function(super_) {
-		var ERR_CANNOT_USE_RECT_METHOD = 'EdgeではsetRectは使えません';
-
+	var DisplayUnitCascadeRemovingEvent = Event.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.Edge',
+			name: 'h5.ui.components.stage.DisplayUnitCascadeRemovingEvent',
+
 			field: {
-				_from: null,
-				_to: null,
-				_endpointFrom: null,
-				_endpointTo: null,
-				_duDirtyHandler: null,
-				_classSet: null,
-
-				_endpoint_propertyChangeListener: null,
-
-				_x1: null,
-				_x2: null,
-				_y1: null,
-				_y2: null
+				_targetDisplayUnit: null,
+				_relatedDisplayUnit: null
 			},
 
 			accessor: {
-				endpointFrom: {
+				targetDisplayUnit: {
 					get: function() {
-						return this._endpointFrom;
+						return this._targetDisplayUnit;
 					}
 				},
-				endpointTo: {
+				relatedDisplayUnit: {
 					get: function() {
-						return this._endpointTo;
-					}
-				},
-
-				x1: {
-					get: function() {
-						return this._x1;
-					}
-				},
-
-				x2: {
-					get: function() {
-						return this._x2;
-					}
-				},
-
-				y1: {
-					get: function() {
-						return this._y1;
-					}
-				},
-
-				y2: {
-					get: function() {
-						return this._y2;
+						return this._relatedDisplayUnit;
 					}
 				}
 			},
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.Edge
+				 * @memberOf h5.ui.components.stage.DisplayUnitCascadeRemovingEvent
 				 */
-				constructor: function Edge(duFrom, duTo) {
-					super_.constructor.call(this);
-					this._from = duFrom;
-					this._to = duTo;
-
-					//初期状態。_updateLinePosition()により更新され、
-					//線分をちょうど包含するサイズになる
-					this._width = 1;
-					this._height = 1;
-
-					var that = this;
-
-					this._duDirtyHandler = function(event) {
-						var reason = event.reason;
-
-						if (reason.isPositionChanged || reason.isSizeChanged
-								|| reason.isGlobalPositionChanged) {
-							that._updateLinePosition();
-							that.requestRender();
-						}
-					};
-
-					this._classSet = SimpleSet.create();
-
-					this._endpointFrom = EdgeEndpoint.create();
-					this._endpointTo = EdgeEndpoint.create();
-
-					this._endpoint_propertyChangeListener = function(event) {
-						that._updateLinePosition();
-						that.requestRender();
-					};
-
-					this._endpointFrom.addEventListener('propertyChange',
-							this._endpoint_propertyChangeListener);
-					this._endpointTo.addEventListener('propertyChange',
-							this._endpoint_propertyChangeListener);
-
-					this._updateLinePosition();
-				},
-				setRect: function() {
-					throw new Error(ERR_CANNOT_USE_RECT_METHOD);
-				},
-
-				_updateLinePosition: function() {
-					var fr = this._from.getRect();
-					var tr = this._to.getRect();
-
-					var fwPos = this._from.getWorldGlobalPosition();
-					var twPos = this._to.getWorldGlobalPosition();
-
-					var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
-					var toHAlign = this.endpointTo.junctionHorizontalAlign;
-
-					var fromVAlign = this.endpointFrom.junctionVerticalAlign;
-					var toVAlign = this.endpointTo.junctionVerticalAlign;
-
-					var x1, y1, x2, y2;
-
-					switch (fromHAlign) {
-					case 'left':
-						x1 = fwPos.x;
-						break;
-					case 'right':
-						x1 = fwPos.x + fr.width;
-						break;
-					case 'offset':
-						x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
-						break;
-					case 'nearest':
-						var fwCenterX = fwPos.x + fr.width / 2;
-						var twCenterX = twPos.x + tr.width / 2;
-						if (twCenterX - fwCenterX > 0) {
-							//Toノードの中心がFromノードの中心より右にある＝Fromノード側はright相当にする
-							x1 = fwPos.x + fr.width;
-						} else {
-							x1 = fwPos.x;
-						}
-						break;
-					case 'center':
-					default:
-						x1 = fwPos.x + fr.width / 2;
-						break;
-					}
-
-					switch (toHAlign) {
-					case 'left':
-						x2 = twPos.x;
-						break;
-					case 'right':
-						x2 = twPos.x + tr.width;
-						break;
-					case 'offset':
-						x2 = twPos.x + this.endpointTo.junctionOffsetX;
-						break;
-					case 'nearest':
-						var fwCenterX = fwPos.x + fr.width / 2;
-						var twCenterX = twPos.x + tr.width / 2;
-						if (twCenterX - fwCenterX > 0) {
-							//Toノードの中心がFromノードの中心より右にある＝Toノード側はleft相当にする
-							x2 = twPos.x;
-						} else {
-							x2 = twPos.x + tr.width;
-						}
-						break;
-					case 'center':
-					default:
-						x2 = twPos.x + tr.width / 2;
-						break;
-					}
-
-					switch (fromVAlign) {
-					case 'top':
-						y1 = fwPos.y;
-						break;
-					case 'bottom':
-						y1 = fwPos.y + fr.height;
-						break;
-					case 'offset':
-						y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
-						break;
-					case 'nearest':
-						var fwCenterY = fwPos.y + fr.height / 2;
-						var twCenterY = twPos.y + tr.height / 2;
-						if (twCenterY - fwCenterY > 0) {
-							//Toノードの中心がFromノードの中心より下にある＝Fromノード側はbottom相当にする
-							y1 = fwPos.y + fr.height;
-						} else {
-							y1 = fwPos.y;
-						}
-						break;
-					case 'middle':
-					default:
-						y1 = fwPos.y + fr.height / 2;
-						break;
-					}
-
-					switch (toVAlign) {
-					case 'top':
-						y2 = twPos.y;
-						break;
-					case 'bottom':
-						y2 = twPos.y + tr.height;
-						break;
-					case 'offset':
-						y2 = twPos.y + this.endpointTo.junctionOffsetY;
-						break;
-					case 'nearest':
-						var fwCenterY = fwPos.y + fr.height / 2;
-						var twCenterY = twPos.y + tr.height / 2;
-						if (twCenterY - fwCenterY > 0) {
-							//Toノードの中心がFromノードの中心より下にある＝Toノード側はtop相当にする
-							y2 = twPos.y;
-						} else {
-							y2 = twPos.y + tr.height;
-						}
-						break;
-					case 'middle':
-					default:
-						y2 = twPos.y + tr.height / 2;
-						break;
-					}
-
-					this._x1 = x1;
-					this._x2 = x2;
-					this._y1 = y1;
-					this._y2 = y2;
-
-					//EdgeDUのサイズをアップデート
-					var left = x1 <= x2 ? x1 : x2;
-					var top = y1 <= y2 ? y1 : y2;
-					this._x = left;
-					this._y = top;
-					this._width = Math.abs(x2 - x1);
-					this._height = Math.abs(y2 - y1);
-				},
-
-				_render: function(view, line, reason) {
-					if (!reason.isInitialRender && !reason.isRenderRequested
-							&& !reason.isPositionChanged) {
-						return;
-					}
-
-					line.className.baseVal = this.getClassSet().toArray().join(' ');
-
-					setSvgAttributes(line, {
-						x1: this._x1,
-						y1: this._y1,
-						x2: this._x2,
-						y2: this._y2
-					});
-				},
-
-				hasClass: function(cssClass) {
-					return this._classSet.has(cssClass);
-				},
-
-				addClass: function(cssClass) {
-					this._classSet.add(cssClass);
-					this.requestRender();
-				},
-
-				removeClass: function(cssClass) {
-					this._classSet.remove(cssClass);
-					this.requestRender();
-				},
-
-				clearClass: function() {
-					this._classSet.clear();
-					this.requestRender();
-				},
-
-				getClassSet: function() {
-					return this._classSet;
-				},
-
-				//TODO BasicDUにも同じメソッドがある。クラス階層について要検討
-				requestRender: function() {
-					//TODO 正しくは次の再描画フレームで描画
-					if (!this._rootStage) {
-						return;
-					}
-
-					this._updateLinePosition();
-					this._setDirty(REASON_RENDER_REQUEST);
-				},
-
-				_onAddedToRoot: function(stage, belongingLayer) {
-					super_._onAddedToRoot.call(this, stage, belongingLayer);
-
-					this._from.addEventListener('displayUnitDirty', this._duDirtyHandler);
-					this._to.addEventListener('displayUnitDirty', this._duDirtyHandler);
-					this.requestRender();
-				},
-
-				_onRemovedFromRoot: function() {
-					super_._onRemovedFromRoot.call(this);
-
-					this._from.removeEventListener('displayUnitDirty', this._duDirtyHandler);
-					this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
-				},
-
-				_onRemoving: function() {
-					this._from.removeEventListener('displayUnitDirty', this._duDirtyHandler);
-					this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
-				},
-
-				__renderDOM: function(view) {
-					var rootSvg = createSvgElement('line');
-					rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
-					rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
-
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
-
-					this.__updateDOM(view, rootSvg, reason);
-
-					return rootSvg;
-				},
-
-				__updateDOM: function(view, element, reason) {
-					if (reason.isInitialRender || reason.isVisibilityChanged) {
-						element.style.display = this._isVisible && this._isSystemVisible ? ''
-								: 'none';
-					}
-
-					this._render(view, element, reason);
+				constructor: function DisplayUnitCascadeRemovingEvent(targetDisplayUnit,
+						relatedDisplayUnit) {
+					super_.constructor.call(this, 'duCascadeRemoving');
+					this._targetDisplayUnit = targetDisplayUnit;
+					this._relatedDisplayUnit = relatedDisplayUnit;
 				}
 			}
 		};
 		return desc;
 	});
+
+	//TODO Path <- Edge などとする
+	//TODO DUからrect系をはずすか
+	var Edge = DisplayUnit
+			.extend(function(super_) {
+				var ERR_CANNOT_USE_RECT_METHOD = 'EdgeではsetRectは使えません';
+
+				var desc = {
+					name: 'h5.ui.components.stage.Edge',
+					field: {
+						_from: null,
+						_to: null,
+						_endpointFrom: null,
+						_endpointTo: null,
+
+						_duDirtyHandler: null,
+						_duRemoveFromStageHandler: null,
+
+						_classSet: null,
+
+						_endpoint_propertyChangeListener: null,
+
+						_x1: null,
+						_x2: null,
+						_y1: null,
+						_y2: null
+					},
+
+					accessor: {
+						endpointFrom: {
+							get: function() {
+								return this._endpointFrom;
+							}
+						},
+						endpointTo: {
+							get: function() {
+								return this._endpointTo;
+							}
+						},
+
+						x1: {
+							get: function() {
+								return this._x1;
+							}
+						},
+
+						x2: {
+							get: function() {
+								return this._x2;
+							}
+						},
+
+						y1: {
+							get: function() {
+								return this._y1;
+							}
+						},
+
+						y2: {
+							get: function() {
+								return this._y2;
+							}
+						}
+					},
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.Edge
+						 */
+						constructor: function Edge(duFrom, duTo) {
+							super_.constructor.call(this);
+							this._from = duFrom;
+							this._to = duTo;
+
+							//初期状態。_updateLinePosition()により更新され、
+							//線分をちょうど包含するサイズになる
+							this._width = 1;
+							this._height = 1;
+
+							var that = this;
+
+							this._duDirtyHandler = function(event) {
+								var reason = event.reason;
+
+								if (reason.isPositionChanged || reason.isSizeChanged
+										|| reason.isGlobalPositionChanged) {
+									that._updateLinePosition();
+									that.requestRender();
+								}
+							};
+
+							this._duRemoveFromStageHandler = function(event) {
+								that._notifyCascadeRemove(event.target);
+							};
+
+							this._classSet = SimpleSet.create();
+
+							this._endpointFrom = EdgeEndpoint.create();
+							this._endpointTo = EdgeEndpoint.create();
+
+							this._endpoint_propertyChangeListener = function(event) {
+								that._updateLinePosition();
+								that.requestRender();
+							};
+
+							this._endpointFrom.addEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
+							this._endpointTo.addEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
+
+							this._updateLinePosition();
+						},
+						setRect: function() {
+							throw new Error(ERR_CANNOT_USE_RECT_METHOD);
+						},
+
+						_updateLinePosition: function() {
+							var fwPos = this._from.getWorldGlobalPosition();
+							var twPos = this._to.getWorldGlobalPosition();
+
+							if (!fwPos || !twPos) {
+								//from,toどちらかのDUがStageから削除されていて
+								//グローバルポジションが取得できない場合は更新しない
+								return;
+							}
+
+							var fr = this._from.getRect();
+							var tr = this._to.getRect();
+
+							var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
+							var toHAlign = this.endpointTo.junctionHorizontalAlign;
+
+							var fromVAlign = this.endpointFrom.junctionVerticalAlign;
+							var toVAlign = this.endpointTo.junctionVerticalAlign;
+
+							var x1, y1, x2, y2;
+
+							switch (fromHAlign) {
+							case 'left':
+								x1 = fwPos.x;
+								break;
+							case 'right':
+								x1 = fwPos.x + fr.width;
+								break;
+							case 'offset':
+								x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
+								break;
+							case 'nearest':
+								var fwCenterX = fwPos.x + fr.width / 2;
+								var twCenterX = twPos.x + tr.width / 2;
+								if (twCenterX - fwCenterX > 0) {
+									//Toノードの中心がFromノードの中心より右にある＝Fromノード側はright相当にする
+									x1 = fwPos.x + fr.width;
+								} else {
+									x1 = fwPos.x;
+								}
+								break;
+							case 'center':
+							default:
+								x1 = fwPos.x + fr.width / 2;
+								break;
+							}
+
+							switch (toHAlign) {
+							case 'left':
+								x2 = twPos.x;
+								break;
+							case 'right':
+								x2 = twPos.x + tr.width;
+								break;
+							case 'offset':
+								x2 = twPos.x + this.endpointTo.junctionOffsetX;
+								break;
+							case 'nearest':
+								var fwCenterX = fwPos.x + fr.width / 2;
+								var twCenterX = twPos.x + tr.width / 2;
+								if (twCenterX - fwCenterX > 0) {
+									//Toノードの中心がFromノードの中心より右にある＝Toノード側はleft相当にする
+									x2 = twPos.x;
+								} else {
+									x2 = twPos.x + tr.width;
+								}
+								break;
+							case 'center':
+							default:
+								x2 = twPos.x + tr.width / 2;
+								break;
+							}
+
+							switch (fromVAlign) {
+							case 'top':
+								y1 = fwPos.y;
+								break;
+							case 'bottom':
+								y1 = fwPos.y + fr.height;
+								break;
+							case 'offset':
+								y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
+								break;
+							case 'nearest':
+								var fwCenterY = fwPos.y + fr.height / 2;
+								var twCenterY = twPos.y + tr.height / 2;
+								if (twCenterY - fwCenterY > 0) {
+									//Toノードの中心がFromノードの中心より下にある＝Fromノード側はbottom相当にする
+									y1 = fwPos.y + fr.height;
+								} else {
+									y1 = fwPos.y;
+								}
+								break;
+							case 'middle':
+							default:
+								y1 = fwPos.y + fr.height / 2;
+								break;
+							}
+
+							switch (toVAlign) {
+							case 'top':
+								y2 = twPos.y;
+								break;
+							case 'bottom':
+								y2 = twPos.y + tr.height;
+								break;
+							case 'offset':
+								y2 = twPos.y + this.endpointTo.junctionOffsetY;
+								break;
+							case 'nearest':
+								var fwCenterY = fwPos.y + fr.height / 2;
+								var twCenterY = twPos.y + tr.height / 2;
+								if (twCenterY - fwCenterY > 0) {
+									//Toノードの中心がFromノードの中心より下にある＝Toノード側はtop相当にする
+									y2 = twPos.y;
+								} else {
+									y2 = twPos.y + tr.height;
+								}
+								break;
+							case 'middle':
+							default:
+								y2 = twPos.y + tr.height / 2;
+								break;
+							}
+
+							this._x1 = x1;
+							this._x2 = x2;
+							this._y1 = y1;
+							this._y2 = y2;
+
+							//EdgeDUのサイズをアップデート
+							var left = x1 <= x2 ? x1 : x2;
+							var top = y1 <= y2 ? y1 : y2;
+							this._x = left;
+							this._y = top;
+							this._width = Math.abs(x2 - x1);
+							this._height = Math.abs(y2 - y1);
+						},
+
+						_render: function(view, line, reason) {
+							if (!reason.isInitialRender && !reason.isRenderRequested
+									&& !reason.isPositionChanged) {
+								return;
+							}
+
+							line.className.baseVal = this.getClassSet().toArray().join(' ');
+
+							setSvgAttributes(line, {
+								x1: this._x1,
+								y1: this._y1,
+								x2: this._x2,
+								y2: this._y2
+							});
+						},
+
+						hasClass: function(cssClass) {
+							return this._classSet.has(cssClass);
+						},
+
+						addClass: function(cssClass) {
+							this._classSet.add(cssClass);
+							this.requestRender();
+						},
+
+						removeClass: function(cssClass) {
+							this._classSet.remove(cssClass);
+							this.requestRender();
+						},
+
+						clearClass: function() {
+							this._classSet.clear();
+							this.requestRender();
+						},
+
+						getClassSet: function() {
+							return this._classSet;
+						},
+
+						//TODO BasicDUにも同じメソッドがある。クラス階層について要検討
+						requestRender: function() {
+							//TODO 正しくは次の再描画フレームで描画
+							if (!this._rootStage) {
+								return;
+							}
+
+							this._updateLinePosition();
+							this._setDirty(REASON_RENDER_REQUEST);
+						},
+
+						_onAddedToStage: function(stage, belongingLayer) {
+							super_._onAddedToStage.call(this, stage, belongingLayer);
+
+							this._from.addEventListener('displayUnitDirty', this._duDirtyHandler);
+							this._to.addEventListener('displayUnitDirty', this._duDirtyHandler);
+
+							this._from.addEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+							this._to.addEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+
+							this.requestRender();
+						},
+
+						_onRemovedFromStage: function() {
+							super_._onRemovedFromStage.call(this);
+
+							this._from
+									.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+							this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+
+							this._from.removeEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+							this._to.removeEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+						},
+
+						_onRemoving: function() {
+							this._from
+									.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+							this._to.removeEventListener('displayUnitDirty', this._duDirtyHandler);
+
+							this._from.removeEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+							this._to.removeEventListener('removeFromStage',
+									this._duRemoveFromStageHandler);
+						},
+
+						__renderDOM: function(view) {
+							var rootSvg = createSvgElement('line');
+							rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+							rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
+
+							var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+							this.__updateDOM(view, rootSvg, reason);
+
+							return rootSvg;
+						},
+
+						__updateDOM: function(view, element, reason) {
+							if (reason.isInitialRender || reason.isVisibilityChanged) {
+								element.style.display = this._isVisible && this._isSystemVisible ? ''
+										: 'none';
+							}
+
+							this._render(view, element, reason);
+						},
+
+						_notifyCascadeRemove: function(relatedDU) {
+							if (!this._belongingLayer) {
+								return;
+							}
+
+							var isRemovePrevented = this._belongingLayer.__onCascadeRemoving(this,
+									relatedDU);
+
+							if (!isRemovePrevented) {
+								this.remove();
+							}
+						}
+					}
+				};
+				return desc;
+			});
 
 	var EdgeEndpoint = EventDispatcher.extend(function(super_) {
 		var desc = {
@@ -3574,7 +3662,7 @@
 					this._zIndexList.add(du.zIndex, du);
 
 					if (this._rootStage) {
-						du._onAddedToRoot(this._rootStage, this._belongingLayer);
+						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
 
 					//このコンテナにDUが追加されたことをLayerまで通知・伝播
@@ -3605,7 +3693,11 @@
 					//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
 					du._rootStage = null;
 
+					//親に対してDUを削除したことを通知
 					this.__onDescendantRemoved(du, this);
+
+					//DU自身に削除されたことを通知
+					du._onRemovedFromStage();
 				},
 
 				getDisplayUnitById: function(id) {
@@ -3628,25 +3720,25 @@
 				 * @param rootStage
 				 * @param belongingLayer
 				 */
-				_onAddedToRoot: function(rootStage, belongingLayer) {
-					super_._onAddedToRoot.call(this, rootStage, belongingLayer);
+				_onAddedToStage: function(rootStage, belongingLayer) {
+					super_._onAddedToStage.call(this, rootStage, belongingLayer);
 
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
 						var du = children[i];
-						du._onAddedToRoot(rootStage, belongingLayer);
+						du._onAddedToStage(rootStage, belongingLayer);
 					}
 				},
 
-				_onRemovedFromRoot: function() {
+				_onRemovedFromStage: function() {
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
 						var du = children[i];
-						du._onRemovedFromRoot();
+						du._onRemovedFromStage();
 					}
 
 					//先に子供をパージしてから自分からStageへの参照を外す
-					super_._onRemovedFromRoot.call(this);
+					super_._onRemovedFromStage.call(this);
 				},
 
 				setMinScale: function(minScaleX, minScaleY) {
@@ -3945,12 +4037,18 @@
 				 * @param stage
 				 * @param belongingLayer
 				 */
-				_onAddedToRoot: function(stage, belongingLayer) {
+				_onAddedToStage: function(stage, belongingLayer) {
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
 						var du = children[i];
-						du._onAddedToRoot(this._rootStage, this._belongingLayer);
+						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
+				},
+
+				__onCascadeRemoving: function(srcDU, relatedDU) {
+					var ev = DisplayUnitCascadeRemovingEvent.create(srcDU, relatedDU);
+					var ret = this.dispatchEvent(ev);
+					return ret;
 				}
 			}
 		};
@@ -4925,8 +5023,6 @@
 							}
 
 							this._initForemostSvg();
-
-							//this._updateLayerScrollPosition();
 						},
 
 						__onSelectDUStart: function(dragSelectStartPos) {
@@ -7671,6 +7767,8 @@
 
 	var EVENT_VIEW_UNIFIED_SIGHT_CHANGE = 'stageViewUnifiedSightChange';
 
+	var EVENT_DU_CASCADE_REMOVING = 'duCascadeRemoving';
+
 	var EVENT_DU_CLICK = 'duClick';
 	var EVENT_DU_DBLCLICK = 'duDblclick';
 
@@ -7936,6 +8034,10 @@
 			this._dragMoveWrapper = function() {
 				that._doDragMove();
 			},
+
+			this._duCascadeRemovingListener = function(event) {
+				that._onDUCascadeRemoving(event);
+			};
 
 			this._viewCollection = GridStageViewCollection.create(this);
 		},
@@ -9005,17 +9107,37 @@
 			bottom: Number.MIN_VALUE
 		},
 
+		_duCascadeRemovingListener: null,
+
+		_onDUCascadeRemoving: function(event) {
+			var evArg = {
+				targetDisplayUnit: event.targetDisplayUnit,
+				relatedDisplayUnit: event.relatedDisplayUnit
+			};
+			var ev = this.trigger(EVENT_DU_CASCADE_REMOVING, evArg);
+			if (ev.isDefaultPrevented()) {
+				//カスケード削除がキャンセルされたことを通知
+				event.preventDefault();
+			}
+		},
+
 		addLayer: function(layer, index, isDefault) {
+			if (!layer) {
+				throw new Error('レイヤーインスタンスがnullです。');
+			}
+
 			if (this._layers.length === 0 || isDefault === true) {
 				this._defaultLayer = layer;
 			}
+
+			layer.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
 
 			if (index != null) {
 				this._layers.splice(index, 0, layer);
 			} else {
 				this._layers.push(layer);
 			}
-			layer._onAddedToRoot(this);
+			layer._onAddedToStage(this);
 		},
 
 		_removeLayer: function(layer) {
@@ -9027,8 +9149,11 @@
 
 			//TODO レイヤーを外したときにStageViewのリスナーを削除する
 
-			layer._onRemovedFromRoot();
 			this._layers.splice(idx, 1);
+			layer
+					.removeEventListener('displayUnitCascadeRemoving',
+							this._duCascadeRemovingListener);
+			layer._onRemovedFromStage();
 		},
 
 		_clearLayers: function() {

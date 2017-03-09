@@ -47,13 +47,13 @@
 <style>
 #appRoot {
 	width: 800px;
-	height: 800px;
+	height: 850px;
 	border: 1px solid black;
 }
 
 #controls {
 	width: 100%;
-	height: 100px;
+	height: 150px;
 	background-color: yellow;
 }
 
@@ -111,6 +111,11 @@ text {
 .stageGridSeparator.vertical {
 	cursor: w-resize;
 }
+
+.h5-stage-invisible-du {
+	display: none;
+}
+
 </style>
 
 </head>
@@ -130,6 +135,8 @@ text {
 				type="button" name="clearSplitView" value="split全解除"> <input type="button" name="removeDU" value="remove()">
 			<input type="button" name="visibleRangeY" value="visibleRangeY"> <input type="button" name="visibleRangeX"
 				value="visibleRangeX">
+			<input type="button" name="setup" value="setup">
+			<input type="button" name="cascadeRemove" value="cascadeRemove">
 		</div>
 		<div id="stageRoot"></div>
 
