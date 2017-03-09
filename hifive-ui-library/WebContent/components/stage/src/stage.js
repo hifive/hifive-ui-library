@@ -237,6 +237,7 @@
 	var REASON_SCROLL_POSITION_CHANGE = '__duScrollPositionChange__';
 	var REASON_SELECTION_CHANGE = '__duSelectionChange__';
 	var REASON_FOCUS_CHANGE = '__duFocusChange__';
+	var REASON_GLOBAL_POSITION_CHANGE = '__duGlobalPositionChange__';
 
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
@@ -248,7 +249,8 @@
 		INITIAL_RENDER: REASON_INITIAL_RENDER,
 		SCROLL_POSITION_CHANGE: REASON_SCROLL_POSITION_CHANGE,
 		SELECTION_CHANGE: REASON_SELECTION_CHANGE,
-		FOCUS_CHANGE: REASON_FOCUS_CHANGE
+		FOCUS_CHANGE: REASON_FOCUS_CHANGE,
+		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE
 	};
 
 	h5.u.obj.expose('h5.ui.components.stage', {
@@ -2436,8 +2438,6 @@
 
 							this.__onDirtyNotify(this, reasons);
 
-							//TODO Edgeがイベントを拾えるようにするための対応
-							//レイヤー横断でイベントを拾えるようになればレイヤーから拾えばよい
 							var event = DisplayUnitDirtyEvent.create();
 							event.displayUnit = this;
 							event.reason = UpdateReasonSet.create(reasons);
@@ -2524,6 +2524,30 @@
 							}
 						},
 
+						/**
+						 * 直接の親要素がdirtyになった場合に親→子に向かって呼び出されるコールバック
+						 */
+						__onParentDirtyNotify: function(du, reasons) {
+							if (!this._willGlobalPositionChangeByParentDirty(reasons)) {
+								return;
+							}
+							this._worldGlobalPositionCache = null;
+							this._setDirty(REASON_GLOBAL_POSITION_CHANGE);
+						},
+
+						_willGlobalPositionChangeByParentDirty: function(reasons) {
+							if (!Array.isArray(reasons)) {
+								reasons = [reasons];
+							}
+
+							if (reasons.indexOf(REASON_POSITION_CHANGE) !== -1
+									|| reasons.indexOf(REASON_SCROLL_POSITION_CHANGE) !== -1
+									|| reasons.indexOf(REASON_SCALE_CHANGE) !== -1) {
+								return true;
+							}
+							return false;
+						},
+
 						_setSystemVisible: function(value, element) {
 							this._isSystemVisible = value;
 
@@ -2557,6 +2581,12 @@
 				isPositionChanged: {
 					get: function() {
 						return this.has(REASON_POSITION_CHANGE);
+					}
+				},
+
+				isGlobalPositionChanged: {
+					get: function() {
+						return this.has(REASON_GLOBAL_POSITION_CHANGE);
 					}
 				},
 
@@ -2854,7 +2884,8 @@
 					this._duDirtyHandler = function(event) {
 						var reason = event.reason;
 
-						if (reason.isPositionChanged || reason.isSizeChanged) {
+						if (reason.isPositionChanged || reason.isSizeChanged
+								|| reason.isGlobalPositionChanged) {
 							that._updateLinePosition();
 							that.requestRender();
 						}
@@ -3677,6 +3708,23 @@
 
 					//直下のgタグに対してtransformをかける
 					element.firstChild.setAttribute('transform', transform);
+				},
+
+				_setDirty: function(reasons) {
+					//先に子供に通知し、globalPositionCacheをクリアさせる。
+					//こうすることで、自コンテナの位置が移動した場合に
+					//外から自分の子供のコンテナのglobalPositionを取得した時
+					//正しい値が取得できる。
+					this.__onParentDirtyNotify(this, reasons);
+					super_._setDirty.call(this, reasons);
+				},
+
+				__onParentDirtyNotify: function(du, reasons) {
+					super_.__onParentDirtyNotify.call(this, du, reasons);
+					var that = this;
+					this._children.forEach(function(childDU) {
+						childDU.__onParentDirtyNotify(that, reasons);
+					});
 				},
 
 				__renderDOM: function(view) {
