@@ -628,7 +628,7 @@
 						}
 					}
 
-					this._stage._stageViewCollection.__onDragDUMove(this);
+					this._stage._viewCollection.__onDragDUMove(this);
 				},
 
 				_rollbackStates: function() {
@@ -2467,9 +2467,14 @@
 
 							var isElementDisplayVisible = window.getComputedStyle(element, '').display !== 'none';
 
-							if (isElementDisplayVisible !== this._isVisible) {
+							//ドラッグ中など、元のDUを強制的にすることがある。
+							//（ドラッグ中の場合はViewCollectionがドラッグ対象とされたDUにたいしてこのisForceHiddenを設定する）
+							//ユーザーが設定したisVisibleを変更しないようにしている。
+							var desiredVisible = this._isForceHidden ? false : this._isVisible;
+
+							if (isElementDisplayVisible !== desiredVisible) {
 								//現時点では、単純にユーザーによる表示制御だけを行う
-								element.style.display = this._isVisible ? '' : 'none';
+								element.style.display = desiredVisible ? '' : 'none';
 							}
 
 							//forceHiddenがtrueの場合は必ずdipslay:noneにする
@@ -4763,7 +4768,8 @@
 							});
 
 							SvgUtil.setAttributes(foremostSvg, {
-								overflow: 'visible'
+								overflow: 'visible',
+								'pointer-events': 'none'
 							});
 
 							this._foremostSvg = foremostSvg;
@@ -4961,13 +4967,13 @@
 						},
 
 						setSize: function(displayWidth, displayHeight) {
-							var row = this._stage._stageViewCollection.getRow(this.rowIndex);
+							var row = this._stage._viewCollection.getRow(this.rowIndex);
 							row._desiredHeight = displayHeight;
 
-							var col = this._stage._stageViewCollection.getColumn(this.columnIndex);
+							var col = this._stage._viewCollection.getColumn(this.columnIndex);
 							col._desiredWidth = displayWidth;
 
-							this._stage._stageViewCollection._updateGridRegion();
+							this._stage._viewCollection._updateGridRegion();
 						},
 
 						getScrollPosition: function() {
@@ -5293,25 +5299,25 @@
 						},
 
 						getVisibleRangeX: function() {
-							var ret = this._stage._stageViewCollection.getColumn(this.columnIndex)
+							var ret = this._stage._viewCollection.getColumn(this.columnIndex)
 									.getVisibleRangeX();
 							return ret;
 						},
 
 						setVisibleRangeX: function(worldLeft, worldRight) {
-							this._stage._stageViewCollection.getColumn(this.columnIndex)
+							this._stage._viewCollection.getColumn(this.columnIndex)
 									.setVisibleRangeX(worldLeft, worldRight);
 						},
 
 						getVisibleRangeY: function() {
-							var ret = this._stage._stageViewCollection.getRow(this.rowIndex)
+							var ret = this._stage._viewCollection.getRow(this.rowIndex)
 									.getVisibleRangeY();
 							return ret;
 						},
 
 						setVisibleRangeY: function(worldTop, worldBottom) {
-							this._stage._stageViewCollection.getRow(this.rowIndex)
-									.setVisibleRangeY(worldTop, worldBottom);
+							this._stage._viewCollection.getRow(this.rowIndex).setVisibleRangeY(
+									worldTop, worldBottom);
 						},
 
 						getDefsForLayer: function(layer) {
@@ -7849,7 +7855,7 @@
 				that._doDragMove();
 			},
 
-			this._stageViewCollection = GridStageViewCollection.create(this);
+			this._viewCollection = GridStageViewCollection.create(this);
 		},
 
 		__ready: function() {
@@ -8294,7 +8300,7 @@
 
 					this._dragSession.begin();
 
-					this._stageViewCollection.__onDragDUStart(this._dragSession);
+					this._viewCollection.__onDragDUStart(this._dragSession);
 
 					//プロキシが設定されたらそれを表示
 					var proxyElem = this._dragSession.getProxyElement();
@@ -8326,7 +8332,7 @@
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
 
-						this._stageViewCollection.__onSelectDUStart(this._dragSelectStartPos);
+						this._viewCollection.__onSelectDUStart(this._dragSelectStartPos);
 					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
 						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
 
@@ -8388,7 +8394,7 @@
 			this._isInScrollBarScroll = true;
 
 			if (isVertical) {
-				var row = this._stageViewCollection.getRow(idx);
+				var row = this._viewCollection.getRow(idx);
 
 				var newPos = 0;
 				var isIndexScroll = context.evArg.vertical.type === 'indexDiff';
@@ -8417,7 +8423,7 @@
 				//setScrollYに渡す座標はディスプレイ座標
 				row.setScrollY(scrDispY);
 			} else {
-				var col = this._stageViewCollection.getColumn(idx);
+				var col = this._viewCollection.getColumn(idx);
 
 				var newPos = 0;
 				var isIndexScroll = context.evArg.horizontal.type === 'indexDiff';
@@ -8470,7 +8476,7 @@
 
 			var view = this._getActiveViewFromElement(event.target);
 			if (view) {
-				this._stageViewCollection.setActiveView(view);
+				this._viewCollection.setActiveView(view);
 			}
 
 			if ($(event.target).hasClass('stageGridSeparator')) {
@@ -8687,7 +8693,7 @@
 			var ww = activeView._viewport.getXLengthOfWorld(dispW);
 			var wh = activeView._viewport.getYLengthOfWorld(dispH);
 
-			this._stageViewCollection.__onSelectDUMove(worldPos, ww, wh);
+			this._viewCollection.__onSelectDUMove(worldPos, ww, wh);
 		},
 
 		_getCurrentDragPosition: function() {
@@ -8745,7 +8751,7 @@
 			//this._currentDragMode === DRAG_MODE_NONEの場合は何もしない
 
 			if (this._currentDragMode === DRAG_MODE_SELECT) {
-				this._stageViewCollection.__onSelectDUEnd();
+				this._viewCollection.__onSelectDUEnd();
 
 				this.trigger(EVENT_DRAG_SELECT_END, {
 					stageController: this
@@ -8775,7 +8781,7 @@
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
 
-				this._stageViewCollection.__onDragDUDrop(this._dragSession);
+				this._viewCollection.__onDragDUDrop(this._dragSession);
 
 				this.trigger(delegatedJQueryEvent, {
 					dragSession: this._dragSession,
@@ -8868,7 +8874,7 @@
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
 
 			//現在保持しているすべてのビューを破棄する
-			this._stageViewCollection._clear(true);
+			this._viewCollection._clear(true);
 
 			this._clearLayers();
 
@@ -8998,11 +9004,11 @@
 		},
 
 		_getActiveView: function() {
-			return this._stageViewCollection.getActiveView();
+			return this._viewCollection.getActiveView();
 		},
 
 		_getActiveViewFromElement: function(element) {
-			var views = this._stageViewCollection.getViewAll();
+			var views = this._viewCollection.getViewAll();
 			for (var i = 0, len = views.length; i < len; i++) {
 				var view = views[i];
 				if (view.isElementOwner(element)) {
@@ -9283,10 +9289,10 @@
 			return this._getActiveView().setVisibleRangeY(worldTopY, worldBottomY);
 		},
 
-		_stageViewCollection: null,
+		_viewCollection: null,
 
 		getViewCollection: function() {
-			return this._stageViewCollection;
+			return this._viewCollection;
 		},
 
 		splitView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
@@ -9300,8 +9306,8 @@
 			var w = $(this.rootElement).width();
 			var h = $(this.rootElement).height();
 
-			this._stageViewCollection._makeGrid(horizontalSplitDefinitions,
-					verticalSplitDefinitions, w, h);
+			this._viewCollection._makeGrid(horizontalSplitDefinitions, verticalSplitDefinitions, w,
+					h);
 		},
 
 		_createViewStructureChangeEventArg: function() {
@@ -9328,14 +9334,14 @@
 
 			//TODO StageViewCollection側にseparatorをIndex指定で取得するAPIを作るべき
 			if (isHorizontal) {
-				var allRows = this._stageViewCollection.getRowsOfAllTypes();
+				var allRows = this._viewCollection.getRowsOfAllTypes();
 				sep = allRows[index];
 				prevView = allRows[index - 1];
 				prevDesiredSize = prevView._desiredHeight;
 				nextView = allRows[index + 1];
 				nextDesiredSize = nextView._desiredHeight;
 			} else {
-				var allCols = this._stageViewCollection.getColumnsOfAllTypes();
+				var allCols = this._viewCollection.getColumnsOfAllTypes();
 				sep = allCols[index];
 				prevView = allCols[index - 1];
 				prevDesiredSize = prevView._desiredWidth;
@@ -9347,14 +9353,14 @@
 			//TODO ドラッグ対象のセパレータのindexに応じて描画範囲をより最適化する
 			//TODO ドラッグ中にもDUが追加されたりrequestRender()が呼ばれる可能性もあるのでそれらは描画する（今は全てのアップデートを止めている）
 			//MEMO: visibleの制御をおこなわないこととしたので、下記のコードは不要。
-			//			this._stageViewCollection.getViewAll().forEach(
+			//			this._viewCollection.getViewAll().forEach(
 			//					this.own(function(view) {
 			//						var vpwRect = view._viewport.getWorldRect();
 			//
 			//						var worldW = view.coordinateConverter
-			//								.toWorldXLength(this._stageViewCollection._width);
+			//								.toWorldXLength(this._viewCollection._width);
 			//						var worldH = view.coordinateConverter
-			//								.toWorldYLength(this._stageViewCollection._height);
+			//								.toWorldYLength(this._viewCollection._height);
 			//
 			//						//セパレータ操作中に可視範囲に入り得る最大は
 			//						//「現在のスクロール位置を中心に、上下左右に"現在のViewCollection全体の幅/高さ"分だけ広げた領域」となる。
@@ -9397,7 +9403,7 @@
 			var rootRight = rootOffset.left + $root.width() - dragContext.separator.width;
 			var rootBottom = rootOffset.top + $root.height() - dragContext.separator.height;
 
-			if (this._stageViewCollection._isHScrollBarShow()) {
+			if (this._viewCollection._isHScrollBarShow()) {
 				//下に水平スクロールバーが表示されている場合、
 				//セパレータが動く最大の位置はStageのルートのbottomから
 				//スクロールバーの高さを引いた位置になる
@@ -9410,7 +9416,7 @@
 				cursorPageY = rootOffset.top;
 			}
 
-			if (this._stageViewCollection._isVScrollBarShow()) {
+			if (this._viewCollection._isVScrollBarShow()) {
 				rootRight -= SCROLL_BAR_THICKNESS;
 			}
 
@@ -9444,7 +9450,7 @@
 				dragContext.nextView._desiredWidth = dragContext.nextDesiredSize - dispDx;
 			}
 
-			this._stageViewCollection._updateGridRegion();
+			this._viewCollection._updateGridRegion();
 
 			this._isDraggingStarted = true;
 
@@ -9464,7 +9470,7 @@
 			this._gridSeparatorDragContext = null;
 
 			//ビューの更新を有効にする
-			this._stageViewCollection.getViewAll().forEach(function(view) {
+			this._viewCollection.getViewAll().forEach(function(view) {
 				view._isUpdateSuppressed = false;
 				view._update();
 			});
