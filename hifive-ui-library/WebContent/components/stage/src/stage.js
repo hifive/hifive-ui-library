@@ -4160,13 +4160,85 @@
 			name: 'h5.ui.components.stage.ReadOnlyViewport',
 
 			field: {
-				_viewport: null,
+				_viewport: null
+			},
+
+			accessor: {
+				scaleX: {
+					get: function() {
+						return this._viewport._scaleX;
+					}
+				},
+				scaleY: {
+					get: function() {
+						return this._viewport._scaleY;
+					}
+				},
+				displayX: {
+					get: function() {
+						return this._viewport._displayRect.x;
+					}
+				},
+				displayY: {
+					get: function() {
+						return this._viewport._displayRect.y;
+					}
+				},
+				displayWidth: {
+					get: function() {
+						return this._viewport._displayRect.width;
+					}
+				},
+				displayHeight: {
+					get: function() {
+						return this._viewport._displayRect.height;
+					}
+				},
+				worldX: {
+					get: function() {
+						return this._viewport._worldRect.x;
+					}
+				},
+				worldY: {
+					get: function() {
+						return this._viewport._worldRect.y;
+					}
+				},
+				worldWidth: {
+					get: function() {
+						return this._viewport._worldRect.width;
+					}
+				},
+				worldHeight: {
+					get: function() {
+						return this._viewport._worldRect.height;
+					}
+				}
 			},
 
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ReadOnlyViewport
+				 */
 				constructor: function ReadOnlyViewport(viewport) {
 					super_.constructor.call(this);
 					this._viewport = viewport;
+				},
+
+				getDisplayPosition: function(worldX, worldY) {
+					return this._viewport.getDisplayPosition(worldX, worldY);
+				},
+
+				getDisplayRect: function() {
+					return this._viewport.getDisplayRect();
+				},
+
+				getWorldPosition: function(displayX, displayY) {
+					return this._viewport.getWorldPosition(displayX, displayY);
+				},
+
+				getWorldRect: function() {
+					return this._viewport.getWorldRect();
 				}
 			}
 		};
@@ -4237,7 +4309,7 @@
 					get: function() {
 						return this._worldRect.height;
 					}
-				},
+				}
 			},
 
 			method: {
@@ -4732,8 +4804,6 @@
 
 						viewport: {
 							get: function() {
-								return this._viewport;
-
 								if (this._viewportReadOnly) {
 									return this._viewportReadOnly;
 								}
