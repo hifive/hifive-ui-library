@@ -2880,7 +2880,8 @@
 					this._from = duFrom;
 					this._to = duTo;
 
-					//サイズを0x0にするとFirefoxでは線が描画されないので1x1にしておく
+					//初期状態。_updateLinePosition()により更新され、
+					//線分をちょうど包含するサイズになる
 					this._width = 1;
 					this._height = 1;
 
@@ -4153,6 +4154,25 @@
 		return desc;
 	});
 
+	var ReadOnlyViewport = RootClass.extend(function(super_) {
+
+		var desc = {
+			name: 'h5.ui.components.stage.ReadOnlyViewport',
+
+			field: {
+				_viewport: null,
+			},
+
+			method: {
+				constructor: function ReadOnlyViewport(viewport) {
+					super_.constructor.call(this);
+					this._viewport = viewport;
+				}
+			}
+		};
+		return desc;
+	});
+
 	var Viewport = EventDispatcher.extend(function(super_) {
 		var DEFAULT_BOUNDARY_WIDTH = 25;
 
@@ -4424,6 +4444,10 @@
 					}
 
 					return nineSlice;
+				},
+
+				createReadOnlyReference: function() {
+					return ReadOnlyViewport.create(this);
 				}
 
 			//将来追加予定だが現時点では使っていないのでコメントアウト
@@ -4574,6 +4598,8 @@
 
 						_viewport: null,
 
+						_viewportReadOnly: null,
+
 						/**
 						 * 実際にDOMを描画する範囲
 						 */
@@ -4701,6 +4727,18 @@
 						scrollY: {
 							get: function() {
 								return this._viewport.displayY;
+							}
+						},
+
+						viewport: {
+							get: function() {
+								return this._viewport;
+
+								if (this._viewportReadOnly) {
+									return this._viewportReadOnly;
+								}
+								this._viewportReadOnly = this._viewport.createReadOnlyReference();
+								return this._viewportReadOnly;
 							}
 						}
 					},
