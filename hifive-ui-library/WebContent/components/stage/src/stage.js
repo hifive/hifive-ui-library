@@ -3617,8 +3617,7 @@
 				_minScaleY: null,
 				_maxScaleX: null,
 				_maxScaleY: null,
-				_isUpdateTransformReserved: null,
-				_zIndexList: null
+				_isUpdateTransformReserved: null
 			},
 			method: {
 				/**
@@ -3632,8 +3631,6 @@
 					this.y = 0;
 					this.width = 0;
 					this.height = 0;
-
-					this._zIndexList = ZIndexList.create();
 
 					this._scaleX = 1;
 					this._scaleY = 1;
@@ -3659,8 +3656,6 @@
 
 					this._children.push(du);
 
-					this._zIndexList.add(du.zIndex, du);
-
 					if (this._rootStage) {
 						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
@@ -3683,8 +3678,6 @@
 					if (typeof du._onRemoving === 'function') {
 						du._onRemoving();
 					}
-
-					this._zIndexList.remove(du.zIndex, du);
 
 					this._children.splice(idx, 1);
 
@@ -3843,27 +3836,11 @@
 
 					this.__updateDOM(view, rootSvg, reason);
 
-					var children = this._zIndexList.getAllAcendant();
-
-					var childrenLen = children.length;
-					for (var i = 0; i < childrenLen; i++) {
-						var childDU = children[i];
-						var dom = childDU.__renderDOM(view);
-						rootG.appendChild(dom);
-
-						//ここでやらない方が良いが、一旦ここでマップに登録する
-						view._duidElementMap.set(childDU.id, dom);
-					}
-
 					return rootSvg;
 				},
 
-				__addDOM: function(view, containerElement, targetElement) {
-					containerElement.firstChild.appendChild(targetElement);
-				},
-
-				__removeDOM: function(view, containerElement, targetElement) {
-					containerElement.firstChild.removeChild(targetElement);
+				__getPracticalParentElement: function(containerRootElement) {
+					return containerRootElement.firstChild;
 				},
 
 				__updateDOM: function(view, element, reason) {
@@ -3972,24 +3949,6 @@
 					rootSvg.appendChild(rootG);
 
 					return rootSvg;
-				},
-
-				__renderDOM: function(view) {
-					var children = this._zIndexList.getAllAcendant();
-
-					var layerElement = view._getElementForLayer(this);
-
-					var childrenLen = children.length;
-					for (var i = 0; i < childrenLen; i++) {
-						var childDU = children[i];
-						var dom = childDU.__renderDOM(view);
-						this.__addDOM(view, layerElement, dom);
-
-						//ここでやらない方が良いが、一旦ここでマップに登録する
-						view._duidElementMap.set(childDU.id, dom);
-					}
-
-					return null;
 				},
 
 				/**
@@ -4733,6 +4692,326 @@
 		return desc;
 	});
 
+	var DOMManager = RootClass
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.DOMManager',
+
+					field: {
+						_view: null,
+						_duElementMap: null,
+						_duZCacheMap: null,
+
+						_numOfDU: null,
+
+						_bulkAddRootDU: null,
+						_fragmentRoot: null,
+						_numOfBulkAdd: null
+					},
+
+					accessor: {
+						numberOfDisplayUnit: {
+							get: function() {
+								return this._numOfDU;
+							}
+						}
+					},
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.DOMManager
+						 */
+						constructor: function DOMManager() {
+							super_.constructor.call(this);
+							this._duElementMap = new Map();
+							this._duZCacheMap = new Map();
+
+							this._numOfDU = 0;
+							this._numOfBulkAdd = 0;
+						},
+
+						beginBulkAdd: function(rootDisplayUnit) {
+							this._bulkAddRootDU = rootDisplayUnit;
+							this._fragmentRoot = document.createDocumentFragment();
+							this._numOfBulkAdd = 0;
+						},
+
+						endBulkAdd: function() {
+							var containerRootElement = this.getElement(this._bulkAddRootDU);
+							var parentElement = this._bulkAddRootDU
+									.__getPracticalParentElement(containerRootElement);
+
+							//Fragmentの中身をまとめて追加
+							parentElement.appendChild(this._fragmentRoot);
+
+							this._fragmentRoot = null;
+							this._bulkAddRootDU = null;
+
+							var ret = this._numOfBulkAdd;
+							this._numOfBulkAdd = 0;
+							return ret;
+						},
+
+						/**
+						 * 渡されたDUをレンダーし、zIndexの制約を満たす適切な位置に追加します。 渡されたDUはこのマネージャの管理下に置かれます。
+						 *
+						 * @param du
+						 */
+						add: function(du, element, isManageOnly) {
+							if (isManageOnly !== true) {
+								//レイヤーの場合はルート要素なので管理だけ行う。
+								//それ以外のDUの場合は、要素を適切なzIndexの位置に挿入する
+								this._insert(du, element);
+							}
+
+							this._numOfDU++;
+
+							//要素を内部で保持
+							this._duElementMap.set(du, element);
+						},
+
+						/**
+						 * 与えられたDUに対応するDOM要素が、DUのzIndex制約を満たすようにDOM要素の位置を更新します。
+						 *
+						 * @param du
+						 */
+						updateElementZIndex: function(du) {
+							var element = this.getElement(du);
+							if (!element) {
+								//対応するDOMがレンダーされていなければ何もしない
+								return;
+							}
+							this._removeElement(du);
+							this._insert(du, element);
+						},
+
+						/**
+						 * 与えられたDUに対応するDOM要素を返します。
+						 *
+						 * @param du
+						 * @returns
+						 */
+						getElement: function(du) {
+							return this._duElementMap.get(du);
+						},
+
+						/**
+						 * 与えられたDUが既に描画済みかどうかを返します。
+						 *
+						 * @param du
+						 * @returns {Boolean}
+						 */
+						has: function(du) {
+							return this._duElementMap.has(du);
+						},
+
+						/**
+						 * 与えられたDUに対応するDOM要素をDOMツリーから削除します。DUはこのマネージャの管理外になります。
+						 *
+						 * @param du
+						 */
+						remove: function(du) {
+							if (DisplayUnitContainer.isClassOf(du)) {
+								//コンテナの場合は子孫(すべて)のDUをchild-firstで先に削除し、その後自分自身を削除
+								var children = du.getDisplayUnitAll();
+								for (var i = 0, len = children.length; i < len; i++) {
+									var child = children[i];
+									this.remove(child);
+								}
+							}
+
+							//要素をDOMツリーから削除
+							this._removeElement(du);
+
+							this._numOfDU--;
+
+							//MEMO: EclipseのJSDTだと.deleteの記述がエラーになる
+							//各種キャッシュから当該DUのエントリを削除
+							this._duElementMap['delete'](du);
+							this._duZCacheMap['delete'](du);
+						},
+
+						/**
+						 * 与えられたDUに対応するDOM要素をDOMツリーから削除します。要素が存在しない場合は何もしません。
+						 *
+						 * @private
+						 * @param du
+						 */
+						_removeElement: function(du) {
+							var element = this._duElementMap.get(du);
+
+							if (!element) {
+								return;
+							}
+
+							//対応する要素が描画されていたら削除
+							var parentNode = element.parentNode;
+							if (parentNode) {
+								parentNode.removeChild(element);
+							}
+
+							this._removeZCacheEntry(du.parentDisplayUnit, du, element);
+						},
+
+						/**
+						 * 与えられたコンテナDUに対応するZCacheを更新します。
+						 *
+						 * @private
+						 * @param containerDU
+						 * @param targetDU
+						 * @param targetElement
+						 */
+						_removeZCacheEntry: function(containerDU, targetDU, targetElement) {
+							//entry = { zIndexArray: , zIndexToFirstElementMap:  };
+							var entry = this._duZCacheMap.get(containerDU);
+							if (!entry) {
+								return;
+							}
+
+							var firstElement = entry.zIndexToFirstElementMap.get(targetDU.zIndex);
+							if (targetElement !== firstElement) {
+								//先頭の要素でなかったということは、
+								//同じzIndexを持つ要素がすでに存在し、かつ
+								//今削除対象になっている要素は（先頭要素ではないので）キャッシュ更新の必要がない
+								return;
+							}
+
+							//削除する要素が、そのzIndexを持つ先頭の要素だったので
+							//そのzIndex値->DOM要素 のマップエントリを削除。
+							//同時に、先頭の要素だったということは同じzIndexを持つ要素は
+							//他にないので、zIndexArrayからもそのzIndex値を削除する。
+							entry.zIndexToFirstElementMap['delete'](targetDU.zIndex);
+							var ary = entry.zIndexArray;
+							var idx = ary.indexOf(targetDU.zIndex);
+							ary.splice(idx, 1);
+						},
+
+						/**
+						 * DUのzIndex制約を満たす位置にelementを挿入します。
+						 *
+						 * @private
+						 * @param element
+						 */
+						_insert: function(du, element) {
+							var containerDU = du.parentDisplayUnit;
+							if (!containerDU) {
+								throw new Error('指定されたDUは親がありません。要素をDOMツリーに追加できません。');
+							}
+							var containerElement = this.getElement(containerDU);
+							if (!containerElement) {
+								throw new Error('コンテナに対応するDOM要素がありません。要素をDOMツリーに追加できません。');
+							}
+
+							if (this._fragmentRoot) {
+								this._numOfBulkAdd++;
+							}
+
+							//MEMO: コンテナ要素はsvg,gと実際に2つ存在するが、
+							//「直接子要素を保持する要素」を取得するので、このAPIの名前は
+							//"actual"ではなく"practical"とする
+							var parentElement;
+							if (this._fragmentRoot && containerDU === this._bulkAddRootDU) {
+								//バルク追加の最中で、親DUがバルク追加のルートDUだったら
+								//DocumentFragmentを親として追加させる。
+								//これにより、この後バルクで追加されるDUは
+								//すべてDocumentFragmentの下に追加されることになる。
+								parentElement = this._fragmentRoot;
+							} else {
+								parentElement = containerDU
+										.__getPracticalParentElement(containerElement);
+							}
+
+							var cacheEntry = this._duZCacheMap.get(containerDU);
+							if (!cacheEntry) {
+								var cacheEntry = this._createZCacheEntry();
+								this._duZCacheMap.set(containerDU, cacheEntry);
+							}
+
+							var zIndexArray = cacheEntry.zIndexArray;
+							var zIndexToFirstElementMap = cacheEntry.zIndexToFirstElementMap;
+
+							//{ exists: , index: }
+							var info = this._getNearestGreaterZIndexInfo(cacheEntry, du.zIndex);
+							var greaterZArrayIndex = info.index;
+
+							if (greaterZArrayIndex == null) {
+								//指定されたDUは一番大きいzIndexを持つので末尾に挿入
+								parentElement.appendChild(element);
+							} else {
+								//自分よりも大きいzIndexを持つ先頭要素の前に挿入
+								var nearestZIndexValue = zIndexArray[greaterZArrayIndex];
+								var nearestGreaterElement = zIndexToFirstElementMap
+										.get(nearestZIndexValue);
+								parentElement.insertBefore(element, nearestGreaterElement);
+							}
+
+							if (!info.exists) {
+								//指定されたzIndex値はこのキャッシュエントリに存在しなかったので追加
+								//なお、すでに配列に存在する場合は何もしない
+								if (greaterZArrayIndex == null) {
+									//このDUのzIndexは一番大きい値なので末尾に追加
+									zIndexArray.push(du.zIndex);
+								} else {
+									zIndexArray.splice(greaterZArrayIndex, 0, du.zIndex);
+								}
+								//elementはこのzIndex値に対応する先頭要素になるのでMapに追加
+								zIndexToFirstElementMap.set(du.zIndex, element);
+							}
+						},
+
+						/**
+						 * ある1つのDUに対応するZキャッシュエントリを作成します。<br>
+						 * Zキャッシュエントリは{ zIndexArray: [], zIndexToFirstElementMap:
+						 * Map}という構造のオブジェクトです。
+						 *
+						 * @private
+						 * @returns {Object} キャッシュエントリ
+						 */
+						_createZCacheEntry: function() {
+							var entry = {
+								zIndexArray: [],
+								zIndexToFirstElementMap: new Map()
+							};
+							return entry;
+						},
+
+						/**
+						 * 与えられたzIndex値より大きく、かつキャッシュエントリとして存在する最も小さいzIndexに対応する
+						 * zIndexArrayのインデックスと、与えられたzIndex値がキャッシュのzIndexArrayに存在するかどうかを表すフラグを持つオブジェクトを返します。
+						 * 戻り値のオブジェクトの型：{ exists: boolean, index: Number }
+						 *
+						 * @private
+						 * @param cacheEntry Zキャッシュエントリ
+						 * @param value 検索対象のzIndex値
+						 * @returns キャッシュ情報
+						 */
+						_getNearestGreaterZIndexInfo: function(cacheEntry, value) {
+							var existsTargetZValue = false;
+
+							//zIndexArrayには、値の小さい順にzIndex値が入っている
+							var ary = cacheEntry.zIndexArray;
+							for (var i = 0, len = ary.length; i < len; i++) {
+								var zIndex = ary[i];
+
+								if (zIndex === value) {
+									existsTargetZValue = true;
+								} else if (zIndex > value) {
+									return {
+										exists: existsTargetZValue,
+										index: i
+									};
+								}
+							}
+							return {
+								exists: existsTargetZValue,
+								index: null
+							};
+						}
+					}
+				};
+				return desc;
+			});
+
 	var StageView = EventDispatcher
 			.extend(function(super_) {
 				//DUとViewportの位置関係を表す定数
@@ -4787,9 +5066,13 @@
 
 						_dragSelectOverlayRect: null,
 
-						_duidElementMap: null,
+						//_isUpdateSuppressed: null,
 
-						_isUpdateSuppressed: null
+						_domManager: null,
+
+						_standbyDUArray: null,
+
+						_inInitialized: null
 					},
 
 					accessor: {
@@ -4888,6 +5171,7 @@
 					method: {
 						/**
 						 * @memberOf h5.ui.components.stage.StageView
+						 * @constructor
 						 */
 						constructor: function StageView(stage) {
 							super_.constructor.call(this);
@@ -4895,13 +5179,15 @@
 							this._x = 0;
 							this._y = 0;
 
-							this._renderRect = Rect.create();
+							this._inInitialized = false;
+
+							this._domManager = DOMManager.create(this);
+
+							this._standbyDUArray = [];
 
 							this._layerElementMap = new Map();
 
 							this._layerDefsMap = new Map();
-
-							this._duidElementMap = new Map();
 
 							this._isUpdateTransformReserved = false;
 
@@ -4920,7 +5206,25 @@
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
 
-							this._isUpdateSuppressed = false;
+							//this._isUpdateSuppressed = false;
+
+							this._addToStage();
+						},
+
+						_addToStage: function() {
+							var $root = $('<div class="h5-stage-view-root"></div>');
+							$root.css({
+								position: 'absolute',
+								overflow: 'hidden',
+								margin: 0,
+								padding: 0,
+								width: this._width,
+								height: this._height,
+								top: this._y,
+								left: this._x
+							});
+							this._rootElement = $root[0];
+							this._stage.rootElement.appendChild(this._rootElement);
 						},
 
 						_initForemostSvg: function() {
@@ -4958,19 +5262,17 @@
 						},
 
 						init: function() {
-							var $root = $('<div class="h5-stage-view-root"></div>');
-							$root.css({
-								position: 'absolute',
-								overflow: 'hidden',
-								margin: 0,
-								padding: 0,
-								width: this._width,
-								height: this._height,
+							if (this._inInitialized) {
+								return;
+							}
+							this._inInitialized = true;
+
+							$(this._rootElement).css({
+								left: this._x,
 								top: this._y,
-								left: this._x
+								width: this._width,
+								height: this._height
 							});
-							this._rootElement = $root[0];
-							this._stage.rootElement.appendChild(this._rootElement);
 
 							var layers = this._stage._layers;
 
@@ -5011,11 +5313,15 @@
 									overflow: 'visible'
 								});
 
-								layer.__renderDOM(this);
-
 								layer.addEventListener('displayUnitAdd', this._duAddListener);
 								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
+
+								//レイヤーと対応する要素をDOMマネージャに登録
+								this._domManager.add(layer, layerRootElement, true);
+
+								//現時点で存在するレイヤー内のDUを描画
+								this._renderDisplayUnit(layer);
 
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
@@ -5023,6 +5329,8 @@
 							}
 
 							this._initForemostSvg();
+
+							this._updateLayerScrollPosition();
 						},
 
 						__onSelectDUStart: function(dragSelectStartPos) {
@@ -5088,7 +5396,7 @@
 								that._foremostSvgGroup.appendChild(element);
 
 								//レイヤーに存在する元々のDUは非表示にする
-								var originalDOM = that._duidElementMap.get(du.id);
+								var originalDOM = that._domManager.getElement(du);
 								if (originalDOM) {
 									du._updateActualDisplayStyle(originalDOM);
 								}
@@ -5111,7 +5419,7 @@
 						__onDragDUDrop: function(dragSession) {
 							var that = this;
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
-								var originalDOM = that._duidElementMap.get(du.id);
+								var originalDOM = that._domManager.getElement(du);
 								if (originalDOM) {
 									du._updateActualDisplayStyle(originalDOM);
 								}
@@ -5138,8 +5446,6 @@
 
 							this._layerElementMap.clear();
 							this._layerDefsMap.clear();
-
-							this._duidElementMap.clear();
 
 							$(this._rootElement).remove();
 						},
@@ -5226,7 +5532,12 @@
 
 							this._viewport.scrollTo(actualDispX, actualDispY);
 
-							this._updateLayerScrollPosition();
+							if (this._inInitialized) {
+								//初期化されていない状態では
+								//実際のレイヤーは生成されていないので
+								//移動処理をしない
+								this._updateLayerScrollPosition();
+							}
 
 							var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
@@ -5535,7 +5846,7 @@
 							if (!displayUnit) {
 								throw new Error('DisplayUnitが指定されていません。');
 							}
-							return this._duidElementMap.get(displayUnit.id);
+							return this._domManager.getElement(displayUnit);
 						},
 
 						/**
@@ -5564,11 +5875,6 @@
 							var pos = DisplayPoint.create(offset.left, offset.top);
 							return pos;
 						},
-
-						//update: function(isImmediate) {
-						//TODO rAFでdirtyなものを全て処理する
-						//isImmedaite === trueならすぐに処理する
-						//},
 
 						_updateLayerScrollPosition: function() {
 							var layers = this._stage._layers;
@@ -5803,54 +6109,42 @@
 						//							}
 						//						},
 						//
-						//						_isOutOfViewport: function(du, rLeft, rTop, rRight, rBottom) {
-						//							var duGlobalPos = du.getWorldGlobalPosition();
-						//
-						//							if (duGlobalPos.x > rRight) {
-						//								return DU_POSITION_BEYOND_RIGHT;
-						//							}
-						//
-						//							var duRight = duGlobalPos.x + du.width;
-						//							if (duRight < rLeft) {
-						//								return DU_POSITION_BEYOND_LEFT;
-						//							}
-						//
-						//							var duBottom = duGlobalPos.y + du.height;
-						//							if (duBottom < rTop) {
-						//								return DU_POSITION_BEYOND_TOP;
-						//							}
-						//							if (duGlobalPos.y > rBottom) {
-						//								return DU_POSITION_BEYOND_BOTTOM;
-						//							}
-						//
-						//							return DU_POSITION_INTERSECT;
-						//						},
 
 						_update: function(rootDU, renderRect) {
-						//MEMO: 最適化の結果、現時点では個別に非表示制御をする必要はなくなった。
-						//ただし、今後DOMの追加・削除を動的に行う等を行う可能性があるので
-						//APIとしては残しておく。
-						//							if (this._isUpdateSuppressed) {
-						//								return;
-						//							}
-						//
-						//							if (!renderRect) {
-						//								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
-						//								renderRect = this._viewport.getWorldRect();
-						//								//renderRect.width *= 1.0;
-						//								//renderRect.height *= 1.0;
-						//								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
-						//								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
-						//							}
-						//
-						//							if (rootDU) {
-						//								this._updateSystemVisible(renderRect, rootDU, true);
-						//							} else {
-						//								var that = this;
-						//								this._stage._layers.forEach(function(layer) {
-						//									that._updateSystemVisible(renderRect, layer, false);
-						//								});
-						//							}
+							if (this._standbyDUArray.length === 0) {
+								return;
+							}
+
+							var ary = this._standbyDUArray.slice(0);
+							for (var i = 0, len = ary.length; i < len; i++) {
+								var du = ary[i];
+								this._renderDisplayUnit(du);
+							}
+
+							//MEMO: 最適化の結果、現時点では個別に非表示制御をする必要はなくなった。
+							//ただし、今後DOMの追加・削除を動的に行う等を行う可能性があるので
+							//APIとしては残しておく。
+							//							if (this._isUpdateSuppressed) {
+							//								return;
+							//							}
+							//
+							//							if (!renderRect) {
+							//								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
+							//								renderRect = this._viewport.getWorldRect();
+							//								//renderRect.width *= 1.0;
+							//								//renderRect.height *= 1.0;
+							//								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
+							//								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
+							//							}
+							//
+							//							if (rootDU) {
+							//								this._updateSystemVisible(renderRect, rootDU, true);
+							//							} else {
+							//								var that = this;
+							//								this._stage._layers.forEach(function(layer) {
+							//									that._updateSystemVisible(renderRect, layer, false);
+							//								});
+							//							}
 						},
 
 						/**
@@ -5895,93 +6189,155 @@
 							}
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 */
+						_renderDisplayUnit: function(du, isNested) {
+							var domManager = this._domManager;
+							var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
+
+							if (DisplayUnitContainer.isClassOf(du)) {
+								//コンテナDUは、現状必ず描画する
+								if (!domManager.has(du)) {
+									var elem = du.__renderDOM(this, reason);
+									domManager.add(du, elem);
+								}
+
+								if (isNested !== true) {
+									domManager.beginBulkAdd(du);
+								}
+
+								var children = du.getDisplayUnitAll();
+								for (var i = 0, len = children.length; i < len; i++) {
+									var child = children[i];
+									this._renderDisplayUnit(child, true);
+								}
+
+								if (isNested !== true) {
+									domManager.endBulkAdd();
+								}
+
+								return;
+							}
+
+							/* ---- 以下はコンテナでないDUの場合 ---- */
+
+							if (domManager.has(du)) {
+								//既に描画済みの場合
+								return;
+							}
+
+							if (this._shouldRender(du)) {
+								//今すぐレンダーする
+								var elem = du.__renderDOM(this, reason);
+								domManager.add(du, elem);
+
+								//待機リストに入っていたら削除
+								var standbyIdx = this._standbyDUArray.indexOf(du);
+								if (standbyIdx !== -1) {
+									this._standbyDUArray.splice(standbyIdx, 1);
+								}
+							} else {
+								var standbyIdx = this._standbyDUArray.indexOf(du);
+								if (standbyIdx === -1) {
+									//待機リストに入っていなかったら、今はレンダーせず、待機リストに追加する
+									this._standbyDUArray.push(du);
+								}
+							}
+						},
+
+						/**
+						 * このDUを今描画すべきかどうかを返します。
+						 *
+						 * @private
+						 * @param du
+						 */
+						_shouldRender: function(du) {
+							return true;
+
+							//Firefoxでは、スクロールの度に描画を増やしていくと
+							//判定などの方が重くなりfpsが安定しないので
+							//一旦全てのDUは追加時に描画するようにする
+							/*
+							var renderRect = this._renderRect;
+							if (!renderRect) {
+								//Viewport.getWorldRect()は毎回インスタンスを生成する。
+								//(あまりしたくないが)高速化のため内部変数を直接見る。
+								renderRect = this._viewport._worldRect;
+							}
+
+							var rLeft = renderRect.x;
+							var rTop = renderRect.y;
+							var rRight = rLeft + renderRect.width;
+							var rBottom = rTop + renderRect.height;
+
+							var duGlobalPos = du.getWorldGlobalPosition();
+
+							if (duGlobalPos.x > rRight) {
+								return false;
+							}
+
+							var duRight = duGlobalPos.x + du.width;
+							if (duRight < rLeft) {
+								return false;
+							}
+
+							var duBottom = duGlobalPos.y + du.height;
+							if (duBottom < rTop) {
+								return false;
+							}
+
+							if (duGlobalPos.y > rBottom) {
+								return false;
+							}
+
+							return true;
+							*/
+						},
+
 						_onDUDirty: function(event) {
 							var du = event.displayUnit;
 
-							var dom = this._duidElementMap.get(du.id);
+							var dom = this._domManager.getElement(du);
 
 							if (!dom) {
 								//対応するDOMが存在しない
 								return;
 							}
 
-							//TODO もしreasonでZIndexChangedだったら
-							//親コンテナでzindex制約を満たすようにDOMの位置を差し替える
-
 							var reason = event.reason;
 
-							du.__updateDOM(this, dom, reason);
-
-							if (reason.isPositionChanged || reason.isSizeChanged
-									|| reason.isScaleChanged) {
-								this._update(du);
+							//もしreasonでZIndexChangedだったら
+							//親コンテナでzindex制約を満たすようにDOMの位置を差し替える
+							if (reason.isZIndexChanged) {
+								this._domManager.updateElementZIndex(du);
 							}
+
+							du.__updateDOM(this, dom, reason);
 						},
 
 						_onDUAdd: function(event) {
 							var du = event.displayUnit;
-
-							var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
-
-							var dom = du.__renderDOM(this, reason);
-
-							this._duidElementMap.set(du.id, dom);
-
-							//DOMの追加方法は
-							var parentDU = du.parentDisplayUnit;
-							var parentDOM = this._duidElementMap.get(du.parentDisplayUnit.id);
-
-							if (parentDOM === undefined) {
-								//親に対応するDOMが見つからなかったということは
-								//レイヤーに直接追加されたもの
-								//（コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する）
-								//$(this._rootElement).append(dom);
-
-								//このparentDUは必ずLayer
-								parentDOM = this._layerElementMap.get(parentDU);
-							}
-							parentDU.__addDOM(this, parentDOM, dom);
-
-							this._update(du);
+							this._renderDisplayUnit(du);
 						},
 
 						_onDURemove: function(event) {
-							var du = event.displayUnit;
+							this._domManager.remove(event.displayUnit);
 
-							var targetElement = this._duidElementMap.get(du.id);
-
-							if (!targetElement) {
-								//対象のDOMを描画していなければ何もしない
-								return;
+							var removedDUs = [event.displayUnit];
+							if (DisplayUnitContainer.isClassOf(event.displayUnit)) {
+								Array.prototype.push.apply(removedDUs, event.displayUnit
+										.getDisplayUnitAll(true));
 							}
 
-							//具体的なDOMの削除方法はコンテナ自身が知っているのでコンテナを取得する
-							//なお、ターゲットのDU自身は既に削除された後なので
-							//parentDisplayUnitを参照してもnullなので注意。
-							var parentDU = event.parentDisplayUnit;
-
-							var parentDOM = this._duidElementMap.get(parentDU.id);
-
-							if (parentDOM === undefined) {
-								//親に対応するDOMが見つからなかったということは
-								//レイヤーに直接追加されたもの
-								//現時点では、コンテナ追加時、それまでのコンテナ以下の要素はレンダー済みだから必ず存在する
-
-								//このparentDUは必ずLayer
-								parentDOM = this._layerElementMap.get(parentDU);
-							}
-
-							parentDU.__removeDOM(this, parentDOM, targetElement);
-
-							//Eclipseのエディタが .delete でエラーとみなすのでこうしている
-							this._duidElementMap['delete'](du.id);
-
-							if (DisplayUnitContainer.isClassOf(du)) {
-								//コンテナの場合は子孫のDUに対応するElementのマップを削除
-								var allChildren = du.getDisplayUnitAll(true);
-								allChildren.forEach(function(childDU) {
-									this._duidElementMap['delete'](childDU.id);
-								});
+							//DUが削除されたので、子孫も含め、待機リストから全て削除
+							for (var i = 0, len = removedDUs.length; i < len; i++) {
+								var du = removedDUs[i];
+								var idx = this._standbyDUArray.indexOf(du);
+								if (idx !== -1) {
+									this._standbyDUArray.splice(idx, 1);
+								}
 							}
 						},
 
@@ -6789,7 +7145,9 @@
 
 						_isSightChangePropagationSuppressed: null,
 
-						_sightChangeEvents: null
+						_sightChangeEvents: null,
+
+						isAutoInitView: null
 					},
 
 					accessor: {
@@ -6840,6 +7198,8 @@
 							this._width = 0;
 							this._height = 0;
 
+							this.isAutoInitView = false;
+
 							//初期状態では「何もない」ことにする
 							this._numberOfOverallRows = 0;
 							this._numberOfOverallColumns = 0;
@@ -6857,6 +7217,12 @@
 							this._view_sightChangeListener = function(event) {
 								that._onSightChange(event);
 							};
+						},
+
+						initView: function() {
+							this.getViewAll().forEach(function(v) {
+								v.init();
+							});
 						},
 
 						/**
@@ -7174,18 +7540,12 @@
 									} else {
 										//新規にビューを作成する
 										theView = StageView.create(this._stage);
-										theView.init();
+										if (this.isAutoInitView) {
+											theView.init();
+										}
 									}
 
 									this._addView(theView, rowIndex, colIndex);
-
-									var viewW = col._desiredWidth ? col._desiredWidth : rootWidth
-											- totalWidth;
-
-									//									theView.x = totalWidth;
-									//									theView.y = totalHeight;
-									//									theView.height = viewH;
-									//									theView.width = viewW;
 
 									totalWidth += col._desiredWidth ? col._desiredWidth : 0;
 									colIndex++;
@@ -7879,6 +8239,11 @@
 		_selectionLogic: h5.ui.SelectionLogic,
 
 		_focusController: h5.ui.FocusController,
+
+		initView: function() {
+			this._viewCollection.initView();
+			this._viewCollection.isAutoInitView = true;
+		},
 
 		select: function(displayUnit, isExclusive) {
 			if (!Array.isArray(displayUnit)) {
@@ -9540,9 +9905,6 @@
 			return {};
 		},
 
-		_t_splitWidth: null,
-		_t_splitHeight: null,
-
 		_isGridSeparatorDragging: false,
 
 		_gridSeparatorDragContext: null,
@@ -9859,10 +10221,10 @@
 			this._gridSeparatorDragContext = null;
 
 			//ビューの更新を有効にする
-			this._viewCollection.getViewAll().forEach(function(view) {
-				view._isUpdateSuppressed = false;
-				view._update();
-			});
+			//			this._viewCollection.getViewAll().forEach(function(view) {
+			//				view._isUpdateSuppressed = false;
+			//				view._update();
+			//			});
 
 			var evArg = {
 				isLive: false
