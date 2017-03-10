@@ -5330,7 +5330,9 @@
 
 							this._initForemostSvg();
 
-							this._updateLayerScrollPosition();
+							//TODO レイヤーが論理的に移動されてからinit()したときに
+							//レイヤーの位置を合わせる
+							//this._updateLayerScrollPosition();
 						},
 
 						__onSelectDUStart: function(dragSelectStartPos) {
