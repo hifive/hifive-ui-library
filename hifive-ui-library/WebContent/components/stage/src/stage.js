@@ -5498,6 +5498,18 @@
 									worldTop, worldBottom);
 						},
 
+						getVisibleHeight: function() {
+							var ret = this._stage._viewCollection.getRow(this.rowIndex)
+									.getVisibleHeight();
+							return ret;
+						},
+
+						getVisibleWidth: function() {
+							var ret = this._stage._viewCollection.getColumn(this.columnIndex)
+									.getVisibleWidth();
+							return ret;
+						},
+
 						getDefsForLayer: function(layer) {
 							var defs = this._layerDefsMap.get(layer);
 
@@ -5893,6 +5905,9 @@
 								return;
 							}
 
+							//TODO もしreasonでZIndexChangedだったら
+							//親コンテナでzindex制約を満たすようにDOMの位置を差し替える
+
 							var reason = event.reason;
 
 							du.__updateDOM(this, dom, reason);
@@ -6195,7 +6210,7 @@
 
 						getVisibleHeight: function() {
 							if (!this._isVisibleRangeFinite()) {
-								return Number.MAX_VALUE;
+								return Infinity;
 							}
 							var visibleRangeY = this._visibleRangeY;
 							return Math.abs(visibleRangeY.bottom - visibleRangeY.top);
@@ -6203,11 +6218,16 @@
 
 						getVisibleHeightOfDisplay: function() {
 							if (!this._isVisibleRangeFinite()) {
-								return Number.MAX_VALUE;
+								return Infinity;
 							}
 							var ret = this.getView(0).coordinateConverter.toDisplayYLength(this
 									.getVisibleHeight());
 							return ret;
+						},
+
+						getPagePosition: function() {
+							//RowのPagePositionは、この行の一番左のビューのPagePositionと一致
+							return this._getView(0).getPagePosition();
 						},
 
 						_getViewportYFromScrollBarPosition: function(value) {
@@ -6507,7 +6527,7 @@
 
 						getVisibleWidth: function() {
 							if (!this._isVisibleRangeFinite()) {
-								return Number.MAX_VALUE;
+								return Infinity;
 							}
 							var visibleRangeX = this._visibleRangeX;
 							return Math.abs(visibleRangeX.right - visibleRangeX.left);
@@ -6515,11 +6535,16 @@
 
 						getVisibleWidthOfDisplay: function() {
 							if (!this._isVisibleRangeFinite()) {
-								return Number.MAX_VALUE;
+								return Infinity;
 							}
 							var ret = this.getView(0).coordinateConverter.toDisplayYLength(this
 									.getVisibleWidth());
 							return ret;
+						},
+
+						getPagePosition: function() {
+							//列のPagePositionは一番上のビューのPagePositionに一致
+							return this.getView(0).getPagePosition();
 						},
 
 						_isVisibleRangeFinite: function() {
@@ -7361,6 +7386,7 @@
 												actualHeight -= SCROLL_BAR_THICKNESS;
 											}
 										} else {
+											//実際のビューの高さは「無限」はあり得ないのでMAX_VALUEを最大とする
 											var maxHeight = Number.MAX_VALUE;
 
 											if (row._isVisibleRangeFinite()) {
@@ -7439,6 +7465,7 @@
 														actualWidth -= SCROLL_BAR_THICKNESS;
 													}
 												} else {
+													//実際のビューの幅は「無限」はあり得ないのでMAX_VALUEを最大とする
 													var maxWidth = Number.MAX_VALUE;
 
 													if (column._isVisibleRangeFinite()) {
@@ -9098,15 +9125,6 @@
 
 		_defaultLayer: null,
 
-		_worldWholeRect: null,
-
-		_worldWholeSize: {
-			top: Number.MAX_VALUE,
-			left: Number.MAX_VALUE,
-			right: Number.MIN_VALUE,
-			bottom: Number.MIN_VALUE
-		},
-
 		_duCascadeRemovingListener: null,
 
 		_onDUCascadeRemoving: function(event) {
@@ -9536,24 +9554,24 @@
 			var isHorizontal = $el.hasClass('horizontal');
 
 			var sep;
-			var prevView, nextView;
-			var prevDesiredSize, nextDesiredSize;
+			var prevLine, nextLine;
+			var prevSize, nextSize;
 
 			//TODO StageViewCollection側にseparatorをIndex指定で取得するAPIを作るべき
 			if (isHorizontal) {
 				var allRows = this._viewCollection.getRowsOfAllTypes();
 				sep = allRows[index];
-				prevView = allRows[index - 1];
-				prevDesiredSize = prevView._desiredHeight;
-				nextView = allRows[index + 1];
-				nextDesiredSize = nextView._desiredHeight;
+				prevLine = allRows[index - 1];
+				prevSize = prevLine.height;
+				nextLine = allRows[index + 1];
+				nextSize = nextLine.height;
 			} else {
 				var allCols = this._viewCollection.getColumnsOfAllTypes();
 				sep = allCols[index];
-				prevView = allCols[index - 1];
-				prevDesiredSize = prevView._desiredWidth;
-				nextView = allCols[index + 1];
-				nextDesiredSize = nextView._desiredWidth;
+				prevLine = allCols[index - 1];
+				prevSize = prevLine.width;
+				nextLine = allCols[index + 1];
+				nextSize = nextLine.width;
 			}
 
 			//セパレータドラッグ中は、ドラッグで見える可能性がある範囲を一度だけ描画し、ドラッグ完了まで可視範囲判定を抑制する
@@ -9586,12 +9604,18 @@
 			//					}));
 
 			this._gridSeparatorDragContext = {
+				separatorElement: context.event.target,
 				isHorizontal: isHorizontal,
-				separator: sep,
-				prevView: prevView,
-				prevDesiredSize: prevDesiredSize,
-				nextView: nextView,
-				nextDesiredSize: nextDesiredSize
+				separatorLine: sep,
+				prevLine: prevLine,
+				prevSize: prevSize,
+				nextLine: nextLine,
+				nextSize: nextSize,
+				//trueだったら順方向にロック（"前"のビューのサイズがロックされている）、
+				//falseだったら逆方向にロック（"後ろ"のビューのサイズがロックされている）
+				lockedDirection: null,
+				//セパレータ要素のpageオフセットのleftかtopが入っている
+				separatorLockedPos: 0
 			};
 			this._isGridSeparatorDragging = true;
 		},
@@ -9599,16 +9623,116 @@
 		_processGridSeparatorDragMove: function(context) {
 			var event = context.event;
 
+			var dragContext = this._gridSeparatorDragContext;
+			var isHorizontal = dragContext.isHorizontal;
+
 			var cursorPageX = event.pageX;
 			var cursorPageY = event.pageY;
 
-			var dragContext = this._gridSeparatorDragContext;
+			var dragLastPagePos = this._dragLastPagePos;
+
+			this._dragLastPagePos = {
+				x: cursorPageX,
+				y: cursorPageY
+			};
+
+			//セパレータの前後どちらかのビューがVisibleRangeいっぱいを表示しているときは、
+			//カーソルがセパレータの位置に来るまではリサイズを行わない
+			if (dragContext.lockedDirection !== null) {
+				if (isHorizontal) {
+					//水平セパレータの場合
+					if (dragContext.lockedDirection) {
+						//セパレータの上のビューがロックされているので
+						//カーソル位置がセパレータより下にある場合はロック継続
+						if (cursorPageY > dragContext.separatorLockedPos
+								+ dragContext.separatorLine.height) {
+							return;
+						}
+					} else {
+						//セパレータの下のビューがロックされている
+						if (cursorPageY < dragContext.separatorLockedPos) {
+							return;
+						}
+					}
+				} else {
+					//垂直セパレータの場合
+					if (dragContext.lockedDirection) {
+						//セパレータの左のビューがロックされているので
+						//カーソル位置がセパレータより右にある場合はロック継続
+						if (cursorPageX > dragContext.separatorLockedPos
+								+ dragContext.separatorLine.width) {
+							return;
+						}
+					} else {
+						//セパレータの右のビューがロックされている
+						if (cursorPageX < dragContext.separatorLockedPos) {
+							return;
+						}
+					}
+				}
+			}
+
+			var isForwardMove = true;
+			var viewVisibleSize = 0;
+			var viewportWorldSize = 0;
+			var targetLine = null;
+
+			if (isHorizontal) {
+				//水平セパレータなので、下方向に動かしたらforward=true
+				isForwardMove = dragLastPagePos.y - event.pageY < 0;
+
+				if (isForwardMove) {
+					//順方向＝下方向の移動なので、
+					//VisibleRangeの制約チェック対象は"上"のビュー
+					targetLine = dragContext.prevLine;
+				} else {
+					//"下"のビューが制約チェック対象
+					targetLine = dragContext.nextLine;
+				}
+
+				viewportWorldSize = targetLine.getView(0).coordinateConverter
+						.toWorldYLength(targetLine.height);
+				viewVisibleSize = targetLine.getVisibleHeight();
+			} else {
+				//垂直セパレータなので、右方向に動かしたらfoward=true
+				isForwardMove = dragLastPagePos.x - event.pageX < 0;
+
+				if (isForwardMove) {
+					//順方向＝右方向の移動なので、
+					//VisibleRangeの制約チェック対象は"前のビュー"
+					targetLine = dragContext.prevLine;
+				} else {
+					targetLine = dragContext.nextLine;
+				}
+
+				viewportWorldSize = targetLine.getView(0).coordinateConverter
+						.toWorldXLength(targetLine.width);
+				viewVisibleSize = targetLine.getVisibleWidth();
+			}
+
+			//セパレータの移動方向に対して"後ろ"のビューの表示サイズが
+			//すでにVisibleRangeのサイズいっぱいだったらこれ以上動かさない
+			if (viewportWorldSize >= viewVisibleSize) {
+				var sepOffset = $(dragContext.separatorElement).offset();
+				dragContext.separatorLockedPos = isHorizontal ? sepOffset.top : sepOffset.left;
+
+				//lockedDirectionがtrueの場合は
+				//セパレータの"前"のビューが制限に達したという意味になる。
+				//従って、lockedDirectionをチェックするときは
+				//カーソル位置がセパレータよりも"前"にあるかどうかをチェックし、
+				//"前"にある場合はlock状態継続、そうでなければロック解除すればよい。
+				dragContext.lockedDirection = isForwardMove;
+
+				return;
+			}
+
+			dragContext.lockedDirection = null;
 
 			var $root = $(this.rootElement);
 
 			var rootOffset = $root.offset();
-			var rootRight = rootOffset.left + $root.width() - dragContext.separator.width;
-			var rootBottom = rootOffset.top + $root.height() - dragContext.separator.height;
+			var rootRight = rootOffset.left + $root.width() - dragContext.separatorLine.width;
+			var rootBottom = rootOffset.top + $root.height() - dragContext.separatorLine.height;
 
 			if (this._viewCollection._isHScrollBarShow()) {
 				//下に水平スクロールバーが表示されている場合、
@@ -9636,7 +9760,7 @@
 			var dispDx = cursorPageX - this._dragStartPagePos.x;
 			var dispDy = cursorPageY - this._dragStartPagePos.y;
 
-			if (dragContext.isHorizontal) {
+			if (isHorizontal) {
 				//水平分割(上下に分割)しているので、X方向には動かさない
 				dispDx = 0;
 			} else {
@@ -9645,16 +9769,46 @@
 			}
 
 			if (dispDx === 0 && dispDy === 0) {
-				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
+				//実質的にX,Yどちらの方向にも動きがない場合は何もしない
 				return;
 			}
 
-			if (dragContext.isHorizontal) {
-				dragContext.prevView._desiredHeight = dragContext.prevDesiredSize + dispDy;
-				dragContext.nextView._desiredHeight = dragContext.nextDesiredSize - dispDy;
+			if (isHorizontal) {
+				//水平セパレータの場合
+				var availableHeight = dragContext.prevSize + dragContext.separatorLine.height
+						+ dragContext.nextSize;
+
+				if (isForwardMove) {
+					//下に動かしたので上のビューが制約優先ビュー
+					var prevLineUnlimitedHeight = dragContext.prevSize + dispDy;
+					this._limitViewSizeToVisibleSize(isHorizontal, dragContext.prevLine,
+							dragContext.nextLine, dragContext.separatorLine,
+							prevLineUnlimitedHeight, availableHeight);
+				} else {
+					//上に動かしたので下のビューが制約優先ビュー
+					var nextLineUnlimitedHeight = dragContext.nextSize - dispDy;
+					this._limitViewSizeToVisibleSize(isHorizontal, dragContext.nextLine,
+							dragContext.prevLine, dragContext.separatorLine,
+							nextLineUnlimitedHeight, availableHeight);
+				}
 			} else {
-				dragContext.prevView._desiredWidth = dragContext.prevDesiredSize + dispDx;
-				dragContext.nextView._desiredWidth = dragContext.nextDesiredSize - dispDx;
+				//垂直セパレータの場合
+				var availableWidth = dragContext.prevSize + dragContext.separatorLine.width
+						+ dragContext.nextSize;
+
+				if (isForwardMove) {
+					//右に動かしたので左のビューが制約優先ビュー
+					var prevLineUnlimitedWidth = dragContext.prevSize + dispDx;
+					this._limitViewSizeToVisibleSize(isHorizontal, dragContext.prevLine,
+							dragContext.nextLine, dragContext.separatorLine,
+							prevLineUnlimitedWidth, availableWidth);
+				} else {
+					//左に動かしたので右のビューが制約優先ビュー
+					var nextLineUnlimitedWidth = dragContext.nextSize - dispDx;
+					this._limitViewSizeToVisibleSize(isHorizontal, dragContext.nextLine,
+							dragContext.prevLine, dragContext.separatorLine,
+							nextLineUnlimitedWidth, availableWidth);
+				}
 			}
 
 			this._viewCollection._updateGridRegion();
@@ -9670,6 +9824,34 @@
 			//				columnSeparatorIndices: null,
 			};
 			this.trigger(EVENT_VIEW_REGION_CHANGE, evArg);
+		},
+
+		_limitViewSizeToVisibleSize: function(isHorizontal, preferredLine, oppositeLine,
+				separatorLine, desiredSize, availableSize) {
+			var preferredLineMaxSize = Infinity;
+
+			if (preferredLine._isVisibleRangeFinite()) {
+				if (isHorizontal) {
+					preferredLineMaxSize = preferredLine.getVisibleHeightOfDisplay();
+				} else {
+					preferredLineMaxSize = preferredLine.getVisibleWidthOfDisplay();
+				}
+			}
+
+			//制約があればそれを最大に、そうでなければカーソル位置に基づく位置を
+			//優先ビューの高さとする
+			//非優先ビューの高さは先に決まった高さの残り
+			var actualDesiredSize = Math.min(desiredSize, preferredLineMaxSize);
+
+			if (isHorizontal) {
+				preferredLine._desiredHeight = actualDesiredSize;
+				oppositeLine._desiredHeight = availableSize - actualDesiredSize
+						- separatorLine.height;
+			} else {
+				preferredLine._desiredWidth = actualDesiredSize;
+				oppositeLine._desiredWidth = availableSize - actualDesiredSize
+						- separatorLine.width;
+			}
 		},
 
 		_endGridSeparatorDrag: function(context, $el) {
