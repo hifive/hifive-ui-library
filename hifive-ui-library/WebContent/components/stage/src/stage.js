@@ -7827,11 +7827,14 @@
 							var ret = isRow ? this._height : this._width;
 							ret -= totalSeparatorSize;
 							if (isRow) {
-								if (this._isVScrollBarShow()) {
+								//Y方向のコンテンツビューの高さを求めるので、
+								//「画面下に水平スクロールバーが出ているかどうか」で
+								//スクロールバーのサイズを引くかどうかを判定する
+								if (this._isHScrollBarShow()) {
 									ret -= SCROLL_BAR_THICKNESS;
 								}
 							} else {
-								if (this._isHScrollBarShow()) {
+								if (this._isVScrollBarShow()) {
 									ret -= SCROLL_BAR_THICKNESS;
 								}
 							}
