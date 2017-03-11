@@ -6695,8 +6695,9 @@
 							if (!this._scrollBarController) {
 								return;
 							}
+							var $root = $(this._scrollBarController.rootElement);
 							this._scrollBarController.dispose();
-							$(this._scrollBarController.rootElement).remove();
+							$root.remove();
 							this._scrollBarController = null;
 						},
 
@@ -7018,8 +7019,9 @@
 							if (!this._scrollBarController) {
 								return;
 							}
+							var $root = $(this._scrollBarController.rootElement);
 							this._scrollBarController.dispose();
-							$(this._scrollBarController.rootElement).remove();
+							$root.remove();
 							this._scrollBarController = null;
 						},
 
