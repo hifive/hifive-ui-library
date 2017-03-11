@@ -680,46 +680,29 @@
 				var desc = {
 					name: 'h5.ui.components.stage.Rect',
 					field: {
-						_x: null,
-						_y: null
-					},
-					accessor: {
-						x: {
-							get: function() {
-								return this._x;
-							},
-							set: function(value) {
-								this._x = value;
-							}
-						},
-						y: {
-							get: function() {
-								return this._y;
-							},
-							set: function(value) {
-								this._y = value;
-							}
-						},
-						width: null, //TODO 実験用にwidth,heightは _p_width のままにしている
+						x: null,
+						y: null,
+						width: null,
 						height: null
 					},
+
 					method: {
 						/**
 						 * @memberOf h5.ui.components.stage.Rect
 						 */
 						constructor: function Rect(x, y, width, height) {
 							super_.constructor.call(this);
-							this._x = x !== undefined ? x : 0;
-							this._y = y !== undefined ? y : 0;
-							this._p_width = width !== undefined ? width : 0;
-							this._p_height = height !== undefined ? height : 0;
+							this.x = x !== undefined ? x : 0;
+							this.y = y !== undefined ? y : 0;
+							this.width = width !== undefined ? width : 0;
+							this.height = height !== undefined ? height : 0;
 						},
 						setRect: function(x, y, width, height) {
 							if (x != null) {
-								this._x = x;
+								this.x = x;
 							}
 							if (y != null) {
-								this._y = y;
+								this.y = y;
 							}
 							if (width != null) {
 								this.width = width;
@@ -731,10 +714,10 @@
 
 						setLocation: function(x, y) {
 							if (x != null) {
-								this._x = x;
+								this.x = x;
 							}
 							if (y != null) {
-								this._y = y;
+								this.y = y;
 							}
 						},
 
