@@ -2877,31 +2877,34 @@
 							get: function() {
 								return this._endpointTo;
 							}
-						},
-
-						x1: {
-							get: function() {
-								return this._x1;
-							}
-						},
-
-						x2: {
-							get: function() {
-								return this._x2;
-							}
-						},
-
-						y1: {
-							get: function() {
-								return this._y1;
-							}
-						},
-
-						y2: {
-							get: function() {
-								return this._y2;
-							}
 						}
+
+					//MEMO: エッジの描画判定は
+					//エッジのDUがOutOfViewportの判定方法だけにしたので
+					//x1, x2, y1, y2へのアクセサは現時点では不要
+					//						x1: {
+					//							get: function() {
+					//								return this._x1;
+					//							}
+					//						},
+					//
+					//						x2: {
+					//							get: function() {
+					//								return this._x2;
+					//							}
+					//						},
+					//
+					//						y1: {
+					//							get: function() {
+					//								return this._y1;
+					//							}
+					//						},
+					//
+					//						y2: {
+					//							get: function() {
+					//								return this._y2;
+					//							}
+					//						}
 					},
 
 					method: {
@@ -2965,8 +2968,10 @@
 								return;
 							}
 
-							var fr = this._from.getRect();
-							var tr = this._to.getRect();
+							var fromW = this._from.width;
+							var fromH = this._from.height;
+							var toW = this._to.width;
+							var toH = this._to.height;
 
 							var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
 							var toHAlign = this.endpointTo.junctionHorizontalAlign;
@@ -2981,24 +2986,24 @@
 								x1 = fwPos.x;
 								break;
 							case 'right':
-								x1 = fwPos.x + fr.width;
+								x1 = fwPos.x + fromW;
 								break;
 							case 'offset':
 								x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
 								break;
 							case 'nearest':
-								var fwCenterX = fwPos.x + fr.width / 2;
-								var twCenterX = twPos.x + tr.width / 2;
+								var fwCenterX = fwPos.x + fromW / 2;
+								var twCenterX = twPos.x + toW / 2;
 								if (twCenterX - fwCenterX > 0) {
 									//Toノードの中心がFromノードの中心より右にある＝Fromノード側はright相当にする
-									x1 = fwPos.x + fr.width;
+									x1 = fwPos.x + fromW;
 								} else {
 									x1 = fwPos.x;
 								}
 								break;
 							case 'center':
 							default:
-								x1 = fwPos.x + fr.width / 2;
+								x1 = fwPos.x + fromW / 2;
 								break;
 							}
 
@@ -3007,24 +3012,24 @@
 								x2 = twPos.x;
 								break;
 							case 'right':
-								x2 = twPos.x + tr.width;
+								x2 = twPos.x + toW;
 								break;
 							case 'offset':
 								x2 = twPos.x + this.endpointTo.junctionOffsetX;
 								break;
 							case 'nearest':
-								var fwCenterX = fwPos.x + fr.width / 2;
-								var twCenterX = twPos.x + tr.width / 2;
+								var fwCenterX = fwPos.x + fromW / 2;
+								var twCenterX = twPos.x + toW / 2;
 								if (twCenterX - fwCenterX > 0) {
 									//Toノードの中心がFromノードの中心より右にある＝Toノード側はleft相当にする
 									x2 = twPos.x;
 								} else {
-									x2 = twPos.x + tr.width;
+									x2 = twPos.x + toW;
 								}
 								break;
 							case 'center':
 							default:
-								x2 = twPos.x + tr.width / 2;
+								x2 = twPos.x + toW / 2;
 								break;
 							}
 
@@ -3033,24 +3038,24 @@
 								y1 = fwPos.y;
 								break;
 							case 'bottom':
-								y1 = fwPos.y + fr.height;
+								y1 = fwPos.y + fromH;
 								break;
 							case 'offset':
 								y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
 								break;
 							case 'nearest':
-								var fwCenterY = fwPos.y + fr.height / 2;
-								var twCenterY = twPos.y + tr.height / 2;
+								var fwCenterY = fwPos.y + fromH / 2;
+								var twCenterY = twPos.y + toH / 2;
 								if (twCenterY - fwCenterY > 0) {
 									//Toノードの中心がFromノードの中心より下にある＝Fromノード側はbottom相当にする
-									y1 = fwPos.y + fr.height;
+									y1 = fwPos.y + fromH;
 								} else {
 									y1 = fwPos.y;
 								}
 								break;
 							case 'middle':
 							default:
-								y1 = fwPos.y + fr.height / 2;
+								y1 = fwPos.y + fromH / 2;
 								break;
 							}
 
@@ -3059,24 +3064,24 @@
 								y2 = twPos.y;
 								break;
 							case 'bottom':
-								y2 = twPos.y + tr.height;
+								y2 = twPos.y + toH;
 								break;
 							case 'offset':
 								y2 = twPos.y + this.endpointTo.junctionOffsetY;
 								break;
 							case 'nearest':
-								var fwCenterY = fwPos.y + fr.height / 2;
-								var twCenterY = twPos.y + tr.height / 2;
+								var fwCenterY = fwPos.y + fromH / 2;
+								var twCenterY = twPos.y + toH / 2;
 								if (twCenterY - fwCenterY > 0) {
 									//Toノードの中心がFromノードの中心より下にある＝Toノード側はtop相当にする
 									y2 = twPos.y;
 								} else {
-									y2 = twPos.y + tr.height;
+									y2 = twPos.y + toH;
 								}
 								break;
 							case 'middle':
 							default:
-								y2 = twPos.y + tr.height / 2;
+								y2 = twPos.y + toH / 2;
 								break;
 							}
 
@@ -5962,42 +5967,41 @@
 						 * @param y4
 						 * @returns {Boolean}
 						 */
-						_isLineCrossing: function(x1, y1, x2, y2, x3, y3, x4, y4) {
-							//参考：http://www5d.biglobe.ne.jp/~tomoya03/shtml/algorithm/Intersection.htm
-							var ta = (x3 - x4) * (y1 - y3) + (y3 - y4) * (x3 - x1);
-							var tb = (x3 - x4) * (y2 - y3) + (y3 - y4) * (x3 - x2);
-							var tc = (x1 - x2) * (y3 - y1) + (y1 - y2) * (x1 - x3);
-							var td = (x1 - x2) * (y4 - y1) + (y1 - y2) * (x1 - x4);
-
-							//端点を含まない場合はイコールを外す
-							return tc * td <= 0 && ta * tb <= 0;
-						},
-
-						_isRenderRectCrossing: function(edgeDU, leftX, topY, rightX, bottomY) {
-							var ex1 = edgeDU.x1;
-							var ey1 = edgeDU.y1;
-							var ex2 = edgeDU.x2;
-							var ey2 = edgeDU.y2;
-
-							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX, topY)) {
-								//上辺とエッジが交差している
-								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, leftX,
-									bottomY)) {
-								//左辺と交差している
-								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, bottomY,
-									rightX, bottomY)) {
-								//下辺と交差している
-								return true;
-							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, rightX, bottomY,
-									rightX, topY)) {
-								//右辺と交差している
-								return true;
-							}
-							return false;
-						},
-
+						//						_isLineCrossing: function(x1, y1, x2, y2, x3, y3, x4, y4) {
+						//							//参考：http://www5d.biglobe.ne.jp/~tomoya03/shtml/algorithm/Intersection.htm
+						//							var ta = (x3 - x4) * (y1 - y3) + (y3 - y4) * (x3 - x1);
+						//							var tb = (x3 - x4) * (y2 - y3) + (y3 - y4) * (x3 - x2);
+						//							var tc = (x1 - x2) * (y3 - y1) + (y1 - y2) * (x1 - x3);
+						//							var td = (x1 - x2) * (y4 - y1) + (y1 - y2) * (x1 - x4);
+						//
+						//							//端点を含まない場合はイコールを外す
+						//							return tc * td <= 0 && ta * tb <= 0;
+						//						},
+						//
+						//						_isRenderRectCrossing: function(edgeDU, leftX, topY, rightX, bottomY) {
+						//							var ex1 = edgeDU.x1;
+						//							var ey1 = edgeDU.y1;
+						//							var ex2 = edgeDU.x2;
+						//							var ey2 = edgeDU.y2;
+						//
+						//							if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, rightX, topY)) {
+						//								//上辺とエッジが交差している
+						//								return true;
+						//							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, topY, leftX,
+						//									bottomY)) {
+						//								//左辺と交差している
+						//								return true;
+						//							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, leftX, bottomY,
+						//									rightX, bottomY)) {
+						//								//下辺と交差している
+						//								return true;
+						//							} else if (this._isLineCrossing(ex1, ey1, ex2, ey2, rightX, bottomY,
+						//									rightX, topY)) {
+						//								//右辺と交差している
+						//								return true;
+						//							}
+						//							return false;
+						//						},
 						//MEMO: 最適化の結果、現時点では個別に表示制御しない方がよいので、一旦コードをコメントアウト。
 						//ただし、今後DOMを動的に生成・削除する場合には同様のアルゴリズムを実装する可能性があるので
 						//現時点ではコードは残しておく。
@@ -6107,7 +6111,6 @@
 						//							}
 						//						},
 						//
-
 						_update: function(rootDU, renderRect) {
 							if (this._standbyDUArray.length === 0) {
 								return;
