@@ -29,6 +29,10 @@
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
 	var stageInitParam = {
+		view: {
+			autoInit: false
+		},
+
 		layers: [{
 			id: LAYER_ID_MAIN,
 			isDefault: true
@@ -272,16 +276,20 @@
 			this._stageController.setScaleRangeX(0.2, 2);
 			this._stageController.setScaleRangeY(0.2, 2);
 
+			var startTime = new Date().getTime();
+
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(200, 100, 100, 100));
 
 			this._container = container;
 
-			for (var i = 0, len = 20; i < len; i++) {
+			var numCreate = 30;
+
+			for (var i = 0, len = numCreate; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._createDU(rect);
-				unit.zIndex = 20 - i;
+				unit.zIndex = numCreate - i;
 				container.addDisplayUnit(unit);
 				this._units.push(unit);
 			}
@@ -297,6 +305,14 @@
 			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			this._stageController.initView();
+
+			var endTime = new Date().getTime();
+
+			var msg = 'initialize time = ' + (endTime - startTime) + '[ms]';
+			$('#stat').text(msg);
+			console.log(msg);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).UIDragScreenScrollDirection = h5.ui.components.stage.ScrollDirection.XY;
 
@@ -554,7 +570,11 @@
 		},
 
 		'input[name="removeDU"] click': function(context) {
-			this._container.moveTo(200, 10);
+			var selections = this._stageController.getSelectedDisplayUnits();
+			selections.forEach(function(du) {
+				du.remove();
+			});
+			//this._container.moveTo(200, 10);
 		},
 
 		'input[name="cascadeRemove"] click': function(context) {
@@ -564,6 +584,18 @@
 		'{rootElement} duCascadeRemoving': function(context) {
 			context.event.preventDefault();
 			console.log(context);
+		},
+
+		'input[name="row1vr"] click': function(context) {
+			this._stageController.getViewCollection().getView(0, 1).setVisibleRangeX(100, 200);
+			this._stageController.getViewCollection().getView(1, 0).setVisibleRangeY(0, 100);
+		},
+
+		'input[name="zIndex"] click': function() {
+			var selections = this._stageController.getSelectedDisplayUnits();
+			selections.forEach(function(du) {
+				du.zIndex = 4;
+			});
 		}
 	};
 

@@ -7149,7 +7149,7 @@
 
 						_sightChangeEvents: null,
 
-						isAutoInitView: null
+						_isAutoInitView: null
 					},
 
 					accessor: {
@@ -7200,7 +7200,7 @@
 							this._width = 0;
 							this._height = 0;
 
-							this.isAutoInitView = false;
+							this._isAutoInitView = true;
 
 							//初期状態では「何もない」ことにする
 							this._numberOfOverallRows = 0;
@@ -7542,7 +7542,7 @@
 									} else {
 										//新規にビューを作成する
 										theView = StageView.create(this._stage);
-										if (this.isAutoInitView) {
+										if (this._isAutoInitView) {
 											theView.init();
 										}
 									}
@@ -8362,7 +8362,10 @@
 
 		initView: function() {
 			this._viewCollection.initView();
-			this._viewCollection.isAutoInitView = true;
+			//一度initViewした後は、初期のDU投入は完了していると考える。
+			//グリッドの分割時に新しく生成したビューは
+			//自動的に初期化されるようにするため、ここでisAutoInitViewを強制的にtrueにする。
+			this._viewCollection._isAutoInitView = true;
 		},
 
 		select: function(displayUnit, isExclusive) {
@@ -9582,6 +9585,12 @@
 					var layer = Layer.create(layerDef.id, this);
 					this.addLayer(layer, null, layerDef.isDefault);
 				}
+			}
+
+			if (initData.view && initData.view.autoInit === false) {
+				this._viewCollection._isAutoInitView = false;
+			} else {
+				this._viewCollection._isAutoInitView = true;
 			}
 
 			//初期状態では分割のない表示を行う
