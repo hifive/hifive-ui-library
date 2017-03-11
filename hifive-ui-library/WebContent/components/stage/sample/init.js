@@ -596,6 +596,14 @@
 			selections.forEach(function(du) {
 				du.zIndex = 4;
 			});
+		},
+
+		'{rootElement} stageViewStructureChange': function() {
+			console.log('stageViewStructureChange');
+		},
+
+		'{rootElement} stageViewUnifiedSightChange': function() {
+			console.log('stageViewUnifiedSightChange');
 		}
 	};
 

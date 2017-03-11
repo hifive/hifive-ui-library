@@ -7145,6 +7145,8 @@
 
 						_isSightChangePropagationSuppressed: null,
 
+						_isTriggerUnifiedSightChangeSuppressed: null,
+
 						_sightChangeEvents: null,
 
 						_isAutoInitView: null
@@ -7209,6 +7211,8 @@
 							this._numberOfColumnSeparators = 0;
 
 							this._isSightChangePropagationSuppressed = false;
+
+							this._isTriggerUnifiedSightChangeSuppressed = false;
 
 							this._rows = [];
 							this._columns = [];
@@ -7519,9 +7523,6 @@
 								var totalWidth = 0;
 								var colIndex = 0;
 
-								var viewH = row._desiredHeight ? row._desiredHeight : rootHeight
-										- totalHeight;
-
 								for (var vDefIndex = 0; vDefIndex < vDefsLen; vDefIndex++) {
 									var vDef = verticalSplitDefinitions[vDefIndex];
 									var col = cols[vDefIndex];
@@ -7531,7 +7532,7 @@
 										continue;
 									}
 
-									var theView;
+									var theView = null;
 
 									if (rowIndex < oldNumOfRows && colIndex < oldNumOfCols) {
 										//今回の位置と同じ位置にビューがあれば再利用する
@@ -7588,6 +7589,13 @@
 							//ループで各ビューのスケール・スクロール位置を個別に設定していくので
 							//あるビューのsightChangeを他に反映させるのは抑制する
 							this._isSightChangePropagationSuppressed = true;
+
+							//グリッド構造の生成（変更）中は、sightChangeイベントは発生させない。
+							//グリッド構造が変更されるということは、「今あるビューのビューポートが変化した」のではなく
+							//そもそもビュー自体が再生成された、という意味にしたいため。
+							//そのため、ユーザーはstructureChangeイベントが来たら
+							//ビューのスクロール位置やスケールなどは全て変わっている可能性があると考える必要がある。
+							this._isTriggerUnifiedSightChangeSuppressed = true;
 
 							//全てのビューのスケールを合わせる
 							for (var rowIndex = 0, rowLen = rows.length; rowIndex < rowLen; rowIndex++) {
@@ -7667,6 +7675,8 @@
 
 							this._isSightChangePropagationSuppressed = false;
 							this._sightChangeEvents = null;
+
+							this._isTriggerUnifiedSightChangeSuppressed = false;
 
 							//TODO forceActive指定があればそのViewをアクティブにする
 							var topLeftView = this.getView(0, 0);
@@ -8105,22 +8115,28 @@
 
 							this._isSightChangePropagationSuppressed = false;
 
-							//最後に、変更が起きたすべてのビューの変更をまとめて一つのイベントとして出す
-							var unifiedSightChangeEvArg = {
-								changes: []
-							};
-							this._sightChangeEvents.forEach(function(ev) {
-								var e = {
-									view: ev.target,
-									scrollPosition: ev.scrollPosition,
-									scale: ev.scale
-								};
-								unifiedSightChangeEvArg.changes.push(e);
-							});
+							if (!this._isTriggerUnifiedSightChangeSuppressed) {
+								//makeGrid()によりグリッド構造が再生成される途中で
+								//グリッド内の各ビューのサイズ変更などがおきるが、
+								//そのときにはイベントを発生させないようにしている。
 
-							//このイベントは、全てのビューのsightChangeが完了した後に一度だけ発生させる
-							this._stage.trigger(EVENT_VIEW_UNIFIED_SIGHT_CHANGE,
-									unifiedSightChangeEvArg);
+								//最後に、変更が起きたすべてのビューの変更をまとめて一つのイベントとして出す
+								var unifiedSightChangeEvArg = {
+									changes: []
+								};
+								this._sightChangeEvents.forEach(function(ev) {
+									var e = {
+										view: ev.target,
+										scrollPosition: ev.scrollPosition,
+										scale: ev.scale
+									};
+									unifiedSightChangeEvArg.changes.push(e);
+								});
+
+								//このイベントは、全てのビューのsightChangeが完了した後に一度だけ発生させる
+								this._stage.trigger(EVENT_VIEW_UNIFIED_SIGHT_CHANGE,
+										unifiedSightChangeEvArg);
+							}
 
 							this._sightChangeEvents = null;
 						},
