@@ -7714,7 +7714,123 @@
 							return this._willVScrollBarShow();
 						},
 
+						/**
+						 * リージョンの調整に先立ち、VisibleRange制約をチェックして可能な限りその制約を満たすように調整します。
+						 *
+						 * @private
+						 */
+						_preadjust: function(isRow) {
+							var availableContentsSize = this._getAvailableContentsSize(isRow);
+
+							var unadjustedLines = [];
+
+							/* desiredSizeがVisibleSizeよりも大きいラインについて、可能な限り
+							 * VisibleSizeに保つようにする
+							 */
+							var lines = isRow ? this.getRowsOfAllTypes() : this
+									.getColumnsOfAllTypes();
+							for (var i = 0, len = lines.length; i < len; i++) {
+								var line = lines[i];
+
+								if (line.type === GRID_TYPE_SEPARATOR) {
+									continue;
+								}
+
+								var isLineSizeAdjusted = false;
+
+								if (line._isVisibleRangeFinite()) {
+									//コンテンツビューでdesiredSizeがVisibleRangeより小さく指定されていた場合、
+									//VisibleRangeとdesiredSizeの差が残りの利用可能サイズより多ければ
+									//desiredSizeをVisibleRangeにする
+									var desiredSize = isRow ? line._desiredHeight
+											: line._desiredWidth;
+									var visibleSize = isRow ? line.getVisibleHeightOfDisplay()
+											: line.getVisibleWidthOfDisplay();
+
+									var diff = desiredSize - visibleSize;
+									if (diff > 0 && diff <= availableContentsSize) {
+										if (isRow) {
+											line._desiredHeight = visibleSize;
+										} else {
+											line._desiredWidth = visibleSize;
+										}
+
+										isLineSizeAdjusted = true;
+
+										//VisibleRangeに調整したビューについて
+										//上書きしたサイズを引く。
+										//このループが終わると、
+										//availableContentsSizeの値は
+										//調整を行わなかったビューで使えるサイズの合計値となるので、
+										//2度目のループで再調整をしないビューのサイズを準に引いていって
+										//再調整をしなかった最後のビューに
+										//残ったavailableContentsSizeを強制的に適用する。
+										//これにより、後ろの行・列にあるかどうかに関わらず
+										//可能な限りVisibleRange制約を満たしながらdesiredSizeを決定できる。
+										availableContentsSize -= visibleSize;
+									}
+								}
+
+								if (!isLineSizeAdjusted) {
+									unadjustedLines.push(line);
+								}
+							}
+
+							/* 2nd pass: 制約のために調整しなかったラインについてサイズ調整する */
+							for (var i = 0, len = unadjustedLines.length; i < len; i++) {
+								//unadjustedLinesは必ずコンテンツビューのみを含む
+								var line = unadjustedLines[i];
+
+								var desiredSize = isRow ? line._desiredHeight : line._desiredWidth;
+								var visibleSize = isRow ? line.getVisibleHeightOfDisplay() : line
+										.getVisibleWidthOfDisplay();
+								var diff = desiredSize - visibleSize;
+
+								if (line._isVisibleRangeFinite() && diff > 0
+										&& diff <= availableContentsSize) {
+									continue;
+								}
+
+								if (i === len - 1) {
+									//最後のラインは必ずコンテンツビューという前提
+									//最後のラインに、残ったサイズ全てを割り当てる
+									if (isRow) {
+										line._desiredHeight = availableContentsSize;
+									} else {
+										line._desiredWidth = availableContentsSize;
+									}
+								} else {
+									availableContentsSize -= line._desiredHeight;
+								}
+							}
+						},
+
+						_getAvailableContentsSize: function(isRow) {
+							var totalSeparatorSize = 0;
+							var lines = isRow ? this.getRowsOfAllTypes() : this
+									.getColumnsOfAllTypes();
+							lines.forEach(function(r) {
+								if (r.type === GRID_TYPE_SEPARATOR) {
+									totalSeparatorSize += isRow ? r.height : r.width;
+								}
+							});
+							var ret = isRow ? this._height : this._width;
+							ret -= totalSeparatorSize;
+							if (isRow) {
+								if (this._isVScrollBarShow()) {
+									ret -= SCROLL_BAR_THICKNESS;
+								}
+							} else {
+								if (this._isHScrollBarShow()) {
+									ret -= SCROLL_BAR_THICKNESS;
+								}
+							}
+							return ret;
+						},
+
 						_updateGridRegionRow: function() {
+							this._preadjust(true);
+
 							var totalY = 0;
 
 							var that = this;
@@ -7791,6 +7907,8 @@
 						},
 
 						_updateGridRegionColumn: function() {
+							this._preadjust(false);
+
 							var totalX = 0;
 
 							var that = this;
