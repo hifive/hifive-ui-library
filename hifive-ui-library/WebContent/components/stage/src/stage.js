@@ -1997,6 +1997,7 @@
 					isAbstract: true,
 					field: {
 						id: null,
+						extraData: null,
 
 						_x: null,
 						_y: null,
@@ -2071,11 +2072,12 @@
 								var oldValue = this._zIndex;
 								this._zIndex = value;
 
-								this._setDirty(REASON_Z_INDEX_CHANGE);
-
-								var ev = PropertyChangeEvent.create('zIndex', oldValue,
-										this._zIndex);
-								this.dispatchEvent(ev);
+								var dirtyReason = {
+									type: REASON_Z_INDEX_CHANGE,
+									oldValue: oldValue,
+									newValue: value
+								};
+								this._setDirty(dirtyReason);
 							}
 						},
 
@@ -2105,7 +2107,6 @@
 								this._setDirty(REASON_SIZE_CHANGE);
 							}
 						},
-						extraData: null,
 						groupTag: {
 							get: function() {
 								return this._groupTag;
@@ -2687,6 +2688,9 @@
 								type: r
 							};
 						} else {
+							if (r.type == null) {
+								throw new Error('アップデート理由オブジェクトにtypeがありません。typeは必須です。');
+							}
 							that._reasonMap[r.type] = r;
 						}
 					});
@@ -4775,13 +4779,14 @@
 						 *
 						 * @param du
 						 */
-						updateElementZIndex: function(du) {
+						updateElementZIndex: function(du, oldValue, newValue) {
 							var element = this.getElement(du);
 							if (!element) {
 								//対応するDOMがレンダーされていなければ何もしない
 								return;
 							}
-							this._removeElement(du);
+
+							this._removeElement(du, du.parentDisplayUnit, oldValue);
 							this._insert(du, element);
 						},
 
@@ -4810,25 +4815,27 @@
 						 *
 						 * @param du
 						 */
-						remove: function(du) {
+						remove: function(du, parentDisplayUnit) {
 							if (DisplayUnitContainer.isClassOf(du)) {
 								//コンテナの場合は子孫(すべて)のDUをchild-firstで先に削除し、その後自分自身を削除
 								var children = du.getDisplayUnitAll();
 								for (var i = 0, len = children.length; i < len; i++) {
 									var child = children[i];
-									this.remove(child);
+									this.remove(child, du);
 								}
 							}
 
 							//要素をDOMツリーから削除
-							this._removeElement(du);
+							this._removeElement(du, parentDisplayUnit);
 
 							this._numOfDU--;
 
 							//MEMO: EclipseのJSDTだと.deleteの記述がエラーになる
 							//各種キャッシュから当該DUのエントリを削除
 							this._duElementMap['delete'](du);
-							this._duZCacheMap['delete'](du);
+							if (DisplayUnitContainer.isClassOf(du)) {
+								this._duZCacheMap['delete'](du);
+							}
 						},
 
 						/**
@@ -4837,20 +4844,20 @@
 						 * @private
 						 * @param du
 						 */
-						_removeElement: function(du) {
+						_removeElement: function(du, parentDU, oldZIndex) {
 							var element = this._duElementMap.get(du);
 
 							if (!element) {
 								return;
 							}
 
-							//対応する要素が描画されていたら削除
+							//対応する要素が描画されていたら親から取り外す
 							var parentNode = element.parentNode;
 							if (parentNode) {
 								parentNode.removeChild(element);
 							}
 
-							this._removeZCacheEntry(du.parentDisplayUnit, du, element);
+							this._removeZCacheEntry(parentDU, du, element, oldZIndex);
 						},
 
 						/**
@@ -4861,14 +4868,20 @@
 						 * @param targetDU
 						 * @param targetElement
 						 */
-						_removeZCacheEntry: function(containerDU, targetDU, targetElement) {
+						_removeZCacheEntry: function(containerDU, targetDU, targetElement,
+								oldZIndex) {
 							//entry = { zIndexArray: , zIndexToFirstElementMap:  };
 							var entry = this._duZCacheMap.get(containerDU);
 							if (!entry) {
 								return;
 							}
 
-							var firstElement = entry.zIndexToFirstElementMap.get(targetDU.zIndex);
+							var targetDUZIndex = targetDU.zIndex;
+							if (oldZIndex != null) {
+								targetDUZIndex = oldZIndex;
+							}
+
+							var firstElement = entry.zIndexToFirstElementMap.get(targetDUZIndex);
 							if (targetElement !== firstElement) {
 								//先頭の要素でなかったということは、
 								//同じzIndexを持つ要素がすでに存在し、かつ
@@ -4880,9 +4893,9 @@
 							//そのzIndex値->DOM要素 のマップエントリを削除。
 							//同時に、先頭の要素だったということは同じzIndexを持つ要素は
 							//他にないので、zIndexArrayからもそのzIndex値を削除する。
-							entry.zIndexToFirstElementMap['delete'](targetDU.zIndex);
+							entry.zIndexToFirstElementMap['delete'](targetDUZIndex);
 							var ary = entry.zIndexArray;
-							var idx = ary.indexOf(targetDU.zIndex);
+							var idx = ary.indexOf(targetDUZIndex);
 							ary.splice(idx, 1);
 						},
 
@@ -6313,7 +6326,9 @@
 							//もしreasonでZIndexChangedだったら
 							//親コンテナでzindex制約を満たすようにDOMの位置を差し替える
 							if (reason.isZIndexChanged) {
-								this._domManager.updateElementZIndex(du);
+								var dirtyReason = reason.get(UpdateReasons.Z_INDEX_CHANGE);
+								this._domManager.updateElementZIndex(du, dirtyReason.oldValue,
+										dirtyReason.newValue);
 							}
 
 							du.__updateDOM(this, dom, reason);
@@ -6325,7 +6340,7 @@
 						},
 
 						_onDURemove: function(event) {
-							this._domManager.remove(event.displayUnit);
+							this._domManager.remove(event.displayUnit, event.parentDisplayUnit);
 
 							var removedDUs = [event.displayUnit];
 							if (DisplayUnitContainer.isClassOf(event.displayUnit)) {
