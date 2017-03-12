@@ -1879,7 +1879,7 @@
 					this._keys.push(key);
 				},
 				remove: function(key) {
-					var idx = $.inArray(key, this._keys);
+					var idx = this._keys.indexOf(key);
 					if (idx === -1) {
 						//このタグは持っていない
 						return;
@@ -1887,7 +1887,7 @@
 					this._keys.splice(idx, 1);
 				},
 				has: function(key) {
-					return $.inArray(key, this._keys) !== -1;
+					return this._keys.indexOf(key) !== -1;
 				},
 				clear: function() {
 					this._keys = [];
@@ -6473,6 +6473,11 @@
 						 * @param du
 						 */
 						_shouldRender: function(du, renderRect) {
+							if (du.isVisible === false) {
+								//ユーザーが明示的にfalseにしているなら描画しない
+								return false;
+							}
+
 							//Firefoxでは、スクロールの度に描画を増やしていくと
 							//判定などの方が重くなりfpsが安定しないので
 							//一旦全てのDUは追加時に描画するようにする
