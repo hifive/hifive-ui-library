@@ -2367,8 +2367,8 @@
 
 							var parentDU = this._parentDU;
 							while (!Layer.isClassOf(parentDU)) {
-								wgx += parentDU._x;
-								wgy += parentDU._y;
+								wgx += parentDU.x;
+								wgy += parentDU.y;
 								parentDU = this._parentDU._parentDU;
 							}
 
@@ -2636,7 +2636,7 @@
 					super_.constructor.call(this);
 					this._reasonMap = {};
 
-					this.add(reasons);
+					this._add(reasons);
 				},
 
 				has: function(type) {
@@ -2649,14 +2649,29 @@
 
 				getAll: function() {
 					var ret = [];
+					var that = this;
 					Object.keys(this._reasonMap).forEach(function(key) {
-						ret.push(this._reasonMap[key]);
+						ret.push(that._reasonMap[key]);
 					});
 					return ret;
 				},
 
-				//UpdateReasonは 最低限typeを持つ（オブジェクトの場合）、または文字列のみでもよい
-				add: function(reasons) {
+				merge: function(updateReasonSet) {
+					if (!updateReasonSet || updateReasonSet === this) {
+						return;
+					}
+
+					var reasons = updateReasonSet.getAll();
+					this._add(reasons);
+				},
+
+				/**
+				 * アップデート理由を追加します。UpdateReasonは 最低限typeを持つ（オブジェクトの場合）、または文字列のみでもよいです。
+				 * 既に同じtypeのReasonがあった場合は上書きします。
+				 *
+				 * @private
+				 */
+				_add: function(reasons) {
 					if (!Array.isArray(reasons)) {
 						reasons = [reasons];
 					}
@@ -2844,7 +2859,7 @@
 	//TODO DUからrect系をはずすか
 	var Edge = DisplayUnit
 			.extend(function(super_) {
-				var ERR_CANNOT_USE_RECT_METHOD = 'EdgeではsetRectは使えません';
+				var ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD = 'Edgeでは位置やサイズを直接変更するメソッドは使えません';
 
 				var desc = {
 					name: 'h5.ui.components.stage.Edge',
@@ -2861,6 +2876,8 @@
 
 						_endpoint_propertyChangeListener: null,
 
+						_isUpdateLinePositionRequired: null,
+
 						_x1: null,
 						_x2: null,
 						_y1: null,
@@ -2868,6 +2885,46 @@
 					},
 
 					accessor: {
+						x: {
+							get: function() {
+								this._updateLinePosition();
+								return super_.x.get.call(this);
+							},
+							set: function(value) {
+								throw new Error('Edgeのxは直接設定できません。');
+							}
+						},
+
+						y: {
+							get: function() {
+								this._updateLinePosition();
+								return super_.y.get.call(this);
+							},
+							set: function(value) {
+								throw new Error('Edgeのyは直接設定できません。');
+							}
+						},
+
+						width: {
+							get: function() {
+								this._updateLinePosition();
+								return super_.width.get.call(this);
+							},
+							set: function(value) {
+								throw new Error('Edgeのwidthは直接設定できません。');
+							}
+						},
+
+						height: {
+							get: function() {
+								this._updateLinePosition();
+								return super_.height.get.call(this);
+							},
+							set: function(value) {
+								throw new Error('Edgeのheightは直接設定できません。');
+							}
+						},
+
 						endpointFrom: {
 							get: function() {
 								return this._endpointFrom;
@@ -2921,6 +2978,13 @@
 							this._width = 1;
 							this._height = 1;
 
+							this._classSet = SimpleSet.create();
+
+							this._endpointFrom = EdgeEndpoint.create();
+							this._endpointTo = EdgeEndpoint.create();
+
+							this._isUpdateLinePositionRequired = true;
+
 							var that = this;
 
 							this._duDirtyHandler = function(event) {
@@ -2928,7 +2992,6 @@
 
 								if (reason.isPositionChanged || reason.isSizeChanged
 										|| reason.isGlobalPositionChanged) {
-									that._updateLinePosition();
 									that.requestRender();
 								}
 							};
@@ -2937,28 +3000,84 @@
 								that._notifyCascadeRemove(event.target);
 							};
 
-							this._classSet = SimpleSet.create();
-
-							this._endpointFrom = EdgeEndpoint.create();
-							this._endpointTo = EdgeEndpoint.create();
-
 							this._endpoint_propertyChangeListener = function(event) {
-								that._updateLinePosition();
 								that.requestRender();
 							};
-
-							this._endpointFrom.addEventListener('propertyChange',
-									this._endpoint_propertyChangeListener);
-							this._endpointTo.addEventListener('propertyChange',
-									this._endpoint_propertyChangeListener);
-
-							this._updateLinePosition();
 						},
+
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
 						setRect: function() {
-							throw new Error(ERR_CANNOT_USE_RECT_METHOD);
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
 						},
 
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
+						setSize: function() {
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
+						},
+
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
+						moveBy: function() {
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
+						},
+
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
+						moveDisplayBy: function() {
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
+						},
+
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
+						moveTo: function() {
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
+						},
+
+						/**
+						 * Edgeの位置・大きさはfrom,toのDisplayUnitとendpointの指定によって決まります。
+						 * そのため、位置や大きさを変更するメソッドは使用できません。
+						 *
+						 * @override
+						 */
+						moveDisplayTo: function() {
+							throw new Error(ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD);
+						},
+
+						/**
+						 * 線の端点の位置を再計算します。このメソッドを呼び出すとx,y,width,heightが更新されます。
+						 * _isUpdateLinePositionRequiredがfalseの場合は何もしません。
+						 *
+						 * @private
+						 */
 						_updateLinePosition: function() {
+							if (!this._isUpdateLinePositionRequired) {
+								//位置の更新の必要がない状態で呼ばれたときは何もしない
+								return;
+							}
+							this._isUpdateLinePositionRequired = false;
+
 							var fwPos = this._from.getWorldGlobalPosition();
 							var twPos = this._to.getWorldGlobalPosition();
 
@@ -3099,22 +3218,6 @@
 							this._height = Math.abs(y2 - y1);
 						},
 
-						_render: function(view, line, reason) {
-							if (!reason.isInitialRender && !reason.isRenderRequested
-									&& !reason.isPositionChanged) {
-								return;
-							}
-
-							line.className.baseVal = this.getClassSet().toArray().join(' ');
-
-							setSvgAttributes(line, {
-								x1: this._x1,
-								y1: this._y1,
-								x2: this._x2,
-								y2: this._y2
-							});
-						},
-
 						hasClass: function(cssClass) {
 							return this._classSet.has(cssClass);
 						},
@@ -3138,17 +3241,20 @@
 							return this._classSet;
 						},
 
-						//TODO BasicDUにも同じメソッドがある。クラス階層について要検討
 						requestRender: function() {
-							//TODO 正しくは次の再描画フレームで描画
 							if (!this._rootStage) {
 								return;
 							}
 
-							this._updateLinePosition();
+							this._isUpdateLinePositionRequired = true;
 							this._setDirty(REASON_RENDER_REQUEST);
 						},
 
+						/**
+						 * @private
+						 * @param stage
+						 * @param belongingLayer
+						 */
 						_onAddedToStage: function(stage, belongingLayer) {
 							super_._onAddedToStage.call(this, stage, belongingLayer);
 
@@ -3160,9 +3266,17 @@
 							this._to.addEventListener('removeFromStage',
 									this._duRemoveFromStageHandler);
 
-							this.requestRender();
+							this._endpointFrom.addEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
+							this._endpointTo.addEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
+
+							this._isUpdateLinePositionRequired = true;
 						},
 
+						/**
+						 * @private
+						 */
 						_onRemovedFromStage: function() {
 							super_._onRemovedFromStage.call(this);
 
@@ -3174,8 +3288,16 @@
 									this._duRemoveFromStageHandler);
 							this._to.removeEventListener('removeFromStage',
 									this._duRemoveFromStageHandler);
+
+							this._endpointFrom.removeEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
+							this._endpointTo.removeEventListener('propertyChange',
+									this._endpoint_propertyChangeListener);
 						},
 
+						/**
+						 * @private
+						 */
 						_onRemoving: function() {
 							this._from
 									.removeEventListener('displayUnitDirty', this._duDirtyHandler);
@@ -3187,6 +3309,11 @@
 									this._duRemoveFromStageHandler);
 						},
 
+						/**
+						 * @private
+						 * @param view
+						 * @returns
+						 */
 						__renderDOM: function(view) {
 							var rootSvg = createSvgElement('line');
 							rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
@@ -3199,15 +3326,41 @@
 							return rootSvg;
 						},
 
-						__updateDOM: function(view, element, reason) {
+						/**
+						 * @private
+						 * @param view
+						 * @param line
+						 * @param reason
+						 */
+						__updateDOM: function(view, line, reason) {
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
-								element.style.display = this._isVisible && this._isSystemVisible ? ''
+								line.style.display = this._isVisible && this._isSystemVisible ? ''
 										: 'none';
 							}
 
-							this._render(view, element, reason);
+							if (!reason.isInitialRender && !reason.isRenderRequested
+									&& !reason.isPositionChanged) {
+								return;
+							}
+
+							this._updateLinePosition();
+
+							//Edgeの場合、自身が最初のrender時に返しているのは<line>なので、
+							//Update時に渡されるelementはline要素である
+							line.className.baseVal = this.getClassSet().toArray().join(' ');
+
+							setSvgAttributes(line, {
+								x1: this._x1,
+								y1: this._y1,
+								x2: this._x2,
+								y2: this._y2
+							});
 						},
 
+						/**
+						 * @private
+						 * @param relatedDU
+						 */
 						_notifyCascadeRemove: function(relatedDU) {
 							if (!this._belongingLayer) {
 								return;
@@ -5071,7 +5224,13 @@
 
 						_domManager: null,
 
-						_standbyDUArray: null,
+						_updateCallWrapper: null,
+
+						_duRenderStandbyMap: null,
+
+						_duDirtyReasonMap: null,
+
+						_updateAnimationFrameId: null,
 
 						_inInitialized: null
 					},
@@ -5184,7 +5343,17 @@
 
 							this._domManager = DOMManager.create(this);
 
-							this._standbyDUArray = [];
+							var that = this;
+							/**
+							 * @private
+							 */
+							this._updateCallWrapper = function() {
+								that._doUpdate();
+							};
+
+							this._duDirtyReasonMap = new Map();
+
+							this._duRenderStandbyMap = new Map();
 
 							this._layerElementMap = new Map();
 
@@ -5322,7 +5491,8 @@
 								this._domManager.add(layer, layerRootElement, true);
 
 								//現時点で存在するレイヤー内のDUを描画
-								this._renderDisplayUnit(layer);
+								this._duRenderStandbyMap.set(layer, layer);
+								this.update();
 
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
@@ -5416,7 +5586,7 @@
 								});
 							});
 
-							this._update();
+							this.update();
 						},
 
 						__onDragDUDrop: function(dragSession) {
@@ -5433,7 +5603,7 @@
 							//フォアレイヤーのDOMを削除する
 							$(this._foremostSvgGroup).empty();
 
-							this._update();
+							this.update();
 						},
 
 						dispose: function() {
@@ -5449,6 +5619,9 @@
 
 							this._layerElementMap.clear();
 							this._layerDefsMap.clear();
+
+							this._duRenderStandbyMap.clear();
+							this._duDirtyReasonMap.clear();
 
 							$(this._rootElement).remove();
 						},
@@ -5947,7 +6120,7 @@
 								this._updateTransform(dom, actualScrollWorldX, actualScrollWorldY);
 							}
 
-							this._update();
+							this.update();
 
 							//フォアレイヤーのスクロール位置も移動させる
 							this._updateTransform(this._foremostSvg, actualScrollWorldX,
@@ -6111,16 +6284,64 @@
 						//							}
 						//						},
 						//
-						_update: function(rootDU, renderRect) {
-							if (this._standbyDUArray.length === 0) {
+						/**
+						 * 実際に描画を更新します。
+						 *
+						 * @private
+						 * @param renderRect 描画範囲
+						 */
+						_doUpdate: function(renderRect) {
+							if (this._updateAnimationFrameId) {
+								//描画が更新されるので、次フレームを待っていた場合は解除
+								cancelAnimationFrame(this._updateAnimationFrameId);
+							}
+							this._updateAnimationFrameId = null;
+
+							var that = this;
+
+							var dirtyMap = this._duDirtyReasonMap;
+
+							//前回のアップデートから今回までに新たに追加されたDU、および
+							//描画範囲が変更されて新たに描画されることになったDUを処理。
+							//なお、shouldRender()の実装によってはこのタイミングでDUが描画されないこともある（可視範囲外等）ので、
+							//duRenderStandbyMapにはDUが残る場合もある。よって、このMapはクリアしてはいけない。
+							this._duRenderStandbyMap.forEach(function(du) {
+								that._renderDisplayUnit(du, renderRect);
+
+								//Addされた後さらにDUに変更が加えられてDirtyの方にも入っている可能性があるが、
+								//InitialRenderのタイミングで現在の状態に基づくDUの描画はなされているはずなので
+								//Dirtyのマップからは削除する
+								dirtyMap['delete'](du);
+							});
+
+							//DirtyなDUを処理
+							dirtyMap.forEach(function(updateReasonSet, du) {
+								var elem = that._domManager.getElement(du);
+								if (elem) {
+									du.__updateDOM(that, elem, updateReasonSet);
+								}
+							});
+							dirtyMap.clear();
+						},
+
+						/**
+						 * 描画をアップデートします。isImmediateにtrueを渡さなかった場合、次のアニメーションフレームのタイミングまで描画は遅延されます。
+						 *
+						 * @param {Boolean} isImmediate アニメーションフレームを待たず、すぐに描画を更新するかどうか。デフォルト：false
+						 * @param {Rect} renderRect 描画範囲とする矩形領域。isImmediateがtrueの場合のみ適用されます。
+						 */
+						update: function(isImmediate, renderRect) {
+							if (isImmediate) {
+								this._doUpdate(renderRect);
 								return;
 							}
 
-							var ary = this._standbyDUArray.slice(0);
-							for (var i = 0, len = ary.length; i < len; i++) {
-								var du = ary[i];
-								this._renderDisplayUnit(du);
+							if (this._updateAnimationFrameId) {
+								//既に次フレームでの描画が予約されていたら何もしない
+								return;
 							}
+
+							this._updateAnimationFrameId = requestAnimationFrame(this._updateCallWrapper);
 
 							//MEMO: 最適化の結果、現時点では個別に非表示制御をする必要はなくなった。
 							//ただし、今後DOMの追加・削除を動的に行う等を行う可能性があるので
@@ -6194,7 +6415,7 @@
 						 * @private
 						 * @param du
 						 */
-						_renderDisplayUnit: function(du, isNested) {
+						_renderDisplayUnit: function(du, renderRect, isNested) {
 							var domManager = this._domManager;
 							var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
 
@@ -6203,6 +6424,8 @@
 								if (!domManager.has(du)) {
 									var elem = du.__renderDOM(this, reason);
 									domManager.add(du, elem);
+									//描画待機マップから削除
+									this._duRenderStandbyMap['delete'](du);
 								}
 
 								if (isNested !== true) {
@@ -6212,7 +6435,7 @@
 								var children = du.getDisplayUnitAll();
 								for (var i = 0, len = children.length; i < len; i++) {
 									var child = children[i];
-									this._renderDisplayUnit(child, true);
+									this._renderDisplayUnit(child, renderRect, true);
 								}
 
 								if (isNested !== true) {
@@ -6229,23 +6452,18 @@
 								return;
 							}
 
-							if (this._shouldRender(du)) {
-								//今すぐレンダーする
-								var elem = du.__renderDOM(this, reason);
-								domManager.add(du, elem);
-
-								//待機リストに入っていたら削除
-								var standbyIdx = this._standbyDUArray.indexOf(du);
-								if (standbyIdx !== -1) {
-									this._standbyDUArray.splice(standbyIdx, 1);
-								}
-							} else {
-								var standbyIdx = this._standbyDUArray.indexOf(du);
-								if (standbyIdx === -1) {
-									//待機リストに入っていなかったら、今はレンダーせず、待機リストに追加する
-									this._standbyDUArray.push(du);
-								}
+							if (!this._shouldRender(du, renderRect)) {
+								//今はまだ描画すべきでない場合は何もしない
+								//（duRenderStandbyMapに入ったままになる）
+								return;
 							}
+
+							//今すぐレンダーする
+							var elem = du.__renderDOM(this, reason);
+							domManager.add(du, elem);
+
+							//待機リストに入っていたら削除
+							this._duRenderStandbyMap['delete'](du);
 						},
 
 						/**
@@ -6254,18 +6472,18 @@
 						 * @private
 						 * @param du
 						 */
-						_shouldRender: function(du) {
-							return true;
-
+						_shouldRender: function(du, renderRect) {
 							//Firefoxでは、スクロールの度に描画を増やしていくと
 							//判定などの方が重くなりfpsが安定しないので
 							//一旦全てのDUは追加時に描画するようにする
-							/*
-							var renderRect = this._renderRect;
 							if (!renderRect) {
-								//Viewport.getWorldRect()は毎回インスタンスを生成する。
-								//(あまりしたくないが)高速化のため内部変数を直接見る。
-								renderRect = this._viewport._worldRect;
+								if (this._renderRect) {
+									renderRect = this._renderRect;
+								} else {
+									//Viewport.getWorldRect()は毎回インスタンスを生成する。
+									//(あまりしたくないが)高速化のため内部変数を直接見る。
+									renderRect = this._viewport._worldRect;
+								}
 							}
 
 							var rLeft = renderRect.x;
@@ -6294,7 +6512,6 @@
 							}
 
 							return true;
-							*/
 						},
 
 						_onDUDirty: function(event) {
@@ -6310,21 +6527,41 @@
 							var reason = event.reason;
 
 							//もしreasonでZIndexChangedだったら
-							//親コンテナでzindex制約を満たすようにDOMの位置を差し替える
+							//親コンテナでzIndex制約を満たすようにDOMの位置を差し替える。
+							//zIndexはDOMManager内でキャッシュを持っているので、
+							//都度DOMManager側を更新する必要がある。
 							if (reason.isZIndexChanged) {
 								var dirtyReason = reason.get(UpdateReasons.Z_INDEX_CHANGE);
 								this._domManager.updateElementZIndex(du, dirtyReason.oldValue,
 										dirtyReason.newValue);
 							}
 
-							du.__updateDOM(this, dom, reason);
+							//このタイミングですぐには再描画せず、DirtyなDUの集合に理由をマージして待機。
+							//次のアニメーションフレームのタイミングで、まとめて描画される。
+							var dirtyReason = this._duDirtyReasonMap.get(du);
+							if (!dirtyReason) {
+								this._duDirtyReasonMap.set(du, reason);
+							} else {
+								//既にDirtyなDUだった場合は、理由をマージする。
+								//なお、同じ理由があった場合、後から追加された方の理由で上書きされる。
+								dirtyReason.merge(reason);
+							}
+
+							this.update();
 						},
 
 						_onDUAdd: function(event) {
 							var du = event.displayUnit;
-							this._renderDisplayUnit(du);
+							this._duRenderStandbyMap.set(du, du);
+							this.update();
 						},
 
+						/**
+						 * DUの削除に対応して描画を更新します。現在のところ、DUが削除された場合には、アニメーションフレームを待たずただちに描画を更新します。
+						 *
+						 * @private
+						 * @param event
+						 */
 						_onDURemove: function(event) {
 							this._domManager.remove(event.displayUnit, event.parentDisplayUnit);
 
@@ -6337,11 +6574,13 @@
 							//DUが削除されたので、子孫も含め、待機リストから全て削除
 							for (var i = 0, len = removedDUs.length; i < len; i++) {
 								var du = removedDUs[i];
-								var idx = this._standbyDUArray.indexOf(du);
-								if (idx !== -1) {
-									this._standbyDUArray.splice(idx, 1);
-								}
+								this._removeFromUpdateWaitingCache(du);
 							}
+						},
+
+						_removeFromUpdateWaitingCache: function(du) {
+							this._duRenderStandbyMap['delete'](du);
+							this._duDirtyReasonMap['delete'](du);
 						},
 
 						_setWidth: function(width) {
@@ -6358,7 +6597,7 @@
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
 
-							this._update();
+							this.update();
 						},
 
 						_setHeight: function(height) {
@@ -6375,7 +6614,7 @@
 								//レイヤーに設定すると、全てのマウスイベントを最前面のレイヤーで受けてしまうため。
 							}
 
-							this._update();
+							this.update();
 						}
 					}
 				};
@@ -10112,7 +10351,7 @@
 			//
 			//						var renderRect = Rect.create(renderX, renderY, renderW, renderH);
 			//
-			//						view._update(null, renderRect);
+			//						view.update(null, renderRect);
 			//						view._isUpdateSuppressed = true;
 			//					}));
 
@@ -10374,7 +10613,7 @@
 			//ビューの更新を有効にする
 			//			this._viewCollection.getViewAll().forEach(function(view) {
 			//				view._isUpdateSuppressed = false;
-			//				view._update();
+			//				view.update();
 			//			});
 
 			var evArg = {
