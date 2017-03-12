@@ -2935,33 +2935,6 @@
 								return this._endpointTo;
 							}
 						}
-
-					//MEMO: エッジの描画判定は
-					//エッジのDUがOutOfViewportの判定方法だけにしたので
-					//x1, x2, y1, y2へのアクセサは現時点では不要
-					//						x1: {
-					//							get: function() {
-					//								return this._x1;
-					//							}
-					//						},
-					//
-					//						x2: {
-					//							get: function() {
-					//								return this._x2;
-					//							}
-					//						},
-					//
-					//						y1: {
-					//							get: function() {
-					//								return this._y1;
-					//							}
-					//						},
-					//
-					//						y2: {
-					//							get: function() {
-					//								return this._y2;
-					//							}
-					//						}
 					},
 
 					method: {
@@ -4224,18 +4197,6 @@
 		return desc;
 	});
 
-	//	h5.u.obj.expose('h5.ui.components.stage', {
-	//		BasicDisplayUnit: BasicDisplayUnit,
-	//		Layer: Layer,
-	//		DisplayUnitContainer: DisplayUnitContainer,
-	//		Rect: Rect,
-	//		Point: Point,
-	//		WorldPoint: WorldPoint,
-	//		DisplayPoint: DisplayPoint,
-	//		Edge: Edge,
-	//		SVGLinearGradient: SVGLinearGradient
-	//	});
-
 })(jQuery);
 
 (function($) {
@@ -5220,8 +5181,6 @@
 
 						_dragSelectOverlayRect: null,
 
-						//_isUpdateSuppressed: null,
-
 						_domManager: null,
 
 						_updateCallWrapper: null,
@@ -5375,8 +5334,6 @@
 							this._viewport = viewport;
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
-
-							//this._isUpdateSuppressed = false;
 
 							this._addToStage();
 						},
@@ -6342,31 +6299,6 @@
 							}
 
 							this._updateAnimationFrameId = requestAnimationFrame(this._updateCallWrapper);
-
-							//MEMO: 最適化の結果、現時点では個別に非表示制御をする必要はなくなった。
-							//ただし、今後DOMの追加・削除を動的に行う等を行う可能性があるので
-							//APIとしては残しておく。
-							//							if (this._isUpdateSuppressed) {
-							//								return;
-							//							}
-							//
-							//							if (!renderRect) {
-							//								//デフォルトでは可視範囲ちょうどを描画範囲とみなす。
-							//								renderRect = this._viewport.getWorldRect();
-							//								//renderRect.width *= 1.0;
-							//								//renderRect.height *= 1.0;
-							//								renderRect.x -= (renderRect.width - this._viewport.worldWidth) / 2;
-							//								renderRect.y -= (renderRect.height - this._viewport.worldHeight) / 2;
-							//							}
-							//
-							//							if (rootDU) {
-							//								this._updateSystemVisible(renderRect, rootDU, true);
-							//							} else {
-							//								var that = this;
-							//								this._stage._layers.forEach(function(layer) {
-							//									that._updateSystemVisible(renderRect, layer, false);
-							//								});
-							//							}
 						},
 
 						/**
@@ -10096,21 +10028,6 @@
 			}
 		},
 
-		/*
-		 * TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
-		 */
-		//		_temporarilyProcessEdgeContextmenu: function(context, du) {
-		//			var orgEvent = context.event.originalEvent;
-		//			var fixedEvent = $.event.fix(orgEvent);
-		//			fixedEvent.type = EVENT_DU_CONTEXTMENU;
-		//			var duEv = this.trigger(fixedEvent, {
-		//				stageController: this,
-		//				displayUnit: du
-		//			});
-		//			if (duEv.isDefaultPrevented()) {
-		//				context.event.preventDefault();
-		//			}
-		//		},
 		/**
 		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
 		 *
@@ -10614,12 +10531,6 @@
 		_endGridSeparatorDrag: function(context, $el) {
 			this._isGridSeparatorDragging = false;
 			this._gridSeparatorDragContext = null;
-
-			//ビューの更新を有効にする
-			//			this._viewCollection.getViewAll().forEach(function(view) {
-			//				view._isUpdateSuppressed = false;
-			//				view.update();
-			//			});
 
 			var evArg = {
 				isLive: false
