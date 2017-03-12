@@ -6428,23 +6428,44 @@
 							var rRight = rLeft + renderRect.width;
 							var rBottom = rTop + renderRect.height;
 
+							var belongingLayer = du._belongingLayer;
+							switch (belongingLayer.UIDragScreenScrollDirection) {
+							case SCROLL_DIRECTION_X:
+								//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
+								rTop = 0;
+								break;
+							case SCROLL_DIRECTION_Y:
+								//レイヤーがY方向のみ移動可能
+								rLeft = 0;
+								break;
+							case SCROLL_DIRECTION_NONE:
+								//レイヤーは全く移動しない
+								rLeft = 0;
+								rTop = 0;
+								break;
+							}
+
 							var duGlobalPos = du.getWorldGlobalPosition();
 
 							if (duGlobalPos.x > rRight) {
+								//DUの左端が描画領域の右端より右にある
 								return false;
 							}
 
 							var duRight = duGlobalPos.x + du.width;
 							if (duRight < rLeft) {
+								//DUの右端が描画領域の左端より右にある
 								return false;
 							}
 
 							var duBottom = duGlobalPos.y + du.height;
 							if (duBottom < rTop) {
+								//DUの下端が描画領域の上端より上にある
 								return false;
 							}
 
 							if (duGlobalPos.y > rBottom) {
+								//DUの上端が描画領域の下端より下にある
 								return false;
 							}
 
