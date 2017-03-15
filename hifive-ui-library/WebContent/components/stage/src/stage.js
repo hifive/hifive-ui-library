@@ -17,9 +17,6 @@
 (function() {
 	'use strict';
 
-	//TODO FocusControllerはh5.ui.focusManager()としてグローバルに実装する予定
-	//一時的にこっちに置いている
-
 	function FocusGroup(elem, groupName) {
 		this.element = elem;
 		this.name = groupName;
@@ -34,9 +31,9 @@
 
 	var focusController = {
 		/**
-		 * @memberOf h5.ui.FocusController
+		 * @memberOf h5.ui.components.stage.FocusController
 		 */
-		__name: 'h5.ui.FocusController',
+		__name: 'h5.ui.components.stage.FocusController',
 
 		_currentFocusGroupElement: null,
 
@@ -586,7 +583,7 @@
 						positions.push(pos);
 						parentDUs.push(t.parentDisplayUnit);
 					}
-					//TODO オブジェクト化してまとめて保持
+
 					this._targetInitialPositions = positions;
 					this._targetInitialParentDU = parentDUs;
 				},
@@ -879,8 +876,6 @@
 
 	var NS_XLINK = "http://www.w3.org/1999/xlink";
 
-	//TODO 本当はSVGDrawElementのfuncの中に入れたいが
-	//Eclipseのフォーマッタと相性が悪い。いずれ方法を検討。
 	var ERR_MUST_OVERRIDE_RENDER_FUNCTION = 'SVGDrawElementのrenderメソッドは、その子クラスで必ずオーバーライドする必要があります。';
 
 	var SVGElementWrapper = RootClass.extend(function(super_) {
@@ -1563,7 +1558,7 @@
 				add: function(definition) {
 					var id = this._getId(definition);
 					if (id === null) {
-						// TODO
+						throw new Error('definitionは必ずidを持つ必要があります。');
 						return;
 					}
 
@@ -1573,7 +1568,7 @@
 				remove: function(target) {
 					var id = this._getId(target);
 					if (id === null) {
-						// TODO
+						throw new Error('definitionは必ずidを持つ必要があります。');
 						return;
 					}
 
@@ -5191,6 +5186,8 @@
 
 						_updateAnimationFrameId: null,
 
+						_isUpdateLayerScrollPositionRequired: null,
+
 						_inInitialized: null
 					},
 
@@ -5299,6 +5296,8 @@
 							this._y = 0;
 
 							this._inInitialized = false;
+
+							this._isUpdateLayerScrollPositionRequired = true;
 
 							this._domManager = DOMManager.create(this);
 
@@ -5458,9 +5457,9 @@
 
 							this._initForemostSvg();
 
-							//TODO レイヤーが論理的に移動されてからinit()したときに
-							//レイヤーの位置を合わせる
-							//this._updateLayerScrollPosition();
+							//ビューポートが既に移動している状態でinitされた場合に備え
+							//ここでレイヤーの位置をアップデート予約しておく（実際の更新はdoUpdate()のタイミングで行われる）
+							this._updateLayerScrollPosition();
 						},
 
 						__onSelectDUStart: function(dragSelectStartPos) {
@@ -5603,54 +5602,52 @@
 							this._scrollTo(dispX, dispY);
 						},
 
+						_getActualScrollPoint: function(isRow, desiredDisplayPoint,
+								dispVisibleSize, dispViewportSize, dispVisibleMin, dispVisibleMax) {
+
+							var dispScrollableSize = dispVisibleSize - dispViewportSize;
+							if (dispScrollableSize <= 0) {
+								//現在のスケールにおいて、ビューポートのサイズが可視領域のサイズより大きい
+								//＝必ず全てが見えており、かつ可視領域の一番上に張りつかせる
+								//→スクロール位置は必ずvisibleRangeの先頭位置になる
+								return dispVisibleMin;
+							}
+
+							//ビューポートのDisplayサイズが可視領域のDisplayサイズより小さい
+							//＝スクロールが可能なので、VisibleRangeにclampする
+							var actualPoint = StageUtil.clamp(desiredDisplayPoint, dispVisibleMin,
+									dispVisibleMin + dispScrollableSize);
+							return actualPoint;
+						},
+
 						/**
 						 * scrollXXX系のメソッドは、最終的に必ずこのメソッドを呼び出している。
 						 *
 						 * @private
 						 * @param dispX
 						 * @param dispY
-						 * @returns {___anonymous112058_112171}
 						 */
 						_scrollTo: function(dispX, dispY) {
 							var oldPos = DisplayPoint.create(this._viewport.displayX,
 									this._viewport.displayY);
 
+							var cconv = this.coordinateConverter;
+
 							var visibleRangeX = this.getVisibleRangeX();
+							var dispLeft = cconv.toDisplayXLength(visibleRangeX.left);
+							var dispRight = cconv.toDisplayXLength(visibleRangeX.right);
 
-							var leftLimit = null;
-							if (visibleRangeX.left != null) {
-								leftLimit = this._viewport.getXLengthOfDisplay(visibleRangeX.left);
-							}
-
-							var rightLimit = null;
-							if (visibleRangeX.right != null) {
-								rightLimit = this._viewport
-										.getXLengthOfDisplay(visibleRangeX.right)
-										- this._viewport.displayWidth;
-								if (rightLimit < 0) {
-									rightLimit = leftLimit != null ? leftLimit : 0;
-								}
-							}
+							var actualDispX = this._getActualScrollPoint(false, dispX, this
+									.getVisibleWidthOfDisplay(), this._viewport.displayWidth,
+									dispLeft, dispRight);
 
 							var visibleRangeY = this.getVisibleRangeY();
+							var dispTop = cconv.toDisplayYLength(visibleRangeY.top);
+							var dispBottom = cconv.toDisplayYLength(visibleRangeY.bottom);
 
-							var topLimit = null;
-							if (visibleRangeY.top != null) {
-								topLimit = this._viewport.getYLengthOfDisplay(visibleRangeY.top);
-							}
-
-							var bottomLimit = null;
-							if (visibleRangeY.bottom != null) {
-								bottomLimit = this._viewport
-										.getXLengthOfDisplay(visibleRangeY.bottom)
-										- this._viewport.displayHeight;
-								if (bottomLimit < 0) {
-									bottomLimit = topLimit != null ? topLimit : 0;
-								}
-							}
-
-							var actualDispX = StageUtil.clamp(dispX, leftLimit, rightLimit);
-							var actualDispY = StageUtil.clamp(dispY, topLimit, bottomLimit);
+							var actualDispY = this._getActualScrollPoint(true, dispY, this
+									.getVisibleHeightOfDisplay(), this._viewport.displayHeight,
+									dispTop, dispBottom);
 
 							var actualDiff = {
 								dx: actualDispX - this._viewport.displayX,
@@ -5659,7 +5656,7 @@
 
 							if (this._viewport.displayX === actualDispX
 									&& this._viewport.displayY === actualDispY) {
-								//サイズが現在と変わらなかったら何もしない
+								//スクロール位置が現在と全く変わらなかったら何もしない
 								return actualDiff;
 							}
 
@@ -5797,55 +5794,32 @@
 							var oldScaleX = this._viewport.scaleX;
 							var oldScaleY = this._viewport.scaleY;
 
+							//一旦VisibleRangeを考慮せずスケールを適用する。
+							//これによりviewportのdisplay座標が更新されるので、
+							//この値を使ってVisibleRangeの制約を満たすようにスクロールしなおす
 							this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x,
 									scaleCenter.y);
 
+							var cconv = this.coordinateConverter;
 
-							//scrollRangeでclampする
 							var visibleRangeX = this.getVisibleRangeX();
-
-							var leftLimit = null;
-							if (visibleRangeX.left != null) {
-								leftLimit = this._viewport.getXLengthOfDisplay(visibleRangeX.left);
-							}
-
-							var rightLimit = null;
-							if (visibleRangeX.right != null) {
-								rightLimit = this._viewport
-										.getXLengthOfDisplay(visibleRangeX.right)
-										- this._viewport.displayWidth;
-								if (rightLimit < 0) {
-									rightLimit = leftLimit != null ? leftLimit : 0;
-								}
-							}
+							var dispLeft = cconv.toDisplayXLength(visibleRangeX.left);
+							var dispRight = cconv.toDisplayXLength(visibleRangeX.right);
+							var actualScrollX = this._getActualScrollPoint(false,
+									this._viewport.displayX, this.getVisibleWidthOfDisplay(),
+									this._viewport.displayWidth, dispLeft, dispRight);
 
 							var visibleRangeY = this.getVisibleRangeY();
+							var dispTop = cconv.toDisplayYLength(visibleRangeY.top);
+							var dispBottom = cconv.toDisplayYLength(visibleRangeY.bottom);
+							var actualScrollY = this._getActualScrollPoint(true,
+									this._viewport.displayY, this.getVisibleHeightOfDisplay(),
+									this._viewport.displayHeight, dispTop, dispBottom);
 
-							var topLimit = null;
-							if (visibleRangeY.top != null) {
-								topLimit = this._viewport.getYLengthOfDisplay(visibleRangeY.top);
-							}
+							//VisibleRange制約を満たす位置に再度スクロールする
+							this._viewport.scrollTo(actualScrollX, actualScrollY);
 
-							var bottomLimit = null;
-							if (visibleRangeY.bottom != null) {
-								bottomLimit = this._viewport
-										.getXLengthOfDisplay(visibleRangeY.bottom)
-										- this._viewport.displayHeight;
-								if (bottomLimit < 0) {
-									bottomLimit = topLimit != null ? topLimit : 0;
-								}
-							}
-
-							var actualScrollPosX = StageUtil.clamp(this._viewport.displayX,
-									leftLimit, rightLimit);
-							var actualScrollPosY = StageUtil.clamp(this._viewport.displayY,
-									topLimit, bottomLimit);
-
-							//clampされた位置にスクロールする
-							this._viewport.scrollTo(actualScrollPosX, actualScrollPosY);
-
-							var newScrollPos = DisplayPoint.create(actualScrollPosX,
-									actualScrollPosY);
+							var newScrollPos = DisplayPoint.create(actualScrollX, actualScrollY);
 
 							var isScrollPoisitionChanged = true;
 							if (oldScrollPos.x === newScrollPos.x
@@ -5948,10 +5922,20 @@
 							return ret;
 						},
 
+						getVisibleHeightOfDisplay: function() {
+							return this._stage._viewCollection.getRow(this.rowIndex)
+									.getVisibleHeightOfDisplay();
+						},
+
 						getVisibleWidth: function() {
 							var ret = this._stage._viewCollection.getColumn(this.columnIndex)
 									.getVisibleWidth();
 							return ret;
+						},
+
+						getVisibleWidthOfDisplay: function() {
+							return this._stage._viewCollection.getColumn(this.columnIndex)
+									.getVisibleWidthOfDisplay();
 						},
 
 						getDefsForLayer: function(layer) {
@@ -6010,11 +5994,21 @@
 						},
 
 						_updateLayerScrollPosition: function() {
+							this._isUpdateLayerScrollPositionRequired = true;
+							this.update();
+						},
+
+						/**
+						 * @private
+						 */
+						_doUpdateLayerScrollPosition: function() {
 							var layers = this._stage._layers;
 
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 
+								//ビューポートの位置はVisibleRangeの制約を満たした状態になっているので
+								//改めてVisibleRangeに収まるような計算をする必要はない。
 								var scrollX = this._viewport.worldX;
 								var scrollY = this._viewport.worldY;
 
@@ -6034,54 +6028,15 @@
 									break;
 								}
 
-								var visibleRangeX = this.getVisibleRangeX();
-
-								var leftLimit = null;
-								if (visibleRangeX.left != null) {
-									leftLimit = visibleRangeX.left;
-								}
-
-								var rightLimit = null;
-								if (visibleRangeX.right != null) {
-									rightLimit = visibleRangeX.right - this._viewport.worldWidth;
-									if (rightLimit < 0) {
-										//ビューポートの幅がVisibleRangeの右端を超えているので、
-										//左端の制限がある場合はright=leftとしてつねにleftの位置にスクロールが固定されるようにし、
-										//左端の制限がない場合はスクロール位置はゼロにする
-										rightLimit = leftLimit != null ? leftLimit : 0;
-									}
-								}
-
-								var visibleRangeY = this.getVisibleRangeY();
-
-								var topLimit = null;
-								if (visibleRangeY.top != null) {
-									topLimit = visibleRangeY.top;
-								}
-
-								var bottomLimit = null;
-								if (visibleRangeY.bottom != null) {
-									bottomLimit = visibleRangeY.bottom - this._viewport.worldHeight;
-									if (bottomLimit < 0) {
-										bottomLimit = topLimit != null ? topLimit : 0;
-									}
-								}
-
-								//レイヤーのスクロールはビューポートX,Yの逆方向
-								var actualScrollWorldX = -StageUtil.clamp(scrollX, leftLimit,
-										rightLimit);
-								var actualScrollWorldY = -StageUtil.clamp(scrollY, topLimit,
-										bottomLimit);
-
 								var dom = this._layerElementMap.get(layer);
-								this._updateTransform(dom, actualScrollWorldX, actualScrollWorldY);
+								//scrollXYはビューポートの位置なので、
+								//レイヤーのtranslateにセットする値としては符号を逆にする
+								this._updateTransform(dom, -scrollX, -scrollY);
 							}
 
-							this.update();
-
 							//フォアレイヤーのスクロール位置も移動させる
-							this._updateTransform(this._foremostSvg, actualScrollWorldX,
-									actualScrollWorldY);
+							this._updateTransform(this._foremostSvg, -this._viewport.worldX,
+									-this._viewport.worldY);
 						},
 
 						/**
@@ -6255,6 +6210,11 @@
 							this._updateAnimationFrameId = null;
 
 							var that = this;
+
+							if (this._isUpdateLayerScrollPositionRequired) {
+								this._isUpdateLayerScrollPositionRequired = false;
+								this._doUpdateLayerScrollPosition();
+							}
 
 							var dirtyMap = this._duDirtyReasonMap;
 
@@ -6544,8 +6504,6 @@
 						_setWidth: function(width) {
 							this._viewport.setDisplaySize(width, this._viewport.displayHeight);
 
-							this._scrollTo(this._viewport.displayX, this._viewport.displayY);
-
 							if (this._rootElement) {
 								$(this._rootElement).css({
 									width: width
@@ -6560,8 +6518,6 @@
 
 						_setHeight: function(height) {
 							this._viewport.setDisplaySize(this._viewport.displayWidth, height);
-
-							this._scrollTo(this._viewport.displayX, this._viewport.displayY);
 
 							if (this._rootElement) {
 								$(this._rootElement).css({
@@ -7779,8 +7735,6 @@
 							/* *** ここまでで、新しいグリッド構造とビューインスタンスの生成が完了 *** */
 							/* *** 以下で、スケールやサイズを調整、およびスクロールバーの生成 *** */
 
-							this._updateGridRegion();
-
 							//もしoldActiveViewがあれば、それのスケールを維持する。
 							//それがなければ、一番左上のスケールを維持する。
 							var newScale = this.getView(0, 0).getScale();
@@ -7798,6 +7752,12 @@
 							//そのため、ユーザーはstructureChangeイベントが来たら
 							//ビューのスクロール位置やスケールなどは全て変わっている可能性があると考える必要がある。
 							this._isTriggerUnifiedSightChangeSuppressed = true;
+
+							this._updateGridRegion();
+
+							//TODO forceActive指定があればそのViewをアクティブにする
+							var topLeftView = this.getView(0, 0);
+							this.setActiveView(topLeftView);
 
 							//全てのビューのスケールを合わせる
 							for (var rowIndex = 0, rowLen = rows.length; rowIndex < rowLen; rowIndex++) {
@@ -7879,10 +7839,6 @@
 							this._sightChangeEvents = null;
 
 							this._isTriggerUnifiedSightChangeSuppressed = false;
-
-							//TODO forceActive指定があればそのViewをアクティブにする
-							var topLeftView = this.getView(0, 0);
-							this.setActiveView(topLeftView);
 						},
 
 						_updateGridRegion: function() {
@@ -8577,7 +8533,7 @@
 		//TODO dependsOn()
 		_selectionLogic: h5.ui.SelectionLogic,
 
-		_focusController: h5.ui.FocusController,
+		_focusController: h5.ui.components.stage.FocusController,
 
 		initView: function() {
 			this._viewCollection.initView();
