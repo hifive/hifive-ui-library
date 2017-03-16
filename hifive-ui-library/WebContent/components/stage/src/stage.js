@@ -35,14 +35,29 @@
 		 */
 		__name: 'h5.ui.components.stage.FocusController',
 
+		/**
+		 * @private
+		 */
 		_currentFocusGroupElement: null,
 
+		/**
+		 * @private
+		 */
 		_currentFocusGroupName: null,
 
+		/**
+		 * @private
+		 */
 		_lastClickElement: null,
 
+		/**
+		 * @private
+		 */
 		_focusRootElement: null,
 
+		/**
+		 * @private
+		 */
 		_hasFocus: null,
 
 		isKeyEventEmulationEnabled: true,
@@ -72,6 +87,9 @@
 			this._processKeyEvent(context.event);
 		},
 
+		/**
+		 * @private
+		 */
 		_processKeyEvent: function(event) {
 			if (!this.isKeyEventEmulationEnabled || event.originalEvent.isFocusEmulated === true
 					|| event.isFocusEmulated === true || !this._hasFocus) {
@@ -96,6 +114,9 @@
 			}
 		},
 
+		/**
+		 * @private
+		 */
 		_dispatchPseudoKeyboardEvent: function(originalEvent, eventSource) {
 			//DOM4では new KeyboardEvent()とすべき。
 			//しかし、IE11では KeyboardEventはコンストラクタとして使えない。
@@ -130,6 +151,9 @@
 
 		},
 
+		/**
+		 * @private
+		 */
 		_updateFocus: function(element) {
 			if (!element) {
 				this.log.debug('_updateFocus: フォーカス要素がnullです。フォーカスは変更されませんでした。');
@@ -391,6 +415,10 @@
 					this.async = false;
 
 					this._isCompleted = false;
+
+					/**
+					 * @private
+					 */
 					this._moveFunction = defaultMoveFunction;
 
 					this._moveFunctionDataMap = {};
@@ -588,6 +616,9 @@
 					this._targetInitialParentDU = parentDUs;
 				},
 
+				/**
+				 * @private
+				 */
 				_deltaMove: function(event, delta) {
 					if (!this._targets) {
 						return;
@@ -628,6 +659,9 @@
 					this._stage._viewCollection.__onDragDUMove(this);
 				},
 
+				/**
+				 * @private
+				 */
 				_rollbackStates: function() {
 					if (!this._targets) {
 						return;
@@ -641,6 +675,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				_cleanUp: function() {
 					this._targets = null;
 					this._targetInitialPositions = null;
@@ -655,6 +692,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				_setDraggingFlag: function(value) {
 					if (!this._targets) {
 						return;
@@ -985,9 +1025,17 @@
 				setXLinkAttributes: function(param) {
 					this._setXLinkAttributes(param, this.isDefinition);
 				},
+
+				/**
+				 * @private
+				 */
 				_setAttribute: function(key, value, sync) {
 					this._setAttributeNS(null, key, value, sync);
 				},
+
+				/**
+				 * @private
+				 */
 				_setAttributes: function(param, sync) {
 					for ( var key in param) {
 						if (param.hasOwnProperty(key)) {
@@ -995,9 +1043,17 @@
 						}
 					}
 				},
+
+				/**
+				 * @private
+				 */
 				_setXLinkAttribute: function(key, value, sync) {
 					this._setAttributeNS(NS_XLINK, key, value, sync);
 				},
+
+				/**
+				 * @private
+				 */
 				_setXLinkAttributes: function(params, sync) {
 					for ( var key in param) {
 						if (param.hasOwnProperty(key)) {
@@ -1005,6 +1061,10 @@
 						}
 					}
 				},
+
+				/**
+				 * @private
+				 */
 				_setAttributeNS: function(ns, key, value, sync) {
 					if (value === null) {
 						this.removeAttribute(key);
@@ -1030,6 +1090,10 @@
 				removeXLinkAttribute: function(key, sync) {
 					this._removeAttributeNS(NS_XLINK, key, sync);
 				},
+
+				/**
+				 * @private
+				 */
 				_removeAttributeNS: function(ns, key, sync) {
 					// FIXME deleteがエラーとして表示される
 					if (!this._attributes.has(key)) {
@@ -1068,6 +1132,10 @@
 						}
 					}
 				},
+
+				/**
+				 * @private
+				 */
 				_renderChangedAttributes: function() {
 					// Delete removed attributes
 					var attrChanged = false;
@@ -1387,6 +1455,10 @@
 					this._renderChangedAttributes();
 					this._renderTriangle();
 				},
+
+				/**
+				 * @private
+				 */
 				_renderTriangle: function() {
 					var width = this.width;
 					var height = this.height;
@@ -1500,9 +1572,17 @@
 					this._renderChangedAttributes();
 					this._renderPolyline();
 				},
+
+				/**
+				 * @private
+				 */
 				_renderPolyline: function() {
 					this._setAttribute('points', this._points.join(' '), true);
 				},
+
+				/**
+				 * @private
+				 */
 				_pointArrayChanged: function() {
 					this.requestRender();
 				}
@@ -1578,6 +1658,10 @@
 					}
 					this._element.removeChild(definition._element);
 				},
+
+				/**
+				 * @private
+				 */
 				_getId: function(target) {
 					if (typeof target === 'string') {
 						return target;
@@ -1729,6 +1813,9 @@
 					this._view = view;
 				},
 
+				/**
+				 * @private
+				 */
 				_addDefinition: function(svgElementWrapper) {
 					if (this._defs.has(svgElementWrapper)) {
 						//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
@@ -1742,6 +1829,9 @@
 					this._defs.remove(id);
 				},
 
+				/**
+				 * @private
+				 */
 				_addToRenderWaitingList: function(svgDrawElement) {
 					if ($.inArray(svgDrawElement, this._renderWaitingList) === -1) {
 						this._renderWaitingList.push(svgDrawElement);
@@ -1952,6 +2042,10 @@
 					this._points.length = 0;
 					this._dispatchEvent();
 				},
+
+				/**
+				 * @private
+				 */
 				_dispatchEvent: function() {
 					var event = Event.create('pointArrayChanged');
 					this.dispatchEvent(event);
@@ -2410,6 +2504,9 @@
 							this._rootStage.unfocus(andUnselect);
 						},
 
+						/**
+						 * @private
+						 */
 						_setDirty: function(reasons) {
 							if (!reasons) {
 								throw new Error('_setDirty()時は引数のリーズンは必須です。');
@@ -2423,6 +2520,9 @@
 							this.dispatchEvent(event);
 						},
 
+						/**
+						 * @private
+						 */
 						_onAddedToStage: function(stage, belongingLayer) {
 							this._rootStage = stage;
 							this._belongingLayer = belongingLayer;
@@ -2431,6 +2531,9 @@
 							this.dispatchEvent(event);
 						},
 
+						/**
+						 * @private
+						 */
 						_onRemovedFromStage: function() {
 							this._rootStage = null;
 							this._belongingLayer = null;
@@ -2439,6 +2542,9 @@
 							this.dispatchEvent(event);
 						},
 
+						/**
+						 * @private
+						 */
 						_updateActualDisplayStyle: function(element) {
 							//MEMO: 個別要素にdisplay:noneを設定するよりも、
 							//表示非表示の制御を完全にブラウザに任せる（＝displayの制御をまったくしない）方が高速だった。
@@ -2479,6 +2585,9 @@
 							//							}
 						},
 
+						/**
+						 * @private
+						 */
 						__updateDOM: function(stageView, element, reason) {
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
 								this._updateActualDisplayStyle(element);
@@ -2499,6 +2608,9 @@
 							}
 						},
 
+						/**
+						 * @private
+						 */
 						__renderDOM: function(view) {
 							throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
 						},
@@ -2506,6 +2618,7 @@
 						/**
 						 * 子孫の要素がdirtyになった場合に子→親に向かって呼び出されるコールバック
 						 *
+						 * @private
 						 * @param du
 						 */
 						__onDirtyNotify: function(du, reasons) {
@@ -2516,6 +2629,8 @@
 
 						/**
 						 * 直接の親要素がdirtyになった場合に親→子に向かって呼び出されるコールバック
+						 *
+						 * @private
 						 */
 						__onParentDirtyNotify: function(du, reasons) {
 							if (!this._willGlobalPositionChangeByParentDirty(reasons)) {
@@ -2525,6 +2640,9 @@
 							this._setDirty(REASON_GLOBAL_POSITION_CHANGE);
 						},
 
+						/**
+						 * @private
+						 */
 						_willGlobalPositionChangeByParentDirty: function(reasons) {
 							if (!Array.isArray(reasons)) {
 								reasons = [reasons];
@@ -2538,6 +2656,9 @@
 							return false;
 						},
 
+						/**
+						 * @private
+						 */
 						_setSystemVisible: function(value, element) {
 							this._isSystemVisible = value;
 
@@ -2763,12 +2884,16 @@
 					this._setDirty(REASON_RENDER_REQUEST);
 				},
 
+				/**
+				 * @private
+				 */
 				__createGraphics: function(view, svgElement) {
 					var graphics = this._belongingLayer.__createGraphics(view, svgElement);
 					return graphics;
 				},
 
 				/**
+				 * @private
 				 * @overrides オーバーライド
 				 */
 				__renderDOM: function(view) {
@@ -2782,11 +2907,17 @@
 					return root;
 				},
 
+				/**
+				 * @private
+				 */
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
 					this._update(view, element, reason);
 				},
 
+				/**
+				 * @private
+				 */
 				_update: function(view, root, reason) {
 					if (!this._renderer) {
 						//レンダラがセットされていない場合は空の要素を返す
@@ -3592,6 +3723,9 @@
 					return this.getLast(val);
 				},
 
+				/**
+				 * @private
+				 */
 				_addToKeyArray: function(key) {
 					var len = this._keyArray.length;
 					for (var i = 0; i < len; i++) {
@@ -3822,6 +3956,7 @@
 				/**
 				 * オーバーライド
 				 *
+				 * @private
 				 * @overrides
 				 * @param rootStage
 				 * @param belongingLayer
@@ -3836,6 +3971,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				_onRemovedFromStage: function() {
 					var children = this._children;
 					for (var i = 0, len = children.length; i < len; i++) {
@@ -3889,6 +4027,9 @@
 					return globalPos;
 				},
 
+				/**
+				 * @private
+				 */
 				_clampScale: function(scaleX, scaleY) {
 					var x = StageUtil.clamp(scaleX, this._minScaleX, this._maxScaleX);
 					var y = StageUtil.clamp(scaleY, this._minScaleY, this._maxScaleY);
@@ -3906,6 +4047,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				_updateTransform: function(element) {
 					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
 							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
@@ -3914,6 +4058,9 @@
 					element.firstChild.setAttribute('transform', transform);
 				},
 
+				/**
+				 * @private
+				 */
 				_setDirty: function(reasons) {
 					//先に子供に通知し、globalPositionCacheをクリアさせる。
 					//こうすることで、自コンテナの位置が移動した場合に
@@ -3923,6 +4070,9 @@
 					super_._setDirty.call(this, reasons);
 				},
 
+				/**
+				 * @private
+				 */
 				__onParentDirtyNotify: function(du, reasons) {
 					super_.__onParentDirtyNotify.call(this, du, reasons);
 					var that = this;
@@ -3931,6 +4081,9 @@
 					});
 				},
 
+				/**
+				 * @private
+				 */
 				__renderDOM: function(view) {
 					var rootSvg = createSvgElement('svg');
 					rootSvg.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
@@ -3952,10 +4105,16 @@
 					return rootSvg;
 				},
 
+				/**
+				 * @private
+				 */
 				__getPracticalParentElement: function(containerRootElement) {
 					return containerRootElement.firstChild;
 				},
 
+				/**
+				 * @private
+				 */
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
 
@@ -3967,6 +4126,7 @@
 				/**
 				 * 子孫に要素が追加されたときに子⇒親に向かって呼び出されるコールバック
 				 *
+				 * @private
 				 * @param targetDU
 				 */
 				__onDescendantAdded: function(displayUnit) {
@@ -3975,6 +4135,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
 					if (this._parentDU) {
 						this._parentDU.__onDescendantRemoved(displayUnit, parentDisplayUnit);
@@ -4035,9 +4198,11 @@
 				 */
 				moveBy: function(worldX, worldY) {
 					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
-
 				},
 
+				/**
+				 * @private
+				 */
 				__createGraphics: function(view, svgRoot) {
 					var SVGGraphics = classManager.getClass('h5.ui.components.stage.SVGGraphics');
 
@@ -4047,6 +4212,9 @@
 					return graphics;
 				},
 
+				/**
+				 * @private
+				 */
 				__createRootElement: function(view) {
 					var rootSvg = createSvgElement('svg');
 					rootSvg.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
@@ -4065,8 +4233,8 @@
 				},
 
 				/**
-				 * オーバーライド
-				 *
+				 * @private
+				 * @overrides
 				 * @param du
 				 */
 				__onDirtyNotify: function(du, reasons) {
@@ -4080,8 +4248,8 @@
 				},
 
 				/**
-				 * オーバーライド
-				 *
+				 * @private
+				 * @overrides
 				 * @param targetDU
 				 * @param parentDU
 				 */
@@ -4092,8 +4260,8 @@
 				},
 
 				/**
-				 * オーバーライド
-				 *
+				 * @private
+				 * @overrides
 				 * @param du 取り外されたDisplayUnit
 				 */
 				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
@@ -4106,6 +4274,7 @@
 				/**
 				 * 属するレイヤーは自分自身なので引数は無視する
 				 *
+				 * @private
 				 * @param stage
 				 * @param belongingLayer
 				 */
@@ -4117,6 +4286,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				__onCascadeRemoving: function(srcDU, relatedDU) {
 					var ev = DisplayUnitCascadeRemovingEvent.create(srcDU, relatedDU);
 					var ret = this.dispatchEvent(ev);
@@ -5337,6 +5509,9 @@
 							this._addToStage();
 						},
 
+						/**
+						 * @private
+						 */
 						_addToStage: function() {
 							var $root = $('<div class="h5-stage-view-root"></div>');
 							$root.css({
@@ -5353,6 +5528,9 @@
 							this._stage.rootElement.appendChild(this._rootElement);
 						},
 
+						/**
+						 * @private
+						 */
 						_initForemostSvg: function() {
 							var foremostSvg = SvgUtil.createElement('svg');
 							foremostSvg.setAttribute('data-h5-dyn-stage-role', 'foremostSvg'); //TODO for debugging
@@ -5462,6 +5640,9 @@
 							this._updateLayerScrollPosition();
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUStart: function(dragSelectStartPos) {
 							var rect = SvgUtil.createElement('rect');
 							this._dragSelectOverlayRect = rect;
@@ -5478,6 +5659,9 @@
 							this._foremostSvgGroup.appendChild(rect);
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUMove: function(worldPos, worldWidth, worldHeight) {
 							SvgUtil.setAttributes(this._dragSelectOverlayRect, {
 								x: worldPos.x,
@@ -5487,10 +5671,16 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUEnd: function() {
 							$(this._dragSelectOverlayRect).remove();
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUStart: function(dragSession) {
 							var targetDUs = dragSession.getTarget();
 							if (!Array.isArray(targetDUs)) {
@@ -5532,6 +5722,9 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUMove: function(dragSession) {
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
 								var gpos = du.getWorldGlobalPosition();
@@ -5545,6 +5738,9 @@
 							this.update();
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUDrop: function(dragSession) {
 							var that = this;
 							this._dragTargetDUInfoMap.forEach(function(element, du) {
@@ -5602,6 +5798,16 @@
 							this._scrollTo(dispX, dispY);
 						},
 
+						/**
+						 * @private
+						 * @param isRow
+						 * @param desiredDisplayPoint
+						 * @param dispVisibleSize
+						 * @param dispViewportSize
+						 * @param dispVisibleMin
+						 * @param dispVisibleMax
+						 * @returns
+						 */
 						_getActualScrollPoint: function(isRow, desiredDisplayPoint,
 								dispVisibleSize, dispViewportSize, dispVisibleMin, dispVisibleMax) {
 
@@ -5699,6 +5905,12 @@
 							this._scrollBy(displayDx, displayDy);
 						},
 
+						/**
+						 * @private
+						 * @param displayDx
+						 * @param displayDy
+						 * @returns
+						 */
 						_scrollBy: function(displayDx, displayDy) {
 							if (displayDx === 0 && displayDy === 0) {
 								return;
@@ -5954,6 +6166,11 @@
 							return defs;
 						},
 
+						/**
+						 * @private
+						 * @param layer
+						 * @returns
+						 */
 						_getElementForLayer: function(layer) {
 							var elem = this._layerElementMap.get(layer);
 							return elem;
@@ -5993,6 +6210,9 @@
 							return pos;
 						},
 
+						/**
+						 * @private
+						 */
 						_updateLayerScrollPosition: function() {
 							this._isUpdateLayerScrollPositionRequired = true;
 							this.update();
@@ -6039,7 +6259,7 @@
 									-this._viewport.worldY);
 						},
 
-						/**
+						/*
 						 * 線分1-2 と 線分3-4 が交差しているかどうかを判定します。端点で交差する場合もtrueを返します。
 						 *
 						 * @param x1
@@ -6264,6 +6484,7 @@
 						/**
 						 * レイヤーではtranslate量にDUのx,yの値を用いる。
 						 *
+						 * @private
 						 * @param worldX
 						 * @param worldY
 						 */
@@ -6432,6 +6653,10 @@
 							return true;
 						},
 
+						/**
+						 * @private
+						 * @param event
+						 */
 						_onDUDirty: function(event) {
 							var du = event.displayUnit;
 
@@ -6468,6 +6693,10 @@
 							this.update();
 						},
 
+						/**
+						 * @private
+						 * @param event
+						 */
 						_onDUAdd: function(event) {
 							var du = event.displayUnit;
 							this._duRenderStandbyMap.set(du, du);
@@ -6496,17 +6725,26 @@
 							}
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 */
 						_removeFromUpdateWaitingCache: function(du) {
 							this._duRenderStandbyMap['delete'](du);
 							this._duDirtyReasonMap['delete'](du);
 						},
 
-						_setWidth: function(width) {
-							this._viewport.setDisplaySize(width, this._viewport.displayHeight);
+						/**
+						 * @private
+						 * @param {Number} displayWidth 幅、ディスプレイ座標系
+						 */
+						_setWidth: function(displayWidth) {
+							this._viewport.setDisplaySize(displayWidth,
+									this._viewport.displayHeight);
 
 							if (this._rootElement) {
 								$(this._rootElement).css({
-									width: width
+									width: displayWidth
 								});
 
 								//注：レイヤーに対してはサイズを設定してはいけない。
@@ -6516,12 +6754,17 @@
 							this.update();
 						},
 
-						_setHeight: function(height) {
-							this._viewport.setDisplaySize(this._viewport.displayWidth, height);
+						/**
+						 * @private
+						 * @param {Number} displayHeight 高さ、ディスプレイ座標系
+						 */
+						_setHeight: function(displayHeight) {
+							this._viewport.setDisplaySize(this._viewport.displayWidth,
+									displayHeight);
 
 							if (this._rootElement) {
 								$(this._rootElement).css({
-									height: height
+									height: displayHeight
 								});
 
 								//注：レイヤーに対してはサイズを設定してはいけない。
@@ -6742,6 +6985,9 @@
 							return this._getView(0).getPagePosition();
 						},
 
+						/**
+						 * @private
+						 */
 						_getViewportYFromScrollBarPosition: function(value) {
 							if (!this._scrollBarController) {
 								return 0;
@@ -6749,6 +6995,9 @@
 							return value + this._visibleRangeY.top;
 						},
 
+						/**
+						 * @private
+						 */
 						_getScrollBarPositionFromScrollY: function(scrollY) {
 							if (!this._scrollBarController) {
 								return;
@@ -6758,6 +7007,9 @@
 							return yMod;
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarSetting: function(logicalViewSize, amount) {
 							if (!this._scrollBarController) {
 								return;
@@ -6765,6 +7017,9 @@
 							this._scrollBarController.setScrollSize(logicalViewSize, amount);
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarPosition: function(worldY) {
 							if (!this._scrollBarController) {
 								return;
@@ -6773,6 +7028,9 @@
 							this._scrollBarController.setScrollPosition(yMod);
 						},
 
+						/**
+						 * @private
+						 */
 						_updateScrollBarLogicalValues: function() {
 							if (!this._scrollBarController) {
 								return;
@@ -6788,6 +7046,9 @@
 							this._setScrollBarPosition(worldY);
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarTop: function(top) {
 							if (!this._scrollBarController) {
 								return;
@@ -6798,6 +7059,9 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarHeight: function(height) {
 							if (!this._scrollBarController) {
 								return;
@@ -6816,6 +7080,9 @@
 									- worldHeight);
 						},
 
+						/**
+						 * @private
+						 */
 						_showScrollBar: function() {
 							if (this._scrollBarController) {
 								//既にスクロールバーが出ている場合はこのまま
@@ -6847,6 +7114,9 @@
 							$root.appendTo(this._viewCollection._stage.rootElement);
 						},
 
+						/**
+						 * @private
+						 */
 						_hideScrollBar: function() {
 							if (!this._scrollBarController) {
 								return;
@@ -6857,12 +7127,18 @@
 							this._scrollBarController = null;
 						},
 
+						/**
+						 * @private
+						 */
 						_createVScrollBarController: function(rootElement) {
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.VerticalScrollBarController);
 							return controller;
 						},
 
+						/**
+						 * @private
+						 */
 						_isVisibleRangeFinite: function() {
 							return this._visibleRangeY.top != null
 									&& this._visibleRangeY.bottom != null;
@@ -7060,12 +7336,18 @@
 							return this.getView(0).getPagePosition();
 						},
 
+						/**
+						 * @private
+						 */
 						_isVisibleRangeFinite: function() {
 							var ret = this._visibleRangeX.left != null
 									&& this._visibleRangeX.right != null;
 							return ret;
 						},
 
+						/**
+						 * @private
+						 */
 						_getViewportXFromScrollBarPosition: function(value) {
 							if (!this._scrollBarController) {
 								return 0;
@@ -7073,6 +7355,9 @@
 							return value + this._visibleRangeX.left;
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarLeft: function(left) {
 							if (!this._scrollBarController) {
 								return;
@@ -7083,6 +7368,9 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						_getScrollBarPositionFromScrollX: function(scrollX) {
 							if (!this._scrollBarController) {
 								return;
@@ -7092,6 +7380,9 @@
 							return xMod;
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarSetting: function(logicalViewSize, amount) {
 							if (!this._scrollBarController) {
 								return;
@@ -7099,6 +7390,9 @@
 							this._scrollBarController.setScrollSize(logicalViewSize, amount);
 						},
 
+						/**
+						 * @private
+						 */
 						_updateScrollBarLogicalValues: function() {
 							if (!this._scrollBarController) {
 								return;
@@ -7114,6 +7408,9 @@
 							this._setScrollBarPosition(worldX);
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarPosition: function(worldX) {
 							if (!this._scrollBarController) {
 								return;
@@ -7122,6 +7419,9 @@
 							this._scrollBarController.setScrollPosition(xMod);
 						},
 
+						/**
+						 * @private
+						 */
 						_setScrollBarWidth: function(width) {
 							if (!this._scrollBarController) {
 								return;
@@ -7139,6 +7439,9 @@
 									- worldWidth);
 						},
 
+						/**
+						 * @private
+						 */
 						_showScrollBar: function() {
 							if (this._scrollBarController) {
 								//既にスクロールバーが出ている場合はこのまま
@@ -7171,6 +7474,9 @@
 							$root.appendTo(this._viewCollection._stage.rootElement);
 						},
 
+						/**
+						 * @private
+						 */
 						_hideScrollBar: function() {
 							if (!this._scrollBarController) {
 								return;
@@ -7181,6 +7487,9 @@
 							this._scrollBarController = null;
 						},
 
+						/**
+						 * @private
+						 */
 						_createHScrollBarController: function(rootElement) {
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.HorizontalScrollBarController);
@@ -7397,6 +7706,9 @@
 							return this._getView(this._viewMap, rowIndex, columnIndex);
 						},
 
+						/**
+						 * @private
+						 */
 						_getView: function(viewMap, rowIndex, columnIndex) {
 							var row = viewMap[rowIndex];
 							if (!row) {
@@ -7496,6 +7808,9 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						_clear: function(andDisposeView) {
 							var views = this.getViewAll();
 
@@ -7537,6 +7852,9 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						_addView: function(view, rowIndex, columnIndex) {
 							var rowMap = this._viewMap[rowIndex];
 							if (!rowMap) {
@@ -7550,6 +7868,9 @@
 							view.addEventListener('sightChange', this._view_sightChangeListener);
 						},
 
+						/**
+						 * @private
+						 */
 						_makeGrid: function(horizontalSplitDefinitions, verticalSplitDefinitions,
 								rootWidth, rootHeight) {
 							//セパレータは一旦削除し、グリッド構成時に改めて作成
@@ -7841,11 +8162,17 @@
 							this._isTriggerUnifiedSightChangeSuppressed = false;
 						},
 
+						/**
+						 * @private
+						 */
 						_updateGridRegion: function() {
 							this._updateGridRegionRow();
 							this._updateGridRegionColumn();
 						},
 
+						/**
+						 * @private
+						 */
 						_willHScrollBarShow: function() {
 							var columns = this.getColumns();
 							for (var i = 0, len = columns.length; i < len; i++) {
@@ -7858,12 +8185,18 @@
 							return false;
 						},
 
+						/**
+						 * @private
+						 */
 						_isHScrollBarShow: function() {
 							//厳密には「出る可能性がある」と「今出ている」は異なる。
 							//こちらは「今出ているかどうか」を表す。ただし今はalways/noneだけなのでこれでよい。
 							return this._willHScrollBarShow();
 						},
 
+						/**
+						 * @private
+						 */
 						_willVScrollBarShow: function() {
 							var rows = this.getRows();
 							for (var i = 0, len = rows.length; i < len; i++) {
@@ -7876,6 +8209,9 @@
 							return false;
 						},
 
+						/**
+						 * @private
+						 */
 						_isVScrollBarShow: function() {
 							return this._willVScrollBarShow();
 						},
@@ -7971,6 +8307,9 @@
 							}
 						},
 
+						/**
+						 * @private
+						 */
 						_getAvailableContentsSize: function(isRow) {
 							var totalSeparatorSize = 0;
 							var lines = isRow ? this.getRowsOfAllTypes() : this
@@ -7997,6 +8336,9 @@
 							return ret;
 						},
 
+						/**
+						 * @private
+						 */
 						_updateGridRegionRow: function() {
 							this._preadjust(true);
 
@@ -8075,6 +8417,9 @@
 									});
 						},
 
+						/**
+						 * @private
+						 */
 						_updateGridRegionColumn: function() {
 							this._preadjust(false);
 
@@ -8158,6 +8503,7 @@
 						 * 指定されたソースビューと同じ行・列のビューのスクロール位置をソースビューの位置と合わせます。
 						 * 同じ行の場合はscrollYを、同じ列の場合はscrollXを合わせます。
 						 *
+						 * @private
 						 * @param srcView ソースビュー
 						 * @param newScrollPos 合わせるスクロール位置
 						 */
@@ -8199,6 +8545,9 @@
 							}
 						},
 
+						/**
+						 * @private
+						 */
 						_onSightChange: function(event) {
 							if (this._isSightChangePropagationSuppressed) {
 								//あるビューのsightChangeに伴って他のビューを変更している最中の場合、
@@ -8304,6 +8653,8 @@
 
 						/**
 						 * sightChange時、スケールが変更されていた場合に全てのスクロールバーのスクロールサイズを更新します。
+						 *
+						 * @private
 						 */
 						_updateAllScrollBars: function() {
 							var rows = this.getRows();
@@ -8319,24 +8670,36 @@
 							}
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUStart: function(dragStartPos) {
 							this.getViewAll().forEach(function(v) {
 								v.__onSelectDUStart(dragStartPos);
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUMove: function(worldPos, worldWidth, worldHeight) {
 							this.getViewAll().forEach(function(v) {
 								v.__onSelectDUMove(worldPos, worldWidth, worldHeight);
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onSelectDUEnd: function() {
 							this.getViewAll().forEach(function(v) {
 								v.__onSelectDUEnd();
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUStart: function(dragSession) {
 							var targetDUs = dragSession.getTarget();
 							if (!Array.isArray(targetDUs)) {
@@ -8354,12 +8717,18 @@
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUMove: function(dragSession) {
 							this.getViewAll().forEach(function(v) {
 								v.__onDragDUMove(dragSession);
 							});
 						},
 
+						/**
+						 * @private
+						 */
 						__onDragDUDrop: function(dragSession) {
 							var targetDUs = dragSession.getTarget();
 							if (!Array.isArray(targetDUs)) {
@@ -8507,18 +8876,39 @@
 		 */
 		__name: 'h5.ui.components.stage.StageController',
 
+		/**
+		 * @private
+		 */
 		_layers: null,
 
+		/**
+		 * @private
+		 */
 		_units: null,
 
+		/**
+		 * @private
+		 */
 		_viewport: null,
 
+		/**
+		 * @private
+		 */
 		_initData: null,
 
+		/**
+		 * @private
+		 */
 		_defs: null,
 
+		/**
+		 * @private
+		 */
 		_scaleRangeX: null,
 
+		/**
+		 * @private
+		 */
 		_scaleRangeY: null,
 
 		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
@@ -8531,8 +8921,14 @@
 		//{ min: , max: } をディスプレイ座標で指定。
 
 		//TODO dependsOn()
+		/**
+		 * @private
+		 */
 		_selectionLogic: h5.ui.SelectionLogic,
 
+		/**
+		 * @private
+		 */
 		_focusController: h5.ui.components.stage.FocusController,
 
 		initView: function() {
@@ -8561,6 +8957,9 @@
 			this._selectionLogic.select(basicUnits);
 		},
 
+		/**
+		 * @private
+		 */
 		_getAllSelectableDisplayUnits: function() {
 			var layers = this._layers;
 			var ret = [];
@@ -8703,6 +9102,9 @@
 			return ret;
 		},
 
+		/**
+		 * @private
+		 */
 		__construct: function() {
 			this._units = new Map();
 			this._layers = [];
@@ -8732,6 +9134,9 @@
 			this._viewCollection = GridStageViewCollection.create(this);
 		},
 
+		/**
+		 * @private
+		 */
 		__ready: function() {
 			//overflow: hiddenは各StageView側で設定
 			$(this.rootElement).css({
@@ -8820,6 +9225,7 @@
 		/**
 		 * targetで指定された要素を含むBasicDUを返す。 BasicDUに含まれていない場合はnullを返す。
 		 *
+		 * @private
 		 * @param target
 		 */
 		_getIncludingDisplayUnit: function(target) {
@@ -8847,10 +9253,19 @@
 			return ret;
 		},
 
+		/**
+		 * @private
+		 */
 		_isDblclickEmulationEnabled: null,
 
+		/**
+		 * @private
+		 */
 		_dblclickWaitTimer: null,
 
+		/**
+		 * @private
+		 */
 		_processClick: function(event, triggerEventName) {
 			if (this._isDraggingStarted) {
 				//ドラッグ操作が終わった直後のclickイベントの場合は何もしない
@@ -8973,20 +9388,44 @@
 
 		UIDragMode: DRAG_MODE_AUTO,
 
+		/**
+		 * @private
+		 */
 		_currentDragMode: DRAG_MODE_NONE,
 
+		/**
+		 * @private
+		 */
 		_dragSelectStartPos: null,
 
+		/**
+		 * @private
+		 */
 		_dragSelectStartSelectedDU: null,
 
+		/**
+		 * @private
+		 */
 		_dragStartPagePos: null,
 
+		/**
+		 * @private
+		 */
 		_dragLastPagePos: null,
 
+		/**
+		 * @private
+		 */
 		_dragSession: null,
 
+		/**
+		 * @private
+		 */
 		_dragStartRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
 
+		/**
+		 * @private
+		 */
 		_startDrag: function(context) {
 			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
 			if (this._dragSession) {
@@ -9237,8 +9676,14 @@
 			}
 		},
 
+		/**
+		 * @private
+		 */
 		_isMousedown: false,
 
+		/**
+		 * @private
+		 */
 		_isScrollBarEvent: function(context, $el) {
 			var $scrollbar = $(context.event.target).closest('.h5-stage-scrollbar');
 
@@ -9251,6 +9696,9 @@
 			return false;
 		},
 
+		/**
+		 * @private
+		 */
 		_isInScrollBarScroll: false,
 
 		'{rootElement} h5scroll': function(context, $el) {
@@ -9374,8 +9822,14 @@
 			//moveのタイミングにするのがよい。
 		},
 
+		/**
+		 * @private
+		 */
 		_throttledLastDragMoveContext: null,
 
+		/**
+		 * @private
+		 */
 		_processDragMove: function(context) {
 			if (!this._isMousedown) {
 				//mousedownしていない＝ドラッグ操作でない場合
@@ -9417,8 +9871,14 @@
 			this._rafId = requestAnimationFrame(this._dragMoveWrapper);
 		},
 
+		/**
+		 * @private
+		 */
 		_dragMoveWrapper: null,
 
+		/**
+		 * @private
+		 */
 		_doDragMove: function() {
 			this._rafId = null;
 
@@ -9560,6 +10020,9 @@
 			}
 		},
 
+		/**
+		 * @private
+		 */
 		_updateDragOverlay: function(dispActualX, dispActualY, dispW, dispH) {
 			var activeView = this._getActiveView();
 
@@ -9570,6 +10033,9 @@
 			this._viewCollection.__onSelectDUMove(worldPos, ww, wh);
 		},
 
+		/**
+		 * @private
+		 */
 		_getCurrentDragPosition: function() {
 			var rootOffset = $(this.rootElement).offset();
 
@@ -9693,6 +10159,9 @@
 			$(this.rootElement).css('cursor', 'auto');
 		},
 
+		/**
+		 * @private
+		 */
 		_disposeDragSession: function() {
 			this._dragSession.removeEventListener('dragSessionEnd',
 					this._dragSessionEndHandlerWrapper);
@@ -9701,7 +10170,9 @@
 			this._dragSession = null; //TODO dragSessionをdisposeする
 		},
 
-
+		/**
+		 * @private
+		 */
 		_getDragOverDisplayUnit: function(event) {
 			//ドラッグ中、ドラッグ対象のDUはpointer-events=noneの
 			//隠し最前面レイヤーに移動している。
@@ -9711,12 +10182,24 @@
 			return dragOverDU;
 		},
 
+		/**
+		 * @private
+		 */
 		_isDraggingStarted: false,
 
+		/**
+		 * @private
+		 */
 		_boundaryScrollTimerId: null,
 
+		/**
+		 * @private
+		 */
 		_nineSlice: null,
 
+		/**
+		 * @private
+		 */
 		_beginBoundaryScroll: function(nineSlice, callback) {
 			//途中で方向が変わった場合のため、9-Sliceだけは常に更新する
 			this._nineSlice = nineSlice;
@@ -9736,6 +10219,9 @@
 			}, BOUNDARY_SCROLL_INTERVAL);
 		},
 
+		/**
+		 * @private
+		 */
 		_endBoundaryScroll: function() {
 			if (this._boundaryScrollTimerId) {
 				clearInterval(this._boundaryScrollTimerId);
@@ -9792,10 +10278,19 @@
 		//TODO
 		},
 
+		/**
+		 * @private
+		 */
 		_defaultLayer: null,
 
+		/**
+		 * @private
+		 */
 		_duCascadeRemovingListener: null,
 
+		/**
+		 * @private
+		 */
 		_onDUCascadeRemoving: function(event) {
 			var evArg = {
 				targetDisplayUnit: event.targetDisplayUnit,
@@ -9827,6 +10322,9 @@
 			layer._onAddedToStage(this);
 		},
 
+		/**
+		 * @private
+		 */
 		_removeLayer: function(layer) {
 			var idx = this._layers.indexOf(layer);
 
@@ -9843,6 +10341,9 @@
 			layer._onRemovedFromStage();
 		},
 
+		/**
+		 * @private
+		 */
 		_clearLayers: function() {
 			var layers = this._layers.slice(0);
 			var that = this;
@@ -9870,6 +10371,9 @@
 		},
 
 		//TODO StageView側に移動、ただしDragSession内部で使っている
+		/**
+		 * @private
+		 */
 		_scrollBy: function(displayDx, displayDy) {
 			return this._getActiveView()._scrollBy(displayDx, displayDy);
 		},
@@ -9897,10 +10401,16 @@
 			return this._getActiveView().setScale(scaleX, scaleY, displayPageX, displayPageY);
 		},
 
+		/**
+		 * @private
+		 */
 		_getActiveView: function() {
 			return this._viewCollection.getActiveView();
 		},
 
+		/**
+		 * @private
+		 */
 		_getActiveViewFromElement: function(element) {
 			var views = this._viewCollection.getViewAll();
 			for (var i = 0, len = views.length; i < len; i++) {
@@ -9924,17 +10434,32 @@
 			return this._getActiveView().getScrollPosition();
 		},
 
+		/**
+		 * @private
+		 */
 		_lastEnteredDU: null,
 
+		/**
+		 * @private
+		 */
 		_dragSessionEndHandlerWrapper: null,
 
+		/**
+		 * @private
+		 */
 		_dragSessionEndHandler: function() {
 			this.trigger(EVENT_DRAG_DU_END);
 			this._disposeDragSession();
 		},
 
+		/**
+		 * @private
+		 */
 		_dragSessionCancelHandlerWrapper: null,
 
+		/**
+		 * @private
+		 */
 		_dragSessionCancelHandler: function() {
 			this.trigger(EVENT_DRAG_DU_CANCEL);
 			this._disposeDragSession();
@@ -10116,6 +10641,9 @@
 			this._processKeyEvent(context.event, EVENT_DU_KEY_UP);
 		},
 
+		/**
+		 * @private
+		 */
 		_processKeyEvent: function(event, eventName) {
 			var eventTarget = event.target;
 
@@ -10152,6 +10680,9 @@
 			});
 		},
 
+		/**
+		 * @private
+		 */
 		_isInputTag: function(element) {
 			var tag = element.tagName.toLowerCase();
 			if (tag === 'input' || tag === 'textarea' || tag === 'select') {
@@ -10168,6 +10699,9 @@
 			return this._getActiveView().setVisibleRangeY(worldTopY, worldBottomY);
 		},
 
+		/**
+		 * @private
+		 */
 		_viewCollection: null,
 
 		getViewCollection: function() {
@@ -10181,6 +10715,9 @@
 			this.trigger(EVENT_VIEW_STRUCTURE_CHANGE, evArg);
 		},
 
+		/**
+		 * @private
+		 */
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
 			var w = $(this.rootElement).width();
 			var h = $(this.rootElement).height();
@@ -10189,15 +10726,27 @@
 					h);
 		},
 
+		/**
+		 * @private
+		 */
 		_createViewStructureChangeEventArg: function() {
 			//TODO 変更前の値のオブジェクトを作る
 			return {};
 		},
 
+		/**
+		 * @private
+		 */
 		_isGridSeparatorDragging: false,
 
+		/**
+		 * @private
+		 */
 		_gridSeparatorDragContext: null,
 
+		/**
+		 * @private
+		 */
 		_startGridSeparatorDrag: function(context) {
 			var $el = $(context.event.target);
 
@@ -10271,6 +10820,9 @@
 			this._isGridSeparatorDragging = true;
 		},
 
+		/**
+		 * @private
+		 */
 		_processGridSeparatorDragMove: function(context) {
 			var event = context.event;
 
@@ -10477,6 +11029,9 @@
 			this.trigger(EVENT_VIEW_REGION_CHANGE, evArg);
 		},
 
+		/**
+		 * @private
+		 */
 		_limitViewSizeToVisibleSize: function(isHorizontal, preferredLine, oppositeLine,
 				separatorLine, desiredSize, availableSize) {
 			var preferredLineMaxSize = Infinity;
@@ -10505,6 +11060,9 @@
 			}
 		},
 
+		/**
+		 * @private
+		 */
 		_endGridSeparatorDrag: function(context, $el) {
 			this._isGridSeparatorDragging = false;
 			this._gridSeparatorDragContext = null;
