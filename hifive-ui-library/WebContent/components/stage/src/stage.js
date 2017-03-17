@@ -5812,17 +5812,17 @@
 								dispVisibleSize, dispViewportSize, dispVisibleMin, dispVisibleMax) {
 
 							var dispScrollableSize = dispVisibleSize - dispViewportSize;
-							if (dispScrollableSize <= 0) {
+							if (dispScrollableSize <= 0 && isFinite(dispVisibleMin)) {
 								//現在のスケールにおいて、ビューポートのサイズが可視領域のサイズより大きい
-								//＝必ず全てが見えており、かつ可視領域の一番上に張りつかせる
+								//＝全てが見えており、かつ可視領域の一番上に張りつかせる
 								//→スクロール位置は必ずvisibleRangeの先頭位置になる
 								return dispVisibleMin;
 							}
 
-							//ビューポートのDisplayサイズが可視領域のDisplayサイズより小さい
-							//＝スクロールが可能なので、VisibleRangeにclampする
+							//ビューポートのDisplayサイズが可視領域のDisplayサイズより小さい＝スクロールが可能
+							//スクロール可能な最大値は、可視領域の最大からビューポートのサイズを引いた値となる
 							var actualPoint = StageUtil.clamp(desiredDisplayPoint, dispVisibleMin,
-									dispVisibleMin + dispScrollableSize);
+									dispVisibleMax - dispViewportSize);
 							return actualPoint;
 						},
 
@@ -5840,16 +5840,20 @@
 							var cconv = this.coordinateConverter;
 
 							var visibleRangeX = this.getVisibleRangeX();
-							var dispLeft = cconv.toDisplayXLength(visibleRangeX.left);
-							var dispRight = cconv.toDisplayXLength(visibleRangeX.right);
+							var dispLeft = visibleRangeX.left == null ? -Infinity : cconv
+									.toDisplayXLength(visibleRangeX.left);
+							var dispRight = visibleRangeX.right == null ? Infinity : cconv
+									.toDisplayXLength(visibleRangeX.right);
 
 							var actualDispX = this._getActualScrollPoint(false, dispX, this
 									.getVisibleWidthOfDisplay(), this._viewport.displayWidth,
 									dispLeft, dispRight);
 
 							var visibleRangeY = this.getVisibleRangeY();
-							var dispTop = cconv.toDisplayYLength(visibleRangeY.top);
-							var dispBottom = cconv.toDisplayYLength(visibleRangeY.bottom);
+							var dispTop = visibleRangeY.top == null ? -Infinity : cconv
+									.toDisplayYLength(visibleRangeY.top);
+							var dispBottom = visibleRangeY.bottom == null ? Infinity : cconv
+									.toDisplayYLength(visibleRangeY.bottom);
 
 							var actualDispY = this._getActualScrollPoint(true, dispY, this
 									.getVisibleHeightOfDisplay(), this._viewport.displayHeight,
@@ -6015,15 +6019,19 @@
 							var cconv = this.coordinateConverter;
 
 							var visibleRangeX = this.getVisibleRangeX();
-							var dispLeft = cconv.toDisplayXLength(visibleRangeX.left);
-							var dispRight = cconv.toDisplayXLength(visibleRangeX.right);
+							var dispLeft = visibleRangeX.left == null ? -Infinity : cconv
+									.toDisplayXLength(visibleRangeX.left);
+							var dispRight = visibleRangeX.right == null ? Infinity : cconv
+									.toDisplayXLength(visibleRangeX.right);
 							var actualScrollX = this._getActualScrollPoint(false,
 									this._viewport.displayX, this.getVisibleWidthOfDisplay(),
 									this._viewport.displayWidth, dispLeft, dispRight);
 
 							var visibleRangeY = this.getVisibleRangeY();
-							var dispTop = cconv.toDisplayYLength(visibleRangeY.top);
-							var dispBottom = cconv.toDisplayYLength(visibleRangeY.bottom);
+							var dispTop = visibleRangeY.top == null ? -Infinity : cconv
+									.toDisplayYLength(visibleRangeY.top);
+							var dispBottom = visibleRangeY.bottom == null ? Infinity : cconv
+									.toDisplayYLength(visibleRangeY.bottom);
 							var actualScrollY = this._getActualScrollPoint(true,
 									this._viewport.displayY, this.getVisibleHeightOfDisplay(),
 									this._viewport.displayHeight, dispTop, dispBottom);
