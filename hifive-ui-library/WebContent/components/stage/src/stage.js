@@ -4775,20 +4775,52 @@
 					return point;
 				},
 
-				getXLengthOfWorld: function(displayXLength) {
-					return displayXLength / this._scaleX;
+				getXLengthOfWorld: function(displayX1, displayX0) {
+					if (displayX0 == null) {
+						displayX0 = 0;
+					}
+					var ret = Math.abs((displayX1 - displayX0) / this._scaleX);
+					return ret;
 				},
 
-				getYLengthOfWorld: function(displayYLength) {
-					return displayYLength / this._scaleY;
+				getYLengthOfWorld: function(displayY1, displayY0) {
+					if (displayY0 == null) {
+						displayY0 = 0;
+					}
+					var ret = Math.abs((displayY1 - displayY0) / this._scaleY);
+					return ret;
 				},
 
-				getXLengthOfDisplay: function(worldXLength) {
-					return worldXLength * this._scaleX;
+				getXLengthOfDisplay: function(worldX1, worldX0) {
+					if (worldX0 == null) {
+						worldX0 = 0;
+					}
+					var ret = Math.abs((worldX1 - worldX0) * this._scaleX);
+					return ret;
 				},
 
-				getYLengthOfDisplay: function(worldYLength) {
-					return worldYLength * this._scaleY;
+				getYLengthOfDisplay: function(worldY1, worldY0) {
+					if (worldY0 == null) {
+						worldY0 = 0;
+					}
+					var ret = Math.abs((worldY1 - worldY0) * this._scaleY);
+					return ret;
+				},
+
+				toWorldX: function(displayX) {
+					return displayX / this._scaleX;
+				},
+
+				toWorldY: function(displayY) {
+					return displayY / this._scaleY;
+				},
+
+				toDisplayX: function(worldX) {
+					return worldX * this._scaleX;
+				},
+
+				toDisplayY: function(worldY) {
+					return worldY * this._scaleY;
 				},
 
 				getWorldPosition: function(displayX, displayY) {
@@ -4906,12 +4938,23 @@
 					}
 					return this._viewport.getWorldPosition(x, y);
 				},
-				toWorldXLength: function(displayXLength) {
-					return this._viewport.getXLengthOfWorld(displayXLength);
+
+				toWorldXLength: function(displayX1, displayX0) {
+					return this._viewport.getXLengthOfWorld(displayX1, displayX0);
 				},
-				toWorldYLength: function(displayYLength) {
-					return this._viewport.getYLengthOfWorld(displayYLength);
+
+				toWorldYLength: function(displayY1, displayY0) {
+					return this._viewport.getYLengthOfWorld(displayY1, displayY0);
 				},
+
+				toWorldX: function(displayX) {
+					return this._viewport.toWorldX(displayX);
+				},
+
+				toWorldY: function(displayY) {
+					return this._viewport.toWorldY(displayY);
+				},
+
 				toDisplayPosition: function(worldX, worldY) {
 					var x;
 					var y;
@@ -4924,11 +4967,19 @@
 					}
 					return this._viewport.getDisplayPosition(x, y);
 				},
-				toDisplayXLength: function(worldXLength) {
-					return this._viewport.getXLengthOfDisplay(worldXLength);
+				toDisplayXLength: function(worldX1, worldX0) {
+					return this._viewport.getXLengthOfDisplay(worldX1, worldX0);
 				},
-				toDisplayYLength: function(worldYLength) {
-					return this._viewport.getYLengthOfDisplay(worldYLength);
+				toDisplayYLength: function(worldY1, worldY0) {
+					return this._viewport.getYLengthOfDisplay(worldY1, worldY0);
+				},
+
+				toDisplayX: function(worldX) {
+					return this._viewport.toDisplayX(worldX);
+				},
+
+				toDisplayY: function(worldY) {
+					return this._viewport.toDisplayY(worldY);
 				}
 			}
 		};
