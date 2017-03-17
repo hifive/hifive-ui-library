@@ -8396,6 +8396,11 @@
 										row.getViewAll().forEach(function(v) {
 											v.y = totalY;
 											v._setHeight(actualHeight);
+											//高さが変更されたので、ビューポートのサイズが
+											//VisibleRangeより大きくなる可能性があるので
+											//現在と同じ位置にスクロールを実行してVisibleRange制約を満たす位置にスクロールさせる。
+											//(VisibleRangeの制約を満たしていれば今まで通りの位置のままのはず）
+											v.scrollTo(v.viewport.displayX, v.viewport.displayY);
 										});
 
 										row._desiredHeight = actualHeight;
@@ -8477,10 +8482,18 @@
 													actualWidth = 0;
 												}
 
-												column.getViewAll().forEach(function(v) {
-													v.x = totalX;
-													v._setWidth(actualWidth);
-												});
+												column.getViewAll().forEach(
+														function(v) {
+															v.x = totalX;
+															v._setWidth(actualWidth);
+
+															//幅が変更されたので、ビューポートのサイズが
+															//VisibleRangeより大きくなる可能性がある。
+															//現在と同じ位置にスクロールを実行してVisibleRange制約を満たす位置にスクロールさせる。
+															//(VisibleRangeの制約を満たしていれば今まで通りの位置のままのはず）
+															v.scrollTo(v.viewport.displayX,
+																	v.viewport.displayY);
+														});
 
 												column._desiredWidth = actualWidth;
 
