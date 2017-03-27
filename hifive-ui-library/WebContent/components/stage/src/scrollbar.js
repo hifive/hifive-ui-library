@@ -3803,6 +3803,11 @@
 	var SCROLL_BAR_PRESS_SCROLL_AREA_DIFF = 120;
 	var SCROLL_EVENT_NAME = 'h5scroll';
 
+	var DISPLAY_MODE_NONE = 0;
+	var DISPLAY_MODE_INVISIBLE = 1;
+	var DISPLAY_MODE_AUTO = 2;
+	var DISPLAY_MODE_ALWAYS = 3;
+
 	// =============================
 	// ScrollBarController
 	// =============================
@@ -3821,6 +3826,8 @@
 		__construct: function() {
 			var firstWait = SCROLL_BAR_REPEAT_FIRST_WAIT;
 			var interval = SCROLL_BAR_REPEAT_INTERVAL;
+
+			this._displayMode = DISPLAY_MODE_AUTO;
 
 			//トラック部がクリックされたときの移動量を初期化
 			//UpとDownは個別に設定できるのでそれぞれ初期化
@@ -4073,6 +4080,11 @@
 			this._downTrackScrollAmount = value;
 		},
 
+		setDisplayMode: function(displayMode) {
+			this._displayMode = displayMode;
+			this._updateDisplayState();
+		},
+
 		// --- Event Handler --- //
 
 		'.scrollBarArrowUp h5trackstart': function(context, $el) {
@@ -4144,6 +4156,16 @@
 		},
 
 		'.scrollBarScrollArea h5trackstart': function(context, $el) {
+			if (!this._isActuallyScrollable()) {
+				//スクロールバーの表示モードがALWAYSかつスクロール不能な状態のとき、
+				//矢印はdisabledでクリックをキャンセルしており、
+				//サム(knob)は非表示になっているので
+				//トラック部分のイベントをキャンセルすればよい
+				return;
+			}
+
+			this._isScrollTrackPressing = true;
+
 			this._areaTop = $el.offset().top;
 			this._areaTrackPos = context.event.pageY - this._areaTop;
 
@@ -4155,10 +4177,16 @@
 		},
 
 		'.scrollBarScrollArea h5trackmove': function(context) {
+			if (!this._isScrollTrackPressing) {
+				return;
+			}
+
 			this._areaTrackPos = context.event.pageY - this._areaTop;
 		},
 
 		'.scrollBarScrollArea h5trackend': function() {
+			this._isScrollTrackPressing = false;
+
 			this._areaTop = null;
 			this._areaTrackPos = null;
 
@@ -4167,6 +4195,10 @@
 		},
 
 		// --- Private Property --- //
+
+		_displayMode: null,
+
+		_isScrollTrackPressing: false,
 
 		_displaySize: 0,
 
@@ -4241,14 +4273,53 @@
 				height: knobSize
 			});
 
-			var $root = $(this.rootElement);
-			var visibility = (this._scrollSize <= 1) ? 'hidden' : 'visible';
-
-			$root.css({
-				visibility: visibility
-			});
+			this._updateDisplayState();
 
 			this._moveKnob(this._position);
+		},
+
+		_isActuallyScrollable: function() {
+			return this._scrollSize >= 1;
+		},
+
+		_updateDisplayState: function() {
+			var $root = this.$find('.' + SCROLL_BAR_BASE_CLASS);
+
+			var isActuallyScrollable = this._isActuallyScrollable();
+
+			switch (this._displayMode) {
+			case DISPLAY_MODE_NONE:
+				$root.css('display', 'none');
+				break;
+			case DISPLAY_MODE_INVISIBLE:
+				$root.css('visibility', 'hidden');
+				break;
+			case DISPLAY_MODE_ALWAYS:
+				$root.css({
+					display: 'block',
+					visibility: 'visible'
+				});
+
+				if (isActuallyScrollable) {
+					$root.removeClass('disabled');
+				} else {
+					$root.addClass('disabled');
+				}
+
+				break;
+			case DISPLAY_MODE_AUTO:
+			default:
+				if (isActuallyScrollable) {
+					$root.css({
+						display: 'block',
+						visibility: 'visible'
+					});
+				} else {
+					$root.css('display', 'none');
+				}
+
+				break;
+			}
 		}
 	};
 
@@ -4266,6 +4337,8 @@
 		__construct: function() {
 			var firstWait = SCROLL_BAR_REPEAT_FIRST_WAIT;
 			var interval = SCROLL_BAR_REPEAT_INTERVAL;
+
+			this._displayMode = DISPLAY_MODE_AUTO;
 
 			//Track部分をクリックされたときの移動量を初期化
 			//左右個別に設定できるのでそれぞれ初期化
@@ -4515,6 +4588,11 @@
 			this._rightTrackScrollAmount = value;
 		},
 
+		setDisplayMode: function(displayMode) {
+			this._displayMode = displayMode;
+			this._updateDisplayState();
+		},
+
 		// --- Event Handler --- //
 
 		'.scrollBarArrowLeft h5trackstart': function(context, $el) {
@@ -4586,6 +4664,16 @@
 		},
 
 		'.scrollBarScrollArea h5trackstart': function(context, $el) {
+			if (!this._isActuallyScrollable()) {
+				//スクロールバーの表示モードがALWAYSかつスクロール不能な状態のとき、
+				//矢印はdisabledでクリックをキャンセルしており、
+				//サム(knob)は非表示になっているので
+				//トラック部分のイベントをキャンセルすればよい
+				return;
+			}
+
+			this._isScrollTrackPressing = true;
+
 			this._areaLeft = $el.offset().left;
 			this._areaTrackPos = context.event.pageX - this._areaLeft;
 
@@ -4597,10 +4685,16 @@
 		},
 
 		'.scrollBarScrollArea h5trackmove': function(context) {
+			if (!this._isScrollTrackPressing) {
+				return;
+			}
+
 			this._areaTrackPos = context.event.pageX - this._areaLeft;
 		},
 
 		'.scrollBarScrollArea h5trackend': function() {
+			this._isScrollTrackPressing = false;
+
 			this._areaLeft = null;
 			this._areaTrackPos = null;
 
@@ -4609,6 +4703,10 @@
 		},
 
 		// --- Private Property --- //
+
+		_displayMode: null,
+
+		_isScrollTrackPressing: false,
 
 		_displaySize: 0,
 
@@ -4689,14 +4787,53 @@
 				width: knobSize
 			});
 
-			var $root = $(this.rootElement);
-			var visibility = (this._scrollSize <= 1) ? 'hidden' : 'visible';
-
-			$root.css({
-				visibility: visibility
-			});
+			this._updateDisplayState();
 
 			this._moveKnob(this._position);
+		},
+
+		_isActuallyScrollable: function() {
+			return this._scrollSize >= 1;
+		},
+
+		_updateDisplayState: function() {
+			var $root = this.$find('.' + SCROLL_BAR_BASE_CLASS);
+
+			var isActuallyScrollable = this._isActuallyScrollable();
+
+			switch (this._displayMode) {
+			case DISPLAY_MODE_NONE:
+				$root.css('display', 'none');
+				break;
+			case DISPLAY_MODE_INVISIBLE:
+				$root.css('visibility', 'hidden');
+				break;
+			case DISPLAY_MODE_ALWAYS:
+				$root.css({
+					display: 'block',
+					visibility: 'visible'
+				});
+
+				if (isActuallyScrollable) {
+					$root.removeClass('disabled');
+				} else {
+					$root.addClass('disabled');
+				}
+
+				break;
+			case DISPLAY_MODE_AUTO:
+			default:
+				if (isActuallyScrollable) {
+					$root.css({
+						display: 'block',
+						visibility: 'visible'
+					});
+				} else {
+					$root.css('display', 'none');
+				}
+
+				break;
+			}
 		}
 	};
 

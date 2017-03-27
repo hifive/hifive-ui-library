@@ -6883,6 +6883,8 @@
 	var GRID_TYPE_CONTENTS = 'contents';
 	var GRID_TYPE_SEPARATOR = 'separator';
 
+	var SCROLL_BAR_DISPLAY_MODE_ALWAYS = 3;
+
 	var StageGridRow = RootClass
 			.extend(function(super_) {
 				var desc = {
@@ -7160,6 +7162,8 @@
 								this.setBarSize(rightmostView.height);
 								that._updateScrollBarLogicalValues();
 							});
+
+							controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
 
 							this._scrollBarController = controller;
 
@@ -7529,6 +7533,9 @@
 								this.setBarSize(bottommostView.width);
 								that._updateScrollBarLogicalValues();
 							});
+
+							this._scrollBarController
+									.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
 
 							$root.appendTo(this._viewCollection._stage.rootElement);
 						},
@@ -9756,8 +9763,8 @@
 		/**
 		 * @private
 		 */
-		_isScrollBarEvent: function(context, $el) {
-			var $scrollbar = $(context.event.target).closest('.h5-stage-scrollbar');
+		_isScrollBarEvent: function(eventTarget) {
+			var $scrollbar = $(eventTarget).closest('.h5-stage-scrollbar');
 
 			var dom = $scrollbar[0];
 
@@ -9848,7 +9855,7 @@
 		},
 
 		'{rootElement} mousedown': function(context, $el) {
-			if (this._isScrollBarEvent(context, $el)) {
+			if (this._isScrollBarEvent(context.event.target)) {
 				//スクロールバー操作については直接関知しない
 				return;
 			}
@@ -10537,11 +10544,11 @@
 			this._disposeDragSession();
 		},
 
-		'{rootElement} click': function(context) {
+		'.h5-stage-view-root click': function(context) {
 			this._processClick(context.event, EVENT_DU_CLICK);
 		},
 
-		'{rootElement} dblclick': function(context) {
+		'.h5-stage-view-root dblclick': function(context) {
 			if (this._isDblclickEmulationEnabled) {
 				//ダブルクリックのエミュレーションが有効な場合は
 				//ネイティブのdblclickイベントは無視する
@@ -10551,7 +10558,7 @@
 			this._processClick(context.event, EVENT_DU_DBLCLICK);
 		},
 
-		'{rootElement} contextmenu': function(context) {
+		'.h5-stage-view-root contextmenu': function(context) {
 			var du = this._getIncludingDisplayUnit(context.event.target);
 
 			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避

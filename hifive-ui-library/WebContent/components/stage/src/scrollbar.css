@@ -32,6 +32,7 @@
 	background-color: #888;
 }
 
+.scrollBar.disabled .scrollBarArrow,
 .scrollBarArrow.disabled {
 	background-color: #EEE;
 }
@@ -50,6 +51,10 @@
 
 .scrollBarArrow.disabled>.scrollBarArrowIcon {
 	border-color: #CCC;
+}
+
+.scrollBar.disabled .scrollBarKnob {
+	display:none;
 }
 
 .scrollBarKnob {
