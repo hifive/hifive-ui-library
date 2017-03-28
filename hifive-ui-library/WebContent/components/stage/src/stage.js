@@ -2390,8 +2390,8 @@
 							}
 
 							var view = this._rootStage._getActiveView();
-							var wx = view._viewport.getXLengthOfWorld(x);
-							var wy = view._viewport.getYLengthOfWorld(y);
+							var wx = view._viewport.toWorldX(x);
+							var wy = view._viewport.toWorldY(y);
 							this.moveBy(wx, wy);
 						},
 
@@ -5892,9 +5892,9 @@
 
 							var visibleRangeX = this.getVisibleRangeX();
 							var dispLeft = visibleRangeX.left == null ? -Infinity : cconv
-									.toDisplayXLength(visibleRangeX.left);
+									.toDisplayX(visibleRangeX.left);
 							var dispRight = visibleRangeX.right == null ? Infinity : cconv
-									.toDisplayXLength(visibleRangeX.right);
+									.toDisplayX(visibleRangeX.right);
 
 							var actualDispX = this._getActualScrollPoint(false, dispX, this
 									.getVisibleWidthOfDisplay(), this._viewport.displayWidth,
@@ -5902,9 +5902,9 @@
 
 							var visibleRangeY = this.getVisibleRangeY();
 							var dispTop = visibleRangeY.top == null ? -Infinity : cconv
-									.toDisplayYLength(visibleRangeY.top);
+									.toDisplayY(visibleRangeY.top);
 							var dispBottom = visibleRangeY.bottom == null ? Infinity : cconv
-									.toDisplayYLength(visibleRangeY.bottom);
+									.toDisplayY(visibleRangeY.bottom);
 
 							var actualDispY = this._getActualScrollPoint(true, dispY, this
 									.getVisibleHeightOfDisplay(), this._viewport.displayHeight,
@@ -6071,18 +6071,18 @@
 
 							var visibleRangeX = this.getVisibleRangeX();
 							var dispLeft = visibleRangeX.left == null ? -Infinity : cconv
-									.toDisplayXLength(visibleRangeX.left);
+									.toDisplayX(visibleRangeX.left);
 							var dispRight = visibleRangeX.right == null ? Infinity : cconv
-									.toDisplayXLength(visibleRangeX.right);
+									.toDisplayX(visibleRangeX.right);
 							var actualScrollX = this._getActualScrollPoint(false,
 									this._viewport.displayX, this.getVisibleWidthOfDisplay(),
 									this._viewport.displayWidth, dispLeft, dispRight);
 
 							var visibleRangeY = this.getVisibleRangeY();
 							var dispTop = visibleRangeY.top == null ? -Infinity : cconv
-									.toDisplayYLength(visibleRangeY.top);
+									.toDisplayY(visibleRangeY.top);
 							var dispBottom = visibleRangeY.bottom == null ? Infinity : cconv
-									.toDisplayYLength(visibleRangeY.bottom);
+									.toDisplayY(visibleRangeY.bottom);
 							var actualScrollY = this._getActualScrollPoint(true,
 									this._viewport.displayY, this.getVisibleHeightOfDisplay(),
 									this._viewport.displayHeight, dispTop, dispBottom);
@@ -7133,7 +7133,7 @@
 
 							this._scrollBarController.setBarSize(height);
 
-							var worldHeight = leftmostView._viewport.getYLengthOfWorld(height);
+							var worldHeight = leftmostView._viewport.toWorldY(height);
 
 							var worldAmount = Math.abs(this._visibleRangeY.bottom
 									- this._visibleRangeY.top);
@@ -7389,7 +7389,7 @@
 							if (!this._isVisibleRangeFinite()) {
 								return Infinity;
 							}
-							var ret = this.getView(0).coordinateConverter.toDisplayYLength(this
+							var ret = this.getView(0).coordinateConverter.toDisplayXLength(this
 									.getVisibleWidth());
 							return ret;
 						},
@@ -7496,7 +7496,7 @@
 
 							var worldVisibleXLen = Math.abs(this._visibleRangeX.right
 									- this._visibleRangeX.left);
-							var worldWidth = topmostView._viewport.getXLengthOfWorld(width);
+							var worldWidth = topmostView._viewport.toWorldX(width);
 
 							this._scrollBarController.setScrollSize(worldWidth, worldVisibleXLen
 									- worldWidth);
@@ -9077,8 +9077,8 @@
 		getDisplayUnitsInRect: function(displayX, displayY, displayWidth, displayHeight,
 				isSelectableOnly) {
 			var wtl = this._getActiveView()._viewport.getWorldPosition(displayX, displayY);
-			var ww = this._getActiveView()._viewport.getXLengthOfWorld(displayWidth);
-			var wh = this._getActiveView()._viewport.getYLengthOfWorld(displayHeight);
+			var ww = this._getActiveView()._viewport.toWorldX(displayWidth);
+			var wh = this._getActiveView()._viewport.toWorldY(displayHeight);
 
 			//ワールド座標系のRectに直す
 			var wRect = Rect.create(wtl.x, wtl.y, ww, wh);
@@ -9820,7 +9820,7 @@
 
 				//ここではnewPosはワールド座標
 				var scrY = row._getViewportYFromScrollBarPosition(newPos);
-				var scrDispY = row.getView(0)._viewport.getYLengthOfDisplay(scrY);
+				var scrDispY = row.getView(0)._viewport.toDisplayY(scrY);
 				//setScrollYに渡す座標はディスプレイ座標
 				row.setScrollY(scrDispY);
 			} else {
@@ -9847,7 +9847,7 @@
 
 				//ここではnewPosはワールド座標
 				var scrX = col._getViewportXFromScrollBarPosition(newPos);
-				var scrDispX = col.getView(0)._viewport.getXLengthOfDisplay(scrX);
+				var scrDispX = col.getView(0)._viewport.toDisplayX(scrX);
 				col.setScrollX(scrDispX);
 			}
 
@@ -10106,8 +10106,8 @@
 			var activeView = this._getActiveView();
 
 			var worldPos = activeView._viewport.getWorldPosition(dispActualX, dispActualY);
-			var ww = activeView._viewport.getXLengthOfWorld(dispW);
-			var wh = activeView._viewport.getYLengthOfWorld(dispH);
+			var ww = activeView._viewport.toWorldX(dispW);
+			var wh = activeView._viewport.toWorldY(dispH);
 
 			this._viewCollection.__onSelectDUMove(worldPos, ww, wh);
 		},
@@ -10180,8 +10180,8 @@
 
 				var worldPos = this._getActiveView()._viewport.getWorldPosition(
 						lastDragPos.dispActualX, lastDragPos.dispActualY);
-				var ww = this._getActiveView()._viewport.getXLengthOfWorld(lastDragPos.dispW);
-				var wh = this._getActiveView()._viewport.getYLengthOfWorld(lastDragPos.dispH);
+				var ww = this._getActiveView()._viewport.toWorldX(lastDragPos.dispW);
+				var wh = this._getActiveView()._viewport.toWorldY(lastDragPos.dispH);
 
 				var dispRect = Rect.create(lastDragPos.dispActualX, lastDragPos.dispActualY,
 						lastDragPos.dispW, lastDragPos.dispH);
