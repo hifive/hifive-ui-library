@@ -5749,8 +5749,7 @@
 									display: ''
 								});
 
-								//強制的に元のDUをisVisible = falseにするため
-								//元のisVisibleを覚えておく
+								//DUに対応する、ドラッグ中のみ表示する表層コピーエレメントをマップに保存
 								that._dragTargetDUInfoMap.set(du, element);
 
 								var gpos = du.getWorldGlobalPosition();
@@ -5777,16 +5776,7 @@
 						 * @private
 						 */
 						__onDragDUMove: function(dragSession) {
-							this._dragTargetDUInfoMap.forEach(function(element, du) {
-								var gpos = du.getWorldGlobalPosition();
-								//TODO rAFで遅延させる
-								SvgUtil.setAttributes(element, {
-									x: gpos.x,
-									y: gpos.y
-								});
-							});
-
-							this.update();
+						//Moveの処理はdoUpdateの中で汎用に行うようになったため、ここでの移動処理は不要
 						},
 
 						/**
@@ -6515,6 +6505,22 @@
 								var elem = that._domManager.getElement(du);
 								if (elem) {
 									du.__updateDOM(that, elem, updateReasonSet);
+								}
+
+								//ドラッグ中の場合、DU相当の表層コピーエレメントもアップデートする
+								if (that._dragTargetDUInfoMap) {
+									var foreElem = that._dragTargetDUInfoMap.get(du);
+									if (foreElem) {
+										//通常のDOMと同様に再描画してもらう。ここで、DUのサイズや位置も変更される
+										du.__updateDOM(that, foreElem, updateReasonSet);
+
+										//ただし、位置だけは必ずグローバルポジションに上書きする
+										var gpos = du.getWorldGlobalPosition();
+										SvgUtil.setAttributes(foreElem, {
+											x: gpos.x,
+											y: gpos.y
+										});
+									}
 								}
 							});
 							dirtyMap.clear();
