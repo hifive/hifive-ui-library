@@ -5671,7 +5671,13 @@
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
 
 								//現時点で存在するレイヤー内のDUを描画
-								this._duRenderStandbyMap.set(layer, layer);
+								//レイヤー要素はビューのルート要素として先に生成しているため
+								//スタンバイマップには入れない
+								//（入れてしまうと「このDUに対応するDOMを既に持っているか」という判定がtrueになり
+								//renderDisplayUnit()内の処理が不正になる）
+								layer.getDisplayUnitAll().forEach(function(du) {
+									that._duRenderStandbyMap.set(du, du);
+								});
 								this.update();
 
 								//先にaddしたレイヤーの方が手前に来るようにする
@@ -6616,8 +6622,13 @@
 							}
 
 							if (!this._shouldRender(du, renderRect)) {
-								//今はまだ描画すべきでない場合は何もしない
-								//（duRenderStandbyMapに入ったままになる）
+								//今はまだ描画すべきでない場合は何もしない。
+								//duRenderStandbyMapに入れておく。
+								//（現在の実装では、parent-firstでDUを走査し
+								//DOM要素を生成していかないといけないので
+								//このrenderDU()メソッドで操作するタイミングで
+								//スタンバイマップの追加・削除を制御する必要がある。）
+								this._duRenderStandbyMap.set(du, du);
 								return;
 							}
 
@@ -6712,12 +6723,21 @@
 
 							var dom = this._domManager.getElement(du);
 
+							var reason = event.reason;
+
 							if (!dom) {
-								//対応するDOMが存在しない
+								//対応するDOMが存在しない場合は基本的にはDOMの更新は不要なので何もしない
+
+								if (reason.isVisibilityChanged && du.isVisible) {
+									//ただし、isVisibleがfalse⇒trueになった場合、
+									//それまで描画対象でなかった(スタンバイリストに入っていた)DUが
+									//新規に描画対象になる(可能性がある)ので
+									//ビューのアップデートを予約する
+									this.update();
+								}
+
 								return;
 							}
-
-							var reason = event.reason;
 
 							//もしreasonでZIndexChangedだったら
 							//親コンテナでzIndex制約を満たすようにDOMの位置を差し替える。
