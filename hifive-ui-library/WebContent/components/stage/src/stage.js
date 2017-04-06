@@ -5379,8 +5379,6 @@
 						 */
 						_renderRect: null,
 
-						_layerElementMap: null,
-
 						_isUpdateTransformReserved: null,
 
 						_scaleRangeX: null,
@@ -5536,8 +5534,6 @@
 
 							this._duRenderStandbyMap = new Map();
 
-							this._layerElementMap = new Map();
-
 							this._layerDefsMap = new Map();
 
 							this._isUpdateTransformReserved = false;
@@ -5647,7 +5643,9 @@
 								var layer = layers[i];
 
 								var layerRootElement = layer.__createRootElement(this);
-								this._layerElementMap.set(layer, layerRootElement);
+
+								//レイヤーと対応する要素をDOMマネージャに登録
+								this._domManager.add(layer, layerRootElement, true);
 
 								//SVGのwidth, heightはSVGAttirubute
 								//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
@@ -5671,9 +5669,6 @@
 								layer.addEventListener('displayUnitAdd', this._duAddListener);
 								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
-
-								//レイヤーと対応する要素をDOMマネージャに登録
-								this._domManager.add(layer, layerRootElement, true);
 
 								//現時点で存在するレイヤー内のDUを描画
 								this._duRenderStandbyMap.set(layer, layer);
@@ -5810,7 +5805,6 @@
 												that._duDirtyListener);
 							});
 
-							this._layerElementMap.clear();
 							this._layerDefsMap.clear();
 
 							this._duRenderStandbyMap.clear();
@@ -6203,7 +6197,7 @@
 							var defs = this._layerDefsMap.get(layer);
 
 							if (!defs) {
-								var layerElement = this._layerElementMap.get(layer);
+								var layerElement = this._domManager.getElement(layer);
 								var element = document.createElementNS(
 										'http://www.w3.org/2000/svg', 'defs');
 								layerElement.appendChild(element);
@@ -6213,16 +6207,6 @@
 							}
 
 							return defs;
-						},
-
-						/**
-						 * @private
-						 * @param layer
-						 * @returns
-						 */
-						_getElementForLayer: function(layer) {
-							var elem = this._layerElementMap.get(layer);
-							return elem;
 						},
 
 						getElementForDisplayUnit: function(displayUnit) {
@@ -6297,7 +6281,8 @@
 									break;
 								}
 
-								var dom = this._layerElementMap.get(layer);
+								var dom = this._domManager.getElement(layer);
+
 								//scrollXYはビューポートの位置なので、
 								//レイヤーのtranslateにセットする値としては符号を逆にする
 								this._updateTransform(dom, -scrollX, -scrollY);
