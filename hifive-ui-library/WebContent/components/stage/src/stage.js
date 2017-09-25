@@ -2093,6 +2093,8 @@
 
 						_belongingLayer: null,
 
+						_isOnSvgLayer: null,
+
 						/**
 						 * この要素を現在選択可能かどうか
 						 */
@@ -2271,6 +2273,7 @@
 							this._groupTag = SimpleSet.create();
 
 							this._belongingLayer = null;
+							this._isOnSvgLayer = false;
 						},
 
 						setRect: function(rect) {
@@ -2527,6 +2530,9 @@
 							this._rootStage = stage;
 							this._belongingLayer = belongingLayer;
 
+							//キャッシュ：SVGレイヤーの子孫要素かどうか。onRemovedでfalseにする
+							this._isOnSvgLayer = belongingLayer.type === 'svg';
+
 							var event = Event.create('addToStage');
 							this.dispatchEvent(event);
 						},
@@ -2537,6 +2543,7 @@
 						_onRemovedFromStage: function() {
 							this._rootStage = null;
 							this._belongingLayer = null;
+							this._isOnSvgLayer = false;
 
 							var event = Event.create('removeFromStage');
 							this.dispatchEvent(event);
@@ -2594,14 +2601,36 @@
 							}
 
 							if (reason.isInitialRender || reason.isPositionChanged) {
+								this._updatePosition(element);
+							}
+
+							if (reason.isInitialRender || reason.isSizeChanged) {
+								this._updateSize(element);
+							}
+						},
+
+						_updatePosition: function(element) {
+							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
 									x: this.x,
 									y: this.y
 								});
+							} else {
+								$(element).css({
+									left: this.x,
+									top: this.y
+								});
 							}
+						},
 
-							if (reason.isInitialRender || reason.isSizeChanged) {
+						_updateSize: function(element) {
+							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
+									width: this.width,
+									height: this.height
+								});
+							} else {
+								$(element).css({
 									width: this.width,
 									height: this.height
 								});
@@ -2897,6 +2926,13 @@
 				 * @overrides オーバーライド
 				 */
 				__renderDOM: function(view) {
+					if (this._isOnSvgLayer) {
+						return this._renderRootSvg(view);
+					}
+					return this._renderRootDiv(view);
+				},
+
+				_renderRootSvg: function(view) {
 					var root = createSvgElement('svg');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
 					root.setAttribute('data-h5-dyn-du-id', this.id);
@@ -2904,6 +2940,22 @@
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
 					this.__updateDOM(view, root, reason);
+
+					return root;
+				},
+
+				_renderRootDiv: function(view) {
+					var root = document.createElement('div');
+					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
+					root.setAttribute('data-h5-dyn-du-id', this.id);
+
+					//任意の位置に配置できるようにする
+					root.style.position = 'absolute';
+
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					this.__updateDOM(view, root, reason);
+
 					return root;
 				},
 
@@ -2931,11 +2983,13 @@
 						reason: reason
 					};
 
-					var graphics = this.__createGraphics(view, root);
+					//TODO 一旦、graphicsはSVGの場合のみ生成。
+					//DIVレイヤーの場合はnullとする
+					var graphics = this._isOnSvgLayer ? this.__createGraphics(view, root) : null;
 
 					this._renderer(context, graphics);
 
-					if (graphics.isDirty) {
+					if (graphics != null && graphics.isDirty) {
 						graphics.render();
 					}
 				}
@@ -3414,6 +3468,11 @@
 						 * @returns
 						 */
 						__renderDOM: function(view) {
+							if (!this._isOnSvgLayer) {
+								//TODO 将来的にはEdgeをDIVレイヤーにも配置できるようにする？
+								throw new Error('EdgeはSVGレイヤーにのみ配置可能です。');
+							}
+
 							var rootSvg = createSvgElement('line');
 							rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
 							rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
@@ -4051,11 +4110,19 @@
 				 * @private
 				 */
 				_updateTransform: function(element) {
-					var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-							this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
 
-					//直下のgタグに対してtransformをかける
-					element.firstChild.setAttribute('transform', transform);
+					if (this._isOnSvgLayer) {
+						//SVGレイヤーにいる場合は直下のgタグに対してtransformをかける
+						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+								this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
+						element.firstChild.setAttribute('transform', transform);
+					} else {
+						//DIVレイヤーにいる場合は自分自身に対してtransformをかける
+						//注：CSS Transformの場合、translateは"px"は必須。付けないと平行移動しない。
+						element.style.transform = h5.u.str.format(
+								'scale({0},{1}) translate({2}px,{3}px)', this._scaleX,
+								this._scaleY, -this._scrollX, -this._scrollY);
+					}
 				},
 
 				/**
@@ -4085,31 +4152,58 @@
 				 * @private
 				 */
 				__renderDOM: function(view) {
-					var rootSvg = createSvgElement('svg');
-					rootSvg.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
-					rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
+					var root = null;
+
+					if (this._isOnSvgLayer) {
+						root = this._renderDOMSvg(view);
+					} else {
+						root = this._renderDOMDiv(view);
+					}
 
 					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
 					//width, heightの指定との整合性について検討
-					rootSvg.style.overflow = "visible";
+					root.style.overflow = "visible";
+
+					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
+					root.setAttribute('data-h5-dyn-du-id', this.id);
+
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					this.__updateDOM(view, root, reason);
+
+					return root;
+				},
+
+				_renderDOMSvg: function(view) {
+					var rootSvg = createSvgElement('svg');
 
 					//rootGは<g>要素。transformを一括してかけるため、
 					//子要素は全てこの<g>の下に追加する。
 					var rootG = createSvgElement('g');
 					rootSvg.appendChild(rootG);
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
-
-					this.__updateDOM(view, rootSvg, reason);
-
 					return rootSvg;
+				},
+
+				_renderDOMDiv: function(view) {
+					var root = document.createElement('div');
+
+					//コンテナ要素なので、これ自体が位置を指定できるようにする
+					root.style.position = 'absolute';
+
+					//DIV要素の場合、position:absoluteとtransformを同じ要素でかねられるので
+					//SVGの場合の<g>に相当する要素は作らない
+					return root;
 				},
 
 				/**
 				 * @private
 				 */
 				__getPracticalParentElement: function(containerRootElement) {
-					return containerRootElement.firstChild;
+					if (this._isOnSvgLayer) {
+						return containerRootElement.firstChild;
+					}
+					return containerRootElement;
 				},
 
 				/**
@@ -4154,15 +4248,34 @@
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
-				UIDragScreenScrollDirection: null
+				UIDragScreenScrollDirection: null,
+				_type: null
 			},
+
+			accessor: {
+				type: {
+					get: function() {
+						return this._type;
+					}
+				}
+			},
+
 			method: {
 				/**
 				 * @constructor
 				 * @memberOf h5.ui.components.stage.Layer
 				 */
-				constructor: function Layer(id, stage) {
+				constructor: function Layer(id, stage, type) {
 					super_.constructor.call(this);
+
+					if (type == null) {
+						throw new Error('レイヤーのtypeを"svg"または"div"どちらかで指定してください。');
+					}
+					this._type = type.toLowerCase() === 'svg' ? 'svg' : 'div';
+
+					//Layer自身はtrueとする。
+					//TODO DUContainerとのコード整理は可能か
+					this._isOnSvgLayer = (this._type === 'svg');
 
 					this.id = id;
 					this.UIDragScreenScrollDirection = ScrollDirection.XY;
@@ -4216,20 +4329,46 @@
 				 * @private
 				 */
 				__createRootElement: function(view) {
-					var rootSvg = createSvgElement('svg');
-					rootSvg.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
-					rootSvg.setAttribute('data-h5-dyn-du-id', this.id);
+					var rootElement = null;
 
-					//レイヤーはgをtransformしてスクロールを実現するので
-					//overflowはvisibleである必要がある
-					rootSvg.style.overflow = "visible";
+					if (this.type === 'svg') {
+						rootElement = createSvgElement('svg');
 
-					//rootGは<g>要素。transformを一括してかけるため、
-					//子要素は全てこの<g>の下に追加する。
-					var rootG = createSvgElement('g');
-					rootSvg.appendChild(rootG);
+						//レイヤーは直下の<g>をtransformしてスクロールを実現するので
+						//overflowはvisibleである必要がある
+						//<svg>はoverflow「属性」を持つのでそちらをセット
+						SvgUtil.setAttributes(rootElement, {
+							overflow: 'visible'
+						});
 
-					return rootSvg;
+						//rootGは<g>要素。transformを一括してかけるため、
+						//子要素は全てこの<g>の下に追加する。
+						var rootG = createSvgElement('g');
+						rootElement.appendChild(rootG);
+					} else {
+						rootElement = document.createElement('div');
+						rootElement.style.overflow = 'visible';
+					}
+
+					//SVGのwidth, heightはSVGAttirubute
+					//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
+					//DOMツリー上の子要素が直接クリックできるようにする。
+					//（そうしないとDUをクリックできない）
+					//IE11とFirefox50で確認。
+					//なお、Chromeの場合はoverflow:visibleにしてもサイズを0x0にすると
+					//描画されなくなるため1x1とする。
+					$(rootElement).css({
+						position: 'absolute',
+						margin: 0,
+						padding: 0,
+						width: 1,
+						height: 1
+					});
+
+					rootElement.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
+					rootElement.setAttribute('data-h5-dyn-du-id', this.id);
+
+					return rootElement;
 				},
 
 				/**
@@ -5370,6 +5509,8 @@
 						_foremostSvg: null,
 						_foremostSvgGroup: null,
 
+						_foremostDiv: null,
+
 						_viewport: null,
 
 						_viewportReadOnly: null,
@@ -5575,6 +5716,11 @@
 							this._stage.rootElement.appendChild(this._rootElement);
 						},
 
+						_initHiddenForemostRootElement: function() {
+							this._initForemostSvg();
+							this._initForemostDiv();
+						},
+
 						/**
 						 * @private
 						 */
@@ -5612,6 +5758,26 @@
 							this._rootElement.appendChild(foremostSvg);
 						},
 
+						_initForemostDiv: function() {
+							var foremostDiv = document.createElement('div');
+							foremostDiv.setAttribute('data-h5-dyn-stage-role', 'foremostDiv'); //TODO for debugging
+
+							//SVGのwidth, heightはSVGAttirubute
+							//Chromeの場合overflow:visibleにしてもサイズを0x0にすると
+							//描画されなくなるため1x1とする。
+							$(foremostDiv).css({
+								overflow: 'visible',
+								position: 'absolute',
+								margin: 0,
+								padding: 0
+							//								width: 1,
+							//								height: 1
+							});
+
+							this._foremostDiv = foremostDiv;
+							this._rootElement.appendChild(foremostDiv);
+						},
+
 						init: function() {
 							if (this._inInitialized) {
 								return;
@@ -5647,25 +5813,6 @@
 								//レイヤーと対応する要素をDOMマネージャに登録
 								this._domManager.add(layer, layerRootElement, true);
 
-								//SVGのwidth, heightはSVGAttirubute
-								//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
-								//DOMツリー上の子要素が直接クリックできるようにする。
-								//（そうしないとDUをクリックできない）
-								//IE11とFirefox50で確認。
-								//なお、Chromeの場合はoverflow:visibleにしてもサイズを0x0にすると
-								//描画されなくなるため1x1とする。
-								$(layerRootElement).css({
-									position: 'absolute',
-									margin: 0,
-									padding: 0,
-									width: 1,
-									height: 1
-								});
-
-								SvgUtil.setAttributes(layerRootElement, {
-									overflow: 'visible'
-								});
-
 								layer.addEventListener('displayUnitAdd', this._duAddListener);
 								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
 								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
@@ -5685,7 +5832,7 @@
 								this._rootElement.appendChild(layerRootElement);
 							}
 
-							this._initForemostSvg();
+							this._initHiddenForemostRootElement();
 
 							//ビューポートが既に移動している状態でinitされた場合に備え
 							//ここでレイヤーの位置をアップデート予約しておく（実際の更新はdoUpdate()のタイミングで行われる）
@@ -5744,9 +5891,10 @@
 							var that = this;
 							targetDUs.forEach(function(du) {
 								var element = du.__renderDOM(that);
+								var $element = $(element);
 								//isVisible=falseをすることでDOMにdisplay:noneがつくので
 								//強制的に解除
-								$(element).css({
+								$element.css({
 									display: ''
 								});
 
@@ -5755,15 +5903,27 @@
 
 								var gpos = du.getWorldGlobalPosition();
 
-								SvgUtil.setAttributes(element, {
-									x: gpos.x,
-									y: gpos.y,
-									width: du.width,
-									height: du.height,
-									'pointer-events': 'none'
-								});
-
-								that._foremostSvgGroup.appendChild(element);
+								if (du._isOnSvgLayer) {
+									//SVGレイヤーの場合はforemostSvgに追加
+									SvgUtil.setAttributes(element, {
+										x: gpos.x,
+										y: gpos.y,
+										width: du.width,
+										height: du.height,
+										'pointer-events': 'none'
+									});
+									that._foremostSvgGroup.appendChild(element);
+								} else {
+									//DIVレイヤーの場合はforemostDivに追加
+									$element.css({
+										x: gpos.x,
+										y: gpos.y,
+										width: du.width,
+										height: du.height,
+										'pointer-events': 'none'
+									});
+									that._foremostDiv.appendChild(element);
+								}
 
 								//レイヤーに存在する元々のDUは非表示にする
 								var originalDOM = that._domManager.getElement(du);
@@ -5794,8 +5954,9 @@
 
 							this._dragTargetDUInfoMap = null;
 
-							//フォアレイヤーのDOMを削除する
+							//隠しフォアレイヤーのDOMを削除する
 							$(this._foremostSvgGroup).empty();
+							$(this._foremostDiv).empty();
 
 							this.update();
 						},
@@ -6297,6 +6458,8 @@
 							//フォアレイヤーのスクロール位置も移動させる
 							this._updateTransform(this._foremostSvg, -this._viewport.worldX,
 									-this._viewport.worldY);
+							this._updateTransform(this._foremostDiv, -this._viewport.worldX,
+									-this._viewport.worldY);
 						},
 
 						/*
@@ -6507,10 +6670,18 @@
 
 										//ただし、位置だけは必ずグローバルポジションに上書きする
 										var gpos = du.getWorldGlobalPosition();
-										SvgUtil.setAttributes(foreElem, {
-											x: gpos.x,
-											y: gpos.y
-										});
+										//TODO SVGとDIVの違いはDU側に吸収させる
+										if (du._isOnSvgLayer) {
+											SvgUtil.setAttributes(foreElem, {
+												x: gpos.x,
+												y: gpos.y
+											});
+										} else {
+											$(foreElem).css({
+												left: gpos.x,
+												top: gpos.y
+											});
+										}
 									}
 								}
 							});
@@ -6550,12 +6721,21 @@
 							var tx = getNormalizedValueString(scrollX);
 							var ty = getNormalizedValueString(scrollY);
 
-							var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
-									scaleXStr, scaleYStr, tx, ty);
+							//TODO レイヤーのスクロールはLayer側で吸収させる(SVG/DIVの違い)
+							var isDiv = element.tagName.toLowerCase() === 'div';
 
-							//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
-							//その<g>にtransformを設定する。
-							element.firstChild.setAttribute('transform', transform);
+							if (isDiv) {
+								element.style.transform = h5.u.str.format(
+										'scale({0},{1}) translate({2}px,{3}px)', scaleXStr,
+										scaleYStr, tx, ty);
+							} else {
+								//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
+								//その<g>にtransformを設定する。
+								var transformStr = h5.u.str.format(
+										'scale({0},{1}) translate({2},{3})', scaleXStr, scaleYStr,
+										tx, ty);
+								element.firstChild.setAttribute('transform', transformStr);
+							}
 
 							/* 処理ここまで */
 
@@ -10333,7 +10513,10 @@
 			if (initData.layers) {
 				for (var i = 0, len = initData.layers.length; i < len; i++) {
 					var layerDef = initData.layers[i];
-					var layer = Layer.create(layerDef.id, this);
+					//下位互換性のため、明示的に"div"を指定された場合のみdivレイヤーとし、
+					//指定がない場合のデフォルトはsvgレイヤーとする
+					var layerType = layerDef.type === 'div' ? 'div' : 'svg';
+					var layer = Layer.create(layerDef.id, this, layerType);
 					this.addLayer(layer, null, layerDef.isDefault);
 				}
 			}
