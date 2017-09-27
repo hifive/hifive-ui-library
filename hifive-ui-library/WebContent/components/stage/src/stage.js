@@ -259,6 +259,7 @@
 	var REASON_SELECTION_CHANGE = '__duSelectionChange__';
 	var REASON_FOCUS_CHANGE = '__duFocusChange__';
 	var REASON_GLOBAL_POSITION_CHANGE = '__duGlobalPositionChange__';
+	var REASON_EDIT_CHANGE = '__duEditChange__';
 
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
@@ -271,7 +272,8 @@
 		SCROLL_POSITION_CHANGE: REASON_SCROLL_POSITION_CHANGE,
 		SELECTION_CHANGE: REASON_SELECTION_CHANGE,
 		FOCUS_CHANGE: REASON_FOCUS_CHANGE,
-		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE
+		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE,
+		REASON_EDIT_CHANGE: REASON_EDIT_CHANGE
 	};
 
 	h5.u.obj.expose('h5.ui.components.stage', {
@@ -480,6 +482,7 @@
 					return this._proxyElement;
 				},
 
+				//TODO start()
 				begin: function() {
 					this._setDraggingFlag(true);
 				},
@@ -711,6 +714,263 @@
 		return desc;
 	});
 
+
+	/**
+	 * EditSession
+	 * <p>
+	 * EditSession
+	 * </p>
+	 *
+	 * @class
+	 * @name EditSession
+	 * @param super_ スーパーオブジェクト
+	 * @returns EditSessionクラス
+	 */
+	var EditSession = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.EditSession',
+
+			field: {
+				_editManager: null,
+				_editor: null,
+				_targets: null,
+				_editorView: null,
+				_isExclusive: null
+			},
+
+			accessor: {
+				editor: {
+					get: function() {
+						return this._editor;
+					}
+				},
+				targets: {
+					get: function() {
+						return this._targets;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.EditSession
+				 * @param editor エディタ
+				 * @param targetDisplayUnits ターゲットDisplayUnits
+				 */
+				constructor: function EditSession(editManager, editor, targetDisplayUnits,
+						isExclusive) {
+					super_.constructor.call(this);
+					this._editManager = editManager;
+					this._editor = editor;
+					this._targets = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
+							: [targetDisplayUnits];
+					//必ずtrue/falseどちらかをセット。また、デフォルトはfalse。
+					this._isExclusive = isExclusive === true ? true : false;
+				},
+
+				/**
+				 * DisplayUnitに変更を通知します。targetDisplayUnitsをnullにすると、
+				 * このセッションでターゲットになっている全てのDisplayUnitに同じdataで変更通知を送ります。
+				 *
+				 * @param targetDisplayUnits このセッションに含まれている（ターゲットになっている）DUまたはその配列
+				 * @param data 変更データ
+				 */
+				notifyChange: function(targetDisplayUnits, data) {
+					var targets = this._targets;
+					if (targetDisplayUnits != null) {
+						targets = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
+								: [targetDisplayUnits];
+					}
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var targetDU = targets[i];
+
+						var dirtyReason = {
+							type: REASON_EDIT_CHANGE,
+							data: data
+						};
+						targetDU._setDirty(dirtyReason);
+					}
+				},
+
+				/**
+				 * この編集セッションをキャンセルします。変更はキャンセルされます。
+				 */
+				cancel: function() {
+					this._editor.onCancel(this);
+					this._end();
+				},
+
+				commit: function() {
+					var promise = this._editor.onCommit(this);
+
+					if (promise == null) {
+						this._end();
+					} else {
+						this._editor.onSuspend(this);
+						var that = this;
+						promise.done(function() {
+							that._end();
+						}).fail(function(reason) {
+							if (reason.isResume === true) {
+								that._editor.onResume(that);
+							} else {
+								that._end();
+							}
+						});
+					}
+				},
+
+				_end: function() {
+					this._editor.dispose(this);
+					$(this._editorView).remove();
+
+					this._editManager._onSessionEnd(this);
+				}
+			}
+
+		};
+		return desc;
+	});
+
+	/**
+	 * EditManager
+	 * <p>
+	 * EditManager
+	 * </p>
+	 *
+	 * @class
+	 * @name EditManager
+	 * @param super_ スーパーオブジェクト
+	 * @returns EditManagerクラス
+	 */
+	RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.EditManager',
+
+			field: {
+				_sessions: null,
+				_stage: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.EditManager
+				 */
+				constructor: function EditManager(stage) {
+					super_.constructor.call(this);
+					this._sessions = [];
+					this._stage = stage;
+				},
+
+				startEdit: function(editor, targetDisplayUnits, isExclusive) {
+					//FIXME 一旦、同時編集は不可とする
+					//TODO booleanでなく、非排他、排他で他はキャンセル、排他で他はデフォルト、排他で他はコミット、の exclusiveMode 指定の方がよいかも
+					isExclusive = true;
+
+					if (isExclusive === true && this._sessions.length > 0) {
+						this._sessions.forEach(function(session) {
+							session.cancel();
+						});
+						this._sessions = [];
+					}
+
+					var editSession = EditSession.create(this, editor, targetDisplayUnits,
+							isExclusive);
+					this._sessions.push(editSession);
+
+					var editorView = editor.getView(editSession);
+
+					if (editorView instanceof HTMLElement) {
+						//DOM要素が直接返ってきた
+						showEditor.call(this, editSession, editorView);
+					} else if (editorView == null) {
+						//DOM要素が返ってこなかった⇒エディタのビューは制御しない
+					} else {
+						//Promiseが返された
+						var that = this;
+						editorView.done(function(view) {
+							showEditor.call(that, editSession, view);
+						});
+					}
+
+					function showEditor(editSession, editorView) {
+						editSession._editorView = editorView;
+						editor.onStart(editSession);
+						this._stage._$overlay.append(editorView);
+					}
+				},
+
+				commitEdit: function(displayUnit) {
+					var sessionIndex = this._getEditSessionIndexOf(displayUnit);
+					if (sessionIndex === -1) {
+						//セッションが見つからなかった＝このDUは編集状態ではないので何もしない
+						return;
+					}
+
+					//セッションをキャンセルし、編集中セッションの一覧（配列）から当該セッションを取り除く
+					var session = this._sessions[sessionIndex];
+					session.commit();
+					this._sessions.splice(sessionIndex, 1);
+				},
+
+				cancelEdit: function(displayUnit) {
+					var sessionIndex = this._getEditSessionIndexOf(displayUnit);
+					if (sessionIndex === -1) {
+						//セッションが見つからなかった＝このDUは編集状態ではないので何もしない
+						return;
+					}
+
+					//セッションをキャンセルし、編集中セッションの一覧（配列）から当該セッションを取り除く
+					var session = this._sessions[sessionIndex];
+					session.cancel();
+					this._sessions.splice(sessionIndex, 1);
+				},
+
+				cancelAll: function() {
+					this._sessions.forEach(function(session) {
+						session.cancel();
+					});
+					this._sessions = [];
+				},
+
+				_getEditSessionIndexOf: function(displayUnit) {
+					for (var i = 0, len = this._sessions.length; i < len; i++) {
+						var session = this._sessions[i];
+						var targets = session._targets;
+						for (var j = 0, jLen = targets.length; j < jLen; j++) {
+							var targetDU = targets[j];
+							if (displayUnit === targetDU) {
+								return i;
+							}
+						}
+					}
+					return -1;
+				},
+
+				/**
+				 * EditSessionから呼ばれる
+				 *
+				 * @private
+				 * @param editSession
+				 */
+				_onSessionEnd: function(endedEditSession) {
+					for (var i = 0, len = this._sessions.length; i < len; i++) {
+						var session = this._sessions[i];
+						if (endedEditSession === session) {
+							//現在管理しているEditSession一覧から取り除く
+							this._sessions.splice(i, 1);
+							return;
+						}
+					}
+					//ここには来ないはず：管理しているEditSession一覧になかった場合は何もしない
+					throw new Error('EditManagerの管理外のEditSessionから_onSessionEndが呼ばれました。');
+				}
+			}
+
+		};
+		return desc;
+	});
 
 	var Rect = RootClass
 			.extend(function(super_) {
@@ -2770,6 +3030,12 @@
 					get: function() {
 						return this.has(REASON_FOCUS_CHANGE);
 					}
+				},
+
+				isEditChanged: {
+					get: function() {
+						return this.has(REASON_EDIT_CHANGE);
+					}
 				}
 			},
 
@@ -2847,6 +3113,8 @@
 		var desc = {
 			name: 'h5.ui.components.stage.BasicDisplayUnit',
 			field: {
+				_isEditable: null,
+
 				/**
 				 * この要素を現在ドラッグ可能かどうか
 				 */
@@ -2860,6 +3128,23 @@
 				_renderer: null,
 			},
 			accessor: {
+				isEditable: {
+					get: function() {
+						return this._isEditable;
+					},
+					set: function(value) {
+						if (this._isEditable === value) {
+							return;
+						}
+
+						if (this._isEditable === true && value === false) {
+							//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
+							this.cancelEdit();
+						}
+
+						this._isEditable = value;
+					}
+				},
 				width: {
 					get: function() {
 						return super_.width.get.call(this);
@@ -2886,6 +3171,8 @@
 				constructor: function BasicDisplayUnit(id) {
 					super_.constructor.call(this, id);
 
+					this._isEditable = true;
+
 					this.isDraggable = true;
 					this._isDragging = false;
 				},
@@ -2911,6 +3198,27 @@
 					}
 
 					this._setDirty(REASON_RENDER_REQUEST);
+				},
+
+				startEdit: function() {
+					if (!this._rootStage || !this.isEditable) {
+						return;
+					}
+					this._rootStage._startEdit(this);
+				},
+
+				commitEdit: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage._commitEdit(this);
+				},
+
+				cancelEdit: function() {
+					if (!this._rootStage) {
+						return;
+					}
+					this._rootStage._cancelEdit(this);
 				},
 
 				/**
@@ -4527,6 +4835,8 @@
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 	var SVGDefinitions = classManager.getClass('h5.ui.components.stage.SVGDefinitions');
 
+	var EditManager = classManager.getClass('h5.ui.components.stage.EditManager');
+
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
@@ -5916,8 +6226,8 @@
 								} else {
 									//DIVレイヤーの場合はforemostDivに追加
 									$element.css({
-										x: gpos.x,
-										y: gpos.y,
+										left: gpos.x,
+										top: gpos.y,
 										width: du.width,
 										height: du.height,
 										'pointer-events': 'none'
@@ -9127,6 +9437,8 @@
 	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
+	var EVENT_EDIT_STARTING = 'stageEditStarting';
+
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
 	var SELECTION_CHANGE = 'stageSelectionChange';
@@ -9180,6 +9492,8 @@
 		 * @private
 		 */
 		_scaleRangeY: null,
+
+		_editManager: null,
 
 		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
 
@@ -9380,6 +9694,8 @@
 			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
 
+			this._editManager = EditManager.create(this);
+
 			this._isDblclickEmulationEnabled = true;
 
 			this._scaleRangeX = {
@@ -9412,6 +9728,56 @@
 			$(this.rootElement).css({
 				position: 'absolute'
 			});
+		},
+
+		/**
+		 * @private
+		 * @param du DisplayUnit
+		 */
+		_startEdit: function(du) {
+			var evArg = {
+				setEditor: function(editor) {
+					this._editor = editor;
+				},
+
+				setExclusive: function(value) {
+					this._isExclusive = value;
+				}
+			};
+			var ev = this.trigger(EVENT_EDIT_STARTING, evArg);
+
+			if (ev.isDefaultPrevented()) {
+				//編集開始がキャンセルされたので、何もしない
+				return;
+			}
+
+			var editor = evArg._editor;
+
+			if (!editor) {
+				//エディタがセットされていないので、何もしない
+				//TODO ログ出力した方が良いか
+				return;
+			}
+
+			var isExclusive = evArg._isExclusive === true ? true : false;
+
+			this._editManager.startEdit(editor, du, isExclusive);
+		},
+
+		/**
+		 * @private
+		 * @param du
+		 */
+		_commitEdit: function(du) {
+			this._editManager.commitEdit(du);
+		},
+
+		/**
+		 * @private
+		 * @param du
+		 */
+		_cancelEdit: function(du) {
+			this._editManager.cancelEdit(du);
 		},
 
 		'{this._selectionLogic} selectionChange': function(context) {
@@ -9966,6 +10332,18 @@
 			return false;
 		},
 
+		_isOverlayContentsEvent: function(eventTarget) {
+			if (!this._$overlay) {
+				return false;
+			}
+
+			if (eventTarget && this._$overlay[0].compareDocumentPosition(eventTarget)
+					& Node.DOCUMENT_POSITION_CONTAINED_BY) {
+				return true;
+			}
+			return false;
+		},
+
 		/**
 		 * @private
 		 */
@@ -10046,8 +10424,9 @@
 		},
 
 		'{rootElement} mousedown': function(context, $el) {
-			if (this._isScrollBarEvent(context.event.target)) {
-				//スクロールバー操作については直接関知しない
+			var eventTarget = context.event.target;
+			if (this._isScrollBarEvent(eventTarget) || this._isOverlayContentsEvent(eventTarget)) {
+				//スクロールバー操作、オーバーレイ内のコンテンツの操作（編集エディタの操作等）については直接関知しない
 				return;
 			}
 
@@ -10502,6 +10881,8 @@
 
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
+
+			this._editManager.cancelAll();
 
 			//現在保持しているすべてのビューを破棄する
 			this._viewCollection._clear(true);
@@ -10997,7 +11378,25 @@
 
 			this._viewCollection._makeGrid(horizontalSplitDefinitions, verticalSplitDefinitions, w,
 					h);
+
+			if (this._$overlay) {
+				//ステージ全体オーバーレイのルート要素が既にある場合は
+				//それを一番最後に移動する（画面的には最上位にくるようにする）
+				this._$overlay.remove().appendTo(this.rootElement);
+			} else {
+				var $overlay = $('<div class="h5-stage-overlay-root"></div>');
+				$overlay.css({
+					position: 'absolute',
+					overflow: 'visible',
+					padding: 0,
+					margin: 0
+				});
+				$overlay.appendTo(this.rootElement);
+				this._$overlay = $overlay;
+			}
 		},
+
+		_$overlay: null,
 
 		/**
 		 * @private
