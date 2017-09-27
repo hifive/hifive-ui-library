@@ -3946,6 +3946,66 @@
 		return desc;
 	});
 
+	var DependentDisplayUnit = BasicDisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.DependentDisplayUnit',
+
+			field: {
+				_dependingDURemovedHandler: null,
+				_dependingDisplayUnit: null
+			},
+
+			method: {
+				constructor: function DependentDisplayUnit(dependingDisplayUnit) {
+					super_.constructor.call(this);
+
+					if (!dependingDisplayUnit) {
+						throw new Error('依存先DisplayUnitが指定されていません。');
+					}
+
+					var that = this;
+
+					this._dependingDisplayUnit = dependingDisplayUnit;
+
+					this._dependingDURemovedHandler = function(event) {
+						that._notifyCascadeRemove(event.target);
+					};
+				},
+
+				_onAddedToStage: function(stage, belongingLayer) {
+					super_._onAddedToStage.call(this, stage, belongingLayer);
+
+					this._dependingDisplayUnit.addEventListener('removeFromStage',
+							this._dependingDURemovedHandler);
+				},
+
+				_onRemoving: function() {
+					this._dependingDisplayUnit.removeEventListener('removeFromStage',
+							this._dependingDURemovedHandler);
+				},
+
+				/**
+				 * @private
+				 * @param relatedDU
+				 */
+				_notifyCascadeRemove: function(relatedDU) {
+					if (!this._belongingLayer) {
+						return;
+					}
+
+					var isRemovePrevented = this._belongingLayer.__onCascadeRemoving(this,
+							relatedDU);
+
+					if (!isRemovePrevented) {
+						this.remove();
+					}
+				}
+
+			}
+		};
+		return desc;
+	});
+
 	var ZIndexList = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.ZIndexList',

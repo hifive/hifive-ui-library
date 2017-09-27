@@ -26,6 +26,7 @@
 
 	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 	var DisplayUnitContainer = classManager.getClass('h5.ui.components.stage.DisplayUnitContainer');
+	var DependentDisplayUnit = classManager.getClass('h5.ui.components.stage.DependentDisplayUnit');
 	//var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
@@ -271,8 +272,8 @@
 		//			this.$find('#scrollPos').text('map: ' + str);
 		},
 
-		_createDU: function(rect) {
-			var unit = BasicDisplayUnit.create();
+		_setupDU: function(du, rect) {
+			var unit = du;
 			unit.setRect(rect);
 			unit.extraData = {
 				userText: 'User-defined text'
@@ -402,7 +403,7 @@
 
 			for (var i = 0, len = numCreate; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
-				var unit = this._createDU(rect);
+				var unit = this._setupDU(BasicDisplayUnit.create(), rect);
 				unit.zIndex = numCreate - i;
 				container.addDisplayUnit(unit);
 				this._units.push(unit);
@@ -414,6 +415,11 @@
 			var edge = this._createEdge(this._units[1], this._units[3]);
 			this._edges.push(edge);
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			var dependentDU = DependentDisplayUnit.create(this._units[1]);
+			var depRect = Rect.create(400, 300, 60, 40);
+			this._setupDU(dependentDU, depRect);
+			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(dependentDU);
 
 			var edge = this._createEdge(this._units[3], this._units[6]);
 			this._edges.push(edge);
