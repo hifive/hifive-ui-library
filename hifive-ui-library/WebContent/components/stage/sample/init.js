@@ -22,11 +22,94 @@
 
 	var classManager = h5.cls.manager;
 
+	var RootClass = classManager.getClass('h5.cls.RootClass');
+
 	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 	var DisplayUnitContainer = classManager.getClass('h5.ui.components.stage.DisplayUnitContainer');
 	//var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
+
+	var editorHtml = '<div class="simpleTextEditor"><textarea class="simpleTextEditorTextarea" rows="3" style="width: 100%"></textarea>'
+			+ '<button class="commitButton">確定</button><button class="cancelButton">キャンセル</button></div>';
+
+	var SimpleTextEditor = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'sample.SimpleTextEditor',
+
+			field: {
+				_editSession: null,
+				_undoData: null,
+				_$editor: null
+			},
+
+			method: {
+				constructor: function SimpleTextEditor() {
+					super_.constructor.call(this);
+					this._editSession = null;
+					this._undoData = null;
+				},
+
+				getView: function(editSession) {
+					var that = this;
+					var $editor = $(editorHtml);
+					$editor.on('click', '.commitButton', function() {
+						//編集途中状態をDUに反映させる方法は2通り
+						//DU自体を変更してrequestRender() または editSession.notifyChange(data);
+
+						//これを行えば
+						//that.onCommit(editSession);
+
+						editSession.commit();
+
+						//editSession.notifyChange();
+					}).on('input', 'textarea', function() {
+						var text = $editor.find('.simpleTextEditorTextarea').val();
+						var targetDU = editSession.targets[0];
+						targetDU.extraData = {
+							text: text
+						};
+						targetDU.requestRender();
+					}).on('click', '.cancelButton', function() {
+						editSession.cancel();
+					});
+					this._$editor = $editor;
+					return $editor[0];
+				},
+
+				onStart: function(editSession) {
+					this._editSession = editSession;
+
+					var targetDU = editSession.targets[0];
+					this._undoData = targetDU.extraData;
+					this._$editor.find('.simpleTextEditorTextarea').val(targetDU.extraData.text);
+				},
+
+				onCommit: function(editSession) {
+					var text = this._$editor.find('.simpleTextEditorTextarea').val();
+
+					//編集途中状態をDUに反映させる方法は2通り
+					//DU自体を変更してrequestRender() または editSession.notifyChange(data);
+					var targetDU = editSession.targets[0];
+					targetDU.extraData = {
+						text: text
+					};
+					targetDU.requestRender();
+				},
+
+				onCancel: function(editSession) {
+					var targetDU = editSession.targets[0];
+					targetDU.extraData = this._undoData;
+					targetDU.requestRender();
+				},
+
+				dispose: function(editSession) {
+					this._$editor.off();
+				}
+			}
+		};
+		return desc;
+	});
 
 	var stageInitParam = {
 		view: {
@@ -35,10 +118,15 @@
 
 		layers: [{
 			id: LAYER_ID_MAIN,
-			isDefault: true
+			isDefault: true,
+			type: 'svg'
 		}, {
-			id: LAYER_ID_EDGE
-		}]
+			id: 'divlayer',
+			type: 'div'
+		}, {
+			id: LAYER_ID_EDGE,
+			type: 'svg'
+		}, ]
 	};
 
 
@@ -264,6 +352,32 @@
 			return edge;
 		},
 
+		_createDivDU: function(rect) {
+			var du = BasicDisplayUnit.create();
+			du.setRect(rect);
+			du.extraData = {
+				text: 'this is a div DU'
+			};
+
+			//TODO 引数はsvgではなくこのUnitインスタンス
+			du.setRenderer(function(context, graphics) {
+				var reason = context.reason;
+				if (reason.isInitialRender) {
+					$(context.rootElement).css({
+						'word-wrap': 'break-word',
+						'overflow-wrap': 'break-word',
+						'word-break': 'break-all'
+					//						overflow: 'scroll'
+					});
+				}
+
+				var htmlText = context.displayUnit.extraData.text.replace(/\n/g, '<br>');
+				$(context.rootElement).html(htmlText);
+			});
+
+			return du;
+		},
+
 		_edges: [],
 
 		_units: [],
@@ -305,6 +419,18 @@
 			this._edges.push(edge);
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+			//DIVレイヤーテスト
+			var divContainer = DisplayUnitContainer.create();
+			var rect = Rect.create(50, 200, 80, 40);
+			divContainer.setRect(rect);
+			var divDU = this._createDivDU(rect);
+			divDU.x = 0;
+			divDU.y = 0;
+			divContainer.addDisplayUnit(divDU);
+			this._stageController.getLayer('divlayer').addDisplayUnit(divContainer);
+
+			this._divDU = divDU;
 
 			this._stageController.initView();
 
@@ -598,12 +724,25 @@
 			});
 		},
 
+		'input[name="editDivDU"] click': function() {
+			this._divDU.startEdit();
+			du.startEdit();
+			du.commitEdit();
+			du.cancelEdit();
+		},
+
 		'{rootElement} stageViewStructureChange': function() {
 			console.log('stageViewStructureChange');
 		},
 
 		'{rootElement} stageViewUnifiedSightChange': function() {
 			console.log('stageViewUnifiedSightChange');
+		},
+
+		'{rootElement} stageEditStarting': function(context) {
+			var arg = context.evArg;
+			var editor = SimpleTextEditor.create();
+			arg.setEditor(editor);
 		}
 	};
 
