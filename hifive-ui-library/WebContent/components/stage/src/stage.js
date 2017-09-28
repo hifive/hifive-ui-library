@@ -1035,22 +1035,6 @@
 						targets = [targets];
 					}
 
-					var restrictedDelta = {
-						x: delta.x,
-						y: delta.y
-					};
-
-					//directionの指定に応じてリサイズの方向を制限する
-					//先頭でdirection===NONEの場合はreturnしているので必ずX,Y,XYのいずれか
-					switch (this.direction) {
-					case ResizeDirection.X:
-						restrictedDelta.y = 0;
-						break;
-					case ResizeDirection.Y:
-						restrictedDelta.x = 0;
-						break;
-					}
-
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 
@@ -1060,7 +1044,9 @@
 							this._resizeFunctionDataMap[du.id] = data;
 						}
 
-						var resize = this._resizeFunction(du, data, event, restrictedDelta, this);
+						var limitedDelta = this._getLimitedDelta(du, delta);
+
+						var resize = this._resizeFunction(du, data, event, limitedDelta, this);
 						if (!resize) {
 							continue;
 						}
@@ -1076,6 +1062,93 @@
 					}
 
 					this._stage._viewCollection.__onResizeDUChange(this);
+				},
+
+				_getLimitedDelta: function(du, rawDelta) {
+					var limitedDelta = {
+						x: rawDelta.x,
+						y: rawDelta.y
+					};
+
+					//はじめに、directionの指定による制限をかける
+					//_deltaResize()の先頭でdirection===NONEの場合はreturnしているので必ずX,Y,XYのいずれか
+					switch (this.direction) {
+					case ResizeDirection.X:
+						limitedDelta.y = 0;
+						break;
+					case ResizeDirection.Y:
+						limitedDelta.x = 0;
+						break;
+					}
+
+					//DUの大きさが負にならないように制限する
+					//TODO invertibleの追加？
+					if (du.width + limitedDelta.x < 0) {
+						limitedDelta.x = 0;
+					}
+
+					if (du.height + limitedDelta.y < 0) {
+						limitedDelta.y = 0;
+					}
+
+					if (!du.resizeLimit) {
+						//リミットが何もなければそのままの値を返す
+						return limitedDelta;
+					}
+
+					if (limitedDelta.x < 0 && du.resizeLimit.minWidth != null) {
+						//X軸のマイナス方向のリサイズなのでminWidth制約をチェック
+
+						var diffToMinWidth = du.width - du.resizeLimit.minWidth;
+						if (diffToMinWidth + limitedDelta.x < 0) {
+							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
+							//minWidthよりも小さくなってしまうということ
+							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
+							limitedDelta.x = -diffToMinWidth;
+						}
+					} else if (limitedDelta.x > 0 && du.resizeLimit.maxWidth != null) {
+						//X軸のプラス方向のリサイズなのでmaxWidth制約をチェック
+						var diffToMaxWidth = du.resizeLimit.maxWidth - du.width;
+						if (limitedDelta.x > diffToMaxWidth) {
+							limitedDelta.x = diffToMaxWidth;
+						}
+					}
+
+					if (limitedDelta.y < 0 && du.resizeLimit.minHeight != null) {
+						//Y軸のマイナス方向のリサイズなのでminHeight制約をチェック
+						var diffToMinHeight = du.height - du.resizeLimit.minHeight;
+						if (diffToMinHeight + limitedDelta.y < 0) {
+							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
+							//minWidthよりも小さくなってしまうということ
+							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
+							limitedDelta.y = -diffToMinHeight;
+						}
+					} else if (limitedDelta.y > 0 && du.resizeLimit.maxHeight != null) {
+						//Y軸のプラス方向のリサイズなのでmaxHeight制約をチェック
+						var diffToMaxHeight = du.resizeLimit.maxHeight - du.height;
+						if (limitedDelta.y > diffToMaxHeight) {
+							limitedDelta.y = diffToMaxHeight;
+						}
+					}
+
+					//					var step = du.resizeLimit.step;
+					//					if(step != null) {
+					//						if(limitedDelta.x !== 0) {
+					//							var stepOffsetX = du.resizeLimit.stepOffsetX != null ? du.resizeLimit.stepOffsetX : 0;
+					//							var ldx = limitedDelta.x;
+					//							limitedDelta.x = step * parseInt((ldx) / step);
+					//
+					//							(du.width + limitedDelta.x - stepOffsetX) - limitedDalta.x
+					//						}
+					//
+					//						if(limitedDelta.y !== 0) {
+					//							var stepOffsetY = du.resizeLimit.stepOffsetY != null ? du.resizeLimit.stepOffsetY : 0;
+					//							var ldy = limitedDelta.y;
+					//							limitedDelta.y = step * parseInt((ldy) / step);
+					//						}
+					//					}
+
+					return limitedDelta;
 				},
 
 				/**
