@@ -969,6 +969,9 @@
 					this._lastPageX = event.pageX;
 					this._lastPageY = event.pageY;
 
+					var wDx = this._stage._getActiveView().coordinateConverter.toWorldX(cursorDx);
+					var wDy = this._stage._getActiveView().coordinateConverter.toWorldY(cursorDy);
+
 					this._moveX = event.pageX - this._startPageX;
 					this._moveY = event.pageY - this._startPageY;
 
@@ -978,8 +981,8 @@
 
 					//前回からの差分移動量
 					var delta = {
-						x: cursorDx,
-						y: cursorDy
+						x: wDx,
+						y: wDy
 					};
 
 					this._deltaResize(event, delta);
