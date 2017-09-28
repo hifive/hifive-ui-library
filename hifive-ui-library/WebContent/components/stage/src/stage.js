@@ -739,7 +739,9 @@
 		function defaultResizeFunction(du, data, event, delta, resizeSession) {
 			var ret = {
 				dx: delta.x,
-				dy: delta.y
+				dy: delta.y,
+				dw: 0,
+				dh: 0
 			};
 			return ret;
 		}
@@ -753,7 +755,12 @@
 				//このドラッグセッションを非同期で行うかのフラグ
 				async: null,
 
+				//リサイズ可能方向。ResizeDirection列挙体のいずれかの値を取る
 				direction: null,
+
+				//9-Sliceのどの位置を掴んでリサイズしているか
+				// { x: -1/0/1, y: -1/0/1 } の9-Slice構造体
+				_handlingPosition: null,
 
 				/**
 				 * ドラッグ操作対象オブジェクト
@@ -766,7 +773,7 @@
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTarget()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
-				_targetInitialSizes: null,
+				_targetInitialStates: null,
 
 				//各ドラッグ対象のドラッグ開始直前の親DU
 				_targetInitialParentDU: null,
@@ -813,7 +820,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function ResizeSession(stage, rootElement, event) {
+				constructor: function ResizeSession(stage, rootElement, event, handlingPosition) {
 					super_.constructor.call(this);
 
 					this._stage = stage;
@@ -823,6 +830,8 @@
 					this._isCompleted = false;
 
 					this.direction = ResizeDirection.NONE;
+
+					this._handlingPosition = handlingPosition;
 
 					/**
 					 * @private
@@ -909,8 +918,6 @@
 					}
 					this._isCompleted = true;
 
-					this._setResizingFlag(false);
-
 					this._cleanUp();
 
 					var event = Event.create('resizeSessionEnd');
@@ -938,8 +945,6 @@
 						this._rollbackStates();
 					}
 
-					this._setResizingFlag(false);
-
 					this._cleanUp();
 
 					var event = Event.create('resizeSessionCancel');
@@ -963,17 +968,17 @@
 						return;
 					}
 
-					var cursorDx = event.pageX - this._lastPageX;
-					var cursorDy = event.pageY - this._lastPageY;
+					var pageX = event.pageX;
+					var pageY = event.pageY;
 
-					this._lastPageX = event.pageX;
-					this._lastPageY = event.pageY;
+					var cursorDx = pageX - this._lastPageX;
+					var cursorDy = pageY - this._lastPageY;
 
-					var wDx = this._stage._getActiveView().coordinateConverter.toWorldX(cursorDx);
-					var wDy = this._stage._getActiveView().coordinateConverter.toWorldY(cursorDy);
+					this._lastPageX = pageX;
+					this._lastPageY = pageY;
 
-					this._moveX = event.pageX - this._startPageX;
-					this._moveY = event.pageY - this._startPageY;
+					this._moveX = pageX - this._startPageX;
+					this._moveY = pageY - this._startPageY;
 
 					//totalMoveXYには絶対値で積算していく
 					this._totalMoveX += cursorDx < 0 ? -cursorDx : cursorDx;
@@ -981,8 +986,8 @@
 
 					//前回からの差分移動量
 					var delta = {
-						x: wDx,
-						y: wDy
+						x: cursorDx,
+						y: cursorDy
 					};
 
 					this._deltaResize(event, delta);
@@ -1006,19 +1011,21 @@
 					}
 
 					var parentDUs = [];
-					var sizes = [];
+					var states = [];
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var targetDU = targets[i];
-						var size = {
+						var state = {
+							x: targetDU.x,
+							y: targetDU.y,
 							width: targetDU.width,
 							height: targetDU.height
 						};
-						sizes.push(size);
+						states.push(state);
 						parentDUs.push(targetDU.parentDisplayUnit);
 					}
 
-					this._targetInitialSizes = sizes;
+					this._targetInitialStates = states;
 					this._targetInitialParentDU = parentDUs;
 				},
 
@@ -1044,111 +1051,98 @@
 							this._resizeFunctionDataMap[du.id] = data;
 						}
 
-						var limitedDelta = this._getLimitedDelta(du, delta);
-
-						var resize = this._resizeFunction(du, data, event, limitedDelta, this);
-						if (!resize) {
-							continue;
-						}
-
-						var dx = typeof resize.dx === 'number' ? resize.dx : 0;
-						var dy = typeof resize.dy === 'number' ? resize.dy : 0;
-
-						if (dx === 0 && dy === 0) {
-							continue;
-						}
-
-						du.setSize(du.width + dx, du.height + dy);
+						var newRect = this._getCorrectedRect(du);
+						du.setRect(newRect);
 					}
 
 					this._stage._viewCollection.__onResizeDUChange(this);
 				},
 
-				_getLimitedDelta: function(du, rawDelta) {
-					var limitedDelta = {
-						x: rawDelta.x,
-						y: rawDelta.y
-					};
+				_getInitialState: function(du) {
+					for (var i = 0, len = this._targets.length; i < len; i++) {
+						var t = this._targets[i];
+						if (du === t) {
+							return this._targetInitialStates[i];
+						}
+					}
+				},
 
-					//はじめに、directionの指定による制限をかける
-					//_deltaResize()の先頭でdirection===NONEの場合はreturnしているので必ずX,Y,XYのいずれか
+				_getCorrectedRect: function(du) {
+					var converter = this._stage._getActiveView().coordinateConverter;
+
+					var wmx = converter.toWorldX(this._moveX);
+					var wmy = converter.toWorldY(this._moveY);
+
+					var initialState = this._getInitialState(du);
+
+					var newX = initialState.x;
+					var newY = initialState.y;
+
+					if (this._handlingPosition.x < 0) {
+						//左側を操作している
+						newX += wmx;
+						wmx *= -1;
+					}
+
+					if (this._handlingPosition.y < 0) {
+						//上側を操作している
+						newY += wmy;
+						wmy *= -1;
+					}
+
+					var width = initialState.width + wmx;
+					var height = initialState.height + wmy;
+
+					if (width < 0) {
+						width = 0;
+					}
+
+					if (height < 0) {
+						height = 0;
+					}
+
+					//TODO 左側操作時にmaxWidthを超えたら動かさない
+
+					if (du.resizeConstraint != null) {
+						var minWidth = du.resizeConstraint.minWidth;
+						var maxWidth = du.resizeConstraint.maxWidth;
+						if (minWidth != null && width < minWidth) {
+							width = minWidth;
+							if (this._handlingPosition.x < 0) {
+								newX = initialState.x + initialState.width - minWidth;
+							}
+						} else if (maxWidth != null && maxWidth < width) {
+							width = maxWidth;
+							if (this._handlingPosition.x < 0) {
+								newX = initialState.x + initialState.width - maxWidth;
+							}
+						}
+
+						var minHeight = du.resizeConstraint.minHeight;
+						var maxHeight = du.resizeConstraint.maxHeight;
+						if (minHeight != null && height < minHeight) {
+							height = minHeight;
+							if (this._handlingPosition.y < 0) {
+								newY = initialState.y + initialState.height - minHeight;
+							}
+						} else if (maxHeight != null && maxHeight < height) {
+							height = maxHeight;
+							if (this._handlingPosition.y < 0) {
+								newY = initialState.y + initialState.height - maxHeight;
+							}
+						}
+					}
+
 					switch (this.direction) {
 					case ResizeDirection.X:
-						limitedDelta.y = 0;
+						height = du.height;
 						break;
 					case ResizeDirection.Y:
-						limitedDelta.x = 0;
+						width = du.width;
 						break;
 					}
 
-					//DUの大きさが負にならないように制限する
-					//TODO invertibleの追加？
-					if (du.width + limitedDelta.x < 0) {
-						limitedDelta.x = 0;
-					}
-
-					if (du.height + limitedDelta.y < 0) {
-						limitedDelta.y = 0;
-					}
-
-					if (!du.resizeConstraint) {
-						//リミットが何もなければそのままの値を返す
-						return limitedDelta;
-					}
-
-					if (limitedDelta.x < 0 && du.resizeConstraint.minWidth != null) {
-						//X軸のマイナス方向のリサイズなのでminWidth制約をチェック
-
-						var diffToMinWidth = du.width - du.resizeConstraint.minWidth;
-						if (diffToMinWidth + limitedDelta.x < 0) {
-							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
-							//minWidthよりも小さくなってしまうということ
-							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
-							limitedDelta.x = -diffToMinWidth;
-						}
-					} else if (limitedDelta.x > 0 && du.resizeConstraint.maxWidth != null) {
-						//X軸のプラス方向のリサイズなのでmaxWidth制約をチェック
-						var diffToMaxWidth = du.resizeConstraint.maxWidth - du.width;
-						if (limitedDelta.x > diffToMaxWidth) {
-							limitedDelta.x = diffToMaxWidth;
-						}
-					}
-
-					if (limitedDelta.y < 0 && du.resizeConstraint.minHeight != null) {
-						//Y軸のマイナス方向のリサイズなのでminHeight制約をチェック
-						var diffToMinHeight = du.height - du.resizeConstraint.minHeight;
-						if (diffToMinHeight + limitedDelta.y < 0) {
-							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
-							//minWidthよりも小さくなってしまうということ
-							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
-							limitedDelta.y = -diffToMinHeight;
-						}
-					} else if (limitedDelta.y > 0 && du.resizeConstraint.maxHeight != null) {
-						//Y軸のプラス方向のリサイズなのでmaxHeight制約をチェック
-						var diffToMaxHeight = du.resizeConstraint.maxHeight - du.height;
-						if (limitedDelta.y > diffToMaxHeight) {
-							limitedDelta.y = diffToMaxHeight;
-						}
-					}
-
-					//					var step = du.resizeConstraint.step;
-					//					if(step != null) {
-					//						if(limitedDelta.x !== 0) {
-					//							var stepOffsetX = du.resizeConstraint.stepOffsetX != null ? du.resizeConstraint.stepOffsetX : 0;
-					//							var ldx = limitedDelta.x;
-					//							limitedDelta.x = step * parseInt((ldx) / step);
-					//
-					//							(du.width + limitedDelta.x - stepOffsetX) - limitedDalta.x
-					//						}
-					//
-					//						if(limitedDelta.y !== 0) {
-					//							var stepOffsetY = du.resizeConstraint.stepOffsetY != null ? du.resizeConstraint.stepOffsetY : 0;
-					//							var ldy = limitedDelta.y;
-					//							limitedDelta.y = step * parseInt((ldy) / step);
-					//						}
-					//					}
-
-					return limitedDelta;
+					return Rect.create(newX, newY, width, height);
 				},
 
 				/**
@@ -1162,8 +1156,9 @@
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
-						var size = this._targetInitialSizes[i];
-						du.setSize(size.width, size.height);
+						var state = this._targetInitialStates[i];
+						du.moveTo(state.x, state.y);
+						du.setSize(state.width, state.height);
 					}
 				},
 
@@ -1172,11 +1167,13 @@
 				 */
 				_cleanUp: function() {
 					this._targets = null;
-					this._targetInitialSizes = null;
+					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
 					this._cursorRoot = null;
 					this._resizeFunction = null;
 					this._resizeFunctionDataMap = null;
+
+					this._setResizingFlag(false);
 
 					if (this._proxyElement) {
 						$(this._proxyElement).remove();
@@ -10932,7 +10929,7 @@
 				if (isResize) {
 					//DUを掴んでいて、かつそれがドラッグ可能で周囲にカーソルがある場合はDUリサイズを開始
 					this._resizeSession = ResizeSession.create(this, this.rootElement,
-							context.event);
+							context.event, duNineSlicePos);
 
 					var that = this;
 					this._resizeSessionEndHandlerWrapper = function(ev) {
