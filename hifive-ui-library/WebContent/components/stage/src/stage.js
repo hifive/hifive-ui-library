@@ -3589,7 +3589,15 @@
 				 */
 				_isResizing: null,
 
+				/**
+				 * このDUがリサイズ可能な場合に、リサイズ操作とみなす境界の幅
+				 */
 				resizeBoundary: null,
+
+				/**
+				 * リサイズの制限の設定
+				 */
+				resizeLimit: null,
 
 				_renderer: null,
 			},
