@@ -6897,19 +6897,18 @@
 						},
 
 						__onResizeDUStart: function(resizeSession) {
-
+						//リサイズ時の挙動はViewCollectionで
+						//__onDragDUStartに移譲しているのでここでは何もしない
 						},
 
 						__onResizeDUChange: function(resizeSession) {
-
+						//リサイズ時の挙動はViewCollectionで
+						//__onDragDUChangeに移譲しているのでここでは何もしない
 						},
 
-						__onResizeDUEnd: function(resizeSession) {
-
-						},
-
-						__onResizeDUCancel: function(resizeSession) {
-						//TODO 不要か
+						__onResizeDURelease: function(resizeSession) {
+						//リサイズ時の挙動はViewCollectionで
+						//__onDragDUReleaseに移譲しているのでここでは何もしない
 						},
 
 						dispose: function() {
@@ -9967,26 +9966,29 @@
 						},
 
 						/**
+						 * DUリサイズ時は、DUドラッグ時と同様に 本来DUに対応するDOMは非表示にして リサイズ表示用にフォアレイヤーにDOMをコピーして表示する。
+						 * 理由は、リサイズ時もその要素を最前面に表示するため。 処理内容はドラッグの場合と同じなので、DragDUに処理を委譲している。 Change ->
+						 * Move, Release -> Dropと同様に委譲している。
+						 *
 						 * @private
 						 */
 						__onResizeDUStart: function(resizeSession) {
-
+							this.__onDragDUStart(resizeSession);
 						},
 
 						/**
 						 * @private
 						 */
 						__onResizeDUChange: function(resizeSession) {
-
+							this.__onDragDUMove(resizeSession);
 						},
 
 						/**
 						 * @private
 						 */
-						__onResizeDUEnd: function(resizeSession) {
-
+						__onResizeDURelease: function(resizeSession) {
+							this.__onDragDUDrop(resizeSession);
 						}
-
 					}
 				};
 				return desc;
@@ -11659,7 +11661,7 @@
 					}
 				}
 			} else if (this._currentDragMode === DRAG_MODE_DU_RESIZE) {
-				//this._viewCollection.__onResizeDURelease(this._resizeSession);
+				this._viewCollection.__onResizeDURelease(this._resizeSession);
 
 				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 				delegatedJQueryEvent.type = EVENT_RESIZE_DU_RELEASE;
