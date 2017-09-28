@@ -1091,50 +1091,50 @@
 						limitedDelta.y = 0;
 					}
 
-					if (!du.resizeLimit) {
+					if (!du.resizeConstraint) {
 						//リミットが何もなければそのままの値を返す
 						return limitedDelta;
 					}
 
-					if (limitedDelta.x < 0 && du.resizeLimit.minWidth != null) {
+					if (limitedDelta.x < 0 && du.resizeConstraint.minWidth != null) {
 						//X軸のマイナス方向のリサイズなのでminWidth制約をチェック
 
-						var diffToMinWidth = du.width - du.resizeLimit.minWidth;
+						var diffToMinWidth = du.width - du.resizeConstraint.minWidth;
 						if (diffToMinWidth + limitedDelta.x < 0) {
 							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
 							//minWidthよりも小さくなってしまうということ
 							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
 							limitedDelta.x = -diffToMinWidth;
 						}
-					} else if (limitedDelta.x > 0 && du.resizeLimit.maxWidth != null) {
+					} else if (limitedDelta.x > 0 && du.resizeConstraint.maxWidth != null) {
 						//X軸のプラス方向のリサイズなのでmaxWidth制約をチェック
-						var diffToMaxWidth = du.resizeLimit.maxWidth - du.width;
+						var diffToMaxWidth = du.resizeConstraint.maxWidth - du.width;
 						if (limitedDelta.x > diffToMaxWidth) {
 							limitedDelta.x = diffToMaxWidth;
 						}
 					}
 
-					if (limitedDelta.y < 0 && du.resizeLimit.minHeight != null) {
+					if (limitedDelta.y < 0 && du.resizeConstraint.minHeight != null) {
 						//Y軸のマイナス方向のリサイズなのでminHeight制約をチェック
-						var diffToMinHeight = du.height - du.resizeLimit.minHeight;
+						var diffToMinHeight = du.height - du.resizeConstraint.minHeight;
 						if (diffToMinHeight + limitedDelta.y < 0) {
 							//deltaXは負なので、(現在のDUの幅 - minWidth) + deltaXが負になるということは
 							//minWidthよりも小さくなってしまうということ
 							//そのため、deltaXを(現在のDUの幅 - minWidth)に制限する。
 							limitedDelta.y = -diffToMinHeight;
 						}
-					} else if (limitedDelta.y > 0 && du.resizeLimit.maxHeight != null) {
+					} else if (limitedDelta.y > 0 && du.resizeConstraint.maxHeight != null) {
 						//Y軸のプラス方向のリサイズなのでmaxHeight制約をチェック
-						var diffToMaxHeight = du.resizeLimit.maxHeight - du.height;
+						var diffToMaxHeight = du.resizeConstraint.maxHeight - du.height;
 						if (limitedDelta.y > diffToMaxHeight) {
 							limitedDelta.y = diffToMaxHeight;
 						}
 					}
 
-					//					var step = du.resizeLimit.step;
+					//					var step = du.resizeConstraint.step;
 					//					if(step != null) {
 					//						if(limitedDelta.x !== 0) {
-					//							var stepOffsetX = du.resizeLimit.stepOffsetX != null ? du.resizeLimit.stepOffsetX : 0;
+					//							var stepOffsetX = du.resizeConstraint.stepOffsetX != null ? du.resizeConstraint.stepOffsetX : 0;
 					//							var ldx = limitedDelta.x;
 					//							limitedDelta.x = step * parseInt((ldx) / step);
 					//
@@ -1142,7 +1142,7 @@
 					//						}
 					//
 					//						if(limitedDelta.y !== 0) {
-					//							var stepOffsetY = du.resizeLimit.stepOffsetY != null ? du.resizeLimit.stepOffsetY : 0;
+					//							var stepOffsetY = du.resizeConstraint.stepOffsetY != null ? du.resizeConstraint.stepOffsetY : 0;
 					//							var ldy = limitedDelta.y;
 					//							limitedDelta.y = step * parseInt((ldy) / step);
 					//						}
@@ -3670,7 +3670,7 @@
 				/**
 				 * リサイズの制限の設定
 				 */
-				resizeLimit: null,
+				resizeConstraint: null,
 
 				_renderer: null,
 			},

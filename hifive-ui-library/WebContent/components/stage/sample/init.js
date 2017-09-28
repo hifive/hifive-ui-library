@@ -422,7 +422,7 @@
 			this._setupDU(dependentDU, depRect);
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(dependentDU);
 			dependentDU.isResizable = true;
-			dependentDU.resizeLimit = {
+			dependentDU.resizeConstraint = {
 				minWidth: 3,
 				maxWidth: 100,
 				minHeight: 6,
