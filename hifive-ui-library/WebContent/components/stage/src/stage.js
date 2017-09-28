@@ -238,7 +238,8 @@
 		SCREEN: 2,
 		DU: 3,
 		SELECT: 4,
-		REGION: 5
+		REGION: 5,
+		DU_RESIZE: 6
 	};
 
 	var ScrollDirection = {
@@ -714,6 +715,398 @@
 		return desc;
 	});
 
+	/**
+	 * ResizeSession
+	 * <p>
+	 * DisplayUnitのリサイズ操作を行うためのクラスです。
+	 * </p>
+	 *
+	 * @class
+	 * @name ResizeSession
+	 * @param super_ スーパーオブジェクト
+	 * @returns クラス定義
+	 */
+	EventDispatcher.extend(function(super_) {
+		//eventはnullの場合がある（doPseudoMoveByの場合）
+		function defaultResizeFunction(du, data, event, delta, dragSession) {
+			var ret = {
+				dx: delta.x,
+				dy: delta.y
+			};
+			return ret;
+		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.ResizeSession',
+			field: {
+				//canDrop: null,
+
+				//ステージコントローラ
+				_stage: null,
+
+				//このドラッグセッションを非同期で行うかのフラグ
+				async: null,
+
+				/**
+				 * ドラッグ操作対象オブジェクト
+				 */
+				_targets: null,
+
+				//ドラッグ中のカーソル制御範囲(setCursor()のcursorスタイルの付与先)
+				_cursorRoot: null,
+
+				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
+				//setTarget()のタイミングでセットされる。
+				//同じインデックスの位置を保持。
+				_targetInitialSizes: null,
+
+				//各ドラッグ対象のドラッグ開始直前の親DU
+				_targetInitialParentDU: null,
+
+				//ドラッグ開始時のPagePosition
+				_startPageX: null,
+				_startPageY: null,
+
+				//最後のmousemove時のPagePosition
+				_lastPageX: null,
+				_lastPageY: null,
+
+				//開始場所を原点としたときの、現在のカーソル位置の座標差分
+				_moveX: null,
+				_moveY: null,
+
+				//開始時点を0としたときの、現在までのカーソルの移動総量
+				//こちらはmoveXYと異なり延べ距離を表す。
+				_totalMoveX: null,
+				_totalMoveY: null,
+
+				//ドラッグプロキシ。DUではなく通常のDOM要素を指定する必要がある。
+				_proxyElement: null,
+
+				//このドラッグセッションの完了フラグ
+				_isCompleted: null,
+
+				//移動関数。移動対象のDUごとに呼ばれる
+				_resizeFunction: null,
+
+				//du.id -> 当該DU用のdataオブジェクト へのマップ
+				_resizeFunctionDataMap: null
+			},
+			accessor: {
+				isCompleted: {
+					get: function() {
+						return this._isCompleted;
+					}
+				}
+			},
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ResizeSession
+				 * @param target
+				 * @param dragMode
+				 */
+				constructor: function ResizeSession(stage, rootElement, event) {
+					super_.constructor.call(this);
+
+					this._stage = stage;
+
+					this.async = false;
+
+					this._isCompleted = false;
+
+					/**
+					 * @private
+					 */
+					this._resizeFunction = defaultResizeFunction;
+
+					this._resizeFunctionDataMap = {};
+
+					this._proxyElement = null;
+
+					this._cursorRoot = rootElement;
+
+					//TODO touchイベント、pointer event対応
+					this._startPageX = event.pageX;
+					this._startPageY = event.pageY;
+
+					this._lastPageX = event.pageX;
+					this._lastPageY = event.pageY;
+
+					this._moveX = 0;
+					this._moveY = 0;
+
+					this._totalMoveX = 0;
+					this._totalMoveY = 0;
+				},
+
+				/**
+				 * 指定された位置に移動
+				 * <p>
+				 * このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(ArtShape)のmoveToやmoveByは呼ばれません。
+				 * ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。
+				 * </p>
+				 * <p>
+				 * このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。
+				 * </p>
+				 * <p>
+				 * 引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @param {number} x
+				 * @param {number} y
+				 */
+				setTarget: function(target) {
+					this._targets = target;
+					this._saveInitialStates();
+				},
+
+				getTarget: function() {
+					return this._targets;
+				},
+
+				setResizeFunction: function(func) {
+					this._resizeFunction = func;
+				},
+
+				setProxyElement: function(element) {
+					this._proxyElement = element;
+				},
+
+				getProxyElement: function() {
+					return this._proxyElement;
+				},
+
+				//TODO start()
+				begin: function() {
+					this._setResizingFlag(true);
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を確定させる
+				 * <p>
+				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。ただし、canDropがfalseの場合には代わりにキャンセルが行われます。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @returns {DragSession}
+				 */
+				end: function() {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					if (!this.canDrop) {
+						//ドロップできない場合はキャンセル処理を行う
+						this.cancel();
+						return;
+					}
+
+					this._setResizingFlag(false);
+
+					this._cleanUp();
+
+					var event = Event.create('resizeSessionEnd');
+					this.dispatchEvent(event);
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を元に戻す
+				 * <p>
+				 * moveメソッドで移動させた処理を元に戻します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @returns {DragSession}
+				 */
+				cancel: function(andRollbackPosition) {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					if (andRollbackPosition !== false) {
+						//引数に明示的にfalseを渡された場合を除き、
+						//ドラッグしていたDUの位置を戻す
+						this._rollbackStates();
+					}
+
+					this._setResizingFlag(false);
+
+					this._cleanUp();
+
+					var event = Event.create('resizeSessionCancel');
+					this.dispatchEvent(event);
+				},
+
+				//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
+				//（境界スクロールなどのときに使用）
+				//引数にはディスプレイ座標系での移動差分量を渡す。
+				doPseudoMoveBy: function(dx, dy) {
+					var delta = {
+						x: dx,
+						y: dy
+					};
+
+					this._deltaResize(null, delta);
+				},
+
+				doResize: function(event) {
+					if (this._isCompleted) {
+						return;
+					}
+
+					var cursorDx = event.pageX - this._lastPageX;
+					var cursorDy = event.pageY - this._lastPageY;
+
+					this._lastPageX = event.pageX;
+					this._lastPageY = event.pageY;
+
+					this._moveX = event.pageX - this._startPageX;
+					this._moveY = event.pageY - this._startPageY;
+
+					//totalMoveXYには絶対値で積算していく
+					this._totalMoveX += cursorDx < 0 ? -cursorDx : cursorDx;
+					this._totalMoveY += cursorDy < 0 ? -cursorDy : cursorDy;
+
+					//前回からの差分移動量
+					var delta = {
+						x: cursorDx,
+						y: cursorDy
+					};
+
+					this._deltaResize(event, delta);
+				},
+
+				setCursor: function(cursorStyle) {
+					if (cursorStyle == null) {
+						cursorStyle = '';
+					}
+					$(this._cursorRoot).css('cursor', cursorStyle);
+				},
+
+				/**
+				 * セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
+				 *
+				 * @private
+				 */
+				_saveInitialStates: function() {
+					if (!this._targets) {
+						return;
+					}
+
+					var parentDUs = [];
+					var sizes = [];
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var targetDU = targets[i];
+						var size = {
+							width: targetDU.width,
+							height: targetDU.height
+						};
+						sizes.push(size);
+						parentDUs.push(targetDU.parentDisplayUnit);
+					}
+
+					this._targetInitialSizes = sizes;
+					this._targetInitialParentDU = parentDUs;
+				},
+
+				/**
+				 * @private
+				 */
+				_deltaResize: function(event, delta) {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = this._targets;
+					if (!Array.isArray(targets)) {
+						targets = [targets];
+					}
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+
+						var data = this._resizeFunctionDataMap[du.id];
+						if (!data) {
+							data = {};
+							this._resizeFunctionDataMap[du.id] = data;
+						}
+
+						var resize = this._resizeFunction(du, data, event, delta, this);
+						if (!resize) {
+							continue;
+						}
+
+						var dx = typeof resize.dx === 'number' ? resize.dx : 0;
+						var dy = typeof resize.dy === 'number' ? resize.dy : 0;
+
+						if (dx === 0 && dy === 0) {
+							continue;
+						}
+
+						du.setSize(du.width + dx, du.height + dy);
+					}
+
+					this._stage._viewCollection.__onResizeDUChange(this);
+				},
+
+				/**
+				 * @private
+				 */
+				_rollbackStates: function() {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						var size = this._targetInitialPositions[i];
+						du.setSize(size.width, size.height);
+					}
+				},
+
+				/**
+				 * @private
+				 */
+				_cleanUp: function() {
+					this._targets = null;
+					this._targetInitialSizes = null;
+					this._targetInitialParentDU = null;
+					this._cursorRoot = null;
+					this._resizeFunction = null;
+					this._resizeFunctionDataMap = null;
+
+					if (this._proxyElement) {
+						$(this._proxyElement).remove();
+						this._proxyElement = null;
+					}
+				},
+
+				/**
+				 * @private
+				 */
+				_setResizingFlag: function(value) {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						du._isResizing = value;
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
 
 	/**
 	 * EditSession
@@ -1054,6 +1447,44 @@
 								return true;
 							}
 							return false;
+						},
+
+						getNineSlicePosition: function(x, y, boundary) {
+							var right = this.x + this.width;
+							var nsx = 0;
+
+							if (x > right) {
+								nsx = 2;
+							} else if (right - boundary.right <= x) {
+								nsx = 1;
+							} else if (this.x + boundary.left < x) {
+								nsx = 0;
+							} else if (this.x <= x) {
+								nsx = -1;
+							} else {
+								nsx = -2;
+							}
+
+							var bottom = this.y + this.height;
+							var nsy = 0;
+
+							if (y > bottom) {
+								nsy = 2;
+							} else if (bottom - boundary.bottom <= y) {
+								nsy = 1;
+							} else if (this.y + boundary.top < y) {
+								nsy = 0;
+							} else if (this.y <= y) {
+								nsy = -1;
+							} else {
+								nsy = -2;
+							}
+
+							var nineSlice = {
+								x: nsx,
+								y: nsy
+							};
+							return nineSlice;
 						}
 					}
 				};
@@ -3125,6 +3556,18 @@
 				 */
 				_isDragging: null,
 
+				/**
+				 * この要素がリサイズ可能かどうか
+				 */
+				isResizable: null,
+
+				/**
+				 * 現在この要素をリサイズ中かどうか
+				 */
+				_isResizing: null,
+
+				resizeBoundary: null,
+
 				_renderer: null,
 			},
 			accessor: {
@@ -3165,6 +3608,12 @@
 					get: function() {
 						return this._isDragging;
 					}
+				},
+
+				isResizing: {
+					get: function() {
+						return this._isResizing;
+					}
 				}
 			},
 			method: {
@@ -3175,6 +3624,16 @@
 
 					this.isDraggable = true;
 					this._isDragging = false;
+
+					this.isResizable = false;
+					this._isResizing = false;
+					this.resizeBoundary = {
+						isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
+						top: 3,
+						left: 3,
+						bottom: 3,
+						right: 3
+					};
 				},
 				/**
 				 * rendererのシグネチャ：function(graphics, du)
@@ -4888,6 +5347,7 @@
 	var WorldPoint = classManager.getClass('h5.ui.components.stage.WorldPoint');
 	var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var DragSession = classManager.getClass('h5.ui.components.stage.DragSession');
+	var ResizeSession = classManager.getClass('h5.ui.components.stage.ResizeSession');
 	var UpdateReasonSet = classManager.getClass('h5.ui.components.stage.UpdateReasonSet');
 
 	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
@@ -6329,6 +6789,22 @@
 							$(this._foremostDiv).empty();
 
 							this.update();
+						},
+
+						__onResizeDUStart: function(resizeSession) {
+
+						},
+
+						__onResizeDUChange: function(resizeSession) {
+
+						},
+
+						__onResizeDUEnd: function(resizeSession) {
+
+						},
+
+						__onResizeDUCancel: function(resizeSession) {
+						//TODO 不要か
 						},
 
 						dispose: function() {
@@ -9383,7 +9859,29 @@
 							this.getViewAll().forEach(function(v) {
 								v.__onDragDUDrop(dragSession);
 							});
+						},
+
+						/**
+						 * @private
+						 */
+						__onResizeDUStart: function(resizeSession) {
+
+						},
+
+						/**
+						 * @private
+						 */
+						__onResizeDUChange: function(resizeSession) {
+
+						},
+
+						/**
+						 * @private
+						 */
+						__onResizeDUEnd: function(resizeSession) {
+
 						}
+
 					}
 				};
 				return desc;
@@ -9445,6 +9943,7 @@
 	var DRAG_MODE_DU = DragMode.DU;
 	var DRAG_MODE_SELECT = DragMode.SELECT;
 	var DRAG_MODE_REGION = DragMode.REGION;
+	var DRAG_MODE_DU_RESIZE = DragMode.DU_RESIZE;
 
 	var SCROLL_DIRECTION_NONE = ScrollDirection.NONE;
 	var SCROLL_DIRECTION_X = ScrollDirection.X;
@@ -9491,6 +9990,11 @@
 	var EVENT_DRAG_DU_END = 'stageDragEnd';
 	var EVENT_DRAG_DU_DROP = 'stageDragDrop';
 	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
+
+	var EVENT_RESIZE_DU_START = 'duResizeStart';
+	var EVENT_RESIZE_DU_CHANGE = 'duResizeChange';
+	var EVENT_RESIZE_DU_END = 'duResizeEnd';
+	var EVENT_RESIZE_DU_CANCEL = 'duResizeCancel';
 
 	var EVENT_STAGE_CLICK = 'stageClick';
 
@@ -10119,6 +10623,55 @@
 		 */
 		_dragStartRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
 
+
+		/**
+		 * 指定されたディスプレイ座標（ただしStageルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
+		 *
+		 * @param displayX ディスプレイX座標（ただしStageルート要素の左上を原点とする値）
+		 * @param displayY ディスプレイY座標（ただしStageルート要素の左上を原点とする値）
+		 * @returns { x: -1 or 0 or 1, y: -1 or 0 or 1 } というオブジェクト。 -1の場合は上端または左端、1は下端または右端、0は中央部分
+		 */
+		_getNineSlicePosition: function(du, displayOffsetX, displayOffsetY) {
+			if (!du) {
+				throw new Error('DUがnullです。Nine-Sliceを計算できません。');
+			}
+
+			var viewport = this.getViewCollection().getActiveView()._viewport;
+
+			var cursorWorldPos = viewport.getWorldPositionFromDisplayOffset(displayOffsetX,
+					displayOffsetY);
+
+			var boundaryTop = du.resizeBoundary.top;
+			var boundaryRight = du.resizeBoundary.right;
+			var boundaryBottom = du.resizeBoundary.bottom;
+			var boundaryLeft = du.resizeBoundary.left;
+			//デフォルトではディスプレイ座標系とみなす
+			if (du.resizeBoundary.isDisplay !== false) {
+				//ディスプレイ座標系とみなす場合は、現在の拡大率における
+				//World座標系でのバウンダリの長さに変換
+				boundaryTop = viewport.getYLengthOfWorld(boundaryTop);
+				boundaryRight = viewport.getXLengthOfWorld(boundaryRight);
+				boundaryBottom = viewport.getYLengthOfWorld(boundaryBottom);
+				boundaryLeft = viewport.getXLengthOfWorld(boundaryLeft);
+			}
+
+			//TODO 描画サイズが小さい場合に「中央」とみなすか「右端/下端」とみなすかを指定できるようにしたい
+			//現状ではこの関数はリサイズかドラッグかの判定にのみ使うので、
+			//「右端/下端」にみなしたほうがよい（そうしないと、小さいサイズになったときにリサイズ不能になる）
+
+			var boundaryW = {
+				top: boundaryTop,
+				right: boundaryRight,
+				bottom: boundaryBottom,
+				left: boundaryLeft
+			};
+
+			var nineSlice = du.getRect().getNineSlicePosition(cursorWorldPos.x, cursorWorldPos.y,
+					boundaryW);
+
+			return nineSlice;
+		},
+
 		/**
 		 * @private
 		 */
@@ -10249,7 +10802,95 @@
 			case DRAG_MODE_AUTO:
 			default:
 				//UIDragModeがAUTOの場合
-				if (du && du.isDraggable) {
+
+				var isResize = false;
+				//TODO SPEC:座標に基づいて計算するのか、duがある＝そのカーソル位置にDOMが描画されている場合にのみ判定すべきか
+				if (du && du.isResizable) {
+					var displayOffsetX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
+					var displayOffsetY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
+					var duNineSlicePos = this._getNineSlicePosition(du, displayOffsetX,
+							displayOffsetY);
+					if (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0) {
+						isResize = true;
+					}
+				}
+
+				if (isResize) {
+					//DUを掴んでいて、かつそれがドラッグ可能で周囲にカーソルがある場合はDUリサイズを開始
+					this._resizeSession = ResizeSession.create(this, this.rootElement,
+							context.event);
+
+					var that = this;
+					this._resizeSessionEndHandlerWrapper = function(ev) {
+						that._resizeSessionEndHandler(ev);
+					};
+					this._dragSessionCancelHandlerWrapper = function(ev) {
+						that._resizeSessionCancelHandler(ev);
+					};
+
+					this._resizeSession.addEventListener('resizeSessionEnd',
+							this._resizeSessionEndHandlerWrapper);
+					this._resizeSession.addEventListener('resizeSessionCancel',
+							this._resizeSessionCancelHandlerWrapper);
+
+					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
+					var targetDU = this.getSelectedDisplayUnits();
+					targetDU = targetDU.filter(function(resizeTargetDU) {
+						return resizeTargetDU.isResizable;
+					});
+					this._resizeSession.setTarget(targetDU);
+
+					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+
+					delegatedJQueryEvent.type = EVENT_RESIZE_DU_START;
+					delegatedJQueryEvent.target = this.rootElement;
+					delegatedJQueryEvent.currentTarget = this.rootElement;
+					//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+					//defaultPreventedの値を引き継いで返してしまう。
+					//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+					//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+					//クロージャで持っているため外から変更できない。
+					//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+					//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+					var isDelegatedJQueryEventDefaultPrevented = false;
+					delegatedJQueryEvent.preventDefault = function() {
+						isDelegatedJQueryEventDefaultPrevented = true;
+					};
+					delegatedJQueryEvent.isDefaultPrevented = function() {
+						return isDelegatedJQueryEventDefaultPrevented;
+					};
+
+					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+					var resizeStartEvent = this.trigger(delegatedJQueryEvent, {
+						resizeSession: this._resizeSession
+					});
+
+					if (resizeStartEvent.isDefaultPrevented()) {
+						//TODO:stageDragStartイベントでpreventDefault()された場合の挙動
+						return;
+					}
+
+					this._currentDragMode = DRAG_MODE_DU_RESIZE;
+					setCursor('default');
+
+					this._resizeSession.begin();
+
+					this._viewCollection.__onResizeDUStart(this._resizeSession);
+
+					//プロキシが設定されたらそれを表示
+					var proxyElem = this._resizeSession.getProxyElement();
+					var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+					var proxyTop = event.pageY - this._dragStartRootOffset.top;
+					if (proxyElem) {
+						$root.append(proxyElem);
+						$(proxyElem).css({
+							position: 'absolute',
+							left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+							top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+						});
+					}
+				} else if (du && du.isDraggable) {
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
 					this._dragSession = DragSession.create(this, this.rootElement, context.event);
 
@@ -10616,6 +11257,39 @@
 			var that = this;
 
 			switch (this._currentDragMode) {
+			case DRAG_MODE_DU_RESIZE:
+				//TODO リサイズ中のバウンダリスクロール
+
+				//doMoveの中でStageViewCollection.__onDragDUMoveが呼ばれる
+				this._resizeSession.doResize(context.event);
+
+				//プロキシが設定されたらそれを表示
+				//TODO プロキシの移動はDragSessionに任せる方向で。constructorでドラッグのルート(Stage)を渡せば可能のはず
+				var proxyElem = this._resizeSession.getProxyElement();
+				if (proxyElem) {
+					var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+					var proxyTop = event.pageY - this._dragStartRootOffset.top;
+
+					$(proxyElem).css({
+						position: 'absolute',
+						left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+						top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+					});
+				}
+
+				//var dragOverDU = this._getDragOverDisplayUnit(context.event);
+
+				delegatedJQueryEvent.type = EVENT_RESIZE_DU_CHANGE;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this.trigger(delegatedJQueryEvent, {
+					resizeSession: this._resizeSession
+				//,
+				//dragOverDisplayUnit: dragOverDU
+				});
+
+				break;
 			case DRAG_MODE_DU:
 				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
 					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
@@ -10847,6 +11521,24 @@
 						this._dragSession.end();
 					}
 				}
+			} else if (this._currentDragMode === DRAG_MODE_DU_RESIZE) {
+				this._viewCollection.__onResizeDUEnd(this._resizeSession);
+
+				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				delegatedJQueryEvent.type = EVENT_RESIZE_DU_END;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this.trigger(delegatedJQueryEvent, {
+					resizeSession: this._resizeSession
+				});
+
+				// 同期なら直ちにendまたはcancelに遷移
+				// dragSessionのイベント経由で最終的にdisposeが走る
+				// 非同期の場合はdisposeしない
+				if (!this._resizeSession.isCompleted && !this._resizeSession.async) {
+					this._resizeSession.end();
+				}
 			}
 
 			this._cleanUpDragStates();
@@ -10877,6 +11569,14 @@
 			this._dragSession.removeEventListener('dragSessionCancel',
 					this._dragSessionCancelHandlerWrapper);
 			this._dragSession = null; //TODO dragSessionをdisposeする
+		},
+
+		_disposeResizeSession: function() {
+			this._resizeSession.removeEventListener('resizeSessionEnd',
+					this._resizeSessionEndHandlerWrapper);
+			this._resizeSession.removeEventListener('resizeSessionCancel',
+					this._resizeSessionCancelHandlerWrapper);
+			this._resizeSession = null; //TODO dragSessionをdisposeする
 		},
 
 		/**
@@ -11040,7 +11740,7 @@
 		 * @private
 		 */
 		_removeLayer: function(layer) {
-			var idx = this._layers.indexOf(layer);
+			var idx = this._layers.ffffffffffffffffffffffffffffffffffffffffffindexOf(layer);
 
 			if (idx === -1) {
 				return;
@@ -11179,6 +11879,32 @@
 			this._disposeDragSession();
 		},
 
+		/**
+		 * @private
+		 */
+		_resizeSessionEndHandlerWrapper: null,
+
+		/**
+		 * @private
+		 */
+		_resizeSessionEndHandler: function() {
+			this.trigger(EVENT_RESIZE_DU_END);
+			this._disposeResizeSession();
+		},
+
+		/**
+		 * @private
+		 */
+		_resizeSessionCancelHandlerWrapper: null,
+
+		/**
+		 * @private
+		 */
+		_resizeSessionCancelHandler: function() {
+			this.trigger(EVENT_RESIZE_DU_CANCEL);
+			this._disposeResizeSession();
+		},
+
 		'.h5-stage-view-root click': function(context) {
 			this._processClick(context.event, EVENT_DU_CLICK);
 		},
@@ -11263,6 +11989,32 @@
 			}
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
+
+			var $root = $(this.rootElement);
+
+			//カーソルを一旦リセット
+			$root.css('cursor', '');
+
+			//リサイズ可能なDUの境界部分にカーソルが載ったら
+			//カーソルをリサイズ用のアイコンに変更する
+			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
+				var offsetPos = $root.offset();
+				var displayOffsetX = context.event.pageX - offsetPos.left;
+				var displayOffsetY = context.event.pageY - offsetPos.top;
+				var nineSlicePos = this._getNineSlicePosition(currentMouseOverDU, displayOffsetX,
+						displayOffsetY);
+				if (nineSlicePos.x > 0) {
+					if (nineSlicePos.y < 0) {
+						//カーソルは「右上」にある
+					} else if (nineSlicePos.y > 0) {
+						//カーソルは「右下」にある
+						$root.css('cursor', 'nw-resize');
+					} else {
+						//カーソルは「右中央」にある
+						$root.css('cursor', 'w-resize');
+					}
+				}
+			}
 
 			if (currentMouseOverDU === this._lastEnteredDU) {
 				return;

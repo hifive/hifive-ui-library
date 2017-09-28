@@ -283,7 +283,7 @@
 			unit.setRenderer(function(context, graphics) {
 				var reason = context.reason;
 
-				if (!reason.isRenderRequested && !reason.isInitialRender && !reason.isFocusChanged
+				if (!reason.isSizeChanged && !reason.isRenderRequested && !reason.isInitialRender && !reason.isFocusChanged
 						&& !reason.isSelectionChanged) {
 					//初回描画もしくはリクエスト以外では再描画の必要はない
 					return;
@@ -297,8 +297,8 @@
 				rect2.setAttributes({
 					x: 10,
 					y: 0,
-					width: 20,
-					height: 20,
+					width: du.width,
+					height: du.height,
 					opacity: 1
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
@@ -574,6 +574,22 @@
 		'{rootElement} stageDragRegionEnd': function(context) {
 			console.log(context.event.type);
 			console.log(context.evArg);
+		},
+
+		'{rootElement} duResizeStart': function(context) {
+			console.log(context.event.type);
+		},
+
+		'{rootElement} duResizeChange': function(context) {
+			console.log(context.event.type);
+		},
+
+		'{rootElement} duResizeEnd': function(context) {
+			console.log(context.event.type);
+		},
+
+		'{rootElement} duResizeCancel': function(context) {
+			console.log(context.event.type);
 		},
 
 		'input[name="splitView"] click': function(context) {
