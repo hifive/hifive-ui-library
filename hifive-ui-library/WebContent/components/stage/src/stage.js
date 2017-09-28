@@ -3649,10 +3649,10 @@
 					this._isResizing = false;
 					this.resizeBoundary = {
 						//isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
-						top: 3,
-						left: 3,
-						bottom: 3,
-						right: 3
+						top: 6,
+						left: 6,
+						bottom: 6,
+						right: 6
 					};
 				},
 				/**
@@ -12055,9 +12055,22 @@
 				var displayOffsetY = context.event.pageY - offsetPos.top;
 				var nineSlicePos = this._getNineSlicePosition(currentMouseOverDU, displayOffsetX,
 						displayOffsetY);
-				if (nineSlicePos.x > 0) {
+
+				if (nineSlicePos.x < 0) {
+					if (nineSlicePos.y < 0) {
+						//カーソルは「左上」にある
+						$root.css('cursor', 'nw-resize');
+					} else if (nineSlicePos.y > 0) {
+						//カーソルは「左下」にある
+						$root.css('cursor', 'ne-resize');
+					} else {
+						//カーソルは「左中」にある
+						$root.css('cursor', 'w-resize');
+					}
+				} else if (nineSlicePos.x > 0) {
 					if (nineSlicePos.y < 0) {
 						//カーソルは「右上」にある
+						$root.css('cursor', 'ne-resize');
 					} else if (nineSlicePos.y > 0) {
 						//カーソルは「右下」にある
 						$root.css('cursor', 'nw-resize');
@@ -12065,6 +12078,12 @@
 						//カーソルは「右中央」にある
 						$root.css('cursor', 'w-resize');
 					}
+				} else {
+					if (nineSlicePos.y !== 0) {
+						//カーソルは「中上」または「中下」にある
+						$root.css('cursor', 'n-resize');
+					}
+					//カーソルが「中中」にある場合は変更しない
 				}
 			}
 
