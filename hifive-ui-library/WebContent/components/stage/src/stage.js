@@ -1101,8 +1101,6 @@
 						height = 0;
 					}
 
-					//TODO 左側操作時にmaxWidthを超えたら動かさない
-
 					if (du.resizeConstraint != null) {
 						var minWidth = du.resizeConstraint.minWidth;
 						var maxWidth = du.resizeConstraint.maxWidth;
@@ -2031,7 +2029,7 @@
 		};
 
 		addSimpleSVGAccessor(desc.accessor, ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width',
-				'fill']);
+				'fill', 'stroke-dasharray']);
 		return desc;
 	});
 
