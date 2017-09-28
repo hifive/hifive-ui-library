@@ -283,8 +283,8 @@
 			unit.setRenderer(function(context, graphics) {
 				var reason = context.reason;
 
-				if (!reason.isSizeChanged && !reason.isRenderRequested && !reason.isInitialRender && !reason.isFocusChanged
-						&& !reason.isSelectionChanged) {
+				if (!reason.isSizeChanged && !reason.isRenderRequested && !reason.isInitialRender
+						&& !reason.isFocusChanged && !reason.isSelectionChanged) {
 					//初回描画もしくはリクエスト以外では再描画の必要はない
 					return;
 				}
@@ -404,6 +404,7 @@
 			for (var i = 0, len = numCreate; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._setupDU(BasicDisplayUnit.create(), rect);
+				unit.isResizable = true;
 				unit.zIndex = numCreate - i;
 				container.addDisplayUnit(unit);
 				this._units.push(unit);
@@ -420,6 +421,13 @@
 			var depRect = Rect.create(400, 300, 60, 40);
 			this._setupDU(dependentDU, depRect);
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(dependentDU);
+			dependentDU.isResizable = true;
+			dependentDU.resizeLimit = {
+				minWidth: 3,
+				maxWidth: 100,
+				minHeight: 6,
+				maxHeight: 100
+			};
 
 			var edge = this._createEdge(this._units[3], this._units[6]);
 			this._edges.push(edge);
@@ -435,6 +443,7 @@
 			divDU.y = 0;
 			divContainer.addDisplayUnit(divDU);
 			this._stageController.getLayer('divlayer').addDisplayUnit(divContainer);
+			divDU.isResizable = true;
 
 			this._divDU = divDU;
 
@@ -578,10 +587,24 @@
 
 		'{rootElement} duResizeStart': function(context) {
 			console.log(context.event.type);
+
+			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
+					+ context.evArg.resizeSession.getTarget().length + '</div>')[0];
+
+			//context.event.preventDefault();
+			context.evArg.resizeSession.setProxyElement(elem);
 		},
 
 		'{rootElement} duResizeChange': function(context) {
 			console.log(context.event.type);
+		},
+
+		'{rootElement} duResizeRelease': function(context) {
+			console.log(context.event.type);
+			//			context.evArg.resizeSession.async = true;
+			//			setTimeout(function(){
+			//				context.evArg.resizeSession.end();
+			//			}, 2000);
 		},
 
 		'{rootElement} duResizeEnd': function(context) {

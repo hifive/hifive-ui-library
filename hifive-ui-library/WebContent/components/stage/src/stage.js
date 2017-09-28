@@ -926,13 +926,13 @@
 				 * @memberOf DragSession
 				 * @returns {DragSession}
 				 */
-				cancel: function(andRollbackPosition) {
+				cancel: function(andRollbackSize) {
 					if (this._isCompleted) {
 						return;
 					}
 					this._isCompleted = true;
 
-					if (andRollbackPosition !== false) {
+					if (andRollbackSize !== false) {
 						//引数に明示的にfalseを渡された場合を除き、
 						//ドラッグしていたDUの位置を戻す
 						this._rollbackStates();
@@ -1162,7 +1162,7 @@
 					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
-						var size = this._targetInitialPositions[i];
+						var size = this._targetInitialSizes[i];
 						du.setSize(size.width, size.height);
 					}
 				},
@@ -10098,6 +10098,7 @@
 
 	var EVENT_RESIZE_DU_START = 'duResizeStart';
 	var EVENT_RESIZE_DU_CHANGE = 'duResizeChange';
+	var EVENT_RESIZE_DU_RELEASE = 'duResizeRelease';
 	var EVENT_RESIZE_DU_END = 'duResizeEnd';
 	var EVENT_RESIZE_DU_CANCEL = 'duResizeCancel';
 
@@ -10935,7 +10936,7 @@
 					this._resizeSessionEndHandlerWrapper = function(ev) {
 						that._resizeSessionEndHandler(ev);
 					};
-					this._dragSessionCancelHandlerWrapper = function(ev) {
+					this._resizeSessionCancelHandlerWrapper = function(ev) {
 						that._resizeSessionCancelHandler(ev);
 					};
 
@@ -11658,16 +11659,16 @@
 					}
 				}
 			} else if (this._currentDragMode === DRAG_MODE_DU_RESIZE) {
-				this._viewCollection.__onResizeDUEnd(this._resizeSession);
+				//this._viewCollection.__onResizeDURelease(this._resizeSession);
 
-				//				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-				//				delegatedJQueryEvent.type = EVENT_RESIZE_DU_END;
-				//				delegatedJQueryEvent.target = this.rootElement;
-				//				delegatedJQueryEvent.currentTarget = this.rootElement;
-				//
-				//				this.trigger(delegatedJQueryEvent, {
-				//					resizeSession: this._resizeSession
-				//				});
+				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				delegatedJQueryEvent.type = EVENT_RESIZE_DU_RELEASE;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+
+				this.trigger(delegatedJQueryEvent, {
+					resizeSession: this._resizeSession
+				});
 
 				// 同期なら直ちにendまたはcancelに遷移
 				// dragSessionのイベント経由で最終的にdisposeが走る
