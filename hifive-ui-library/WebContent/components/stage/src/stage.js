@@ -249,6 +249,13 @@
 		XY: 3
 	};
 
+	var ResizeDirection = {
+		NONE: 0,
+		X: 1,
+		Y: 2,
+		XY: 3
+	};
+
 	var REASON_RENDER_REQUEST = '__duRenderRequest__';
 	var REASON_SIZE_CHANGE = '__duSizeChange__';
 	var REASON_POSITION_CHANGE = '__duPositionChange__';
@@ -280,7 +287,8 @@
 	h5.u.obj.expose('h5.ui.components.stage', {
 		DragMode: DragMode,
 		ScrollDirection: ScrollDirection,
-		UpdateReasons: UpdateReasons
+		UpdateReasons: UpdateReasons,
+		ResizeDirection: ResizeDirection
 	});
 
 
@@ -728,7 +736,7 @@
 	 */
 	EventDispatcher.extend(function(super_) {
 		//eventはnullの場合がある（doPseudoMoveByの場合）
-		function defaultResizeFunction(du, data, event, delta, dragSession) {
+		function defaultResizeFunction(du, data, event, delta, resizeSession) {
 			var ret = {
 				dx: delta.x,
 				dy: delta.y
@@ -739,13 +747,13 @@
 		var desc = {
 			name: 'h5.ui.components.stage.ResizeSession',
 			field: {
-				//canDrop: null,
-
 				//ステージコントローラ
 				_stage: null,
 
 				//このドラッグセッションを非同期で行うかのフラグ
 				async: null,
+
+				direction: null,
 
 				/**
 				 * ドラッグ操作対象オブジェクト
@@ -813,6 +821,8 @@
 					this.async = false;
 
 					this._isCompleted = false;
+
+					this.direction = ResizeDirection.NONE;
 
 					/**
 					 * @private
@@ -898,12 +908,6 @@
 						return;
 					}
 					this._isCompleted = true;
-
-					if (!this.canDrop) {
-						//ドロップできない場合はキャンセル処理を行う
-						this.cancel();
-						return;
-					}
 
 					this._setResizingFlag(false);
 
@@ -1019,13 +1023,29 @@
 				 * @private
 				 */
 				_deltaResize: function(event, delta) {
-					if (!this._targets) {
+					if (!this._targets || this.direction === ResizeDirection.NONE) {
 						return;
 					}
 
 					var targets = this._targets;
 					if (!Array.isArray(targets)) {
 						targets = [targets];
+					}
+
+					var restrictedDelta = {
+						x: delta.x,
+						y: delta.y
+					};
+
+					//directionの指定に応じてリサイズの方向を制限する
+					//先頭でdirection===NONEの場合はreturnしているので必ずX,Y,XYのいずれか
+					switch (this.direction) {
+					case ResizeDirection.X:
+						restrictedDelta.y = 0;
+						break;
+					case ResizeDirection.Y:
+						restrictedDelta.x = 0;
+						break;
 					}
 
 					for (var i = 0, len = targets.length; i < len; i++) {
@@ -1037,7 +1057,7 @@
 							this._resizeFunctionDataMap[du.id] = data;
 						}
 
-						var resize = this._resizeFunction(du, data, event, delta, this);
+						var resize = this._resizeFunction(du, data, event, restrictedDelta, this);
 						if (!resize) {
 							continue;
 						}
@@ -3628,7 +3648,7 @@
 					this.isResizable = false;
 					this._isResizing = false;
 					this.resizeBoundary = {
-						isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
+						//isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
 						top: 3,
 						left: 3,
 						bottom: 3,
@@ -5361,6 +5381,7 @@
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
+	var ResizeDirection = h5.ui.components.stage.ResizeDirection;
 
 	var SortedList = RootClass.extend(function(super_) {
 		function getInsertionIndex(array, target, compareFunc, start, end) {
@@ -10627,6 +10648,7 @@
 		/**
 		 * 指定されたディスプレイ座標（ただしStageルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
 		 *
+		 * @private
 		 * @param displayX ディスプレイX座標（ただしStageルート要素の左上を原点とする値）
 		 * @param displayY ディスプレイY座標（ただしStageルート要素の左上を原点とする値）
 		 * @returns { x: -1 or 0 or 1, y: -1 or 0 or 1 } というオブジェクト。 -1の場合は上端または左端、1は下端または右端、0は中央部分
@@ -10645,8 +10667,9 @@
 			var boundaryRight = du.resizeBoundary.right;
 			var boundaryBottom = du.resizeBoundary.bottom;
 			var boundaryLeft = du.resizeBoundary.left;
-			//デフォルトではディスプレイ座標系とみなす
-			if (du.resizeBoundary.isDisplay !== false) {
+			//デフォルトではバウンダリの値はディスプレイ座標系の値とみなす
+			var isBoundaryInDisplaySize = du.resizeBoundary.isDisplay !== false;
+			if (isBoundaryInDisplaySize) {
 				//ディスプレイ座標系とみなす場合は、現在の拡大率における
 				//World座標系でのバウンダリの長さに変換
 				boundaryTop = viewport.getYLengthOfWorld(boundaryTop);
@@ -10666,7 +10689,11 @@
 				left: boundaryLeft
 			};
 
-			var nineSlice = du.getRect().getNineSlicePosition(cursorWorldPos.x, cursorWorldPos.y,
+			var duWorldGlobalPos = du.getWorldGlobalPosition();
+			var duWorldRect = Rect.create(duWorldGlobalPos.x, duWorldGlobalPos.y, du.width,
+					du.height);
+
+			var nineSlice = duWorldRect.getNineSlicePosition(cursorWorldPos.x, cursorWorldPos.y,
 					boundaryW);
 
 			return nineSlice;
@@ -10804,12 +10831,12 @@
 				//UIDragModeがAUTOの場合
 
 				var isResize = false;
+				var duNineSlicePos = null;
 				//TODO SPEC:座標に基づいて計算するのか、duがある＝そのカーソル位置にDOMが描画されている場合にのみ判定すべきか
 				if (du && du.isResizable) {
 					var displayOffsetX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
 					var displayOffsetY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
-					var duNineSlicePos = this._getNineSlicePosition(du, displayOffsetX,
-							displayOffsetY);
+					duNineSlicePos = this._getNineSlicePosition(du, displayOffsetX, displayOffsetY);
 					if (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0) {
 						isResize = true;
 					}
@@ -10832,6 +10859,31 @@
 							this._resizeSessionEndHandlerWrapper);
 					this._resizeSession.addEventListener('resizeSessionCancel',
 							this._resizeSessionCancelHandlerWrapper);
+
+					var resizeDirection = ResizeDirection.NONE;
+					if (duNineSlicePos.x < 0) {
+						if (duNineSlicePos.y === 0) {
+							//左中央
+							resizeDirection = ResizeDirection.X;
+						} else {
+							//左上
+							//左下
+							resizeDirection = ResizeDirection.XY;
+						}
+					} else if (duNineSlicePos.x > 0) {
+						if (duNineSlicePos.y === 0) {
+							//右中央
+							resizeDirection = ResizeDirection.X;
+						} else {
+							//右上または右下
+							resizeDirection = ResizeDirection.XY;
+						}
+					} else {
+						//リサイズであることが確定している＝DUの中央にいることはないので
+						//必ず境界の上または下にカーソルがある
+						resizeDirection = ResizeDirection.Y;
+					}
+					this._resizeSession.direction = resizeDirection;
 
 					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
 					var targetDU = this.getSelectedDisplayUnits();
@@ -11524,14 +11576,14 @@
 			} else if (this._currentDragMode === DRAG_MODE_DU_RESIZE) {
 				this._viewCollection.__onResizeDUEnd(this._resizeSession);
 
-				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-				delegatedJQueryEvent.type = EVENT_RESIZE_DU_END;
-				delegatedJQueryEvent.target = this.rootElement;
-				delegatedJQueryEvent.currentTarget = this.rootElement;
-
-				this.trigger(delegatedJQueryEvent, {
-					resizeSession: this._resizeSession
-				});
+				//				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				//				delegatedJQueryEvent.type = EVENT_RESIZE_DU_END;
+				//				delegatedJQueryEvent.target = this.rootElement;
+				//				delegatedJQueryEvent.currentTarget = this.rootElement;
+				//
+				//				this.trigger(delegatedJQueryEvent, {
+				//					resizeSession: this._resizeSession
+				//				});
 
 				// 同期なら直ちにendまたはcancelに遷移
 				// dragSessionのイベント経由で最終的にdisposeが走る
@@ -11576,7 +11628,7 @@
 					this._resizeSessionEndHandlerWrapper);
 			this._resizeSession.removeEventListener('resizeSessionCancel',
 					this._resizeSessionCancelHandlerWrapper);
-			this._resizeSession = null; //TODO dragSessionをdisposeする
+			this._resizeSession = null; //TODO resizeSessionをdisposeする
 		},
 
 		/**
@@ -11983,17 +12035,17 @@
 				return;
 			}
 
+			var $root = $(this.rootElement);
+
+			//カーソルを一旦リセット
+			$root.css('cursor', 'auto');
+
 			if (!(this.rootElement.compareDocumentPosition(context.event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
 				return;
 			}
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
-
-			var $root = $(this.rootElement);
-
-			//カーソルを一旦リセット
-			$root.css('cursor', '');
 
 			//リサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
