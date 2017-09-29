@@ -1267,7 +1267,8 @@
 				_autoLayout: null,
 
 				_duDirtyHandlerWrapper: null,
-				_stageSightChangeHandlerWrapper: null
+				_stageSightChangeHandlerWrapper: null,
+				_raf: null
 			},
 
 			accessor: {
@@ -1302,6 +1303,8 @@
 					this._isModal = isModal === true ? true : false;
 
 					this._autoLayout = autoLayout;
+
+					this._raf = null;
 
 					//					var event = DisplayUnitDirtyEvent.create();
 					//					event.displayUnit = this;
@@ -1401,6 +1404,19 @@
 				},
 
 				_doAutoLayoutEditor: function() {
+					//TODO ここで直接rAFを使わず、StageViewに refreshViewのイベントをあげさせて
+					//そのタイミングで再描画するのがよい
+					if (this._raf) {
+						return;
+					}
+					var that = this;
+					this._raf = requestAnimationFrame(function() {
+						that._raf = null;
+						that._doAutoLayoutEditorInternal();
+					});
+				},
+
+				_doAutoLayoutEditorInternal: function() {
 					if (!this._autoLayout) {
 						return;
 					}
