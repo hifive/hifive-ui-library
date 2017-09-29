@@ -1263,7 +1263,11 @@
 				_targets: null,
 				_editorView: null,
 				_isExclusive: null,
-				_isModal: null
+				_isModal: null,
+				_autoLayout: null,
+
+				_duDirtyHandlerWrapper: null,
+				_stageSightChangeHandlerWrapper: null
 			},
 
 			accessor: {
@@ -1286,7 +1290,7 @@
 				 * @param targetDisplayUnits ターゲットDisplayUnits
 				 */
 				constructor: function EditSession(editManager, editor, targetDisplayUnits,
-						isExclusive, isModal) {
+						isExclusive, isModal, autoLayout) {
 					super_.constructor.call(this);
 					this._editManager = editManager;
 					this._editor = editor;
@@ -1296,6 +1300,30 @@
 					this._isExclusive = isExclusive === true ? true : false;
 					//isModalはデフォルト：false。
 					this._isModal = isModal === true ? true : false;
+
+					this._autoLayout = autoLayout;
+
+					//					var event = DisplayUnitDirtyEvent.create();
+					//					event.displayUnit = this;
+					//					event.reason = UpdateReasonSet.create(reasons);
+					//					this.dispatchEvent(event);
+
+
+					if (autoLayout) {
+						var that = this;
+						this._duDirtyHandlerWrapper = function(event) {
+							that._onDUDirty(event);
+						};
+						this._stageSightChangeHandlerWrapper = function() {
+							that._doAutoLayoutEditor();
+						};
+
+						autoLayout.followTarget.addEventListener('displayUnitDirty',
+								this._duDirtyHandlerWrapper);
+
+						$(editManager._stage.rootElement).on('stageViewUnifiedSightChange',
+								this._stageSightChangeHandlerWrapper);
+					}
 				},
 
 				/**
@@ -1352,10 +1380,58 @@
 				},
 
 				_end: function() {
+					if (this._duDirtyHandlerWrapper) {
+						this._autoLayout.followTarget.removeEventListener('displayUnitDirty',
+								this._duDirtyHandlerWrapper);
+						$(this._editManager._stage.rootElement).off('stageViewUnifiedSightChange',
+								this._stageSightChangeHandlerWrapper);
+					}
+
 					this._editor.dispose(this);
 					$(this._editorView).remove();
 
 					this._editManager._onSessionEnd(this);
+				},
+
+				_onDUDirty: function(event) {
+					var reason = event.reason;
+					if (reason.isGlobalPositionChanged || reason.isSizeChanged) {
+						this._doAutoLayoutEditor();
+					}
+				},
+
+				_doAutoLayoutEditor: function() {
+					if (!this._autoLayout) {
+						return;
+					}
+
+					var du = this._autoLayout.followTarget;
+
+					var wpos = du.getWorldGlobalPosition();
+
+					var activeView = this._editManager._stage._getActiveView();
+
+					//TODO ビュー分割時のエディタ追従の挙動を整理、対応
+					var converter = activeView.coordinateConverter;
+
+					var dpos = converter.toDisplayPosition(wpos.x, wpos.y);
+					var dw = converter.toDisplayX(du.width);
+					var dh = converter.toDisplayY(du.height);
+
+					var viewScrollPos = activeView.getScrollPosition();
+
+					var left = activeView.x + dpos.x - viewScrollPos.x;
+					var top = activeView.y + dpos.y - viewScrollPos.y;
+
+					$(this._editorView).css({
+						left: left,
+						top: top,
+						width: dw,
+						height: dh
+					});
+
+					var rect = Rect.create(dpos.x, dpos.y, dw, dh);
+					this._editor.onLayout(this, rect);
 				}
 			}
 
@@ -1395,7 +1471,7 @@
 					this._$modalCover = null;
 				},
 
-				startEdit: function(editor, targetDisplayUnits, isExclusive, isModal) {
+				startEdit: function(editor, targetDisplayUnits, isExclusive, isModal, autoLayout) {
 					//FIXME 一旦、同時編集は不可とする
 					//TODO booleanでなく、非排他、排他で他はキャンセル、排他で他はデフォルト、排他で他はコミット、の exclusiveMode 指定の方がよいかも
 					isExclusive = true;
@@ -1410,7 +1486,7 @@
 					var isModalActually = isModal === true ? true : false;
 
 					var editSession = EditSession.create(this, editor, targetDisplayUnits,
-							isExclusive, isModalActually);
+							isExclusive, isModalActually, autoLayout);
 					this._sessions.push(editSession);
 
 					if (isModalActually) {
@@ -1448,8 +1524,10 @@
 						$(editorView).css({
 							position: 'absolute'
 						});
-						editor.onStart(editSession);
 						this._stage._$overlay.append(editorView);
+
+						editSession._doAutoLayoutEditor();
+						editor.onStart(editSession);
 					}
 				},
 
@@ -3377,7 +3455,14 @@
 
 							var event = DisplayUnitDirtyEvent.create();
 							event.displayUnit = this;
-							event.reason = UpdateReasonSet.create(reasons);
+							var reason = UpdateReasonSet.create(reasons);
+							event.reason = reason;
+							if (reason.isPositionChanged) {
+								//位置が変わった場合、グローバル位置も通常変わるのでReasonに追加
+								//厳密には、親DUの位置変更を相殺するように自分の位置が変わった場合
+								//グローバル位置は変わらないが、現時点ではその場合でも発生させることとする。
+								reason._add(REASON_GLOBAL_POSITION_CHANGE);
+							}
 							this.dispatchEvent(event);
 						},
 
@@ -10479,6 +10564,8 @@
 		 */
 		_startEdit: function(du) {
 			var evArg = {
+				displayUnit: du,
+
 				setEditor: function(editor) {
 					this._editor = editor;
 				},
@@ -10489,6 +10576,10 @@
 
 				setModal: function(value) {
 					this._isModal = value;
+				},
+
+				setAutoLayout: function(layoutSetting) {
+					this._autoLayout = layoutSetting;
 				}
 			};
 			var ev = this.trigger(EVENT_EDIT_STARTING, evArg);
@@ -10508,8 +10599,9 @@
 
 			var isExclusive = evArg._isExclusive === true ? true : false;
 			var isModal = evArg._isModal === true ? true : false;
+			var autoLayout = evArg._autoLayout;
 
-			this._editManager.startEdit(editor, du, isExclusive, isModal);
+			this._editManager.startEdit(editor, du, isExclusive, isModal, autoLayout);
 		},
 
 		/**
