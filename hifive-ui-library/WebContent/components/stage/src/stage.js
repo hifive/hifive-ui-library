@@ -805,7 +805,10 @@
 				_resizeFunction: null,
 
 				//du.id -> 当該DU用のdataオブジェクト へのマップ
-				_resizeFunctionDataMap: null
+				_resizeFunctionDataMap: null,
+
+				//du.id -> 当該DUの、このセッションに限ったリサイズ制約 のマップ
+				_constraintOverrideMap: null
 			},
 			accessor: {
 				isCompleted: {
@@ -839,6 +842,8 @@
 					this._resizeFunction = defaultResizeFunction;
 
 					this._resizeFunctionDataMap = {};
+
+					this._constraintOverrideMap = null;
 
 					this._proxyElement = null;
 
@@ -895,6 +900,10 @@
 
 				getProxyElement: function() {
 					return this._proxyElement;
+				},
+
+				setConstraintOverride: function(constraintObject) {
+					this._constraintOverrideMap = constraintObject;
 				},
 
 				//TODO start()
@@ -1101,9 +1110,14 @@
 						height = 0;
 					}
 
-					if (du.resizeConstraint != null) {
-						var minWidth = du.resizeConstraint.minWidth;
-						var maxWidth = du.resizeConstraint.maxWidth;
+					var constraint = du.resizeConstraint;
+					if (this._constraintOverrideMap && this._constraintOverrideMap[du.id] != null) {
+						constraint = this._constraintOverrideMap[du.id];
+					}
+
+					if (constraint != null) {
+						var minWidth = constraint.minWidth;
+						var maxWidth = constraint.maxWidth;
 						if (minWidth != null && width < minWidth) {
 							width = minWidth;
 							if (this._handlingPosition.x < 0) {
@@ -1116,8 +1130,8 @@
 							}
 						}
 
-						var minHeight = du.resizeConstraint.minHeight;
-						var maxHeight = du.resizeConstraint.maxHeight;
+						var minHeight = constraint.minHeight;
+						var maxHeight = constraint.maxHeight;
 						if (minHeight != null && height < minHeight) {
 							height = minHeight;
 							if (this._handlingPosition.y < 0) {
@@ -1170,6 +1184,7 @@
 					this._cursorRoot = null;
 					this._resizeFunction = null;
 					this._resizeFunctionDataMap = null;
+					this._constraintOverrideMap = null;
 
 					this._setResizingFlag(false);
 
@@ -1458,7 +1473,7 @@
 				},
 
 				/**
-				 * EditSessionから呼ばれる
+				 * EditSessionから呼ばれる。commit/cancelどちらの場合でも呼ばれる。
 				 *
 				 * @private
 				 * @param editSession
@@ -11044,7 +11059,6 @@
 					}
 
 					this._currentDragMode = DRAG_MODE_DU_RESIZE;
-					setCursor('default');
 
 					this._resizeSession.begin();
 
