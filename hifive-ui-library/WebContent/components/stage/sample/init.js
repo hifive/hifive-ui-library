@@ -104,6 +104,12 @@
 					targetDU.requestRender();
 				},
 
+				onLayout: function(editSession, rect) {
+				//					var stageOffset = $(this._stageController.rootElement).offset();
+				//
+				//					this._$editor.css()
+				},
+
 				dispose: function(editSession) {
 					this._$editor.off();
 				}
@@ -424,9 +430,11 @@
 			dependentDU.isResizable = true;
 			dependentDU.resizeConstraint = {
 				minWidth: 3,
-				maxWidth: 100,
+				maxWidth: 300,
 				minHeight: 6,
-				maxHeight: 100
+				maxHeight: 100,
+				stepX: 30,
+				stepY: 20
 			};
 
 			var edge = this._createEdge(this._units[3], this._units[6]);
@@ -593,6 +601,8 @@
 
 			//context.event.preventDefault();
 			context.evArg.resizeSession.setProxyElement(elem);
+
+			//context.evArg.resizeSession.setConstraintOverride();
 		},
 
 		'{rootElement} duResizeChange': function(context) {
@@ -788,7 +798,12 @@
 			var arg = context.evArg;
 			var editor = SimpleTextEditor.create();
 			arg.setEditor(editor);
-			arg.setModal(true);
+			//arg.setModal(true);
+
+			var autoLayoutSetting = {
+				followTarget: arg.displayUnit
+			};
+			arg.setAutoLayout(autoLayoutSetting);
 		}
 	};
 
