@@ -1118,6 +1118,20 @@
 					if (constraint != null) {
 						var minWidth = constraint.minWidth;
 						var maxWidth = constraint.maxWidth;
+						var stepX = constraint.stepX;
+
+						//相対stepXの適用
+						if (stepX != null) {
+							width = stepX * parseInt(width / stepX);
+
+							if (this._handlingPosition.x < 0) {
+								//左側を操作している
+								var initialRight = initialState.x + initialState.width;
+								newX = initialRight - stepX
+										* parseInt((initialRight - newX) / stepX);
+							}
+						}
+
 						if (minWidth != null && width < minWidth) {
 							width = minWidth;
 							if (this._handlingPosition.x < 0) {
@@ -1132,6 +1146,20 @@
 
 						var minHeight = constraint.minHeight;
 						var maxHeight = constraint.maxHeight;
+						var stepY = constraint.stepY;
+
+						//相対stepYの適用
+						if (stepY != null) {
+							height = stepY * parseInt(height / stepY);
+
+							if (this._handlingPosition.y < 0) {
+								//上側を操作している
+								var initialBottom = initialState.y + initialState.height;
+								newY = initialBottom - stepY
+										* parseInt((initialBottom - newY) / stepY);
+							}
+						}
+
 						if (minHeight != null && height < minHeight) {
 							height = minHeight;
 							if (this._handlingPosition.y < 0) {
