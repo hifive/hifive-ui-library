@@ -31,7 +31,7 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
-	var editorHtml = '<div class="simpleTextEditor"><textarea class="simpleTextEditorTextarea" rows="3" style="width: 100%"></textarea>'
+	var editorHtml = '<div class="simpleTextEditor" style="background-color: white"><textarea class="simpleTextEditorTextarea" rows="3" style="width: 100%; box-sizing: border-box"></textarea>'
 			+ '<button class="commitButton">確定</button><button class="cancelButton">キャンセル</button></div>';
 
 	var SimpleTextEditor = RootClass.extend(function(super_) {
@@ -771,9 +771,9 @@
 
 		'input[name="editDivDU"] click': function() {
 			this._divDU.startEdit();
-			du.startEdit();
-			du.commitEdit();
-			du.cancelEdit();
+			//			du.startEdit();
+			//			du.commitEdit();
+			//			du.cancelEdit();
 		},
 
 		'{rootElement} stageViewStructureChange': function() {
@@ -788,6 +788,7 @@
 			var arg = context.evArg;
 			var editor = SimpleTextEditor.create();
 			arg.setEditor(editor);
+			arg.setModal(true);
 		}
 	};
 

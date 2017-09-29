@@ -1219,7 +1219,8 @@
 				_editor: null,
 				_targets: null,
 				_editorView: null,
-				_isExclusive: null
+				_isExclusive: null,
+				_isModal: null
 			},
 
 			accessor: {
@@ -1242,14 +1243,16 @@
 				 * @param targetDisplayUnits ターゲットDisplayUnits
 				 */
 				constructor: function EditSession(editManager, editor, targetDisplayUnits,
-						isExclusive) {
+						isExclusive, isModal) {
 					super_.constructor.call(this);
 					this._editManager = editManager;
 					this._editor = editor;
 					this._targets = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
 							: [targetDisplayUnits];
-					//必ずtrue/falseどちらかをセット。また、デフォルトはfalse。
+					//必ずtrue/falseどちらかをセット。また、デフォルトfalse。
 					this._isExclusive = isExclusive === true ? true : false;
+					//isModalはデフォルト：false。
+					this._isModal = isModal === true ? true : false;
 				},
 
 				/**
@@ -1334,7 +1337,8 @@
 
 			field: {
 				_sessions: null,
-				_stage: null
+				_stage: null,
+				_$modalCover: null
 			},
 
 			method: {
@@ -1345,9 +1349,10 @@
 					super_.constructor.call(this);
 					this._sessions = [];
 					this._stage = stage;
+					this._$modalCover = null;
 				},
 
-				startEdit: function(editor, targetDisplayUnits, isExclusive) {
+				startEdit: function(editor, targetDisplayUnits, isExclusive, isModal) {
 					//FIXME 一旦、同時編集は不可とする
 					//TODO booleanでなく、非排他、排他で他はキャンセル、排他で他はデフォルト、排他で他はコミット、の exclusiveMode 指定の方がよいかも
 					isExclusive = true;
@@ -1359,9 +1364,23 @@
 						this._sessions = [];
 					}
 
+					var isModalActually = isModal === true ? true : false;
+
 					var editSession = EditSession.create(this, editor, targetDisplayUnits,
-							isExclusive);
+							isExclusive, isModalActually);
 					this._sessions.push(editSession);
+
+					if (isModalActually) {
+						var $stage = $(this._stage.rootElement);
+
+						var $modalCover = $('<div class="h5-stage-edit-modal-cover"></div>');
+						$modalCover.css({
+							width: $stage.width(),
+							height: $stage.height()
+						});
+						this._$modalCover = $modalCover;
+						this._stage._$overlay.prepend($modalCover);
+					}
 
 					var editorView = editor.getView(editSession);
 
@@ -1375,11 +1394,17 @@
 						var that = this;
 						editorView.done(function(view) {
 							showEditor.call(that, editSession, view);
+						}).fail(function() {
+							that._$modalCover.remove();
+							that._$modalCover = null;
 						});
 					}
 
 					function showEditor(editSession, editorView) {
 						editSession._editorView = editorView;
+						$(editorView).css({
+							position: 'absolute'
+						});
 						editor.onStart(editSession);
 						this._stage._$overlay.append(editorView);
 					}
@@ -1444,6 +1469,14 @@
 						if (endedEditSession === session) {
 							//現在管理しているEditSession一覧から取り除く
 							this._sessions.splice(i, 1);
+
+							if (this._$modalCover) {
+								//モーダルだった場合はカバーを削除
+								//TODO 複数同時セッションの場合のケア
+								this._$modalCover.remove();
+								this._$modalCover = null;
+							}
+
 							return;
 						}
 					}
@@ -10409,6 +10442,10 @@
 
 				setExclusive: function(value) {
 					this._isExclusive = value;
+				},
+
+				setModal: function(value) {
+					this._isModal = value;
 				}
 			};
 			var ev = this.trigger(EVENT_EDIT_STARTING, evArg);
@@ -10427,8 +10464,9 @@
 			}
 
 			var isExclusive = evArg._isExclusive === true ? true : false;
+			var isModal = evArg._isModal === true ? true : false;
 
-			this._editManager.startEdit(editor, du, isExclusive);
+			this._editManager.startEdit(editor, du, isExclusive, isModal);
 		},
 
 		/**
