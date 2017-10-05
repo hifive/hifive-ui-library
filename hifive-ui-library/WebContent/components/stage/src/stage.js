@@ -10981,7 +10981,9 @@
 				return;
 			}
 			var event = context.event;
-			var du = this._getIncludingDisplayUnit(event.target); //BasicDUを返す
+
+			//ドラッグ対象のDUがある場合はmousedownのタイミングで決定済み
+			var du = this._dragStartDisplayUnit;
 
 			this._currentDragMode = DRAG_MODE_NONE;
 
@@ -11011,11 +11013,6 @@
 				//フォーカスは必ずあてる
 				du.focus();
 			}
-
-			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
-			};
 
 			var $root = $(this.rootElement);
 
@@ -11317,6 +11314,12 @@
 				break;
 			}
 
+			//最後に、「前回のマウス座標」を更新
+			this._dragLastPagePos = {
+				x: event.pageX,
+				y: event.pageY
+			};
+
 			function saveDragSelectStartPos() {
 				//TODO rootOffsetの取得をDUドラッグの場合と共通化
 				var rootOffset = $(this.rootElement).offset();
@@ -11479,22 +11482,26 @@
 				//ドラッグ対象がグリッドセパレータの場合は
 				//グリッドのサイズ変更とみなす
 				this._startGridSeparatorDrag(context);
+			} else {
+				//StageViewのドラッグの場合は、対象となるDUを取得(DUがない場合もある)
+				//初回のmousemoveのタイミングで
+				//動作対象を決めると、DUの端の方にカーソルがあったときに
+				//mousedown時にはDUの上にカーソルがあったのに
+				//moveのときに離れてしまい、スクリーンドラッグと判定されるなど
+				//挙動が一貫しない可能性がある。
+				//そのため、ドラッグモードについては
+				//mousedownのタイミングで決定しつつ、
+				//実際にdragStartとみなす（イベントを発生させる）のは
+				//moveのタイミングにする。
+				this._dragStartDisplayUnit = this._getIncludingDisplayUnit(event.target);
 			}
 
 			//DUのドラッグの場合、IE、Firefoxではmousedownの場合textなどでドラッグすると
 			//文字列選択になってしまうのでキャンセルする
 			context.event.preventDefault();
-
-			//TODO 初回のmousemoveのタイミングで
-			//動作対象を決めると、DUの端の方にカーソルがあったときに
-			//mousedown時にはDUの上にカーソルがあったのに
-			//moveのときに離れてしまい、スクリーンドラッグと判定されるなど
-			//挙動が一貫しない可能性がある。
-			//そのため、ドラッグモードについては
-			//mousedownのタイミングで決定しつつ、
-			//実際にdragStartとみなす（イベントを発生させる）のは
-			//moveのタイミングにするのがよい。
 		},
+
+		_dragStartDisplayUnit: null,
 
 		/**
 		 * @private
@@ -11881,6 +11888,7 @@
 			this._dragSelectStartSelectedDU = null;
 			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
+			this._dragStartDisplayUnit = null;
 			$(this.rootElement).css('cursor', 'auto');
 		},
 
