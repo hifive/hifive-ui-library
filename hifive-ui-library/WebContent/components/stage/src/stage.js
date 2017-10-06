@@ -12072,7 +12072,7 @@
 		 * @private
 		 */
 		_removeLayer: function(layer) {
-			var idx = this._layers.ffffffffffffffffffffffffffffffffffffffffffindexOf(layer);
+			var idx = this._layers.indexOf(layer);
 
 			if (idx === -1) {
 				return;
