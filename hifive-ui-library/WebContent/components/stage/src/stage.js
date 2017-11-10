@@ -1489,7 +1489,7 @@
 					this._$modalCover = null;
 				},
 
-				startEdit: function(editor, targetDisplayUnits, isExclusive, isModal, autoLayout) {
+				beginEdit: function(editor, targetDisplayUnits, isExclusive, isModal, autoLayout) {
 					//FIXME 一旦、同時編集は不可とする
 					//TODO booleanでなく、非排他、排他で他はキャンセル、排他で他はデフォルト、排他で他はコミット、の exclusiveMode 指定の方がよいかも
 					isExclusive = true;
@@ -1545,7 +1545,7 @@
 						this._stage._$overlay.append(editorView);
 
 						editSession._doAutoLayoutEditor();
-						editor.onStart(editSession);
+						editor.onBegin(editSession);
 					}
 				},
 
@@ -3937,11 +3937,11 @@
 					this._setDirty(REASON_RENDER_REQUEST);
 				},
 
-				startEdit: function() {
+				beginEdit: function() {
 					if (!this._rootStage || !this.isEditable) {
 						return;
 					}
-					this._rootStage._startEdit(this);
+					this._rootStage._beginEdit(this);
 				},
 
 				commitEdit: function() {
@@ -10266,15 +10266,15 @@
 	 */
 	var EVENT_STAGE_DRAG_STARTING = 'stageDragStarting';
 
-	var EVENT_DRAG_DU_START = 'stageDragStart';
-	var EVENT_DRAG_DU_MOVE = 'stageDragMove';
-	var EVENT_DRAG_DU_END = 'stageDragEnd';
-	var EVENT_DRAG_DU_DROP = 'stageDragDrop';
-	var EVENT_DRAG_DU_CANCEL = 'stageDragCancel';
+	var EVENT_DRAG_DU_BEGIN = 'duDragBegin';
+	var EVENT_DRAG_DU_MOVE = 'duDragMove';
+	var EVENT_DRAG_DU_END = 'duDragEnd';
+	var EVENT_DRAG_DU_DROP = 'duDragDrop';
+	var EVENT_DRAG_DU_CANCEL = 'duDragCancel';
 
-	var EVENT_RESIZE_DU_START = 'duResizeStart';
+	var EVENT_RESIZE_DU_BEGIN = 'duResizeBegin';
 	var EVENT_RESIZE_DU_CHANGE = 'duResizeChange';
-	var EVENT_RESIZE_DU_RELEASE = 'duResizeRelease';
+	var EVENT_RESIZE_DU_COMMIT = 'duResizeCommit';
 	var EVENT_RESIZE_DU_END = 'duResizeEnd';
 	var EVENT_RESIZE_DU_CANCEL = 'duResizeCancel';
 
@@ -10580,7 +10580,7 @@
 		 * @private
 		 * @param du DisplayUnit
 		 */
-		_startEdit: function(du) {
+		_beginEdit: function(du) {
 			var evArg = {
 				displayUnit: du,
 
@@ -10619,7 +10619,7 @@
 			var isModal = evArg._isModal === true ? true : false;
 			var autoLayout = evArg._autoLayout;
 
-			this._editManager.startEdit(editor, du, isExclusive, isModal, autoLayout);
+			this._editManager.beginEdit(editor, du, isExclusive, isModal, autoLayout);
 		},
 
 		/**
@@ -11035,7 +11035,7 @@
 					this._dragSession.setTarget(targetDU);
 					this._currentDragMode = DRAG_MODE_DU;
 					setCursor('default');
-					this.trigger(EVENT_DRAG_DU_START, {
+					this.trigger(EVENT_DRAG_DU_BEGIN, {
 						dragSession: this._dragSession
 					});
 
@@ -11165,7 +11165,7 @@
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 
-					delegatedJQueryEvent.type = EVENT_RESIZE_DU_START;
+					delegatedJQueryEvent.type = EVENT_RESIZE_DU_BEGIN;
 					delegatedJQueryEvent.target = this.rootElement;
 					delegatedJQueryEvent.currentTarget = this.rootElement;
 					//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
@@ -11238,7 +11238,7 @@
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
 
-					delegatedJQueryEvent.type = EVENT_DRAG_DU_START;
+					delegatedJQueryEvent.type = EVENT_DRAG_DU_BEGIN;
 					delegatedJQueryEvent.target = this.rootElement;
 					delegatedJQueryEvent.currentTarget = this.rootElement;
 					//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
@@ -11856,7 +11856,7 @@
 				this._viewCollection.__onResizeDURelease(this._resizeSession);
 
 				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-				delegatedJQueryEvent.type = EVENT_RESIZE_DU_RELEASE;
+				delegatedJQueryEvent.type = EVENT_RESIZE_DU_COMMIT;
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
 
