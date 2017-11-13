@@ -10259,6 +10259,8 @@
 
 	var EVENT_STAGE_CLICK = 'stageClick';
 
+	var EVENT_STAGE_RESIZE = 'stageResize';
+
 	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
@@ -12162,6 +12164,8 @@
 			//現在のグリッド指定を用いてリサイズしなおす
 			this._resetGridView(this._currentHorizontalSplitDefinitions,
 					this._currentVerticalSplitDefinitions);
+
+			this.trigger(EVENT_STAGE_RESIZE);
 		},
 
 		/**
