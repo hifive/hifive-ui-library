@@ -10379,6 +10379,12 @@
 				return du.isSelectable;
 			});
 
+			if (isExclusive !== true && actualSelection.length === 0) {
+				//排他的選択でなく、かつ実際に選択可能な(isSelectable=trueな)DUがなかった場合、
+				//選択状態は変化しないので何もしない
+				return;
+			}
+
 			this._selectionLogic.select(actualSelection, isExclusive);
 		},
 

@@ -123,10 +123,7 @@
 		},
 
 		/**
-		 * 引数に渡されたオブジェクトを選択状態にする
-		 * <p>
-		 * 既に選択状態であるオブジェクトは無視します
-		 * </p>
+		 * 引数に渡されたオブジェクトを選択状態にします。
 		 *
 		 * @instance
 		 * @param {Any|Any[]} objs 配列で渡された場合はその中身を選択対象として扱います
@@ -135,10 +132,26 @@
 		 * @returns {Any[]} 実際に選択されたオブジェクトの配列を返す(既に選択済みだったものは除く)
 		 */
 		select: function(objs, isExclusive) {
+			//TODO このコードだと、select(null)でnullは選択できない。しかし、select([null])は通ってしまう。仕様としてnullは選択不可とするべきか？
+			if (isExclusive !== true
+					&& (objs == null || (Array.isArray(objs) && objs.length === 0))) {
+				//排他的選択でなく、かつ選択対象が何もない（nullまたは配列の要素数が0）場合は
+				//選択状態は何も変化しない
+				return 0;
+			}
+
 			var result = this._select(objs, isExclusive);
 			return result.actuals;
 		},
 
+		/**
+		 * 選択処理の実体です。
+		 *
+		 * @private
+		 * @param objs
+		 * @param isExclusive
+		 * @returns {___anonymous4240_4326}
+		 */
 		_select: function(objs, isExclusive) {
 			var oldFocused = this._focused;
 			var unselected = null;
@@ -266,6 +279,14 @@
 			return oldSelected;
 		},
 
+		/**
+		 * このSelectionLogicインスタンスからselectionChangeイベントを発生させます。
+		 *
+		 * @private
+		 * @param newSelected 新規に選択されたオブジェクトの配列
+		 * @param unselected 非選択状態になったオブジェクトの配列
+		 * @param unfocused フォーカスが外れたオブジェクトの配列
+		 */
 		_dispatchSelectionChangeEvent: function(newSelected, unselected, unfocused) {
 			var event = {
 				type: 'selectionChange',
@@ -276,16 +297,6 @@
 					unselected: unselected,
 					unfocused: unfocused
 				}
-			};
-			this.dispatchEvent(event);
-		},
-
-		_dispatchChangeEvent: function(obj, isSelected, isFocused) {
-			var event = {
-				type: 'change',
-				item: obj,
-				isSelected: isSelected,
-				isFocused: isFocused
 			};
 			this.dispatchEvent(event);
 		}
