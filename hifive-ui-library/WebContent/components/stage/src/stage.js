@@ -10283,7 +10283,7 @@
 	var EVENT_STAGE_CONTEXTMENU = 'stageContextmenu';
 	var EVENT_DU_CONTEXTMENU = 'duContextmenu'; // { displayUnit: }
 
-	var EVENT_EDIT_STARTING = 'stageEditStarting';
+	var EVENT_DU_EDIT_BEGIN = 'duEditBegin';
 
 	var ABSOLUTE_SCALE_MIN = 0.01;
 
@@ -10600,7 +10600,7 @@
 					this._autoLayout = layoutSetting;
 				}
 			};
-			var ev = this.trigger(EVENT_EDIT_STARTING, evArg);
+			var ev = this.trigger(EVENT_DU_EDIT_BEGIN, evArg);
 
 			if (ev.isDefaultPrevented()) {
 				//編集開始がキャンセルされたので、何もしない
