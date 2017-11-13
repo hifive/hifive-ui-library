@@ -9228,6 +9228,25 @@
 							view.addEventListener('sightChange', this._view_sightChangeListener);
 						},
 
+						setSize: function(displayWidth, displayHeight) {
+							var w = displayWidth != null ? displayWidth
+									: $(this._stage.rootElement).width();
+							var h = displayHeight != null ? displayHeight : $(
+									this._stage.rootElement).height();
+
+							this._width = w;
+							this._height = h;
+							this._isSightChangePropagationSuppressed = true;
+							//this._isTriggerUnifiedSightChangeSuppressed = true;
+
+							//グリッドの領域のサイズを変更
+							this._updateGridRegion();
+
+							this._isSightChangePropagationSuppressed = false;
+							this._sightChangeEvents = null;
+							//this._isTriggerUnifiedSightChangeSuppressed = false;
+						},
+
 						/**
 						 * @private
 						 */
@@ -12161,9 +12180,8 @@
 				return;
 			}
 
-			//現在のグリッド指定を用いてリサイズしなおす
-			this._resetGridView(this._currentHorizontalSplitDefinitions,
-					this._currentVerticalSplitDefinitions);
+			//リサイズする
+			this.getViewCollection().setSize(this._fixedWidth, this._fixedHeight);
 
 			this.trigger(EVENT_STAGE_RESIZE);
 		},
