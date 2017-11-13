@@ -236,7 +236,7 @@
 		NONE: 0,
 		AUTO: 1,
 		SCREEN: 2,
-		DU: 3,
+		DU_DRAG: 3,
 		SELECT: 4,
 		REGION: 5,
 		DU_RESIZE: 6
@@ -10221,7 +10221,7 @@
 	var DRAG_MODE_NONE = DragMode.NONE;
 	var DRAG_MODE_AUTO = DragMode.AUTO;
 	var DRAG_MODE_SCREEN = DragMode.SCREEN;
-	var DRAG_MODE_DU = DragMode.DU;
+	var DRAG_MODE_DU_DRAG = DragMode.DU_DRAG;
 	var DRAG_MODE_SELECT = DragMode.SELECT;
 	var DRAG_MODE_REGION = DragMode.REGION;
 	var DRAG_MODE_DU_RESIZE = DragMode.DU_RESIZE;
@@ -11022,7 +11022,7 @@
 			case DRAG_MODE_NONE:
 				//UI操作によるドラッグを行わないモードの場合は、何もしない
 				break;
-			case DRAG_MODE_DU:
+			case DRAG_MODE_DU_DRAG:
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
@@ -11033,7 +11033,7 @@
 					this._dragSession.addEventListener('dragSessionCancel', this
 							.own(this._dragSessionCancelHandler));
 					this._dragSession.setTarget(targetDU);
-					this._currentDragMode = DRAG_MODE_DU;
+					this._currentDragMode = DRAG_MODE_DU_DRAG;
 					setCursor('default');
 					this.trigger(EVENT_DRAG_DU_BEGIN, {
 						dragSession: this._dragSession
@@ -11266,7 +11266,7 @@
 						return;
 					}
 
-					this._currentDragMode = DRAG_MODE_DU;
+					this._currentDragMode = DRAG_MODE_DU_DRAG;
 					setCursor('default');
 
 					this._dragSession.begin();
@@ -11621,7 +11621,7 @@
 				});
 
 				break;
-			case DRAG_MODE_DU:
+			case DRAG_MODE_DU_DRAG:
 				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
 					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
 				});
@@ -11827,7 +11827,7 @@
 					displayRect: dispRect,
 					worldRect: worldRect
 				});
-			} else if (this._currentDragMode === DRAG_MODE_DU) {
+			} else if (this._currentDragMode === DRAG_MODE_DU_DRAG) {
 				var dragOverDU = this._getDragOverDisplayUnit(context.event);
 
 				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
