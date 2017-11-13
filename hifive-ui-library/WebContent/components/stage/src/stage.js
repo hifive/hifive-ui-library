@@ -359,7 +359,7 @@
 				async: null,
 
 				/**
-				 * ドラッグ操作対象オブジェクト
+				 * ドラッグ操作対象オブジェクト。必ず配列。
 				 */
 				_targets: null,
 
@@ -452,30 +452,12 @@
 					this._totalMoveY = 0;
 				},
 
-				/**
-				 * 指定された位置に移動
-				 * <p>
-				 * このメソッドを使って図形を移動すると、見た目の位置のみが変化します。図形(ArtShape)のmoveToやmoveByは呼ばれません。
-				 * ユーザによるドラッグ操作等の、移動先が未確定の場合の図形の移動のためのメソッドです。
-				 * </p>
-				 * <p>
-				 * このメソッドで移動した位置に、図形の位置を確定させたい場合は、endを呼んでください。
-				 * </p>
-				 * <p>
-				 * 引数にはドラッグセッション開始位置からの移動量(x,y)を指定します。
-				 * </p>
-				 *
-				 * @memberOf DragSession
-				 * @instance
-				 * @param {number} x
-				 * @param {number} y
-				 */
-				setTarget: function(target) {
-					this._targets = target;
+				setTargets: function(targets) {
+					this._targets = Array.isArray(targets) ? targets : [targets];
 					this._saveInitialStates();
 				},
 
-				getTarget: function() {
+				getTargets: function() {
 					return this._targets;
 				},
 
@@ -491,7 +473,6 @@
 					return this._proxyElement;
 				},
 
-				//TODO start()
 				begin: function() {
 					this._setDraggingFlag(true);
 				},
@@ -613,7 +594,7 @@
 
 					var parentDUs = [];
 					var positions = [];
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var t = targets[i]; //DU
 						var pos = {
@@ -637,9 +618,6 @@
 					}
 
 					var targets = this._targets;
-					if (!Array.isArray(targets)) {
-						targets = [targets];
-					}
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -679,7 +657,7 @@
 						return;
 					}
 
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						var pos = this._targetInitialPositions[i];
@@ -712,7 +690,7 @@
 						return;
 					}
 
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						du._isDragging = value;
@@ -763,7 +741,7 @@
 				_handlingPosition: null,
 
 				/**
-				 * ドラッグ操作対象オブジェクト
+				 * ドラッグ操作対象オブジェクト。必ず配列。
 				 */
 				_targets: null,
 
@@ -881,12 +859,12 @@
 				 * @param {number} x
 				 * @param {number} y
 				 */
-				setTarget: function(target) {
-					this._targets = target;
+				setTargets: function(targets) {
+					this._targets = Array.isArray(targets) ? targets : [targets];
 					this._saveInitialStates();
 				},
 
-				getTarget: function() {
+				getTargets: function() {
 					return this._targets;
 				},
 
@@ -1021,7 +999,7 @@
 
 					var parentDUs = [];
 					var states = [];
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var targetDU = targets[i];
 						var state = {
@@ -1047,9 +1025,6 @@
 					}
 
 					var targets = this._targets;
-					if (!Array.isArray(targets)) {
-						targets = [targets];
-					}
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -1193,7 +1168,7 @@
 						return;
 					}
 
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						var state = this._targetInitialStates[i];
@@ -1230,7 +1205,7 @@
 						return;
 					}
 
-					var targets = Array.isArray(this._targets) ? this._targets : [this._targets];
+					var targets = this._targets;
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						du._isResizing = value;
