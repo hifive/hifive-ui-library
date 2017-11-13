@@ -1447,8 +1447,8 @@
 					});
 
 					var rect = Rect.create(dpos.x, dpos.y, dw, dh);
-					if (typeof this._editor.onLayout === 'function') {
-						this._editor.onLayout(this, rect);
+					if (typeof this._editor.onUpdateLayout === 'function') {
+						this._editor.onUpdateLayout(this, rect);
 					}
 				}
 			}
