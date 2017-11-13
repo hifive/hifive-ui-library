@@ -5265,9 +5265,12 @@
 						root = this._renderDOMDiv(view);
 					}
 
-					//TODO 暫定的に、コンテナはoverflow:visibleにするようにした
-					//width, heightの指定との整合性について検討
-					root.style.overflow = "visible";
+					//Bootstrapは、非ルートな全てのSVGタグに対してoverflow:hiddenを設定するようになっている（svg:not(:root)指定）。
+					//また、SVGのoverflow「属性」の指定は、CSSによるスタイル指定よりも優先順位が低い。
+					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
+					//属性ではなくスタイル指定によってoverflow:visibleを指定する。
+					//レイヤーについても同様。
+					root.style.overflow = 'visible';
 
 					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
 					root.setAttribute('data-h5-dyn-du-id', this.id);
@@ -5441,10 +5444,6 @@
 
 						//レイヤーは直下の<g>をtransformしてスクロールを実現するので
 						//overflowはvisibleである必要がある
-						//<svg>はoverflow「属性」を持つのでそちらをセット
-						SvgUtil.setAttributes(rootElement, {
-							overflow: 'visible'
-						});
 
 						//rootGは<g>要素。transformを一括してかけるため、
 						//子要素は全てこの<g>の下に追加する。
@@ -5452,8 +5451,13 @@
 						rootElement.appendChild(rootG);
 					} else {
 						rootElement = document.createElement('div');
-						rootElement.style.overflow = 'visible';
 					}
+
+					//Bootstrapは、非ルートな全てのSVGタグに対してoverflow:hiddenを設定するようになっている（svg:not(:root)指定）。
+					//また、SVGのoverflow「属性」の指定は、CSSによるスタイル指定よりも優先順位が低い。
+					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
+					//typeがsvgの場合でも、属性ではなくスタイル指定によってoverflow:visibleを指定する。
+					rootElement.style.overflow = 'visible';
 
 					//SVGのwidth, heightはSVGAttirubute
 					//IEとFirefoxの場合、レイヤー自体のサイズは0x0とし、overflowをvisibleにすることで
