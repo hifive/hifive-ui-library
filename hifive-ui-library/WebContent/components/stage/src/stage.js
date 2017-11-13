@@ -356,7 +356,7 @@
 				_stage: null,
 
 				//このドラッグセッションを非同期で行うかのフラグ
-				async: null,
+				isAsync: null,
 
 				/**
 				 * ドラッグ操作対象オブジェクト。必ず配列。
@@ -423,7 +423,7 @@
 					this._stage = stage;
 
 					this.canDrop = true;
-					this.async = false;
+					this.isAsync = false;
 
 					this._isCompleted = false;
 
@@ -731,7 +731,7 @@
 				_stage: null,
 
 				//このドラッグセッションを非同期で行うかのフラグ
-				async: null,
+				isAsync: null,
 
 				//リサイズ可能方向。ResizeDirection列挙体のいずれかの値を取る
 				direction: null,
@@ -806,7 +806,7 @@
 
 					this._stage = stage;
 
-					this.async = false;
+					this.isAsync = false;
 
 					this._isCompleted = false;
 
@@ -11830,7 +11830,8 @@
 				// 同期なら直ちにendまたはcancelに遷移
 				// dragSessionのイベント経由で最終的にdisposeが走る
 				// 非同期の場合はdisposeしない
-				if (this._dragSession && !this._dragSession.isCompleted && !this._dragSession.async) {
+				if (this._dragSession && !this._dragSession.isCompleted
+						&& !this._dragSession.isAsync) {
 					if (!this._dragSession.canDrop) {
 						this._dragSession.cancel();
 					} else {
@@ -11852,7 +11853,7 @@
 				// 同期なら直ちにendまたはcancelに遷移
 				// dragSessionのイベント経由で最終的にdisposeが走る
 				// 非同期の場合はdisposeしない
-				if (!this._resizeSession.isCompleted && !this._resizeSession.async) {
+				if (!this._resizeSession.isCompleted && !this._resizeSession.isAsync) {
 					this._resizeSession.end();
 				}
 			}
