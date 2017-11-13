@@ -12012,6 +12012,8 @@
 
 			//初期状態では分割のない表示を行う
 			this._resetGridView(null, null);
+
+			this._isViewInitialized = true;
 		},
 
 		addDisplayUnit: function(displayUnit) {
@@ -12156,6 +12158,45 @@
 		setScale: function(scaleX, scaleY, displayPageX, displayPageY) {
 			return this._getActiveView().setScale(scaleX, scaleY, displayPageX, displayPageY);
 		},
+
+		/**
+		 * このStageの大きさをセットします。
+		 *
+		 * @param displayWidth Stageの幅。nullを指定した場合、現在のStageのrootElementの幅になります。
+		 * @param displayHeight Stageの高さ。nullを指定した場合、現在のStageのrootElementの高さになります。
+		 */
+		setSize: function(displayWidth, displayHeight) {
+			this._fixedWidth = displayWidth;
+			this._fixedHeight = displayHeight;
+
+			//引数でnullが指定された場合、スタイル指定を解除する。
+			//すると、resetGridView()の中で、rootElementのサイズを使用するようになる。
+			var styleW = displayWidth == null ? '' : displayWidth;
+			var styleH = displayHeight == null ? '' : displayHeight;
+			$(this.rootElement).css({
+				width: styleW,
+				height: styleH
+			});
+
+			if (!this._isViewInitialized) {
+				//まだビューの初期化が行われていない場合は値のセットのみ行っておく
+				return;
+			}
+
+			//現在のグリッド指定を用いてリサイズしなおす
+			this._resetGridView(this._currentHorizontalSplitDefinitions,
+					this._currentVerticalSplitDefinitions);
+		},
+
+		/**
+		 * このStageの幅。nullの場合はStageのrootElementのサイズを使用する。
+		 */
+		_fixedWidth: null,
+
+		/**
+		 * このStageの高さ。nullの場合はStageのrootElementのサイズを使用する。
+		 */
+		_fixedHeight: null,
 
 		/**
 		 * @private
@@ -12546,8 +12587,11 @@
 		 * @private
 		 */
 		_resetGridView: function(horizontalSplitDefinitions, verticalSplitDefinitions) {
-			var w = $(this.rootElement).width();
-			var h = $(this.rootElement).height();
+			var w = this._fixedWidth != null ? this._fixedWidth : $(this.rootElement).width();
+			var h = this._fixedHeight != null ? this._fixedHeight : $(this.rootElement).height();
+
+			this._currentHorizontalSplitDefinitions = horizontalSplitDefinitions;
+			this._currentVerticalSplitDefinitions = verticalSplitDefinitions;
 
 			this._viewCollection._makeGrid(horizontalSplitDefinitions, verticalSplitDefinitions, w,
 					h);
@@ -12568,6 +12612,8 @@
 				this._$overlay = $overlay;
 			}
 		},
+
+		_isViewInitialized: false,
 
 		_$overlay: null,
 

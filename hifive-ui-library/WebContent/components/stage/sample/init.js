@@ -45,6 +45,10 @@
 			},
 
 			method: {
+				/**
+				 * @constructor
+				 * @memberOf sample.SimpleTextEditor
+				 */
 				constructor: function SimpleTextEditor() {
 					super_.constructor.call(this);
 					this._editSession = null;
@@ -78,7 +82,7 @@
 					return $editor[0];
 				},
 
-				onStart: function(editSession) {
+				onBegin: function(editSession) {
 					this._editSession = editSession;
 
 					var targetDU = editSession.targets[0];
@@ -104,9 +108,8 @@
 					targetDU.requestRender();
 				},
 
-				onLayout: function(editSession, rect) {
+				onUpdateLayout: function(editSession, rect) {
 				//					var stageOffset = $(this._stageController.rootElement).offset();
-				//
 				//					this._$editor.css()
 				},
 
@@ -373,7 +376,8 @@
 					$(context.rootElement).css({
 						'word-wrap': 'break-word',
 						'overflow-wrap': 'break-word',
-						'word-break': 'break-all'
+						'word-break': 'break-all',
+						backgroundColor: 'white'
 					//						overflow: 'scroll'
 					});
 				}
@@ -780,10 +784,20 @@
 		},
 
 		'input[name="editDivDU"] click': function() {
-			this._divDU.startEdit();
+			this._divDU.beginEdit();
 			//			du.startEdit();
 			//			du.commitEdit();
 			//			du.cancelEdit();
+		},
+
+		'input[name="setSize"] click': function() {
+			this._stageController.setSize(200, 200);
+
+			//			var that = this;
+			//			setTimeout(function(){
+			//				that._stageController.setSize(null, null);
+			//			}, 2000);
+
 		},
 
 		'{rootElement} stageViewStructureChange': function() {
@@ -794,7 +808,7 @@
 			console.log('stageViewUnifiedSightChange');
 		},
 
-		'{rootElement} stageEditStarting': function(context) {
+		'{rootElement} duEditBeginning': function(context) {
 			var arg = context.evArg;
 			var editor = SimpleTextEditor.create();
 			arg.setEditor(editor);
