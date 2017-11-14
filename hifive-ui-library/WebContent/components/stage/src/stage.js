@@ -8321,7 +8321,7 @@
 						},
 
 						_getDOMContext: function(du) {
-							this._domManager.getContext(du);
+							return this._domManager.getContext(du);
 						},
 
 						_setDOMContext: function(du, context) {
