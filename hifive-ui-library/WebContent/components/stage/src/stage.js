@@ -388,44 +388,48 @@
 					this._onceListeners.push(listenerObj);
 				},
 
-				unlisten: function(listener) {
-					var idx = this._getListenerIndex(listener, false);
+				unlisten: function(listener, thisArg) {
+					var idx = this._getListenerIndex(listener, thisArg, false);
 					if (idx !== -1) {
 						this._listeners.splice(idx, 1);
 						return;
 					}
 
 					//通常リスナーのリストにない場合、Onceリスナーのリストの中から探索
-					var onceIdx = this._getListenerIndex(listener, true);
+					var onceIdx = this._getListenerIndex(listener, thisArg, true);
 					if (onceIdx !== -1) {
 						this._onceListeners.splice(onceIdx, 1);
 					}
 				},
 
 				dispose: function() {
+					this._listeners = null;
+					this._onceListeners = null;
+
 					if (this._rafId == null) {
 						return;
 					}
 					cancelAnimationFrame(this._rafId);
+					this._rafId = null;
 				},
 
-				_has: function(listener) {
-					if (this._getListenerIndex(listener, false) !== -1) {
+				_has: function(listener, thisArg) {
+					if (this._getListenerIndex(listener, thisArg, false) !== -1) {
 						return true;
 					}
 
-					if (this._getListenerIndex(listener, true) !== -1) {
+					if (this._getListenerIndex(listener, thisArg, true) !== -1) {
 						return true;
 					}
 
 					return false;
 				},
 
-				_getListenerIndex: function(listenerFunc, isOnce) {
+				_getListenerIndex: function(listenerFunc, thisArg, isOnce) {
 					var listeners = isOnce === true ? this._onceListeners : this._listeners;
 					for (var i = 0, len = listeners.length; i < len; i++) {
 						var listener = listeners[i];
-						if (listener.func === listenerFunc) {
+						if (listener.func === listenerFunc && listener.thisArg === thisArg) {
 							return i;
 						}
 					}
@@ -11894,7 +11898,7 @@
 		},
 
 		'{document} mouseup': function(context) {
-			this._viewMasterClock.unlisten(this._doDragMove);
+			this._viewMasterClock.unlisten(this._doDragMove, this);
 
 			this._endBoundaryScroll();
 
