@@ -10677,9 +10677,13 @@
 		 * @private
 		 */
 		__ready: function() {
-			//overflow: hiddenは各StageView側で設定
+			//DUを絶対位置で位置指定するためabsoluteにする。
+			//また、Editor等が表示されるオーバーレイはStageViewとは独立して
+			//Stageのルート要素の直下にあるので、スクリーンのスクロール時に
+			//Stageをはみ出さないよう、overflow:hiddenを設定する。
 			$(this.rootElement).css({
-				position: 'absolute'
+				position: 'absolute',
+				overflow: 'hidden'
 			});
 		},
 
