@@ -367,7 +367,7 @@
 				_cursorRoot: null,
 
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
-				//setTarget()のタイミングでセットされる。
+				//setTargets()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
 				_targetInitialPositions: null,
 
@@ -749,7 +749,7 @@
 				_cursorRoot: null,
 
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
-				//setTarget()のタイミングでセットされる。
+				//setTargets()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
 				_targetInitialStates: null,
 
@@ -11038,7 +11038,7 @@
 							.own(this._dragSessionEndHandler));
 					this._dragSession.addEventListener('dragSessionCancel', this
 							.own(this._dragSessionCancelHandler));
-					this._dragSession.setTarget(targetDU);
+					this._dragSession.setTargets(targetDU);
 					this._currentDragMode = DRAG_MODE_DU_DRAG;
 					setCursor('default');
 					this.trigger(EVENT_DRAG_DU_BEGIN, {
@@ -11166,7 +11166,7 @@
 					targetDU = targetDU.filter(function(resizeTargetDU) {
 						return resizeTargetDU.isResizable;
 					});
-					this._resizeSession.setTarget(targetDU);
+					this._resizeSession.setTargets(targetDU);
 
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
@@ -11239,7 +11239,7 @@
 					targetDU = targetDU.filter(function(dragTargetDU) {
 						return dragTargetDU.isDraggable;
 					});
-					this._dragSession.setTarget(targetDU);
+					this._dragSession.setTargets(targetDU);
 
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
