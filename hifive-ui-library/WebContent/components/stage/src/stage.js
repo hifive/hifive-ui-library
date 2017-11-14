@@ -363,7 +363,7 @@
 				},
 
 				listen: function(listener, thisArg) {
-					if (this._has(listener)) {
+					if (this._has(listener, thisArg)) {
 						//既に登録済みのリスナーなので何もしない(Onceか通常かは問わない)
 						return;
 					}
@@ -376,7 +376,7 @@
 				},
 
 				listenOnce: function(listener, thisArg) {
-					if (this._has(listener)) {
+					if (this._has(listener, thisArg)) {
 						//既に登録済みのリスナーなので何もしない(Onceか通常かは問わない)
 						return;
 					}
