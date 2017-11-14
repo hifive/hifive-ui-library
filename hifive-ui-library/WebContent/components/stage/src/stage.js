@@ -1099,8 +1099,11 @@
 					this._lastPageX = pageX;
 					this._lastPageY = pageY;
 
-					this._moveX = pageX - this._startPageX;
-					this._moveY = pageY - this._startPageY;
+					//TODO バウンダリスクロールを可能にするため、deltaResizeの中で疑似移動量を
+					//moveXYに加算するようにした。そのため、ここではmoveXYは操作しない。
+					//DragSessionと構造が変わっているので、統一を検討。
+					//					this._moveX = pageX - this._startPageX;
+					//					this._moveY = pageY - this._startPageY;
 
 					//totalMoveXYには絶対値で積算していく
 					this._totalMoveX += cursorDx < 0 ? -cursorDx : cursorDx;
@@ -1158,6 +1161,9 @@
 					if (!this._targets || this.direction === ResizeDirection.NONE) {
 						return;
 					}
+
+					this._moveX += delta.x;
+					this._moveY += delta.y;
 
 					var targets = this._targets;
 
@@ -11804,6 +11810,9 @@
 			switch (this._currentDragMode) {
 			case DRAG_MODE_DU_RESIZE:
 				//TODO リサイズ中のバウンダリスクロール
+				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
+					that._resizeSession.doPseudoMoveBy(dispScrX, dispScrY);
+				});
 
 				//doMoveの中でStageViewCollection.__onDragDUMoveが呼ばれる
 				this._resizeSession.doResize(context.event);
