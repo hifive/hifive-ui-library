@@ -1376,6 +1376,8 @@
 				_isModal: null,
 				_autoLayout: null,
 
+				_targetView: null,
+
 				_duDirtyHandlerWrapper: null,
 				_stageSightChangeHandlerWrapper: null
 			},
@@ -1413,12 +1415,6 @@
 
 					this._autoLayout = autoLayout;
 
-					//					var event = DisplayUnitDirtyEvent.create();
-					//					event.displayUnit = this;
-					//					event.reason = UpdateReasonSet.create(reasons);
-					//					this.dispatchEvent(event);
-
-
 					if (autoLayout) {
 						var that = this;
 						this._duDirtyHandlerWrapper = function(event) {
@@ -1427,6 +1423,9 @@
 						this._stageSightChangeHandlerWrapper = function() {
 							that._doAutoLayoutEditor();
 						};
+
+						//現時点では、編集開始時のActiveViewを対象とする
+						this._targetView = editManager._stage._getActiveView();
 
 						autoLayout.followTarget.addEventListener('displayUnitDirty',
 								this._duDirtyHandlerWrapper);
@@ -1443,24 +1442,24 @@
 				 * @param targetDisplayUnits このセッションに含まれている（ターゲットになっている）DUまたはその配列
 				 * @param data 変更データ
 				 */
-				notifyChange: function(targetDisplayUnits, data) {
-					var targets = this._targets;
-					if (targetDisplayUnits != null) {
-						targets = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
-								: [targetDisplayUnits];
-					}
-
-					for (var i = 0, len = targets.length; i < len; i++) {
-						var targetDU = targets[i];
-
-						var dirtyReason = {
-							type: REASON_EDIT_CHANGE,
-							data: data
-						};
-						targetDU._setDirty(dirtyReason);
-					}
-				},
-
+				//一旦使用しないこととする
+				//				notifyChange: function(targetDisplayUnits, data) {
+				//					var targets = this._targets;
+				//					if (targetDisplayUnits != null) {
+				//						targets = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
+				//								: [targetDisplayUnits];
+				//					}
+				//
+				//					for (var i = 0, len = targets.length; i < len; i++) {
+				//						var targetDU = targets[i];
+				//
+				//						var dirtyReason = {
+				//							type: REASON_EDIT_CHANGE,
+				//							data: data
+				//						};
+				//						targetDU._setDirty(dirtyReason);
+				//					}
+				//				},
 				/**
 				 * この編集セッションをキャンセルします。変更はキャンセルされます。
 				 */
@@ -1526,19 +1525,20 @@
 
 					var wpos = du.getWorldGlobalPosition();
 
-					var activeView = this._editManager._stage._getActiveView();
+					var view = this._targetView ? this._targetView : this._editManager._stage
+							._getActiveView();
 
-					//TODO ビュー分割時のエディタ追従の挙動を整理、対応
-					var converter = activeView.coordinateConverter;
+					//TODO 現時点では、ビューが分割されている場合、時のエディタ追従の挙動を整理、対応
+					var converter = view.coordinateConverter;
 
 					var dpos = converter.toDisplayPosition(wpos.x, wpos.y);
 					var dw = converter.toDisplayX(du.width);
 					var dh = converter.toDisplayY(du.height);
 
-					var viewScrollPos = activeView.getScrollPosition();
+					var viewScrollPos = view.getScrollPosition();
 
-					var left = activeView.x + dpos.x - viewScrollPos.x;
-					var top = activeView.y + dpos.y - viewScrollPos.y;
+					var left = view.x + dpos.x - viewScrollPos.x;
+					var top = view.y + dpos.y - viewScrollPos.y;
 
 					$(this._editorView).css({
 						left: left,
