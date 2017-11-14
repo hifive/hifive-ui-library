@@ -1500,6 +1500,12 @@
 					$(this._editorView).remove();
 
 					this._editManager._onSessionEnd(this);
+
+					//isEditingをtrueにするのはEditManager.beginEdit()内で行っている
+					this._targets.forEach(function(du) {
+						du._isEditing = false;
+						du.requestRender();
+					});
 				},
 
 				_onDUDirty: function(event) {
@@ -1528,7 +1534,6 @@
 					var view = this._targetView ? this._targetView : this._editManager._stage
 							._getActiveView();
 
-					//TODO 現時点では、ビューが分割されている場合、時のエディタ追従の挙動を整理、対応
 					var converter = view.coordinateConverter;
 
 					var dpos = converter.toDisplayPosition(wpos.x, wpos.y);
@@ -1604,8 +1609,16 @@
 
 					var isModalActually = isModal === true ? true : false;
 
-					var editSession = EditSession.create(this, editor, targetDisplayUnits,
-							isExclusive, isModalActually, autoLayout);
+					var targetDUs = Array.isArray(targetDisplayUnits) ? targetDisplayUnits
+							: [targetDisplayUnits];
+
+					targetDUs.forEach(function(du) {
+						du._isEditing = true;
+						du.requestRender();
+					});
+
+					var editSession = EditSession.create(this, editor, targetDUs, isExclusive,
+							isModalActually, autoLayout);
 					this._sessions.push(editSession);
 
 					if (isModalActually) {
@@ -3917,6 +3930,8 @@
 			field: {
 				_isEditable: null,
 
+				_isEditing: null,
+
 				/**
 				 * この要素を現在ドラッグ可能かどうか
 				 */
@@ -3967,6 +3982,13 @@
 						this._isEditable = value;
 					}
 				},
+
+				isEditing: {
+					get: function() {
+						return this._isEditing;
+					}
+				},
+
 				width: {
 					get: function() {
 						return super_.width.get.call(this);
@@ -3975,6 +3997,7 @@
 						super_.width.set.call(this, value);
 					}
 				},
+
 				height: {
 					get: function() {
 						return super_.height.get.call(this);
@@ -3983,6 +4006,7 @@
 						super_.height.set.call(this, value);
 					}
 				},
+
 				isDragging: {
 					get: function() {
 						return this._isDragging;
@@ -4000,6 +4024,7 @@
 					super_.constructor.call(this, id);
 
 					this._isEditable = true;
+					this._isEditing = false;
 
 					this.isDraggable = true;
 					this._isDragging = false;
@@ -4110,7 +4135,51 @@
 				 */
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
-					this._update(view, element, reason);
+
+					var ctx = view._getDOMContext(this);
+
+					if (this.isEditing) {
+						if (!ctx) {
+							ctx = {};
+							view._setDOMContext(this, ctx);
+						}
+
+						if (!ctx._$editCover) {
+							//編集中カバーを作成
+							ctx._$editCover = $('<div class="h5-stage-edit-du-cover">編集中</div>');
+
+							//必ず一番最後の要素になるようにここで追加する(z-indexも指定はしているが、念のため)
+							ctx._$editCover.css({
+								position: 'absolute',
+								left: 0,
+								top: 0,
+								width: '100%',
+								height: '100%'
+							});
+
+						} else {
+							//レンダラで上書きなどされないよう、一旦カバーを外した状態でレンダラを呼ぶ
+							ctx._$editCover.remove();
+						}
+
+						//lineHeightのみ、サイズが変わる可能性があるので都度設定する
+						ctx._$editCover.css({
+							lineHeight: this.height + 'px',
+						});
+
+						this._update(view, element, reason);
+
+						ctx._$editCover.appendTo(element);
+
+					} else {
+						if (ctx && ctx._$editCover) {
+							ctx._$editCover.remove();
+							ctx._$editCover = null;
+						}
+
+						//編集中でない場合は、カバーがない状態で呼ぶ
+						this._update(view, element, reason);
+					}
 				},
 
 				/**
@@ -6379,6 +6448,9 @@
 						_duElementMap: null,
 						_duZCacheMap: null,
 
+						//あるDOM要素 -> 汎用なコンテキストオブジェクト へのマップ
+						_duContextMap: null,
+
 						_numOfDU: null,
 
 						_bulkAddRootDU: null,
@@ -6402,6 +6474,8 @@
 							super_.constructor.call(this);
 							this._duElementMap = new Map();
 							this._duZCacheMap = new Map();
+
+							this._duContextMap = new Map();
 
 							this._numOfDU = 0;
 							this._numOfBulkAdd = 0;
@@ -6474,6 +6548,20 @@
 						},
 
 						/**
+						 * 与えられたDUに対応するコンテキストを返します。
+						 *
+						 * @param du
+						 * @returns
+						 */
+						getContext: function(du) {
+							return this._duContextMap.get(du);
+						},
+
+						setContext: function(du, context) {
+							this._duContextMap.set(du, context);
+						},
+
+						/**
 						 * 与えられたDUが既に描画済みかどうかを返します。
 						 *
 						 * @param du
@@ -6506,6 +6594,7 @@
 							//MEMO: EclipseのJSDTだと.deleteの記述がエラーになる
 							//各種キャッシュから当該DUのエントリを削除
 							this._duElementMap['delete'](du);
+							this._duContextMap['delete'](du);
 							if (DisplayUnitContainer.isClassOf(du)) {
 								this._duZCacheMap['delete'](du);
 							}
@@ -8229,6 +8318,14 @@
 							}
 
 							this.update();
+						},
+
+						_getDOMContext: function(du) {
+							this._domManager.getContext(du);
+						},
+
+						_setDOMContext: function(du, context) {
+							this._domManager.setContext(du, context);
 						}
 					}
 				};
@@ -11104,6 +11201,11 @@
 			//ドラッグ対象のDUがある場合はmousedownのタイミングで決定済み
 			var du = this._dragStartDisplayUnit;
 
+			if (du && du.isEditing) {
+				//対象のDUがエディタによって編集中の場合はドラッグ操作は開始しない
+				return;
+			}
+
 			this._currentDragMode = DRAG_MODE_NONE;
 
 			var dragStartMode = this.UIDragMode;
@@ -12474,6 +12576,11 @@
 			}
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
+
+			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
+				//対象のDUが存在し、かつそれが編集中の場合は何もしない
+				return;
+			}
 
 			//リサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
