@@ -4265,11 +4265,11 @@
 							var toW = this._to.width;
 							var toH = this._to.height;
 
-							var fromHAlign = this.endpointFrom.junctionHorizontalAlign;
-							var toHAlign = this.endpointTo.junctionHorizontalAlign;
+							var fromHAlign = this.endpointFrom.horizontalAlign;
+							var toHAlign = this.endpointTo.horizontalAlign;
 
-							var fromVAlign = this.endpointFrom.junctionVerticalAlign;
-							var toVAlign = this.endpointTo.junctionVerticalAlign;
+							var fromVAlign = this.endpointFrom.verticalAlign;
+							var toVAlign = this.endpointTo.verticalAlign;
 
 							var x1, y1, x2, y2;
 
@@ -4281,7 +4281,7 @@
 								x1 = fwPos.x + fromW;
 								break;
 							case 'offset':
-								x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
+								x1 = fwPos.x + this.endpointFrom.alignOffsetX;
 								break;
 							case 'nearestSide':
 								var fwCenterX = fwPos.x + fromW / 2;
@@ -4307,7 +4307,7 @@
 								x2 = twPos.x + toW;
 								break;
 							case 'offset':
-								x2 = twPos.x + this.endpointTo.junctionOffsetX;
+								x2 = twPos.x + this.endpointTo.alignOffsetX;
 								break;
 							case 'nearestSide':
 								var fwCenterX = fwPos.x + fromW / 2;
@@ -4333,7 +4333,7 @@
 								y1 = fwPos.y + fromH;
 								break;
 							case 'offset':
-								y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
+								y1 = fwPos.y + this.endpointFrom.alignOffsetY;
 								break;
 							case 'nearestSide':
 								var fwCenterY = fwPos.y + fromH / 2;
@@ -4359,7 +4359,7 @@
 								y2 = twPos.y + toH;
 								break;
 							case 'offset':
-								y2 = twPos.y + this.endpointTo.junctionOffsetY;
+								y2 = twPos.y + this.endpointTo.alignOffsetY;
 								break;
 							case 'nearestSide':
 								var fwCenterY = fwPos.y + fromH / 2;
@@ -4561,85 +4561,83 @@
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
 			field: {
-				_junctionVerticalAlign: null,
-				_junctionHorizontalAlign: null,
-				_junctionOffsetX: null,
-				_junctionOffsetY: null
+				_verticalAlign: null,
+				_horizontalAlign: null,
+				_alignOffsetX: null,
+				_alignOffsetY: null
 			},
 
 			accessor: {
 				//top, middle, bottom, offset, nearestSide, null
-				junctionVerticalAlign: {
+				verticalAlign: {
 					get: function() {
-						return this._junctionVerticalAlign;
+						return this._verticalAlign;
 					},
 					set: function(value) {
-						var oldValue = this._junctionVerticalAlign;
+						var oldValue = this._verticalAlign;
 
 						if (value === oldValue) {
 							return;
 						}
 
-						this._junctionVerticalAlign = value;
+						this._verticalAlign = value;
 
-						var ev = PropertyChangeEvent.create('junctionVerticalAlign', oldValue,
-								value);
+						var ev = PropertyChangeEvent.create('verticalAlign', oldValue, value);
 						this.dispatchEvent(ev);
 					}
 				},
 
 				//left, center, right, offset, nearestSide, null
-				junctionHorizontalAlign: {
+				horizontalAlign: {
 					get: function() {
-						return this._junctionHorizontalAlign;
+						return this._horizontalAlign;
 					},
 					set: function(value) {
-						var oldValue = this._junctionHorizontalAlign;
+						var oldValue = this._horizontalAlign;
 
 						if (value === oldValue) {
 							return;
 						}
 
-						this._junctionHorizontalAlign = value;
+						this._horizontalAlign = value;
 
-						var ev = PropertyChangeEvent.create('junctionHorizontalAlign', oldValue,
-								value);
+						var ev = PropertyChangeEvent.create('horizontalAlign', oldValue, value);
 						this.dispatchEvent(ev);
 					}
 				},
 
 				//Alignがoffsetの場合のみ有効
-				junctionOffsetX: {
+				alignOffsetX: {
 					get: function() {
-						return this._junctionOffsetX;
+						return this._alignOffsetX;
 					},
 					set: function(value) {
-						var oldValue = this._junctionOffsetX;
+						var oldValue = this._alignOffsetX;
 
 						if (value === oldValue) {
 							return;
 						}
 
-						this._junctionOffsetX = value;
+						this._alignOffsetX = value;
 
-						var ev = PropertyChangeEvent.create('junctionOffsetX', oldValue, value);
+						var ev = PropertyChangeEvent.create('alignOffsetX', oldValue, value);
 						this.dispatchEvent(ev);
 					}
 				},
-				junctionOffsetY: {
+				alignOffsetY: {
 					get: function() {
-						return this._junctionOffsetY;
+						return this._alignOffsetY;
 					},
 					set: function(value) {
-						var oldValue = this._junctionOffsetY;
+						var oldValue = this._alignOffsetY;
 
 						if (value === oldValue) {
 							return;
 						}
 
-						this._junctionOffsetY = value;
+						this._alignOffsetY = value;
 
-						var ev = PropertyChangeEvent.create('junctionOffsetY', oldValue, value);
+						var ev = PropertyChangeEvent.create('alignOffsetY', oldValue, value);
 						this.dispatchEvent(ev);
 					}
 				}
@@ -6969,7 +6967,7 @@
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							var targetDUs = dragSession.getTarget();
+							var targetDUs = dragSession.getTargets();
 							if (!Array.isArray(targetDUs)) {
 								targetDUs = [targetDUs];
 							}
@@ -10093,7 +10091,7 @@
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							var targetDUs = dragSession.getTarget();
+							var targetDUs = dragSession.getTargets();
 							if (!Array.isArray(targetDUs)) {
 								targetDUs = [targetDUs];
 							}
@@ -10122,7 +10120,7 @@
 						 * @private
 						 */
 						__onDragDUDrop: function(dragSession) {
-							var targetDUs = dragSession.getTarget();
+							var targetDUs = dragSession.getTargets();
 							if (!Array.isArray(targetDUs)) {
 								targetDUs = [targetDUs];
 							}
