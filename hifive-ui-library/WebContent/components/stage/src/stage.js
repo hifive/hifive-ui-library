@@ -4283,7 +4283,7 @@
 							case 'offset':
 								x1 = fwPos.x + this.endpointFrom.junctionOffsetX;
 								break;
-							case 'nearest':
+							case 'nearestSide':
 								var fwCenterX = fwPos.x + fromW / 2;
 								var twCenterX = twPos.x + toW / 2;
 								if (twCenterX - fwCenterX > 0) {
@@ -4309,7 +4309,7 @@
 							case 'offset':
 								x2 = twPos.x + this.endpointTo.junctionOffsetX;
 								break;
-							case 'nearest':
+							case 'nearestSide':
 								var fwCenterX = fwPos.x + fromW / 2;
 								var twCenterX = twPos.x + toW / 2;
 								if (twCenterX - fwCenterX > 0) {
@@ -4335,7 +4335,7 @@
 							case 'offset':
 								y1 = fwPos.y + this.endpointFrom.junctionOffsetY;
 								break;
-							case 'nearest':
+							case 'nearestSide':
 								var fwCenterY = fwPos.y + fromH / 2;
 								var twCenterY = twPos.y + toH / 2;
 								if (twCenterY - fwCenterY > 0) {
@@ -4361,7 +4361,7 @@
 							case 'offset':
 								y2 = twPos.y + this.endpointTo.junctionOffsetY;
 								break;
-							case 'nearest':
+							case 'nearestSide':
 								var fwCenterY = fwPos.y + fromH / 2;
 								var twCenterY = twPos.y + toH / 2;
 								if (twCenterY - fwCenterY > 0) {
@@ -4568,7 +4568,7 @@
 			},
 
 			accessor: {
-				//top, middle, bottom, offset, nearest, null
+				//top, middle, bottom, offset, nearestSide, null
 				junctionVerticalAlign: {
 					get: function() {
 						return this._junctionVerticalAlign;
@@ -4588,7 +4588,7 @@
 					}
 				},
 
-				//left, center, right, offset, nearest, null
+				//left, center, right, offset, nearestSide, null
 				junctionHorizontalAlign: {
 					get: function() {
 						return this._junctionHorizontalAlign;
