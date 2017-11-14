@@ -11024,7 +11024,7 @@
 			//イベントのタイミングではrequestRender()が呼ばれるだけなので
 			//要素は消えなくなるはず
 
-			var view = this._getActiveViewFromElement(event.target);
+			var view = this._getOwnerViewOfElement(event.target);
 
 			//duClickイベントは、DUがselectableかどうかに関係なく発生させる
 			var evArg = {
@@ -11142,15 +11142,17 @@
 		 * @param displayY ディスプレイY座標（ただしStageルート要素の左上を原点とする値）
 		 * @returns { x: -1 or 0 or 1, y: -1 or 0 or 1 } というオブジェクト。 -1の場合は上端または左端、1は下端または右端、0は中央部分
 		 */
-		_getNineSlicePosition: function(du, displayOffsetX, displayOffsetY) {
+		_getNineSlicePosition: function(du, element, displayOffsetX, displayOffsetY) {
 			if (!du) {
 				throw new Error('DUがnullです。Nine-Sliceを計算できません。');
 			}
 
-			var viewport = this.getViewCollection().getActiveView()._viewport;
+			var view = this._getOwnerViewOfElement(element);
 
-			var cursorWorldPos = viewport.getWorldPositionFromDisplayOffset(displayOffsetX,
-					displayOffsetY);
+			var viewport = view._viewport;
+
+			var cursorWorldPos = viewport.getWorldPositionFromDisplayOffset(
+					displayOffsetX - view.x, displayOffsetY - view.y);
 
 			var boundaryTop = du.resizeBoundary.top;
 			var boundaryRight = du.resizeBoundary.right;
@@ -11327,7 +11329,8 @@
 				if (du && du.isResizable) {
 					var displayOffsetX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
 					var displayOffsetY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
-					duNineSlicePos = this._getNineSlicePosition(du, displayOffsetX, displayOffsetY);
+					duNineSlicePos = this._getNineSlicePosition(du, event.target, displayOffsetX,
+							displayOffsetY);
 					if (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0) {
 						isResize = true;
 					}
@@ -11694,7 +11697,7 @@
 				y: event.pageY
 			};
 
-			var view = this._getActiveViewFromElement(event.target);
+			var view = this._getOwnerViewOfElement(event.target);
 			if (view) {
 				this._viewCollection.setActiveView(view);
 			}
@@ -12407,7 +12410,7 @@
 		/**
 		 * @private
 		 */
-		_getActiveViewFromElement: function(element) {
+		_getOwnerViewOfElement: function(element) {
 			var views = this._viewCollection.getViewAll();
 			for (var i = 0, len = views.length; i < len; i++) {
 				var view = views[i];
@@ -12588,8 +12591,8 @@
 				var offsetPos = $root.offset();
 				var displayOffsetX = context.event.pageX - offsetPos.left;
 				var displayOffsetY = context.event.pageY - offsetPos.top;
-				var nineSlicePos = this._getNineSlicePosition(currentMouseOverDU, displayOffsetX,
-						displayOffsetY);
+				var nineSlicePos = this._getNineSlicePosition(currentMouseOverDU,
+						context.event.target, displayOffsetX, displayOffsetY);
 
 				if (nineSlicePos.x < 0) {
 					if (nineSlicePos.y < 0) {
@@ -12654,7 +12657,7 @@
 			var event = context.event;
 			var wheelEvent = event.originalEvent;
 
-			var view = this._getActiveViewFromElement(event.target);
+			var view = this._getOwnerViewOfElement(event.target);
 
 			if (!view) {
 				return;
