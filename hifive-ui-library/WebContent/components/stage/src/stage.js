@@ -326,6 +326,137 @@
 		containsElement: containsElement
 	});
 
+	RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.MasterClock',
+
+			field: {
+				_rafId: null,
+				_rafCallbackWrapper: null,
+				_listeners: null,
+				_onceListeners: null
+			},
+
+			method: {
+				/**
+				 * @constructor
+				 * @memberOf h5.ui.components.stage.MasterClock
+				 */
+				constructor: function MasterClock() {
+					super_.constructor.call(this);
+					this._rafId = null;
+
+					this._listeners = [];
+					this._onceListeners = [];
+
+					var that = this;
+					this._rafCallbackWrapper = function() {
+						that._onAnimationFrame();
+					};
+				},
+
+				next: function() {
+					if (this._rafId != null) {
+						return;
+					}
+					this._rafId = requestAnimationFrame(this._rafCallbackWrapper);
+				},
+
+				listen: function(listener, thisArg) {
+					if (this._has(listener)) {
+						//既に登録済みのリスナーなので何もしない(Onceか通常かは問わない)
+						return;
+					}
+
+					var listenerObj = {
+						func: listener,
+						thisArg: thisArg !== undefined ? thisArg : null
+					};
+					this._listeners.push(listenerObj);
+				},
+
+				listenOnce: function(listener, thisArg) {
+					if (this._has(listener)) {
+						//既に登録済みのリスナーなので何もしない(Onceか通常かは問わない)
+						return;
+					}
+
+					var listenerObj = {
+						func: listener,
+						thisArg: thisArg !== undefined ? thisArg : null
+					};
+					this._onceListeners.push(listenerObj);
+				},
+
+				unlisten: function(listener) {
+					var idx = this._getListenerIndex(listener, false);
+					if (idx !== -1) {
+						this._listeners.splice(idx, 1);
+						return;
+					}
+
+					//通常リスナーのリストにない場合、Onceリスナーのリストの中から探索
+					var onceIdx = this._getListenerIndex(listener, true);
+					if (onceIdx !== -1) {
+						this._onceListeners.splice(onceIdx, 1);
+					}
+				},
+
+				dispose: function() {
+					if (this._rafId == null) {
+						return;
+					}
+					cancelAnimationFrame(this._rafId);
+				},
+
+				_has: function(listener) {
+					if (this._getListenerIndex(listener, false) !== -1) {
+						return true;
+					}
+
+					if (this._getListenerIndex(listener, true) !== -1) {
+						return true;
+					}
+
+					return false;
+				},
+
+				_getListenerIndex: function(listenerFunc, isOnce) {
+					var listeners = isOnce === true ? this._onceListeners : this._listeners;
+					for (var i = 0, len = listeners.length; i < len; i++) {
+						var listener = listeners[i];
+						if (listener.func === listenerFunc) {
+							return i;
+						}
+					}
+					return -1;
+				},
+
+				_onAnimationFrame: function() {
+					this._rafId = null;
+
+					var listeners = this._listeners.slice();
+					for (var i = 0, len = listeners.length; i < len; i++) {
+						var listener = listeners[i];
+						listener.func.call(listener.thisArg);
+					}
+
+					var onceListeners = this._onceListeners.slice();
+
+					//一回だけ購読するリスナーのリストはここで一旦削除
+					//（これから発火させるリスナーの中でlistenOnceされる可能性もあるため）
+					this._onceListeners = [];
+
+					for (var j = 0, jLen = onceListeners.length; j < jLen; j++) {
+						var onceListener = onceListeners[j];
+						onceListener.func.call(onceListener.thisArg);
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
 	/**
 	 * DragSession
 	 * <p>
@@ -1242,8 +1373,7 @@
 				_autoLayout: null,
 
 				_duDirtyHandlerWrapper: null,
-				_stageSightChangeHandlerWrapper: null,
-				_raf: null
+				_stageSightChangeHandlerWrapper: null
 			},
 
 			accessor: {
@@ -1278,8 +1408,6 @@
 					this._isModal = isModal === true ? true : false;
 
 					this._autoLayout = autoLayout;
-
-					this._raf = null;
 
 					//					var event = DisplayUnitDirtyEvent.create();
 					//					event.displayUnit = this;
@@ -1379,16 +1507,10 @@
 				},
 
 				_doAutoLayoutEditor: function() {
-					//TODO ここで直接rAFを使わず、StageViewに refreshViewのイベントをあげさせて
-					//そのタイミングで再描画するのがよい
-					if (this._raf) {
-						return;
-					}
-					var that = this;
-					this._raf = requestAnimationFrame(function() {
-						that._raf = null;
-						that._doAutoLayoutEditorInternal();
-					});
+					this._editManager._stage._viewMasterClock.listenOnce(
+							this._doAutoLayoutEditorInternal, this);
+
+					this._editManager._stage._viewMasterClock.next();
 				},
 
 				_doAutoLayoutEditorInternal: function() {
@@ -5612,6 +5734,8 @@
 
 	var EditManager = classManager.getClass('h5.ui.components.stage.EditManager');
 
+	var MasterClock = classManager.getClass('h5.ui.components.stage.MasterClock');
+
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
@@ -6626,13 +6750,9 @@
 
 						_domManager: null,
 
-						_updateCallWrapper: null,
-
 						_duRenderStandbyMap: null,
 
 						_duDirtyReasonMap: null,
-
-						_updateAnimationFrameId: null,
 
 						_isUpdateLayerScrollPositionRequired: null,
 
@@ -6748,14 +6868,6 @@
 							this._isUpdateLayerScrollPositionRequired = true;
 
 							this._domManager = DOMManager.create(this);
-
-							var that = this;
-							/**
-							 * @private
-							 */
-							this._updateCallWrapper = function() {
-								that._doUpdate();
-							};
 
 							this._duDirtyReasonMap = new Map();
 
@@ -7727,12 +7839,6 @@
 						 * @param renderRect 描画範囲
 						 */
 						_doUpdate: function(renderRect) {
-							if (this._updateAnimationFrameId) {
-								//描画が更新されるので、次フレームを待っていた場合は解除
-								cancelAnimationFrame(this._updateAnimationFrameId);
-							}
-							this._updateAnimationFrameId = null;
-
 							var that = this;
 
 							if (this._isUpdateLayerScrollPositionRequired) {
@@ -7801,12 +7907,8 @@
 								return;
 							}
 
-							if (this._updateAnimationFrameId) {
-								//既に次フレームでの描画が予約されていたら何もしない
-								return;
-							}
-
-							this._updateAnimationFrameId = requestAnimationFrame(this._updateCallWrapper);
+							this._stage._viewMasterClock.listenOnce(this._doUpdate, this);
+							this._stage._viewMasterClock.next();
 						},
 
 						/**
@@ -10359,6 +10461,8 @@
 		 */
 		_focusController: h5.ui.components.stage.FocusController,
 
+		_viewMasterClock: null,
+
 		initView: function() {
 			this._viewCollection.initView();
 			//一度initViewした後は、初期のDU投入は完了していると考える。
@@ -10544,6 +10648,8 @@
 			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
 
+			this._viewMasterClock = MasterClock.create();
+
 			this._editManager = EditManager.create(this);
 
 			this._isDblclickEmulationEnabled = true;
@@ -10559,9 +10665,6 @@
 			};
 
 			var that = this;
-			this._dragMoveWrapper = function() {
-				that._doDragMove();
-			},
 
 			this._duCascadeRemovingListener = function(event) {
 				that._onDUCascadeRemoving(event);
@@ -10578,6 +10681,10 @@
 			$(this.rootElement).css({
 				position: 'absolute'
 			});
+		},
+
+		__dispose: function() {
+			this._viewMasterClock.dispose();
 		},
 
 		/**
@@ -11549,24 +11656,14 @@
 
 			this._throttledLastDragMoveContext = context;
 
-			if (this._rafId) {
-				return;
-			}
-
-			this._rafId = requestAnimationFrame(this._dragMoveWrapper);
+			this._viewMasterClock.listenOnce(this._doDragMove, this);
+			this._viewMasterClock.next();
 		},
 
 		/**
 		 * @private
 		 */
-		_dragMoveWrapper: null,
-
-		/**
-		 * @private
-		 */
 		_doDragMove: function() {
-			this._rafId = null;
-
 			var context = this._throttledLastDragMoveContext;
 
 			this._throttledLastDragMoveContext = null;
@@ -11793,11 +11890,7 @@
 		},
 
 		'{document} mouseup': function(context) {
-
-			if (this._rafId) {
-				cancelAnimationFrame(this._rafId);
-				this._rafId = null;
-			}
+			this._viewMasterClock.unlisten(this._doDragMove);
 
 			this._endBoundaryScroll();
 
