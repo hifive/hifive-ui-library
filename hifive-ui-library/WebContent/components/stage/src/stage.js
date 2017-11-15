@@ -1847,13 +1847,23 @@
 							var right = this.x + this.width;
 							var nsx = 0;
 
+							var bRight = boundary.right;
+							var bLeft = boundary.left;
+
+							//引数の値は小数値であることがある。
+							//このとき、boundaryをゼロに設定していても
+							//計算誤差で1/-1という（＝(x,y)が境界上にある、という）判定結果になることがある。
+							//しかし、boundaryがゼロの場合は常にその境界に乗ることはないので、
+							//boundaryがゼロより大きい値にセットされている場合のみ
+							//1/-1になりえるようにしている。top,bottom方向も同じ。
+
 							if (x > right) {
 								nsx = 2;
-							} else if (right - boundary.right <= x) {
+							} else if (bRight > 0 && right - bRight <= x) {
 								nsx = 1;
-							} else if (this.x + boundary.left < x) {
+							} else if (this.x + bLeft < x) {
 								nsx = 0;
-							} else if (this.x <= x) {
+							} else if (bLeft > 0 && this.x <= x) {
 								nsx = -1;
 							} else {
 								nsx = -2;
@@ -1862,13 +1872,16 @@
 							var bottom = this.y + this.height;
 							var nsy = 0;
 
+							var bTop = boundary.top;
+							var bBottom = boundary.bottom;
+
 							if (y > bottom) {
 								nsy = 2;
-							} else if (bottom - boundary.bottom <= y) {
+							} else if (bBottom > 0 && bottom - bBottom <= y) {
 								nsy = 1;
-							} else if (this.y + boundary.top < y) {
+							} else if (this.y + bTop < y) {
 								nsy = 0;
-							} else if (this.y <= y) {
+							} else if (bTop > 0 && this.y <= y) {
 								nsy = -1;
 							} else {
 								nsy = -2;
@@ -11477,7 +11490,15 @@
 				//カーソルがマウスオーバー時の9-Sliceの位置からずれてしまう可能性があり、
 				//予想される挙動と判定結果が変わってしまうため。
 				var duNineSlicePos = this._resizeOverNineSlice;
-				if (du && du.isResizable && (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0)) {
+
+				//拡大縮小やDOM要素の微妙な位置により、カーソル座標あるいはその他の値が小数値になることがある。
+				//このとき、計算結果によっては（ブラウザ的にはカーソルがDUの上に乗っていると判定していても）
+				//NineSliceが「外側(2/-2)」という結果を返す可能性がある。
+				//そのため、"!==0"での比較ではなく、明示的に1/-1かどうかをチェックすることで、
+				//boundaryをゼロにしているのに「リサイズ」と判定されることを防ぐ。
+				if (du
+						&& du.isResizable
+						&& ((duNineSlicePos.x === 1 || duNineSlicePos.x === -1) || (duNineSlicePos.y === 1 || duNineSlicePos.y === -1))) {
 					isResize = true;
 				}
 
@@ -12800,36 +12821,39 @@
 
 			this._resizeOverNineSlice = nineSlicePos;
 
-			if (nineSlicePos.x < 0) {
-				if (nineSlicePos.y < 0) {
+			if (nineSlicePos.x === -1) {
+				if (nineSlicePos.y === -1) {
 					//カーソルは「左上」にある
 					$root.css('cursor', 'nw-resize');
-				} else if (nineSlicePos.y > 0) {
+				} else if (nineSlicePos.y === 1) {
 					//カーソルは「左下」にある
 					$root.css('cursor', 'ne-resize');
 				} else {
 					//カーソルは「左中」にある
 					$root.css('cursor', 'w-resize');
 				}
-			} else if (nineSlicePos.x > 0) {
-				if (nineSlicePos.y < 0) {
+			} else if (nineSlicePos.x === 1) {
+				if (nineSlicePos.y === -1) {
 					//カーソルは「右上」にある
 					$root.css('cursor', 'ne-resize');
-				} else if (nineSlicePos.y > 0) {
+				} else if (nineSlicePos.y === 1) {
 					//カーソルは「右下」にある
 					$root.css('cursor', 'nw-resize');
 				} else {
 					//カーソルは「右中央」にある
 					$root.css('cursor', 'w-resize');
 				}
-			} else {
-				if (nineSlicePos.y !== 0) {
+			} else if (nineSlicePos.x === 0) {
+				if (nineSlicePos.y === 1 || nineSlicePos.y === -1) {
 					//カーソルは「中上」または「中下」にある
 					$root.css('cursor', 'n-resize');
 				} else {
-					//カーソルが「中中」にある場合は変更しない
+					//カーソルが「中中」にある場合は通常カーソルにする
 					$root.css('cursor', 'auto');
 				}
+			} else {
+				//カーソルが「外側」にあると判定されたので、通常カーソルにする
+				$root.css('cursor', 'auto');
 			}
 		},
 
