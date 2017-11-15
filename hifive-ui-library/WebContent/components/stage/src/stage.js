@@ -8406,7 +8406,7 @@
 							//DU自体が削除された場合、待機リストからも削除
 							//(shouldExit()によりDOMのみ削除する場合は再び待機リストに入るので
 							//待機リストからの削除は_removeDOMForDU()ではなくここで行う)
-							this._duRenderStandbyMap['delete'](du);
+							this._duRenderStandbyMap['delete'](event.displayUnit);
 						},
 
 						_removeDOMForDU: function(du, parentDU) {
