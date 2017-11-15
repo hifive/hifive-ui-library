@@ -232,6 +232,12 @@
 	var EventDispatcher = classManager.getClass('h5.event.EventDispatcher');
 	var PropertyChangeEvent = classManager.getClass('h5.event.PropertyChangeEvent');
 
+	var RenderPriority = {
+		NORMAL: 0,
+		ALWAYS: 1
+	//ON_DEMAND: 2
+	};
+
 	var DragMode = {
 		NONE: 0,
 		AUTO: 1,
@@ -288,7 +294,8 @@
 		DragMode: DragMode,
 		ScrollDirection: ScrollDirection,
 		UpdateReasons: UpdateReasons,
-		ResizeDirection: ResizeDirection
+		ResizeDirection: ResizeDirection,
+		RenderPriority: RenderPriority
 	});
 
 
@@ -3169,6 +3176,8 @@
 
 						_isOnSvgLayer: null,
 
+						_renderPriority: null,
+
 						/**
 						 * この要素を現在選択可能かどうか
 						 */
@@ -3306,6 +3315,18 @@
 							get: function() {
 								return this._isFocused;
 							}
+						},
+
+						renderPriority: {
+							get: function() {
+								return this._renderPriority;
+							},
+							set: function(value) {
+								if (this._renderPriority === value) {
+									return;
+								}
+								this._renderPriority = value;
+							}
 						}
 					},
 					method: {
@@ -3323,6 +3344,8 @@
 								//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 								this.id = id;
 							}
+
+							this._renderPriority = RenderPriority.NORMAL;
 
 							this._isSelectable = true;
 							this._isSelected = false;
@@ -5150,7 +5173,10 @@
 		return desc;
 	});
 
+	var MSG_RENDER_PRIORITY_MUST_BE_ALWAYS = 'DisplayUnitContainerおよびそのサブクラスのrenderPriorityは常にALWAYSです。変更できません。';
+
 	var DisplayUnitContainer = DisplayUnit.extend(function(super_) {
+
 		function getDisplayUnitByIdInner(container, id) {
 			var children = container._children;
 			for (var i = 0, len = children.length; i < len; i++) {
@@ -5204,12 +5230,27 @@
 				_maxScaleY: null,
 				_isUpdateTransformReserved: null
 			},
+
+			accessor: {
+				renderPriority: {
+					get: function() {
+						return super_.renderPriority.get.call(this);
+					},
+
+					set: function(value) {
+						throw new Error(MSG_RENDER_PRIORITY_MUST_BE_ALWAYS);
+					}
+				}
+			},
+
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.DisplayUnitContainer
 				 */
 				constructor: function DisplayUnitContainer(id) {
 					super_.constructor.call(this, id);
+
+					this._renderPriority = RenderPriority.ALWAYS;
 
 					//TODO defaultValue
 					this.x = 0;
@@ -5820,6 +5861,7 @@
 	var DragMode = h5.ui.components.stage.DragMode;
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
 	var ResizeDirection = h5.ui.components.stage.ResizeDirection;
+	var RenderPriority = h5.ui.components.stage.RenderPriority;
 
 	var SortedList = RootClass.extend(function(super_) {
 		function getInsertionIndex(array, target, compareFunc, start, end) {
@@ -6604,6 +6646,10 @@
 							if (DisplayUnitContainer.isClassOf(du)) {
 								this._duZCacheMap['delete'](du);
 							}
+						},
+
+						doForEachRenderedDisplayUnit: function(func) {
+							this._duElementMap.forEach(func);
 						},
 
 						/**
@@ -7960,6 +8006,20 @@
 								dirtyMap['delete'](du);
 							});
 
+							//可視範囲外になったDUに対応するDOMを削除する
+							this._domManager.doForEachRenderedDisplayUnit(function(element, du) {
+								if (!that._shouldExit(du)) {
+									return;
+								}
+
+								//DOMが不要と判断されたので、削除して待機マップにDUを再び入れる
+								that._removeDOMForDU(du, du.parentDisplayUnit);
+								that._duRenderStandbyMap.set(du, du);
+
+								//もはやDOMの描画はできないのでDirtyMapからも削除
+								dirtyMap['delete'](du);
+							});
+
 							//DirtyなDUを処理
 							dirtyMap.forEach(function(updateReasonSet, du) {
 								var elem = that._domManager.getElement(du);
@@ -8122,6 +8182,66 @@
 							this._duRenderStandbyMap['delete'](du);
 						},
 
+						_shouldExit: function(du) {
+							if (du.renderPriority === RenderPriority.ALWAYS) {
+								//du.renderPriority = ALWAYSなら自動Exitしない
+								return false;
+							}
+
+							var renderRect = this._viewport._worldRect;
+
+							var halfWidth = renderRect.width / 2;
+							var halfHeight = renderRect.height / 2;
+
+							var rLeft = renderRect.x - halfWidth;
+							var rTop = renderRect.y - halfHeight;
+							var rRight = rLeft + renderRect.width + halfWidth;
+							var rBottom = rTop + renderRect.height + halfHeight;
+
+							var belongingLayer = du._belongingLayer;
+							switch (belongingLayer.UIDragScreenScrollDirection) {
+							case SCROLL_DIRECTION_X:
+								//レイヤーがX方向のみ移動可能＝Y方向には移動しないものとして考える
+								rTop = 0;
+								break;
+							case SCROLL_DIRECTION_Y:
+								//レイヤーがY方向のみ移動可能
+								rLeft = 0;
+								break;
+							case SCROLL_DIRECTION_NONE:
+								//レイヤーは全く移動しない
+								rLeft = 0;
+								rTop = 0;
+								break;
+							}
+
+							var duGlobalPos = du.getWorldGlobalPosition();
+
+							if (duGlobalPos.x > rRight) {
+								//DUの左端が描画領域の右端より右にある
+								return true;
+							}
+
+							var duRight = duGlobalPos.x + du.width;
+							if (duRight < rLeft) {
+								//DUの右端が描画領域の左端より右にある
+								return true;
+							}
+
+							var duBottom = duGlobalPos.y + du.height;
+							if (duBottom < rTop) {
+								//DUの下端が描画領域の上端より上にある
+								return true;
+							}
+
+							if (duGlobalPos.y > rBottom) {
+								//DUの上端が描画領域の下端より下にある
+								return true;
+							}
+
+							return false;
+						},
+
 						/**
 						 * このDUを今描画すべきかどうかを返します。
 						 *
@@ -8134,6 +8254,7 @@
 								return false;
 							}
 
+							//TODO このコメントは古いと思われる。確認後削除
 							//Firefoxでは、スクロールの度に描画を増やしていくと
 							//判定などの方が重くなりfpsが安定しないので
 							//一旦全てのDUは追加時に描画するようにする
@@ -8262,28 +8383,27 @@
 						 * @param event
 						 */
 						_onDURemove: function(event) {
-							this._domManager.remove(event.displayUnit, event.parentDisplayUnit);
+							this._removeDOMForDU(event.displayUnit, event.parentDisplayUnit);
 
-							var removedDUs = [event.displayUnit];
-							if (DisplayUnitContainer.isClassOf(event.displayUnit)) {
-								Array.prototype.push.apply(removedDUs, event.displayUnit
-										.getDisplayUnitAll(true));
-							}
-
-							//DUが削除されたので、子孫も含め、待機リストから全て削除
-							for (var i = 0, len = removedDUs.length; i < len; i++) {
-								var du = removedDUs[i];
-								this._removeFromUpdateWaitingCache(du);
-							}
+							//DU自体が削除された場合、待機リストからも削除
+							//(shouldExit()によりDOMのみ削除する場合は再び待機リストに入るので
+							//待機リストからの削除は_removeDOMForDU()ではなくここで行う)
+							this._duRenderStandbyMap['delete'](du);
 						},
 
-						/**
-						 * @private
-						 * @param du
-						 */
-						_removeFromUpdateWaitingCache: function(du) {
-							this._duRenderStandbyMap['delete'](du);
-							this._duDirtyReasonMap['delete'](du);
+						_removeDOMForDU: function(du, parentDU) {
+							this._domManager.remove(du, parentDU);
+
+							var removedDUs = [du];
+							if (DisplayUnitContainer.isClassOf(du)) {
+								Array.prototype.push.apply(removedDUs, du.getDisplayUnitAll(true));
+							}
+
+							//DUが削除されたので、子孫も含め、DirtyReasonMapから全て削除
+							for (var i = 0, len = removedDUs.length; i < len; i++) {
+								var rdu = removedDUs[i];
+								this._duDirtyReasonMap['delete'](rdu);
+							}
 						},
 
 						/**
