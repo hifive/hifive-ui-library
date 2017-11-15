@@ -109,6 +109,8 @@ text {
 	overflow: auto;
 	padding: 6px;
 
+	box-sizing: border-box;
+
 	/* editorのtextareaと合わせる */
 	font-size: 0.8rem;
 
@@ -125,16 +127,22 @@ text {
 	min-width: 11rem;
 	min-height: 3rem;
 	text-align: center;
-	padding: 6px;
+	padding: 0;
 	font-size: 0;
 
 	/* コメント本体のbg-colorと合わせる */
 	background-color: rgb(204, 238, 204);
 }
 
+.simpleTextEditor .innerPad {
+	width: 100%;
+	height: 100%;
+	padding: 6px;
+	box-sizing: border-box;
+}
+
 .simpleTextEditor .simpleTextEditorTextarea {
 	width: 100%;
-	/* 	box-sizing: border-box; */
 	border: none;
 	font-family: "ＭＳ ゴシック", sans-serif;
 	padding: 0;

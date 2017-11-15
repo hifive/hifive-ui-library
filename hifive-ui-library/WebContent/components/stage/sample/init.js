@@ -31,8 +31,9 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
-	var editorHtml = '<div class="simpleTextEditor"><textarea class="simpleTextEditorTextarea"></textarea>'
-			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span><button class="cancelButton">キャンセル</button></div></div>';
+	var editorHtml = '<div class="simpleTextEditor"><div class="innerPad"><textarea class="simpleTextEditorTextarea"></textarea>'
+			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span>'
+			+ '<button class="cancelButton">キャンセル</button></div></div></div>';
 
 	var SimpleTextEditor = RootClass.extend(function(super_) {
 		var desc = {
@@ -111,7 +112,7 @@
 				},
 
 				onUpdateLayout: function(editSession, rect) {
-					var $editor = this._$editor;
+					var $editor = this._$editor.find('.innerPad');
 
 					var $controls = $editor.find('.editorControls');
 
