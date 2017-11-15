@@ -393,7 +393,10 @@
 					$(context.rootElement).addClass('commentDU');
 				}
 
-				var htmlText = context.displayUnit.extraData.text.replace(/\n/g, '<br>');
+				var rawText = context.displayUnit.extraData.text;
+				var escaped = h5.u.str.escapeHtml(rawText);
+
+				var htmlText = escaped.replace(/\n/g, '<br>');
 				$(context.rootElement).html(htmlText);
 			});
 
