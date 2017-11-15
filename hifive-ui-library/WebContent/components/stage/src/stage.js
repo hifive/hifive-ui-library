@@ -4198,7 +4198,7 @@
 
 						//lineHeightのみ、サイズが変わる可能性があるので都度設定する
 						ctx._$editCover.css({
-							lineHeight: this.height + 'px',
+							lineHeight: this.height + 'px'
 						});
 
 						this._update(view, element, reason);
