@@ -11471,16 +11471,14 @@
 				//UIDragModeがAUTOの場合
 
 				var isResize = false;
-				var duNineSlicePos = null;
-				//TODO SPEC:座標に基づいて計算するのか、duがある＝そのカーソル位置にDOMが描画されている場合にのみ判定すべきか
-				if (du && du.isResizable) {
-					var displayOffsetX = this._dragLastPagePos.x - this._dragStartRootOffset.left;
-					var displayOffsetY = this._dragLastPagePos.y - this._dragStartRootOffset.top;
-					duNineSlicePos = this._getNineSlicePosition(du, event.target, displayOffsetX,
-							displayOffsetY);
-					if (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0) {
-						isResize = true;
-					}
+
+				//mousedown時に計算済みの9-Sliceの値に基づいてリサイズモードを決定する。
+				//mousemoveのイベントハンドラのタイミングで（mousemoveのイベントオブジェクトに基づいて）計算すると
+				//カーソルがマウスオーバー時の9-Sliceの位置からずれてしまう可能性があり、
+				//予想される挙動と判定結果が変わってしまうため。
+				var duNineSlicePos = this._resizeOverNineSlice;
+				if (du && du.isResizable && (duNineSlicePos.x !== 0 || duNineSlicePos.y !== 0)) {
+					isResize = true;
 				}
 
 				if (isResize) {
@@ -11823,13 +11821,13 @@
 		},
 
 		'{rootElement} mousedown': function(context, $el) {
-			var eventTarget = context.event.target;
+			var event = context.event;
+
+			var eventTarget = event.target;
 			if (this._isScrollBarEvent(eventTarget) || this._isOverlayContentsEvent(eventTarget)) {
 				//スクロールバー操作、オーバーレイ内のコンテンツの操作（編集エディタの操作等）については直接関知しない
 				return;
 			}
-
-			var event = context.event;
 
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
@@ -11849,6 +11847,8 @@
 				this._viewCollection.setActiveView(view);
 			}
 
+			var currentMouseOverDU = this._getIncludingDisplayUnit(event.target);
+
 			if ($(event.target).hasClass('stageGridSeparator')) {
 				//ドラッグ対象がグリッドセパレータの場合は
 				//グリッドのサイズ変更とみなす
@@ -11864,12 +11864,35 @@
 				//mousedownのタイミングで決定しつつ、
 				//実際にdragStartとみなす（イベントを発生させる）のは
 				//moveのタイミングにする。
-				this._dragStartDisplayUnit = this._getIncludingDisplayUnit(event.target);
+				this._dragStartDisplayUnit = currentMouseOverDU;
 			}
 
 			//DUのドラッグの場合、IE、Firefoxではmousedownの場合textなどでドラッグすると
 			//文字列選択になってしまうのでキャンセルする
-			context.event.preventDefault();
+			event.preventDefault();
+
+			//Chrome(62で確認)では、mouseover時にカーソルのスタイルを変更しても
+			//それが反映されないことがある。そのため、リサイズのカーソルが見えていたのに
+			//ドラッグを開始したらリサイズにならない、あるいはその逆といった現象が発生することがある。
+			//これを緩和するため、mousedown時にもう一度9-Sliceを計算してカーソルを変更することで、
+			//せめてマウスダウン時にはカーソルとリサイズの挙動が一致するように、下記の処理を
+			//mousemoveイベントハンドラに加えてここでも行う。
+
+			var $root = $(this.rootElement);
+
+			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
+				//対象のDUが存在し、かつそれが編集中の場合は何もしない
+				$root.css('cursor', 'auto');
+				return;
+			}
+
+			//リサイズ可能なDUの境界部分にカーソルが載ったら
+			//カーソルをリサイズ用のアイコンに変更する
+			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
+				this._updateResizeCursor(currentMouseOverDU, event);
+			} else {
+				$root.css('cursor', 'auto');
+			}
 		},
 
 		_dragStartDisplayUnit: null,
@@ -12705,6 +12728,8 @@
 			}
 		},
 
+		_resizeOverNineSlice: null,
+
 		/**
 		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
 		 *
@@ -12737,44 +12762,7 @@
 			//リサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
 			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
-				var offsetPos = $root.offset();
-				var displayOffsetX = context.event.pageX - offsetPos.left;
-				var displayOffsetY = context.event.pageY - offsetPos.top;
-				var nineSlicePos = this._getNineSlicePosition(currentMouseOverDU,
-						context.event.target, displayOffsetX, displayOffsetY);
-
-				if (nineSlicePos.x < 0) {
-					if (nineSlicePos.y < 0) {
-						//カーソルは「左上」にある
-						$root.css('cursor', 'nw-resize');
-					} else if (nineSlicePos.y > 0) {
-						//カーソルは「左下」にある
-						$root.css('cursor', 'ne-resize');
-					} else {
-						//カーソルは「左中」にある
-						$root.css('cursor', 'w-resize');
-					}
-				} else if (nineSlicePos.x > 0) {
-					if (nineSlicePos.y < 0) {
-						//カーソルは「右上」にある
-						$root.css('cursor', 'ne-resize');
-					} else if (nineSlicePos.y > 0) {
-						//カーソルは「右下」にある
-						$root.css('cursor', 'nw-resize');
-					} else {
-						//カーソルは「右中央」にある
-						$root.css('cursor', 'w-resize');
-					}
-				} else {
-					if (nineSlicePos.y !== 0) {
-						//カーソルは「中上」または「中下」にある
-						$root.css('cursor', 'n-resize');
-					}
-					else {
-						//カーソルが「中中」にある場合は変更しない
-						$root.css('cursor', 'auto');
-					}
-				}
+				this._updateResizeCursor(currentMouseOverDU, context.event);
 			} else {
 				$root.css('cursor', 'auto');
 			}
@@ -12798,6 +12786,50 @@
 				this.trigger(EVENT_DU_MOUSE_ENTER, {
 					displayUnit: currentMouseOverDU
 				});
+			}
+		},
+
+		_updateResizeCursor: function(mouseoverDU, event) {
+			var $root = $(this.rootElement);
+
+			var offsetPos = $root.offset();
+			var displayOffsetX = event.pageX - offsetPos.left;
+			var displayOffsetY = event.pageY - offsetPos.top;
+			var nineSlicePos = this._getNineSlicePosition(mouseoverDU, event.target,
+					displayOffsetX, displayOffsetY);
+
+			this._resizeOverNineSlice = nineSlicePos;
+
+			if (nineSlicePos.x < 0) {
+				if (nineSlicePos.y < 0) {
+					//カーソルは「左上」にある
+					$root.css('cursor', 'nw-resize');
+				} else if (nineSlicePos.y > 0) {
+					//カーソルは「左下」にある
+					$root.css('cursor', 'ne-resize');
+				} else {
+					//カーソルは「左中」にある
+					$root.css('cursor', 'w-resize');
+				}
+			} else if (nineSlicePos.x > 0) {
+				if (nineSlicePos.y < 0) {
+					//カーソルは「右上」にある
+					$root.css('cursor', 'ne-resize');
+				} else if (nineSlicePos.y > 0) {
+					//カーソルは「右下」にある
+					$root.css('cursor', 'nw-resize');
+				} else {
+					//カーソルは「右中央」にある
+					$root.css('cursor', 'w-resize');
+				}
+			} else {
+				if (nineSlicePos.y !== 0) {
+					//カーソルは「中上」または「中下」にある
+					$root.css('cursor', 'n-resize');
+				} else {
+					//カーソルが「中中」にある場合は変更しない
+					$root.css('cursor', 'auto');
+				}
 			}
 		},
 
