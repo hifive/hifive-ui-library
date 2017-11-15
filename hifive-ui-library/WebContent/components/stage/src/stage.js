@@ -4609,10 +4609,11 @@
 							//EdgeDUのサイズをアップデート
 							var left = x1 <= x2 ? x1 : x2;
 							var top = y1 <= y2 ? y1 : y2;
-							this._x = left;
-							this._y = top;
-							this._width = Math.abs(x2 - x1);
-							this._height = Math.abs(y2 - y1);
+
+							var width = Math.abs(x2 - x1);
+							var height = Math.abs(y2 - y1);
+
+							super_.setRect.call(this, left, top, width, height);
 						},
 
 						hasClass: function(cssClass) {
@@ -8012,6 +8013,9 @@
 									return;
 								}
 
+								//console.log('exit! id=' + du.id + ', class='
+								//		+ du.getClass().getFullName());
+
 								//DOMが不要と判断されたので、削除して待機マップにDUを再び入れる
 								that._removeDOMForDU(du, du.parentDisplayUnit);
 								that._duRenderStandbyMap.set(du, du);
@@ -8188,15 +8192,29 @@
 								return false;
 							}
 
+							if (BasicDisplayUnit.isClassOf(du)
+									&& (du.isResizing || du.isEditing || du.isDragging)) {
+								//BasicDUで現在なんらかの変更処理中の場合はDOMは削除しない
+								return false;
+							}
+
 							var renderRect = this._viewport._worldRect;
 
-							var halfWidth = renderRect.width / 2;
-							var halfHeight = renderRect.height / 2;
+							var renderX = renderRect.x;
+							var renderY = renderRect.y;
 
-							var rLeft = renderRect.x - halfWidth;
-							var rTop = renderRect.y - halfHeight;
-							var rRight = rLeft + renderRect.width + halfWidth;
-							var rBottom = rTop + renderRect.height + halfHeight;
+							var effectiveWidth = renderRect.width;
+							var effectiveHeight = renderRect.height;
+
+							var rLeft = renderX - effectiveWidth;
+							var rTop = renderY - effectiveHeight;
+							//							var rRight = renderX + renderRect.width + effectiveWidth;
+							//							var rBottom = renderY + renderRect.height + effectiveHeight;
+							//現在の値(effectiveWidth = renderWidth)だと意味的には上記と同じだが
+							//参照解決の回数を減らすためこの式にしている
+							var rRight = renderX + effectiveWidth * 2;
+							var rBottom = renderY + effectiveHeight * 2;
+
 
 							var belongingLayer = du._belongingLayer;
 							switch (belongingLayer.UIDragScreenScrollDirection) {
