@@ -23,6 +23,10 @@
 	}
 
 	function contains(element, containerElement) {
+		if (!element || !containerElement) {
+			return false;
+		}
+
 		return containerElement.compareDocumentPosition(element)
 				& Node.DOCUMENT_POSITION_CONTAINED_BY;
 	}
@@ -172,7 +176,7 @@
 
 			var activeElement = document.activeElement;
 
-			if (this._hasFocus && !contains(activeElement, focusRoot)) {
+			if (activeElement && this._hasFocus && !contains(activeElement, focusRoot)) {
 				//自分が疑似フォーカスを獲得し、かつ
 				//直前のactiveElementが自分の範囲外の要素だったら
 				//その要素のフォーカスを外す
