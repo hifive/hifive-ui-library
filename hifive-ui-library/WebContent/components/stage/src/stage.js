@@ -12176,6 +12176,14 @@
 		},
 
 		'{document} mouseup': function(context) {
+			var event = context.event;
+
+			var eventTarget = event.target;
+			if (this._isScrollBarEvent(eventTarget) || this._isOverlayContentsEvent(eventTarget)) {
+				//スクロールバー操作、オーバーレイ内のコンテンツの操作（編集エディタの操作等）については直接関知しない
+				return;
+			}
+
 			this._viewMasterClock.unlisten(this._doDragMove, this);
 
 			this._endBoundaryScroll();
@@ -12211,9 +12219,9 @@
 					worldRect: worldRect
 				});
 			} else if (this._currentDragMode === DRAG_MODE_DU_DRAG) {
-				var dragOverDU = this._getDragOverDisplayUnit(context.event);
+				var dragOverDU = this._getDragOverDisplayUnit(event);
 
-				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				var delegatedJQueryEvent = $.event.fix(event.originalEvent);
 				delegatedJQueryEvent.type = EVENT_DRAG_DU_DROP;
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
@@ -12239,7 +12247,7 @@
 			} else if (this._currentDragMode === DRAG_MODE_DU_RESIZE) {
 				this._viewCollection.__onResizeDURelease(this._resizeSession);
 
-				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+				var delegatedJQueryEvent = $.event.fix(event.originalEvent);
 				delegatedJQueryEvent.type = EVENT_RESIZE_DU_COMMIT;
 				delegatedJQueryEvent.target = this.rootElement;
 				delegatedJQueryEvent.currentTarget = this.rootElement;
