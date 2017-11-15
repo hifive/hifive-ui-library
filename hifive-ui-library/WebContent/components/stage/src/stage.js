@@ -12720,11 +12720,9 @@
 
 			var $root = $(this.rootElement);
 
-			//カーソルを一旦リセット
-			$root.css('cursor', 'auto');
-
 			if (!(this.rootElement.compareDocumentPosition(context.event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
+				$root.css('cursor', 'auto');
 				return;
 			}
 
@@ -12732,6 +12730,7 @@
 
 			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
 				//対象のDUが存在し、かつそれが編集中の場合は何もしない
+				$root.css('cursor', 'auto');
 				return;
 			}
 
@@ -12771,8 +12770,13 @@
 						//カーソルは「中上」または「中下」にある
 						$root.css('cursor', 'n-resize');
 					}
-					//カーソルが「中中」にある場合は変更しない
+					else {
+						//カーソルが「中中」にある場合は変更しない
+						$root.css('cursor', 'auto');
+					}
 				}
+			} else {
+				$root.css('cursor', 'auto');
 			}
 
 			if (currentMouseOverDU === this._lastEnteredDU) {
