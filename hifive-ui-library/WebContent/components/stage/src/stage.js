@@ -1663,7 +1663,7 @@
 						});
 						this._stage._$overlay.append(editorView);
 
-						editSession._doAutoLayoutEditor();
+						editSession._doAutoLayoutEditorInternal();
 						editor.onBegin(editSession);
 					}
 				},
