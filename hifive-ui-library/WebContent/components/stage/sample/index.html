@@ -102,10 +102,74 @@ text {
 	stroke-width: 3px;
 }
 
-.simpleTextEditor {
-	width: 350px;
-	height: 200px;
+.commentDU {
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	word-break: break-all;
+	overflow: auto;
+	padding: 6px;
+
+	/* editorのtextareaと合わせる */
+	font-size: 0.8rem;
+
+	font-family: "ＭＳ ゴシック", sans-serif;
+	box-shadow: rgba(0, 0, 0, 0.5) 3px 3px 5px;
+
+	/* エディタのbg-colorと合わせる */
+	background-color: rgb(204, 238, 204);
 }
+
+/* -------------- エディタ関連 -------------- */
+
+.simpleTextEditor {
+	min-width: 11rem;
+	min-height: 3rem;
+	text-align: center;
+	padding: 6px;
+	font-size: 0;
+
+	/* コメント本体のbg-colorと合わせる */
+	background-color: rgb(204, 238, 204);
+}
+
+.simpleTextEditor .simpleTextEditorTextarea {
+	width: 100%;
+	/* 	box-sizing: border-box; */
+	border: none;
+	font-family: "ＭＳ ゴシック", sans-serif;
+	padding: 0;
+
+	/* コメント本体のfont-sizeと合わせる */
+	font-size: 0.8rem;
+
+	background-color: rgb(204, 238, 204);
+}
+
+.simpleTextEditor .commitButton {
+	font-weight: bold;
+}
+
+.simpleTextEditor .cancelButton {
+
+}
+
+.simpleTextEditor .editorControls .controlSpacer {
+	display: inline-block;
+	width: 5px;
+}
+
+.simpleTextEditor .editorControls {
+	display: inline-block;
+	margin-top: 2px;
+}
+
+.simpleTextEditor .editorControls * {
+	font-size: 0.7rem;
+	line-height: 0.9;
+	vertical-align: bottom;
+}
+
+/* ------------------------------------------ */
 
 
 .stageGridSeparator {
@@ -126,13 +190,24 @@ text {
 	display: none;
 }
 
-.h5-stage-edit-modal-cover {
+.h5-stage-edit-unit-cover {
 	background-color: black;
 	opacity: 0.7;
 	position: absolute;
+}
 
-}}
-
+.h5-stage-edit-du-cover {
+	text-align: center;
+	vertical-align: middle;
+	color: white;
+	font-size: 11px;
+	background-color: rgba(60, 60, 60, 0.6);
+	z-index: 1000; //
+	background-color: rgba(200, 200, 200, 0.6); //
+	background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%,//transparent 50%,
+		rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%,//transparent 75%, transparent); //
+	background-size: 10px 10px;
+}
 </style>
 
 </head>
@@ -141,24 +216,22 @@ text {
 
 	<div id="appRoot">
 		<div id="controls">
-			<span id="stat"></span>
-			<input placeholder="dummy" type="text" name="dummy"> <input type="button" name="moveTo" value="DU moveTo">
-			<input type="button" name="moveBy" value="DU moveBy"> <input type="button" name="stageScrollTo"
-				value="Stage scrollTo"> <input type="button" name="stageScrollBy" value="Stage scrollBy"> ScaleX:<input
-				type="range" name="scaleX" min="1" max="500" value="100"> ScaleY:<input type="range" name="scaleY" min="1"
-				max="500" value="100"> <input type="button" name="getScrollPosition" value="getScrollPosition"> <span
-				id="scrollPos"></span> <input type="button" name="scrollIntoView" value="scrollIntoView(center)=duid_4"> <input
-				type="button" name="scrollIntoView_glance" value="scrollIntoView(glance)=duid_5"> <input type="button"
-				name="dragRegion" value="dragRegion"> <input type="button" name="splitView" value="splitView"> <input
-				type="button" name="clearSplitView" value="split全解除"> <input type="button" name="removeDU" value="remove selection">
+			<span id="stat"></span> <input placeholder="dummy" type="text" name="dummy"> <input type="button"
+				name="moveTo" value="DU moveTo"> <input type="button" name="moveBy" value="DU moveBy"> <input
+				type="button" name="stageScrollTo" value="Stage scrollTo"> <input type="button" name="stageScrollBy"
+				value="Stage scrollBy"> ScaleX:<input type="range" name="scaleX" min="1" max="500" value="100">
+			ScaleY:<input type="range" name="scaleY" min="1" max="500" value="100"> <input type="button"
+				name="getScrollPosition" value="getScrollPosition"> <span id="scrollPos"></span> <input type="button"
+				name="scrollIntoView" value="scrollIntoView(center)=duid_4"> <input type="button"
+				name="scrollIntoView_glance" value="scrollIntoView(glance)=duid_5"> <input type="button" name="dragRegion"
+				value="dragRegion"> <input type="button" name="splitView" value="splitView"> <input type="button"
+				name="clearSplitView" value="split全解除"> <input type="button" name="removeDU" value="remove selection">
 			<input type="button" name="visibleRangeY" value="visibleRangeY"> <input type="button" name="visibleRangeX"
-				value="visibleRangeX">
-			<input type="button" name="setup" value="setup">
-			<input type="button" name="cascadeRemove" value="cascadeRemove">
-			<input type="button" name="row1vr" value="row=1,visibleRange=100">
-			<input type="button" name="zIndex" value="zIndex = 4">
-			<input type="button" name="editDivDU" value="Edit DIV-DU">
-			<input type="button" name="setSize" value="Set Stage Size">
+				value="visibleRangeX"> <input type="button" name="setup" value="setup"> <input type="button"
+				name="cascadeRemove" value="cascadeRemove"> <input type="button" name="row1vr"
+				value="row=1,visibleRange=100"> <input type="button" name="zIndex" value="zIndex = 4"> <input
+				type="button" name="editDivDU" value="Edit DIV-DU"> <input type="button" name="setSize"
+				value="Set Stage Size">
 		</div>
 		<div id="stageRoot"></div>
 

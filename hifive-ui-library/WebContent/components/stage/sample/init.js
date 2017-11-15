@@ -31,8 +31,8 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
-	var editorHtml = '<div class="simpleTextEditor" style="background-color: white"><textarea class="simpleTextEditorTextarea" rows="3" style="width: 100%; box-sizing: border-box"></textarea>'
-			+ '<button class="commitButton">確定</button><button class="cancelButton">キャンセル</button></div>';
+	var editorHtml = '<div class="simpleTextEditor"><textarea class="simpleTextEditorTextarea"></textarea>'
+			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span><button class="cancelButton">キャンセル</button></div></div>';
 
 	var SimpleTextEditor = RootClass.extend(function(super_) {
 		var desc = {
@@ -87,7 +87,9 @@
 
 					var targetDU = editSession.targets[0];
 					this._undoData = targetDU.extraData;
-					this._$editor.find('.simpleTextEditorTextarea').val(targetDU.extraData.text);
+
+					var $textarea = this._$editor.find('.simpleTextEditorTextarea');
+					$textarea.val(targetDU.extraData.text).focus();
 				},
 
 				onCommit: function(editSession) {
@@ -109,8 +111,23 @@
 				},
 
 				onUpdateLayout: function(editSession, rect) {
-				//					var stageOffset = $(this._stageController.rootElement).offset();
-				//					this._$editor.css()
+					var $editor = this._$editor;
+
+					var $controls = $editor.find('.editorControls');
+
+					//"OK"と"キャンセル"ではキャンセルの方がボタンが大きくなってしまうので
+					//OKボタンの大きさをキャンセルボタンと同じにする
+					var $cancelBtn = $controls.find('.cancelButton');
+					$controls.find('.commitButton').width($cancelBtn.width());
+
+					var $textarea = $editor.find('.simpleTextEditorTextarea');
+
+					var controlsHeight = $controls.outerHeight(true);
+					var textareaPaddingH = $textarea.innerHeight() - $textarea.height();
+
+					//textareaのサイズは、(エディタの内部高さ) - (コントロールのボーダー高さ) - (textareaのpadding高さ)
+					var textHeight = $editor.height() - controlsHeight - textareaPaddingH;
+					$textarea.height(textHeight);
 				},
 
 				dispose: function(editSession) {
@@ -349,12 +366,12 @@
 		_createEdge: function(duFrom, duTo) {
 			var edge = Edge.create(duFrom, duTo);
 
-			edge.endpointTo.junctionVerticalAlign = 'top';
+			edge.endpointTo.verticalAlign = 'top';
 
-			edge.endpointFrom.junctionVerticalAlign = 'bottom';
+			edge.endpointFrom.verticalAlign = 'bottom';
 
-			edge.endpointFrom.junctionHorizontalAlign = 'offset';
-			edge.endpointFrom.junctionOffsetX = 15;
+			edge.endpointFrom.horizontalAlign = 'offset';
+			edge.endpointFrom.alignOffsetX = 15;
 
 			edge.addClass('myEdge');
 			edge.addClass('edge-type-1');
@@ -373,13 +390,7 @@
 			du.setRenderer(function(context, graphics) {
 				var reason = context.reason;
 				if (reason.isInitialRender) {
-					$(context.rootElement).css({
-						'word-wrap': 'break-word',
-						'overflow-wrap': 'break-word',
-						'word-break': 'break-all',
-						backgroundColor: 'white'
-					//						overflow: 'scroll'
-					});
+					$(context.rootElement).addClass('commentDU');
 				}
 
 				var htmlText = context.displayUnit.extraData.text.replace(/\n/g, '<br>');
@@ -448,7 +459,7 @@
 
 			//DIVレイヤーテスト
 			var divContainer = DisplayUnitContainer.create();
-			var rect = Rect.create(50, 200, 80, 40);
+			var rect = Rect.create(50, 200, 200, 60);
 			divContainer.setRect(rect);
 			var divDU = this._createDivDU(rect);
 			divDU.x = 0;
@@ -791,7 +802,7 @@
 		},
 
 		'input[name="setSize"] click': function() {
-			this._stageController.setSize(200, 200);
+			this._stageController.setSize(600, 600);
 
 			//			var that = this;
 			//			setTimeout(function(){
@@ -806,6 +817,10 @@
 
 		'{rootElement} stageViewUnifiedSightChange': function() {
 			console.log('stageViewUnifiedSightChange');
+		},
+
+		'{rootElement} stageSightChange': function() {
+			console.log('sightChange');
 		},
 
 		'{rootElement} duEditBeginning': function(context) {
