@@ -3063,7 +3063,7 @@
 				},
 				toArray: function() {
 					return this._keys.slice(0);
-				},
+				}
 			}
 		};
 		return desc;
@@ -3991,7 +3991,7 @@
 				 */
 				resizeConstraint: null,
 
-				_renderer: null,
+				_renderer: null
 			},
 			accessor: {
 				isEditable: {
@@ -4954,7 +4954,7 @@
 				 * @private key -> valueの配列 のマップ。 zIndex -> DU配列 のマップとして使用。
 				 *          DU配列の中では、後から追加したものほど後ろに存在する。
 				 */
-				_map: null,
+				_map: null
 			},
 
 			method: {
@@ -5106,7 +5106,7 @@
 
 					//このkeyは一番小さい値だった→末尾に追加
 					this._keyArray.push(key);
-				},
+				}
 			}
 		};
 		return desc;
@@ -5766,7 +5766,7 @@
 		var desc = {
 			name: 'h5.ui.components.stage.BulkOperation',
 			field: {
-				_targets: null,
+				_targets: null
 			},
 			method: {
 				/**
@@ -9181,8 +9181,7 @@
 							var controller = h5.core.controller(rootElement,
 									h5.ui.components.stage.HorizontalScrollBarController);
 							return controller;
-						},
-
+						}
 					}
 				};
 				return desc;
