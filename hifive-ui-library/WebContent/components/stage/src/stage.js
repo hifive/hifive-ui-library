@@ -509,9 +509,6 @@
 				 */
 				_targets: null,
 
-				//ドラッグ中のカーソル制御範囲(setCursor()のcursorスタイルの付与先)
-				_cursorRoot: null,
-
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTargets()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
@@ -581,8 +578,6 @@
 					this._moveFunctionDataMap = {};
 
 					this._proxyElement = null;
-
-					this._cursorRoot = rootElement;
 
 					//TODO touchイベント、pointer event対応
 					this._startPageX = event.pageX;
@@ -725,7 +720,7 @@
 					if (cursorStyle == null) {
 						cursorStyle = '';
 					}
-					$(this._cursorRoot).css('cursor', cursorStyle);
+					this._stage._setRootCursor(cursorStyle);
 				},
 
 				/**
@@ -818,7 +813,6 @@
 					this._targets = null;
 					this._targetInitialPositions = null;
 					this._targetInitialParentDU = null;
-					this._cursorRoot = null;
 					this._moveFunction = null;
 					this._moveFunctionDataMap = null;
 
@@ -890,9 +884,6 @@
 				 * ドラッグ操作対象オブジェクト。必ず配列。
 				 */
 				_targets: null,
-
-				//ドラッグ中のカーソル制御範囲(setCursor()のcursorスタイルの付与先)
-				_cursorRoot: null,
 
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTargets()のタイミングでセットされる。
@@ -970,8 +961,6 @@
 					this._constraintOverrideMap = null;
 
 					this._proxyElement = null;
-
-					this._cursorRoot = rootElement;
 
 					//TODO touchイベント、pointer event対応
 					this._startPageX = event.pageX;
@@ -1133,7 +1122,7 @@
 					if (cursorStyle == null) {
 						cursorStyle = '';
 					}
-					$(this._cursorRoot).css('cursor', cursorStyle);
+					this._stage._setRootCursor(cursorStyle);
 				},
 
 				/**
@@ -1336,7 +1325,6 @@
 					this._targets = null;
 					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
-					this._cursorRoot = null;
 					this._resizeFunction = null;
 					this._resizeFunctionDataMap = null;
 					this._constraintOverrideMap = null;
@@ -11417,7 +11405,7 @@
 							.own(this._dragSessionCancelHandler));
 					this._dragSession.setTargets(targetDU);
 					this._currentDragMode = DRAG_MODE_DU_DRAG;
-					setCursor('default');
+					this._setRootCursor('default');
 					this.trigger(EVENT_DRAG_DU_BEGIN, {
 						dragSession: this._dragSession
 					});
@@ -11433,7 +11421,7 @@
 					//SCREENドラッグモード固定、かつ、
 					//UI操作によるスクロールがX,Yどちらかの方向に移動可能な場合はスクリーンドラッグを開始
 					this._currentDragMode = DRAG_MODE_SCREEN;
-					setCursor('move');
+					this._setRootCursor('move');
 				}
 				break;
 			case DRAG_MODE_SELECT:
@@ -11445,7 +11433,7 @@
 				this.trigger(EVENT_DRAG_SELECT_START, {
 					stageController: this
 				});
-				setCursor('default');
+				this._setRootCursor('default');
 
 				this._dragSelectOverlayRect = SvgUtil.createElement('rect');
 				this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
@@ -11463,7 +11451,7 @@
 					stageController: this
 				});
 
-				setCursor('default');
+				this._setRootCursor('default');
 				this._currentDragMode = DRAG_MODE_REGION;
 				saveDragSelectStartPos.call(this);
 
@@ -11657,7 +11645,7 @@
 					}
 
 					this._currentDragMode = DRAG_MODE_DU_DRAG;
-					setCursor('default');
+					this._setRootCursor('default');
 
 					this._dragSession.begin();
 
@@ -11688,7 +11676,7 @@
 							return;
 						}
 
-						setCursor('default');
+						this._setRootCursor('default');
 						this._currentDragMode = DRAG_MODE_SELECT;
 						saveDragSelectStartPos.call(this);
 						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
@@ -11698,7 +11686,7 @@
 						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
 
 						this._currentDragMode = DRAG_MODE_SCREEN;
-						setCursor('move');
+						this._setRootCursor('move');
 					}
 				}
 				break;
@@ -11720,13 +11708,6 @@
 				var dispStartOffY = event.pageY - rootOffset.top - activeView.y;
 				this._dragSelectStartPos = activeView._viewport
 						.getDisplayPositionFromDisplayOffset(dispStartOffX, dispStartOffY);
-			}
-
-			//注：Chrome51では、cursorの値を変えても、
-			//ドラッグが終了するまでカーソルが変わらない。
-			//IE11, FFでは、cursorを書き換えた瞬間に(ドラッグ途中でも)変更される。
-			function setCursor(value) {
-				$root.css('cursor', value);
 			}
 		},
 
@@ -11899,11 +11880,9 @@
 			//せめてマウスダウン時にはカーソルとリサイズの挙動が一致するように、下記の処理を
 			//mousemoveイベントハンドラに加えてここでも行う。
 
-			var $root = $(this.rootElement);
-
 			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
 				//対象のDUが存在し、かつそれが編集中の場合は何もしない
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 				return;
 			}
 
@@ -11912,7 +11891,7 @@
 			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
 				this._updateResizeCursor(currentMouseOverDU, event);
 			} else {
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 			}
 		},
 
@@ -12294,7 +12273,7 @@
 			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
 			this._dragStartDisplayUnit = null;
-			$(this.rootElement).css('cursor', 'auto');
+			this._setRootCursor('auto');
 		},
 
 		/**
@@ -12751,6 +12730,16 @@
 
 		_resizeOverNineSlice: null,
 
+		_lastCursor: null,
+
+		_setRootCursor: function(cursor) {
+			if (this._lastCursor === cursor) {
+				return;
+			}
+			this._lastCursor = cursor;
+			$(this.rootElement).css('cursor', cursor);
+		},
+
 		/**
 		 * ドラッグ中に要素外にカーソルがはみ出した場合にもイベントを拾えるよう、documentに対してバインドする
 		 *
@@ -12764,11 +12753,9 @@
 				return;
 			}
 
-			var $root = $(this.rootElement);
-
 			if (!(this.rootElement.compareDocumentPosition(context.event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 				return;
 			}
 
@@ -12776,7 +12763,7 @@
 
 			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
 				//対象のDUが存在し、かつそれが編集中の場合は何もしない
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 				return;
 			}
 
@@ -12785,7 +12772,7 @@
 			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
 				this._updateResizeCursor(currentMouseOverDU, context.event);
 			} else {
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 			}
 
 			if (currentMouseOverDU === this._lastEnteredDU) {
@@ -12811,11 +12798,13 @@
 		},
 
 		_updateResizeCursor: function(mouseoverDU, event) {
-			var $root = $(this.rootElement);
+			var bRect = this.rootElement.getBoundingClientRect();
 
-			var offsetPos = $root.offset();
-			var displayOffsetX = event.pageX - offsetPos.left;
-			var displayOffsetY = event.pageY - offsetPos.top;
+			var offsetLeft = bRect.left + window.pageXOffset;
+			var offsetTop = bRect.top + window.pageYOffset;
+
+			var displayOffsetX = event.pageX - offsetLeft;
+			var displayOffsetY = event.pageY - offsetTop;
 			var nineSlicePos = this._getNineSlicePosition(mouseoverDU, event.target,
 					displayOffsetX, displayOffsetY);
 
@@ -12824,36 +12813,36 @@
 			if (nineSlicePos.x === -1) {
 				if (nineSlicePos.y === -1) {
 					//カーソルは「左上」にある
-					$root.css('cursor', 'nw-resize');
+					this._setRootCursor('nw-resize');
 				} else if (nineSlicePos.y === 1) {
 					//カーソルは「左下」にある
-					$root.css('cursor', 'ne-resize');
+					this._setRootCursor('ne-resize');
 				} else {
 					//カーソルは「左中」にある
-					$root.css('cursor', 'w-resize');
+					this._setRootCursor('w-resize');
 				}
 			} else if (nineSlicePos.x === 1) {
 				if (nineSlicePos.y === -1) {
 					//カーソルは「右上」にある
-					$root.css('cursor', 'ne-resize');
+					this._setRootCursor('ne-resize');
 				} else if (nineSlicePos.y === 1) {
 					//カーソルは「右下」にある
-					$root.css('cursor', 'nw-resize');
+					this._setRootCursor('nw-resize');
 				} else {
 					//カーソルは「右中央」にある
-					$root.css('cursor', 'w-resize');
+					this._setRootCursor('w-resize');
 				}
 			} else if (nineSlicePos.x === 0) {
 				if (nineSlicePos.y === 1 || nineSlicePos.y === -1) {
 					//カーソルは「中上」または「中下」にある
-					$root.css('cursor', 'n-resize');
+					this._setRootCursor('n-resize');
 				} else {
 					//カーソルが「中中」にある場合は通常カーソルにする
-					$root.css('cursor', 'auto');
+					this._setRootCursor('auto');
 				}
 			} else {
 				//カーソルが「外側」にあると判定されたので、通常カーソルにする
-				$root.css('cursor', 'auto');
+				this._setRootCursor('auto');
 			}
 		},
 
