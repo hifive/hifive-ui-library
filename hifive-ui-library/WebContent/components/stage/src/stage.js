@@ -12929,6 +12929,11 @@
 		_processKeyEvent: function(event, eventName) {
 			var eventTarget = event.target;
 
+			if (this._isScrollBarEvent(eventTarget) || this._isOverlayContentsEvent(eventTarget)) {
+				//スクロールバー操作、オーバーレイ内のコンテンツの操作（編集エディタの操作等）については直接関知しない
+				return;
+			}
+
 			if (this._isInputTag(eventTarget) || !this._focusController.hasFocus()
 					|| this._focusController.getFocusedElement() === this.rootElement) {
 				//inputタグ、またはStageがフォーカスを持っていない、または
