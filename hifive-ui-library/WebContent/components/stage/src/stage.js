@@ -10889,10 +10889,14 @@
 			return ret;
 		},
 
+		_isIE: null,
+
 		/**
 		 * @private
 		 */
 		__construct: function() {
+			this._isIE = h5.env.ua.isIE;
+
 			this._units = new Map();
 			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
@@ -12176,6 +12180,14 @@
 		},
 
 		'{document} mouseup': function(context) {
+			this._processMouseup(context);
+		},
+
+		/**
+		 * @private
+		 * @param context
+		 */
+		_processMouseup: function(context) {
 			var event = context.event;
 
 			var eventTarget = event.target;
@@ -12755,19 +12767,33 @@
 		 * @param $el
 		 */
 		'{document} mousemove': function(context) {
+			var event = context.event;
+
 			if (this._isMousedown) {
+				//IE(11で確認)の場合、DIVレイヤーに置いたDIVタイプのDUでネイティブのスクロールバーが表示されているとき、
+				//そのスクロールバーを操作するとmouseupイベントが発生しない。
+				//(Ch62,FF57の場合、mouseupイベントが発生する。)
+				//その結果、スクロールバーを操作した後DUのドラッグorリサイズが起きてしまう。
+				//これを防ぐため、IEの場合のみ、マウスダウン後→ボタンが押されていない状態で
+				//mousemoveイベントが発生したら、それをmouseupイベント相当とみなして
+				//マウスアップ時と同じ処理を行う。
+				if (this._isIE && (event.buttons & 0x1) === 0) {
+					this._processMouseup(context);
+					return;
+				}
+
 				//ドラッグ中の場合はドラッグハンドラで処理する
 				this._processDragMove(context);
 				return;
 			}
 
-			if (!(this.rootElement.compareDocumentPosition(context.event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+			if (!(this.rootElement.compareDocumentPosition(event.target) & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
 				//ドラッグ中でない場合に、ルート要素の外側にマウスがはみ出した場合は何もしない
 				this._setRootCursor('auto');
 				return;
 			}
 
-			var currentMouseOverDU = this._getIncludingDisplayUnit(context.event.target);
+			var currentMouseOverDU = this._getIncludingDisplayUnit(event.target);
 
 			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
 				//対象のDUが存在し、かつそれが編集中の場合は何もしない
@@ -12778,7 +12804,7 @@
 			//リサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
 			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
-				this._updateResizeCursor(currentMouseOverDU, context.event);
+				this._updateResizeCursor(currentMouseOverDU, event);
 			} else {
 				this._setRootCursor('auto');
 			}
