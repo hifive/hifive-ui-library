@@ -1195,6 +1195,7 @@
 				_getCorrectedRect: function(du) {
 					var converter = this._stage._getActiveView().coordinateConverter;
 
+					//リサイズ開始位置を原点とした、現在のカーソル位置での移動量（ワールド座標）
 					var wmx = converter.toWorldX(this._moveX);
 					var wmy = converter.toWorldY(this._moveY);
 
@@ -1204,14 +1205,28 @@
 					var newY = initialState.y;
 
 					if (this._handlingPosition.x < 0) {
-						//左側を操作している
-						newX += wmx;
+						//左の境界を操作している
+
+						if (wmx > initialState.width) {
+							//X方向の移動量がリサイズ前の幅を超えたら、
+							//X軸正方向(右方向)にDUが移動しないようリサイズ開始前の右端の位置に固定する
+							newX = initialState.x + initialState.width;
+						} else {
+							newX += wmx;
+						}
 						wmx *= -1;
 					}
 
 					if (this._handlingPosition.y < 0) {
-						//上側を操作している
-						newY += wmy;
+						//上の境界を操作している
+
+						if (wmy > initialState.height) {
+							//Y方向の移動量がリサイズ前の高さを超えたら、
+							//Y軸正方向(下方向)にDUが移動しないようリサイズ開始前の下端の位置に固定する
+							newY = initialState.y + initialState.height;
+						} else {
+							newY += wmy;
+						}
 						wmy *= -1;
 					}
 
