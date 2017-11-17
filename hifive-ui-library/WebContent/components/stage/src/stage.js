@@ -560,7 +560,7 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function DragSession(stage, rootElement, event) {
+				constructor: function DragSession(stage, rootElement, startPagePos) {
 					super_.constructor.call(this);
 
 					this._stage = stage;
@@ -579,12 +579,11 @@
 
 					this._proxyElement = null;
 
-					//TODO touchイベント、pointer event対応
-					this._startPageX = event.pageX;
-					this._startPageY = event.pageY;
+					this._startPageX = startPagePos.x;
+					this._startPageY = startPagePos.y;
 
-					this._lastPageX = event.pageX;
-					this._lastPageY = event.pageY;
+					this._lastPageX = startPagePos.x;
+					this._lastPageY = startPagePos.y;
 
 					this._moveX = 0;
 					this._moveY = 0;
@@ -938,7 +937,8 @@
 				 * @param target
 				 * @param dragMode
 				 */
-				constructor: function ResizeSession(stage, rootElement, event, handlingPosition) {
+				constructor: function ResizeSession(stage, rootElement, startPagePos,
+						handlingPosition) {
 					super_.constructor.call(this);
 
 					this._stage = stage;
@@ -962,12 +962,11 @@
 
 					this._proxyElement = null;
 
-					//TODO touchイベント、pointer event対応
-					this._startPageX = event.pageX;
-					this._startPageY = event.pageY;
+					this._startPageX = startPagePos.x;
+					this._startPageY = startPagePos.y;
 
-					this._lastPageX = event.pageX;
-					this._lastPageY = event.pageY;
+					this._lastPageX = startPagePos.x;
+					this._lastPageY = startPagePos.y;
 
 					this._moveX = 0;
 					this._moveY = 0;
@@ -11417,7 +11416,7 @@
 				//DUを掴んでいなかった場合は、何もしない
 				if (du && du.isDraggable) {
 					this._dragSession = DragSession.create(this, this.rootElement,
-							this._foremostLayer._rootG, context.event);
+							this._foremostLayer._rootG, this._dragStartPagePos);
 					this._dragSession.addEventListener('dragSessionEnd', this
 							.own(this._dragSessionEndHandler));
 					this._dragSession.addEventListener('dragSessionCancel', this
@@ -11512,7 +11511,7 @@
 				if (isResize) {
 					//DUを掴んでいて、かつそれがドラッグ可能で周囲にカーソルがある場合はDUリサイズを開始
 					this._resizeSession = ResizeSession.create(this, this.rootElement,
-							context.event, duNineSlicePos);
+							this._dragStartPagePos, duNineSlicePos);
 
 					var that = this;
 					this._resizeSessionEndHandlerWrapper = function(ev) {
@@ -11610,7 +11609,8 @@
 					}
 				} else if (du && du.isDraggable) {
 					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
-					this._dragSession = DragSession.create(this, this.rootElement, context.event);
+					this._dragSession = DragSession.create(this, this.rootElement,
+							this._dragStartPagePos);
 
 					var that = this;
 					this._dragSessionEndHandlerWrapper = function(ev) {
@@ -11710,12 +11710,6 @@
 				}
 				break;
 			}
-
-			//最後に、「前回のマウス座標」を更新
-			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
-			};
 
 			function saveDragSelectStartPos() {
 				//TODO rootOffsetの取得をDUドラッグの場合と共通化
@@ -12792,7 +12786,18 @@
 				//これを防ぐため、IEの場合のみ、マウスダウン後→ボタンが押されていない状態で
 				//mousemoveイベントが発生したら、それをmouseupイベント相当とみなして
 				//マウスアップ時と同じ処理を行う。
-				if (this._isIE && (event.buttons & 0x1) === 0) {
+				//また、IE(11で確認)では、SVG要素でmousedownした後初回のカーソル移動時に起きる
+				//mousemoveハンドラの中で
+				//要素をクローンして同じ位置・サイズでオーバーレイレイヤーに配置すると
+				//mousemoveイベントが（マウスを動かしていないのに）発生し、
+				//その際、buttonsイベントがゼロになっている。
+				//その後マウスを動かしたときに発生するmousemoveイベントではbuttonsは1になっている。
+				//そこで、「IEで、マウスボタンが押されていて(mousedownが先に起きている)、
+				//ドラッグモードがNONEである(ドラッグ処理を行うことを意図していない)状態で
+				//ボタンが離れた状態でmousemoveイベントが起きたとき」に
+				//マウスアップ時と同じ処理を行う。
+				if (this._isIE && this._currentDragMode === DRAG_MODE_NONE
+						&& (event.buttons & 0x1) === 0) {
 					this._processMouseup(context);
 					return;
 				}
