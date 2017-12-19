@@ -11360,8 +11360,8 @@
 		 * @private
 		 */
 		_startDrag: function(context) {
-			// 前回のドラッグが（非同期処理の待ちのために）終了していない場合、新規に開始しない
-			if (this._dragSession) {
+			// 前回のDUドラッグまたはDUリサイズが（非同期処理の待ちのために）終了していない場合、新規に開始しない
+			if (this._dragSession || this._resizeSession) {
 				return;
 			}
 			var event = context.event;
@@ -11585,7 +11585,7 @@
 					});
 
 					if (resizeStartEvent.isDefaultPrevented()) {
-						//TODO:stageDragStartイベントでpreventDefault()された場合の挙動
+						this._disposeResizeSession();
 						return;
 					}
 
@@ -11659,7 +11659,7 @@
 					});
 
 					if (dragStartEvent.isDefaultPrevented()) {
-						//TODO:stageDragStartイベントでpreventDefault()された場合の挙動
+						this._disposeDragSession();
 						return;
 					}
 
@@ -12285,6 +12285,7 @@
 				}
 			}
 
+			this._isMousedown = false;
 			this._cleanUpDragStates();
 		},
 
@@ -12294,7 +12295,6 @@
 		 * @private
 		 */
 		_cleanUpDragStates: function() {
-			this._isMousedown = false;
 			this._dragStartRootOffset = null;
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragSelectStartPos = null;
@@ -12313,14 +12313,19 @@
 					this._dragSessionEndHandlerWrapper);
 			this._dragSession.removeEventListener('dragSessionCancel',
 					this._dragSessionCancelHandlerWrapper);
+
 			this._dragSession = null; //TODO dragSessionをdisposeする
 		},
 
+		/**
+		 * @private
+		 */
 		_disposeResizeSession: function() {
 			this._resizeSession.removeEventListener('resizeSessionEnd',
 					this._resizeSessionEndHandlerWrapper);
 			this._resizeSession.removeEventListener('resizeSessionCancel',
 					this._resizeSessionCancelHandlerWrapper);
+
 			this._resizeSession = null; //TODO resizeSessionをdisposeする
 		},
 
