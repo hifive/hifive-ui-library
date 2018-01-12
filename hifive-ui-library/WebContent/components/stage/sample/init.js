@@ -453,7 +453,11 @@
 				minHeight: 6,
 				maxHeight: 100,
 				stepX: 30,
-				stepY: 20
+				stepY: 20,
+				region: {
+					left: 300,
+					right: 500
+				}
 			};
 
 			var edge = this._createEdge(this._units[3], this._units[6]);
@@ -555,25 +559,39 @@
 			this.log.debug('duKeyUp tagName={0}, key={1}', context.event.target.tagName);
 		},
 
-		'{rootElement} stageDragStart': function(context) {
-			this.log.debug('stageDragStart');
+		'{rootElement} duDragBegin': function(context) {
+			this.log.debug('duDragBegin');
+
+//			setTimeout(function(){
+//				context.evArg.dragSession.cancel();
+//			}, 2000);
 
 			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
-					+ context.evArg.dragSession.getTarget().length + '</div>')[0];
+					+ context.evArg.dragSession.getTargets().length + '</div>')[0];
 
 			//context.event.preventDefault();
-			context.evArg.dragSession.setProxyElement(elem);
+//			context.evArg.dragSession.setProxyElement(elem);
+
+			//context.event.preventDefault();
 		},
 
-		'{rootElement} stageDragMove': function(context) {
+		'{rootElement} duDragMove': function(context) {
 			var dragOverDU = context.evArg.dragOverDisplayUnit;
-			this.log.debug('stageDragMove: dragOverDUID={0}', dragOverDU == null ? 'null'
+			this.log.debug('duDragMove: dragOverDUID={0}', dragOverDU == null ? 'null'
 					: dragOverDU.id);
 			//context.evArg.dragSession.setCursor('not-allowed');
 		},
 
-		'{rootElement} stageDragEnd': function(context) {
-			this.log.debug('stageDragEnd');
+		'{rootElement} duDragDrop': function(context) {
+			this.log.debug('duDragDrop');
+		},
+
+		'{rootElement} duDragCancel': function(context) {
+			this.log.debug('duDragCancel');
+		},
+
+		'{rootElement} duDragEnd': function(context) {
+			this.log.debug('duDragEnd');
 		},
 
 		'{rootElement} stageClick': function(context) {
@@ -612,14 +630,21 @@
 			console.log(context.evArg);
 		},
 
-		'{rootElement} duResizeStart': function(context) {
+		'{rootElement} duResizeBegin': function(context) {
 			console.log(context.event.type);
 
-			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
-					+ context.evArg.resizeSession.getTarget().length + '</div>')[0];
+			var elem = $.parseHTML('<div class="dragProxy">リサイズプロキシ<br>ドラッグ数：'
+					+ context.evArg.resizeSession.getTargets().length + '</div>')[0];
 
 			//context.event.preventDefault();
 			context.evArg.resizeSession.setProxyElement(elem);
+
+//			setTimeout(function(){
+//				console.log('resizeSession.cancel()');
+//				context.evArg.resizeSession.cancel();
+//			}, 2000);
+
+			//context.event.preventDefault();
 
 			//context.evArg.resizeSession.setConstraintOverride();
 		},
@@ -628,7 +653,7 @@
 			console.log(context.event.type);
 		},
 
-		'{rootElement} duResizeRelease': function(context) {
+		'{rootElement} duResizeCommit': function(context) {
 			console.log(context.event.type);
 			//			context.evArg.resizeSession.async = true;
 			//			setTimeout(function(){

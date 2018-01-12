@@ -1248,19 +1248,6 @@
 					if (constraint != null) {
 						var minWidth = constraint.minWidth;
 						var maxWidth = constraint.maxWidth;
-						var stepX = constraint.stepX;
-
-						//相対stepXの適用
-						if (stepX != null) {
-							width = stepX * parseInt(width / stepX);
-
-							if (this._handlingPosition.x < 0) {
-								//左側を操作している
-								var initialRight = initialState.x + initialState.width;
-								newX = initialRight - stepX
-										* parseInt((initialRight - newX) / stepX);
-							}
-						}
 
 						if (minWidth != null && width < minWidth) {
 							width = minWidth;
@@ -1276,19 +1263,6 @@
 
 						var minHeight = constraint.minHeight;
 						var maxHeight = constraint.maxHeight;
-						var stepY = constraint.stepY;
-
-						//相対stepYの適用
-						if (stepY != null) {
-							height = stepY * parseInt(height / stepY);
-
-							if (this._handlingPosition.y < 0) {
-								//上側を操作している
-								var initialBottom = initialState.y + initialState.height;
-								newY = initialBottom - stepY
-										* parseInt((initialBottom - newY) / stepY);
-							}
-						}
 
 						if (minHeight != null && height < minHeight) {
 							height = minHeight;
@@ -1301,7 +1275,78 @@
 								newY = initialState.y + initialState.height - maxHeight;
 							}
 						}
-					}
+
+						var cRegion = constraint.region;
+						if (constraint.region) {
+							//Regionが設定されている場合、その範囲を超えないようにクリップする
+							if (cRegion.left != null && newX < cRegion.left) {
+								//左端を調整するとX座標が変わるため、
+								//その移動量分だけ幅を縮めることでバーの右端がずれないようにする
+								var clippedWidth = cRegion.left - newX;
+								width -= clippedWidth;
+								newX = cRegion.left;
+							}
+
+							if (cRegion.right != null && (newX + width) > cRegion.right) {
+								if (newX > cRegion.right) {
+									newX = cRegion.right;
+									width = 0;
+								} else {
+									width = cRegion.right - newX;
+								}
+							}
+
+							if (cRegion.top != null && newY < cRegion.top) {
+								//leftと同様の調整を行う
+								var clippedHeight = cRegion.top - newY;
+								height -= clippedHeight;
+								newY = cRegion.top;
+							}
+
+							if (cRegion.bottom != null && (newY + height) > cRegion.bottom) {
+								if (newY > cRegion.bottom) {
+									newY = cRegion.bottom;
+									height = 0;
+								} else {
+									height = cRegion.bottom - newY;
+								}
+							}
+						}
+
+						var stepX = constraint.stepX;
+
+						//相対stepXの適用
+						if (stepX != null) {
+							//parseIntで切り捨てになるので、ステップ適用後は最大値を超えることはない
+							var quantizedWidth = stepX * parseInt(width / stepX);
+
+							//右側を操作している場合は左端を固定して、幅を調整すればよいので
+							//量子化した幅を代入すればよい
+							width = quantizedWidth;
+
+							if (this._handlingPosition.x < 0) {
+								//左側を操作している＝右端を固定して、X位置を調整
+								var initialRight = initialState.x + initialState.width;
+								newX = initialRight - quantizedWidth;
+							}
+						}
+
+						var stepY = constraint.stepY;
+
+						//相対stepYの適用
+						if (stepY != null) {
+							var quantizedHeight = stepY * parseInt(height / stepY);
+
+							height = quantizedHeight;
+
+							if (this._handlingPosition.y < 0) {
+								//上側を操作している＝下端を固定して、Y位置を調整
+								var initialBottom = initialState.y + initialState.height;
+								newY = initialBottom - quantizedHeight;
+							}
+						}
+
+					} //constraintの適用終わり
 
 					switch (this.direction) {
 					case ResizeDirection.X:
