@@ -1240,6 +1240,15 @@
 						height = 0;
 					}
 
+					switch (this.direction) {
+					case ResizeDirection.X:
+						height = du.height;
+						break;
+					case ResizeDirection.Y:
+						width = du.width;
+						break;
+					}
+
 					var constraint = du.resizeConstraint;
 					if (this._constraintOverrideMap && this._constraintOverrideMap[du.id] != null) {
 						constraint = this._constraintOverrideMap[du.id];
@@ -1347,15 +1356,6 @@
 						}
 
 					} //constraintの適用終わり
-
-					switch (this.direction) {
-					case ResizeDirection.X:
-						height = du.height;
-						break;
-					case ResizeDirection.Y:
-						width = du.width;
-						break;
-					}
 
 					return Rect.create(newX, newY, width, height);
 				},
