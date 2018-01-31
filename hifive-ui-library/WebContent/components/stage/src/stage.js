@@ -5630,6 +5630,93 @@
 		return desc;
 	});
 
+	var VirtualDisplayUnit = BasicDisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.VirtualDisplayUnit',
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.VirtualDisplayUnit
+				 */
+				constructor: function VirtualDisplayUnit(id) {
+					super_.constructor.call(this, id);
+				}
+			}
+
+		};
+		return desc;
+	});
+
+	var VirtualPlane = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.VirtualPlane',
+
+			field: {
+				_id: null,
+
+				_viewportContainers: null,
+
+				//FIXME
+				_firstVC: null
+			},
+
+			accessor: {
+				id: {
+					get: function() {
+						return this._id;
+					},
+					set: function(id) {
+						this._id = id;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.VirtualPlane
+				 */
+				constructor: function VirtualPlane(id) {
+					super_.constructor.call(this);
+
+					this._viewportContainers = [];
+				},
+
+				addViewport: function(displayUnitContainer) {
+					this._viewportContainers.push(displayUnitContainer);
+
+					//FIXME
+					if (this._firstVC == null) {
+						this._firstVC = displayUnitContainer;
+					}
+				},
+
+				removeViewport: function(displayUnitContainer) {
+					var idx = this._viewportContainers.indexOf(displayUnitContainer);
+					if (idx !== -1) {
+						this._viewportContainers.splice(idx, 1);
+					}
+
+					//FIXME
+					if (this._firstVC === displayUnitContainer) {
+						this._firstVC = null;
+					}
+				},
+
+				addDisplayUnit: function(displayUnit) {
+					if (this._firstVC) {
+						this._firstVC.addDisplayUnit(displayUnit);
+					}
+				},
+
+				removeDisplayUnit: function(displayUnit) {
+					if (this._firstVC) {
+						this._firstVC.removeDisplayUnit(displayUnit);
+					}
+				}
+			}
+		};
+		return desc;
+	});
 
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
 	var Layer = DisplayUnitContainer.extend(function(super_) {
@@ -5920,6 +6007,8 @@
 	var EditManager = classManager.getClass('h5.ui.components.stage.EditManager');
 
 	var MasterClock = classManager.getClass('h5.ui.components.stage.MasterClock');
+
+	var VirtualPlane = classManager.getClass('h5.ui.components.stage.VirtualPlane');
 
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
@@ -12512,6 +12601,15 @@
 				//カスケード削除がキャンセルされたことを通知
 				event.preventDefault();
 			}
+		},
+
+		_planes: null,
+
+		addVirtualPlane: function(plane) {
+			if (this._planes == null) {
+				this._planes = [];
+			}
+			this._planes.push(plane);
 		},
 
 		addLayer: function(layer, index, isDefault) {
