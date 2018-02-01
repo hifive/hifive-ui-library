@@ -5630,6 +5630,52 @@
 		return desc;
 	});
 
+	var ViewportDisplayUnitContainer = DisplayUnitContainer.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.ViewportDisplayUnitContainer',
+
+			field: {
+				_viewportX: null,
+				_viewportY: null
+			},
+
+			accessor: {
+				viewportX: {
+					get: function() {
+						return this._viewportX;
+					},
+					set: function(value) {
+						if (value === this._viewportX) {
+							return;
+						}
+						this._viewportX = value;
+					}
+				},
+				viewportY: {
+					get: function() {
+						return this._viewportY;
+					},
+					set: function(value) {
+						if (value === this._viewportY) {
+							return;
+						}
+						this._viewportY = value;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ViewportDisplayUnitContainer
+				 */
+				constructor: function ViewportDisplayUnitContainer(id, viewportX, viewportY) {
+					super_.constructor.call(this, id);
+				}
+			}
+		};
+		return desc;
+	});
+
 	var VirtualDisplayUnit = BasicDisplayUnit.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.VirtualDisplayUnit',
@@ -5647,71 +5693,244 @@
 		return desc;
 	});
 
-	var VirtualPlane = RootClass.extend(function(super_) {
+	var StackViewport = RootClass.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.VirtualPlane',
+			name: 'h5.ui.components.stage.StackViewport',
 
 			field: {
-				_id: null,
-
+				_plane: null,
 				_viewportContainers: null,
-
-				//FIXME
-				_firstVC: null
+				_orientation: null
 			},
 
 			accessor: {
-				id: {
+				x: null,
+				y: null,
+				width: null,
+				height: null,
+
+				orientation: {
 					get: function() {
-						return this._id;
+						return this._orientation;
 					},
-					set: function(id) {
-						this._id = id;
+					set: function(isHorizontal) {
+						if (this._orientation === isHorizontal) {
+							return;
+						}
+						this._orientation = isHorizontal;
 					}
-				}
+				},
+
 			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.StackViewport
+				 */
+				constructor: function StackViewport(plane) {
+					super_.constructor.call(this);
+					this._plane = plane;
+
+					this.x = 0;
+					this.y = 0;
+					this.width = 0;
+					this.height = 0;
+
+					//trueは水平方向、falseは垂直方向
+					this._orientation = true;
+
+					var that = this;
+					var duAddListener = function(ev) {
+						that._duAddListener(ev);
+					};
+					var duRemoveListener = function(ev) {
+						that._duRemoveListener(ev);
+					};
+
+					plane.addEventListener('duAdd', duAddListener);
+					plane.addEventListener('duRemove', duRemoveListener);
+				},
+
+				setPosition: function(x, y) {
+					this.x = x;
+					this.y = y;
+				},
+
+				setSize: function(width, height) {
+					this.width = width;
+					this.height = height;
+				},
+
+				getViewportContainers: function() {
+					return this._viewportContainers;
+				},
+
+				createPartitions: function(numPartitions) {
+					if (numPartitions < 1) {
+						throw new Error('パーティション数は1以上の整数で指定してください。');
+					}
+
+					//TODO 再変更された場合の処理
+
+					this._viewportContainers = [];
+
+					var partitionWidth = this.width;
+					var partitionHeight = this.height;
+
+					if (this._orientation === true) {
+						//水平方向にスタックする（＝左右に分割）
+						partitionWidth = this.width / numPartitions;
+					} else {
+						//垂直方向にスタックする（上下に分割）
+						partitionHeight = this.height / numPartitions;
+					}
+
+					for (var i = 0; i < numPartitions; i++) {
+						var vcid = this._generateContainerId();
+						var vc = ViewportDisplayUnitContainer.create(vcid);
+
+						if (this._orientation === true) {
+							//水平方向にスタック
+							vc.x = partitionWidth * i;
+							vc.y = 0;
+							vc.viewportX = partitionWidth * i;
+							vc.viewportY = 0;
+							vc.width = partitionWidth;
+							vc.height = partitionHeight;
+						} else {
+							//垂直方向にスタック
+							vc.x = 0;
+							vc.y = partitionHeight * i;
+							vc.viewportX = 0;
+							vc.viewportY = partitionHeight * i;
+							vc.width = partitionWidth;
+							vc.height = partitionHeight;
+						}
+
+						this._viewportContainers.push(vc);
+					}
+
+					return this._viewportContainers;
+				},
+
+				_generateContainerId: function() {
+					var time = new Date().getTime();
+					var r = Math.floor(Math.random() * 10000);
+
+					var ret = 'vcid_' + time + '-' + r;
+					return ret;
+				},
+
+				_duAddListener: function(event) {
+					if (this._viewportContainers == null) {
+						return;
+					}
+
+					var du = event.displayUnit;
+
+					var numPartitions = this._viewportContainers.length;
+					var partitionIndex = 0;
+
+					if (this.orientation === true) {
+						//水平
+						partitionIndex = Math.floor(du.x / (this.width / numPartitions));
+					} else {
+						//垂直
+						partitionIndex = Math.floor(du.y / (this.height / numPartitions));
+					}
+
+					if (partitionIndex >= numPartitions) {
+						return;
+					}
+
+					var vc = this._viewportContainers[partitionIndex];
+					vc.addDisplayUnit(du);
+				},
+
+				_duRemoveListener: function(event) {
+					if (this._viewportContainers == null) {
+						return;
+					}
+
+					var du = event.displayUnit;
+
+					//FIXME 適切なコンテナからのみremoveする
+					var numPartitions = this._viewportContainers.length;
+					for (var i = 0; i < numPartitions; i++) {
+						var vc = this._viewportContainers[i];
+						vc.removeDisplayUnit(du);
+					}
+
+					//					var vc = this._viewportContainers[0];
+					//					vc.removeDisplayUnit(du);
+				}
+			}
+
+		};
+		return desc;
+	});
+
+	var DisplayUnitEvent = Event.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayUnitEvent',
+
+			field: {
+				displayUnit: null
+			},
+
+			method: {
+				constructor: function DisplayUnitEvent(type, du) {
+					super_.constructor.call(this, type);
+					this.displayUnit = du;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var VirtualPlane = EventDispatcher.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.VirtualPlane',
+
+			//			field: {
+			//				_id: null
+			//			},
+			//
+			//			accessor: {
+			//				id: {
+			//					get: function() {
+			//						return this._id;
+			//					},
+			//					set: function(id) {
+			//						this._id = id;
+			//					}
+			//				}
+			//			},
 
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.VirtualPlane
 				 */
-				constructor: function VirtualPlane(id) {
+				constructor: function VirtualPlane() {
 					super_.constructor.call(this);
-
-					this._viewportContainers = [];
-				},
-
-				addViewport: function(displayUnitContainer) {
-					this._viewportContainers.push(displayUnitContainer);
-
-					//FIXME
-					if (this._firstVC == null) {
-						this._firstVC = displayUnitContainer;
-					}
-				},
-
-				removeViewport: function(displayUnitContainer) {
-					var idx = this._viewportContainers.indexOf(displayUnitContainer);
-					if (idx !== -1) {
-						this._viewportContainers.splice(idx, 1);
-					}
-
-					//FIXME
-					if (this._firstVC === displayUnitContainer) {
-						this._firstVC = null;
-					}
 				},
 
 				addDisplayUnit: function(displayUnit) {
-					if (this._firstVC) {
-						this._firstVC.addDisplayUnit(displayUnit);
+					if (displayUnit == null) {
+						return;
 					}
+
+					var ev = DisplayUnitEvent.create('duAdd', displayUnit);
+					this.dispatchEvent(ev);
 				},
 
 				removeDisplayUnit: function(displayUnit) {
-					if (this._firstVC) {
-						this._firstVC.removeDisplayUnit(displayUnit);
+					if (displayUnit == null) {
+						return;
 					}
+
+					var ev = DisplayUnitEvent.create('duRemove', displayUnit);
+					this.dispatchEvent(ev);
 				}
 			}
 		};

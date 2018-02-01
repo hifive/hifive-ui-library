@@ -31,6 +31,11 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
+	var VirtualPlane = classManager.getClass('h5.ui.components.stage.VirtualPlane');
+	var StackViewport = classManager.getClass('h5.ui.components.stage.StackViewport');
+	var ViewportDisplayUnitContainer = classManager
+			.getClass('h5.ui.components.stage.ViewportDisplayUnitContainer');
+
 	var editorHtml = '<div class="simpleTextEditor"><div class="innerPad"><textarea class="simpleTextEditorTextarea"></textarea>'
 			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span>'
 			+ '<button class="cancelButton">キャンセル</button></div></div></div>';
@@ -418,6 +423,8 @@
 
 			var startTime = new Date().getTime();
 
+			var mainLayer = this._stageController.getLayer(LAYER_ID_MAIN);
+
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(200, 100, 100, 100));
@@ -426,17 +433,37 @@
 
 			var numCreate = 30;
 
+			var plane = VirtualPlane.create();
+			this._stageController.addVirtualPlane(plane);
+
+			var stackViewport = StackViewport.create(plane);
+			stackViewport.setSize(2000, 100);
+			stackViewport.orientation = true; // 水平方向にスタック
+
+			var numPartitions = 10;
+
+			var viewportContainers = stackViewport.createPartitions(numPartitions);
+
+			for (var i = 0, len = numPartitions; i < len; i++) {
+				var vc = viewportContainers[i];
+				vc.x = 50;
+				vc.y = 300 + 100 * i;
+				mainLayer.addDisplayUnit(vc);
+			}
+
 			for (var i = 0, len = numCreate; i < len; i++) {
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._setupDU(BasicDisplayUnit.create(), rect);
 				unit.isResizable = true;
 				unit.zIndex = numCreate - i;
-				container.addDisplayUnit(unit);
+				//				container.addDisplayUnit(unit);
+
+				plane.addDisplayUnit(unit);
+
 				this._units.push(unit);
 			}
 
-			var mainLayer = this._stageController.getLayer(LAYER_ID_MAIN);
-			mainLayer.addDisplayUnit(container);
+			//			mainLayer.addDisplayUnit(container);
 
 			var edge = this._createEdge(this._units[1], this._units[3]);
 			this._edges.push(edge);
@@ -562,15 +589,15 @@
 		'{rootElement} duDragBegin': function(context) {
 			this.log.debug('duDragBegin');
 
-//			setTimeout(function(){
-//				context.evArg.dragSession.cancel();
-//			}, 2000);
+			//			setTimeout(function(){
+			//				context.evArg.dragSession.cancel();
+			//			}, 2000);
 
 			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
 					+ context.evArg.dragSession.getTargets().length + '</div>')[0];
 
 			//context.event.preventDefault();
-//			context.evArg.dragSession.setProxyElement(elem);
+			//			context.evArg.dragSession.setProxyElement(elem);
 
 			//context.event.preventDefault();
 		},
@@ -639,10 +666,10 @@
 			//context.event.preventDefault();
 			context.evArg.resizeSession.setProxyElement(elem);
 
-//			setTimeout(function(){
-//				console.log('resizeSession.cancel()');
-//				context.evArg.resizeSession.cancel();
-//			}, 2000);
+			//			setTimeout(function(){
+			//				console.log('resizeSession.cancel()');
+			//				context.evArg.resizeSession.cancel();
+			//			}, 2000);
 
 			//context.event.preventDefault();
 
