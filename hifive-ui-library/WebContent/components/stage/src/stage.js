@@ -5839,8 +5839,17 @@
 						partitionIndex = Math.floor(du.y / (this.height / numPartitions));
 					}
 
-					if (partitionIndex >= numPartitions) {
+					if (partitionIndex < 0 || partitionIndex >= numPartitions) {
 						return;
+					}
+
+					//FIXME
+					if (this.orientation === true) {
+						//水平
+						du.x -= partitionIndex * Math.floor(this.width / numPartitions);
+					} else {
+						//垂直
+						du.y -= partitionIndex * Math.floor(this.height / numPartitions);
 					}
 
 					var vc = this._viewportContainers[partitionIndex];
