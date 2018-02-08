@@ -4387,34 +4387,117 @@
 		return desc;
 	});
 
-	var ShadowDisplayUnit = BasicDisplayUnit.extend(function(super_) {
+	var ProxyManager = RootClass.extend(function(super_) {
+
 		var desc = {
-			name: 'h5.ui.components.stage.ShadowDisplayUnit',
+			name: 'h5.ui.components.stage.ProxyManager',
 
 			field: {
-				_sourceDU: null,
-				_viewportContainer: null
+				_sourceToProxyMap: null
 			},
 
-			accessor: {
-				isEditable: {
-					get: function() {
-						return this._sourceDU._isEditable;
-					},
-					set: function(value) {
-						if (this._sourceDU._isEditable === value) {
-							return;
-						}
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ProxyManager
+				 */
+				constructor: function ProxyManager() {
+					super_.constructor.call(this);
 
-						if (this._sourceDU._isEditable === true && value === false) {
-							//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
-							this._sourceDU.cancelEdit();
-						}
+					this._sourceToProxyMap = new Map();
+				},
 
-						this._sourceDU._isEditable = value;
+				createProxyDisplayUnit: function(sourceDisplayUnit, viewportContainer) {
+					var proxyDUId = this._generateProxyId(sourceDisplayUnit, viewportContainer);
+					var proxyDU = ProxyDisplayUnit.create(proxyDUId, sourceDisplayUnit,
+							viewportContainer);
+
+					//ソースDU : ProxyDU=１:多なので、Mapの値には配列で代入する。
+					//なお、ProxyDUインスタンスごとのViewportContainerはProxyDUインスタンス経由で取得する。
+					if (!this._sourceToProxyMap.has(sourceDisplayUnit)) {
+						this._sourceToProxyMap.set(sourceDisplayUnit, [proxyDU]);
+					} else {
+						this._sourceToProxyMap.get(sourceDisplayUnit).push(proxyDU);
+					}
+
+					return proxyDU;
+				},
+
+				getAllProxiesOf: function(sourceDisplayUnit) {
+					return this._sourceToProxyMap.get(sourceDisplayUnit);
+				},
+
+				removeAllProxies: function(sourceDisplayUnit) {
+					this._sourceToProxyMap['delete'](sourceDisplayUnit);
+				},
+
+				removeProxy: function(proxyDisplayUnit) {
+					var sourceDU = proxyDisplayUnit.sourceDisplayUnit;
+
+					var mapped = this._sourceToProxyMap.get(sourceDU);
+					if (!mapped) {
+						return;
+					}
+					var idx = mapped.indexOf(proxyDisplayUnit);
+					if (idx !== -1) {
+						mapped.splice(idx, 1);
 					}
 				},
 
+				_generateProxyId: function(sourceDU, viewportContainer) {
+					var ret = sourceDU.id + '@' + viewportContainer.id;
+					return ret;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var ProxyDisplayUnit = BasicDisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.ProxyDisplayUnit',
+
+			field: {
+				_sourceDU: null,
+				_viewportContainer: null,
+				_isSelectedOfThisProxy: null
+			},
+
+			accessor: {
+				sourceDisplayUnit: {
+					get: function() {
+						return this._sourceDU;
+					}
+				},
+
+				viewportContainer: {
+					get: function() {
+						return this._viewportContainer;
+					}
+				},
+
+				/* ----------------------------- BasicDisplayUnitのオーバーライド ------------------------------- */
+
+				isEditable: {
+					get: function() {
+						return this._sourceDU.isEditable;
+					},
+					set: function(value) {
+						if (this._sourceDU.isEditable === value) {
+							return;
+						}
+
+						//if (this._sourceDU.isEditable === true && value === false) {
+						//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
+						//	this._sourceDU.cancelEdit();
+						//}
+
+						this._sourceDU.isEditable = value;
+					}
+				},
+
+				/**
+				 * 編集エディタは常に「表示中のインスタンス」に対してのみ表示させるのでソースからのコピーでよい
+				 */
 				isEditing: {
 					get: function() {
 						return this._sourceDU._isEditing;
@@ -4463,7 +4546,7 @@
 					}
 				},
 
-				//以下はDisplayUnitのオーバーライド
+				/* ----------------------------- 以下 DisplayUnitのオーバーライド ------------------------------- */
 
 				x: {
 					get: function() {
@@ -4471,7 +4554,8 @@
 						return this._sourceDU.x - this._viewportContainer.viewportX;
 					},
 					set: function(value) {
-						this._sourceDU.x = value;
+						//TODO ソースDUがルートに直接配置されている前提。コンテナに含まれている場合の考慮は今後追加
+						this._sourceDU.x = value + this._viewportContainer.viewportX;
 
 						//						this._worldGlobalPositionCache = null;
 						//						this._setDirty(REASON_POSITION_CHANGE);
@@ -4482,7 +4566,7 @@
 						return this._sourceDU.y - this._viewportContainer.viewportY;
 					},
 					set: function(value) {
-						this._sourceDU.y = value;
+						this._sourceDU.y = value + this._viewportContainer.viewportY;
 
 						//						this._worldGlobalPositionCache = null;
 						//						this._setDirty(REASON_POSITION_CHANGE);
@@ -4595,14 +4679,17 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.ShadowDisplayUnit
+				 * @memberOf h5.ui.components.stage.ProxyDisplayUnit
 				 */
-				constructor: function ShadowDisplayUnit(id, sourceDisplayUnit, viewportContainer) {
+				constructor: function ProxyDisplayUnit(id, sourceDisplayUnit, viewportContainer) {
 					if (id == null || sourceDisplayUnit == null || viewportContainer == null) {
 						throw new Error('シャドウを生成するためのパラメータが足りません。');
 					}
 
 					this._logicalId = sourceDisplayUnit.id;
+
+					//TODO プロキシをStageに追加した時点でソースDUがisSelected===trueの場合にstage.select()する必要がある
+					this._isSelectedOfThisProxy = sourceDisplayUnit.isSelected;
 
 					super_.constructor.call(this, id);
 					this._sourceDU = sourceDisplayUnit;
@@ -4982,19 +5069,60 @@
 								break;
 							}
 
-							this._x1 = x1;
-							this._x2 = x2;
-							this._y1 = y1;
-							this._y2 = y2;
+							var actualDUFrom = this._getActualDU(this._from, x1, y1);
+							var actualFromPos = this._getActualGlobalPosition(actualDUFrom, x1, y1);
+							var ax1 = actualFromPos.x;
+							var ay1 = actualFromPos.y;
+
+							var actualDUTo = this._getActualDU(this._to, x2, y2);
+							var actualToPos = this._getActualGlobalPosition(actualDUTo, x2, y2);
+							var ax2 = actualToPos.x;
+							var ay2 = actualToPos.y;
+
+							this._x1 = ax1;
+							this._x2 = ax2;
+							this._y1 = ay1;
+							this._y2 = ay2;
 
 							//EdgeDUのサイズをアップデート
-							var left = x1 <= x2 ? x1 : x2;
-							var top = y1 <= y2 ? y1 : y2;
+							var left = ax1 <= ax2 ? ax1 : ax2;
+							var top = ay1 <= ay2 ? ay1 : ay2;
 
-							var width = Math.abs(x2 - x1);
-							var height = Math.abs(y2 - y1);
+							var width = Math.abs(ax2 - ax1);
+							var height = Math.abs(ay2 - ay1);
 
 							super_.setRect.call(this, left, top, width, height);
+						},
+
+						_getActualDU: function(sourceDU, globalX, globalY) {
+							if (!SingleLayerPlane.isClassOf(sourceDU._rootStage)) {
+								return sourceDU;
+							}
+
+							//sourceDUの親DUは(SingleLayerPlaneの)Layer
+							var plane = sourceDU._rootStage;
+							//TODO 現在の実装では、Viewportは重ならないので、対応するProxyDUは必ず1つ
+							var proxyDU = plane.getProxyDisplayUnitsAt(sourceDU, globalX, globalY)[0];
+							return proxyDU;
+						},
+
+						_getActualGlobalPosition: function(actualDU, sourceGlobalX, sourceGlobalY) {
+							if (!ProxyDisplayUnit.isClassOf(actualDU)) {
+								var pos = {
+									x: sourceGlobalX,
+									y: sourceGlobalY
+								};
+								return pos;
+							}
+
+							//TODO actualDUがViewportDUContainer直下に配置されている前提
+							var vc = actualDU.parentDisplayUnit;
+							var vcGlobalPos = vc.getWorldGlobalPosition();
+							var pos = {
+								x: sourceGlobalX - vc.viewportX + vcGlobalPos.x,
+								y: sourceGlobalY - vc.viewportY + vcGlobalPos.y
+							};
+							return pos;
 						},
 
 						hasClass: function(cssClass) {
@@ -5954,7 +6082,9 @@
 			field: {
 				_viewportX: null,
 				_viewportY: null,
-				_duduMap: null
+				_duduMap: null,
+				_plane: null,
+				_viewport: null
 			},
 
 			accessor: {
@@ -5986,23 +6116,45 @@
 				/**
 				 * @memberOf h5.ui.components.stage.ViewportDisplayUnitContainer
 				 */
-				constructor: function ViewportDisplayUnitContainer(id, viewportX, viewportY) {
+				constructor: function ViewportDisplayUnitContainer(id, viewport) {
 					super_.constructor.call(this, id);
 
+					if (viewport == null) {
+						throw new Error('viewportがnullです。');
+					}
+
 					this._duduMap = new Map();
+
+					this._viewport = viewport;
+					this._plane = viewport._plane;
 				},
 
-				addSourceDisplayUnit: function(displayUnit) {
-					if (this._duduMap.has(displayUnit)) {
+				addSourceDisplayUnit: function(sourceDisplayUnit) {
+					if (this._duduMap.has(sourceDisplayUnit)) {
 						//すでに追加済みのDUの場合は何もしない
 						return;
 					}
 
-					var shadowDU = this._createShadowDisplayUnit(displayUnit);
+					var proxyDU = this._plane._proxyManager.createProxyDisplayUnit(
+							sourceDisplayUnit, this);
 
-					this._duduMap.set(displayUnit, shadowDU);
+					this._duduMap.set(sourceDisplayUnit, proxyDU);
 
-					super_.addDisplayUnit.call(this, shadowDU);
+					super_.addDisplayUnit.call(this, proxyDU);
+				},
+
+				removeSourceDisplayUnit: function(sourceDisplayUnit) {
+					var proxyDU = this._duduMap.get(sourceDisplayUnit);
+					if (!proxyDU) {
+						return;
+					}
+					this._duduMap['delete'](sourceDisplayUnit);
+
+					super_.removeDisplayUnit.call(this, proxyDU);
+				},
+
+				getProxyDisplayUnit: function(sourceDisplayUnit) {
+					return this._duduMap.get(sourceDisplayUnit);
 				},
 
 				addDisplayUnit: function(displayUnit) {
@@ -6011,279 +6163,289 @@
 
 				removeDisplayUnit: function(displayUnit) {
 					super_.removeDisplayUnit.call(this, displayUnit);
-				},
-
-				_createShadowDisplayUnit: function(sourceDU) {
-					var shadowId = this._generateShadowDUId(sourceDU);
-					var shadowDU = ShadowDisplayUnit.create(shadowId, sourceDU, this);
-					return shadowDU;
-				},
-
-				_generateShadowDUId: function(sourceDU) {
-					var ret = sourceDU.id + '@' + this.id;
-					return ret;
 				}
 			}
 		};
 		return desc;
 	});
 
-	var VirtualDisplayUnit = BasicDisplayUnit.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.VirtualDisplayUnit',
+	var StackViewport = RootClass
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.StackViewport',
 
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.VirtualDisplayUnit
-				 */
-				constructor: function VirtualDisplayUnit(id) {
-					super_.constructor.call(this, id);
-				}
-			}
-
-		};
-		return desc;
-	});
-
-	var StackViewport = RootClass.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.StackViewport',
-
-			field: {
-				_plane: null,
-				_viewportContainers: null,
-				_orientation: null
-			},
-
-			accessor: {
-				x: null,
-				y: null,
-				width: null,
-				height: null,
-
-				orientation: {
-					get: function() {
-						return this._orientation;
+					field: {
+						_plane: null,
+						_viewportContainers: null,
+						_orientation: null
 					},
-					set: function(isHorizontal) {
-						if (this._orientation === isHorizontal) {
-							return;
+
+					accessor: {
+						x: null,
+						y: null,
+						width: null,
+						height: null,
+
+						orientation: {
+							get: function() {
+								return this._orientation;
+							},
+							set: function(isHorizontal) {
+								if (this._orientation === isHorizontal) {
+									return;
+								}
+								this._orientation = isHorizontal;
+							}
+						},
+
+					},
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.StackViewport
+						 */
+						constructor: function StackViewport(plane) {
+							super_.constructor.call(this);
+
+							if (plane == null) {
+								throw new Error('planeがnullです。');
+							}
+
+							this._plane = plane;
+
+							this.x = 0;
+							this.y = 0;
+							this.width = 0;
+							this.height = 0;
+
+							//trueは水平方向、falseは垂直方向
+							this._orientation = true;
+
+							var that = this;
+							var duAddListener = function(ev) {
+								that._duAddListener(ev);
+							};
+							var duDirtyListener = function(ev) {
+								that._duDirtyListener(ev);
+							};
+							var duRemoveListener = function(ev) {
+								that._duRemoveListener(ev);
+							};
+
+							plane.addEventListener('duAdd', duAddListener);
+							plane.addEventListener('duDirty', duDirtyListener);
+							plane.addEventListener('duRemove', duRemoveListener);
+
+							plane.addViewport(this);
+						},
+
+						setPosition: function(x, y) {
+							this.x = x;
+							this.y = y;
+						},
+
+						setSize: function(width, height) {
+							this.width = width;
+							this.height = height;
+						},
+
+						getViewportContainers: function() {
+							return this._viewportContainers;
+						},
+
+						createPartitions: function(numPartitions) {
+							if (numPartitions < 1) {
+								throw new Error('パーティション数は1以上の整数で指定してください。');
+							}
+
+							//TODO 再変更された場合の処理
+
+							this._viewportContainers = [];
+
+							var partitionWidth = this.width;
+							var partitionHeight = this.height;
+
+							if (this._orientation === true) {
+								//水平方向にスタックする（＝左右に分割）
+								partitionWidth = this.width / numPartitions;
+							} else {
+								//垂直方向にスタックする（上下に分割）
+								partitionHeight = this.height / numPartitions;
+							}
+
+							for (var i = 0; i < numPartitions; i++) {
+								var vcid = this._generateContainerId();
+								var vc = ViewportDisplayUnitContainer.create(vcid, this);
+
+								if (this._orientation === true) {
+									//水平方向にスタック
+									vc.x = partitionWidth * i;
+									vc.y = 0;
+									vc.viewportX = partitionWidth * i;
+									vc.viewportY = 0;
+									vc.width = partitionWidth;
+									vc.height = partitionHeight;
+								} else {
+									//垂直方向にスタック
+									vc.x = 0;
+									vc.y = partitionHeight * i;
+									vc.viewportX = 0;
+									vc.viewportY = partitionHeight * i;
+									vc.width = partitionWidth;
+									vc.height = partitionHeight;
+								}
+
+								this._viewportContainers.push(vc);
+							}
+
+							return this._viewportContainers;
+						},
+
+						getProxyDisplayUnitAt: function(sourceDisplayUnit, globalX, globalY) {
+							var numPartitions = this._viewportContainers.length;
+
+							//水平方向にスタックしている場合
+							var totalSize = this.width;
+							var globalPos = globalX;
+
+							if (this.orientation !== true) {
+								//垂直方向にスタックの場合
+								totalSize = this.height;
+								globalPos = globalY;
+							}
+
+							var partitionSize = totalSize / numPartitions;
+
+							var idx = Math.floor(globalPos / partitionSize);
+
+							if (idx < 0 || idx >= numPartitions) {
+								return null;
+							}
+
+							var container = this._viewportContainers[idx];
+							var sourceDU = container.getProxyDisplayUnit(sourceDisplayUnit);
+							return sourceDU;
+						},
+
+						_getCoveringContainers: function(du) {
+							var numPartitions = this._viewportContainers.length;
+
+							var globalPos = du.getWorldGlobalPosition();
+
+							if (this.orientation === true) {
+								//水平方向にスタック
+
+								if (globalPos.y > this.y + this.height
+										|| globalPos.y + du.height < this.y) {
+									//このビューポートの下または上にDUがある場合はどのコンテナにも含まれない
+									return [];
+								}
+
+								var partitionWidth = this.width / numPartitions;
+
+								var duvpx = globalPos.x - this.x;
+
+								var beginIndex = Math.floor(duvpx / partitionWidth);
+								var endIndex = Math.floor((duvpx + du.width) / partitionWidth) + 1;
+
+								if (beginIndex >= numPartitions || endIndex < 0) {
+									return [];
+								}
+
+								var sliceBeginIndex = beginIndex;
+								if (beginIndex < 0) {
+									sliceBeginIndex = 0;
+								}
+
+								var sliceEndIndex = endIndex;
+								if (endIndex > numPartitions) {
+									sliceEndIndex = numPartitions;
+								}
+
+								return this._viewportContainers.slice(sliceBeginIndex,
+										sliceEndIndex);
+							}
+
+							//以下は垂直方向にスタックした場合
+
+							if (globalPos.x + du.width < this.x
+									|| globalPos.x > this.x + this.width) {
+								//このビューポートの左または右にDUがある場合はどのコンテナにも含まれない
+								return [];
+							}
+
+							var partitionHeight = this.height / numPartitions;
+
+							var duvpy = globalPos.y - this.y;
+
+							var beginIndex = Math.floor(duvpy / partitionHeight);
+							var endIndex = Math.floor((duvpy + du.height) / partitionHeight);
+
+							if (beginIndex >= numPartitions || endIndex < 0) {
+								return [];
+							}
+
+							var sliceBeginIndex = beginIndex;
+							if (beginIndex < 0) {
+								sliceBeginIndex = 0;
+							}
+
+							var sliceEndIndex = endIndex;
+							if (endIndex >= numPartitions) {
+								sliceEndIndex = numPartitions;
+							}
+
+							return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
+						},
+
+						_generateContainerId: function() {
+							var time = new Date().getTime();
+							var r = Math.floor(Math.random() * 10000);
+
+							var ret = 'vcid_' + time + '-' + r;
+							return ret;
+						},
+
+						_duAddListener: function(event) {
+							if (this._viewportContainers == null) {
+								return;
+							}
+
+							var du = event.displayUnit;
+
+							var coveringContainers = this._getCoveringContainers(du);
+							for (var i = 0, len = coveringContainers.length; i < len; i++) {
+								var container = coveringContainers[i];
+								container.addSourceDisplayUnit(du);
+							}
+						},
+
+						_duDirtyListener: function(event) {
+
+						},
+
+						_duRemoveListener: function(event) {
+							if (this._viewportContainers == null) {
+								return;
+							}
+
+							var du = event.displayUnit;
+
+							//FIXME 適切なコンテナからのみremoveする
+							var numPartitions = this._viewportContainers.length;
+							for (var i = 0; i < numPartitions; i++) {
+								var vc = this._viewportContainers[i];
+								vc.removeDisplayUnit(du);
+							}
+
+							//					var vc = this._viewportContainers[0];
+							//					vc.removeDisplayUnit(du);
 						}
-						this._orientation = isHorizontal;
-					}
-				},
-
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.StackViewport
-				 */
-				constructor: function StackViewport(plane) {
-					super_.constructor.call(this);
-					this._plane = plane;
-
-					this.x = 0;
-					this.y = 0;
-					this.width = 0;
-					this.height = 0;
-
-					//trueは水平方向、falseは垂直方向
-					this._orientation = true;
-
-					var that = this;
-					var duAddListener = function(ev) {
-						that._duAddListener(ev);
-					};
-					var duDirtyListener = function(ev) {
-						that._duDirtyListener(ev);
-					};
-					var duRemoveListener = function(ev) {
-						that._duRemoveListener(ev);
-					};
-
-					plane.addEventListener('duAdd', duAddListener);
-					plane.addEventListener('duDirty', duDirtyListener);
-					plane.addEventListener('duRemove', duRemoveListener);
-				},
-
-				setPosition: function(x, y) {
-					this.x = x;
-					this.y = y;
-				},
-
-				setSize: function(width, height) {
-					this.width = width;
-					this.height = height;
-				},
-
-				getViewportContainers: function() {
-					return this._viewportContainers;
-				},
-
-				createPartitions: function(numPartitions) {
-					if (numPartitions < 1) {
-						throw new Error('パーティション数は1以上の整数で指定してください。');
 					}
 
-					//TODO 再変更された場合の処理
-
-					this._viewportContainers = [];
-
-					var partitionWidth = this.width;
-					var partitionHeight = this.height;
-
-					if (this._orientation === true) {
-						//水平方向にスタックする（＝左右に分割）
-						partitionWidth = this.width / numPartitions;
-					} else {
-						//垂直方向にスタックする（上下に分割）
-						partitionHeight = this.height / numPartitions;
-					}
-
-					for (var i = 0; i < numPartitions; i++) {
-						var vcid = this._generateContainerId();
-						var vc = ViewportDisplayUnitContainer.create(vcid);
-
-						if (this._orientation === true) {
-							//水平方向にスタック
-							vc.x = partitionWidth * i;
-							vc.y = 0;
-							vc.viewportX = partitionWidth * i;
-							vc.viewportY = 0;
-							vc.width = partitionWidth;
-							vc.height = partitionHeight;
-						} else {
-							//垂直方向にスタック
-							vc.x = 0;
-							vc.y = partitionHeight * i;
-							vc.viewportX = 0;
-							vc.viewportY = partitionHeight * i;
-							vc.width = partitionWidth;
-							vc.height = partitionHeight;
-						}
-
-						this._viewportContainers.push(vc);
-					}
-
-					return this._viewportContainers;
-				},
-
-				_getCoveringContainers: function(du) {
-					var numPartitions = this._viewportContainers.length;
-
-
-					if (this.orientation === true) {
-						//水平方向にスタック
-
-						if (du.y > this.y + this.height || du.y + du.height < this.y) {
-							//このビューポートの下または上にDUがある場合はどのコンテナにも含まれない
-							return [];
-						}
-
-						var partitionWidth = this.width / numPartitions;
-
-						var duvpx = du.x - this.x;
-
-						var beginIndex = Math.floor(duvpx / partitionWidth);
-						var endIndex = Math.floor((duvpx + du.width) / partitionWidth) + 1;
-
-						if (beginIndex >= numPartitions || endIndex < 0) {
-							return [];
-						}
-
-						var sliceBeginIndex = beginIndex;
-						if (beginIndex < 0) {
-							sliceBeginIndex = 0;
-						}
-
-						var sliceEndIndex = endIndex;
-						if (endIndex > numPartitions) {
-							sliceEndIndex = numPartitions;
-						}
-
-						return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
-					}
-
-					//以下は垂直方向にスタックした場合
-
-					if (du.x + du.width < this.x || du.x > this.x + this.width) {
-						//このビューポートの左または右にDUがある場合はどのコンテナにも含まれない
-						return [];
-					}
-
-					var partitionHeight = this.height / numPartitions;
-
-					var duvpy = du.y - this.y;
-
-					var beginIndex = Math.floor(duvpy / partitionHeight);
-					var endIndex = Math.floor((duvpy + du.height) / partitionHeight);
-
-					if (beginIndex >= numPartitions || endIndex < 0) {
-						return [];
-					}
-
-					var sliceBeginIndex = beginIndex;
-					if (beginIndex < 0) {
-						sliceBeginIndex = 0;
-					}
-
-					var sliceEndIndex = endIndex;
-					if (endIndex >= numPartitions) {
-						sliceEndIndex = numPartitions;
-					}
-
-					return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
-				},
-
-				_generateContainerId: function() {
-					var time = new Date().getTime();
-					var r = Math.floor(Math.random() * 10000);
-
-					var ret = 'vcid_' + time + '-' + r;
-					return ret;
-				},
-
-				_duAddListener: function(event) {
-					if (this._viewportContainers == null) {
-						return;
-					}
-
-					var du = event.displayUnit;
-
-					var coveringContainers = this._getCoveringContainers(du);
-					for (var i = 0, len = coveringContainers.length; i < len; i++) {
-						var container = coveringContainers[i];
-						container.addSourceDisplayUnit(du);
-					}
-				},
-
-				_duDirtyListener: function(event) {
-
-				},
-
-				_duRemoveListener: function(event) {
-					if (this._viewportContainers == null) {
-						return;
-					}
-
-					var du = event.displayUnit;
-
-					//FIXME 適切なコンテナからのみremoveする
-					var numPartitions = this._viewportContainers.length;
-					for (var i = 0; i < numPartitions; i++) {
-						var vc = this._viewportContainers[i];
-						vc.removeDisplayUnit(du);
-					}
-
-					//					var vc = this._viewportContainers[0];
-					//					vc.removeDisplayUnit(du);
-				}
-			}
-
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	var DisplayUnitEvent = Event.extend(function(super_) {
 		var desc = {
@@ -6500,12 +6662,16 @@
 	});
 
 
-	EventDispatcher.extend(function(super_) {
+	var SingleLayerPlane = EventDispatcher.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SingleLayerPlane',
 
 			field: {
-				_layer: null
+				_layer: null,
+
+				_viewports: null,
+
+				_proxyManager: null
 			},
 
 			//
@@ -6527,6 +6693,10 @@
 				constructor: function SingleLayerPlane() {
 					super_.constructor.call(this);
 
+					this._viewports = [];
+
+					this._proxyManager = ProxyManager.create();
+
 					this._layer = Layer.create('singleLayerPlane-rootLayer', this, 'virtual');
 
 					var that = this;
@@ -6545,6 +6715,24 @@
 					this._layer.addEventListener('displayUnitDirty', duDirtyListener);
 				},
 
+				getProxyDisplayUnitsAt: function(displayUnit, globalX, globalY) {
+					var ret = [];
+
+					for (var i = 0, len = this._viewports.length; i < len; i++) {
+						var vp = this._viewports[i];
+						var proxyDU = vp.getProxyDisplayUnitAt(displayUnit, globalX, globalY);
+						ret.push(proxyDU);
+					}
+
+					return ret;
+				},
+
+				addViewport: function(viewport) {
+					if (this._viewports.indexOf(viewport) === -1) {
+						this._viewports.push(viewport);
+					}
+				},
+
 				addDisplayUnit: function(displayUnit) {
 					if (displayUnit == null) {
 						return;
@@ -6557,6 +6745,9 @@
 					if (displayUnit == null) {
 						return;
 					}
+
+					//TODO DUがPlaneに直接追加されている場合を前提にしている
+					this._proxyManager.removeAllProxies(displayUnit);
 
 					this._layer.removeDisplayUnit(displayUnit);
 
@@ -6679,7 +6870,8 @@
 
 	var MasterClock = classManager.getClass('h5.ui.components.stage.MasterClock');
 
-	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
+	//var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
+	var ProxyDisplayUnit = classManager.getClass('h5.ui.components.stage.ProxyDisplayUnit');
 
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
@@ -11825,9 +12017,44 @@
 			this._editManager.cancelEdit(du);
 		},
 
+		_getSourceDU: function(du) {
+			if (ProxyDisplayUnit.isClassOf(du)) {
+				return du.sourceDisplayUnit;
+			}
+			return du;
+		},
+
+		_setSelected: function(du, value) {
+			if (!ProxyDisplayUnit.isClassOf(du)) {
+				//通常のDUの場合は直接選択状態をセットして終了
+				du._isSelected = value;
+				return;
+			}
+
+			//以下はduがプロキシDUの場合
+
+			//まずは個々のプロキシDUの選択状態を変更する
+			du._isSelectedOfThisProxy = value;
+
+			var sourceDU = du.sourceDisplayUnit;
+
+			//Proxyの場合は、すべてのProxyの選択状態のORをオリジナルの状態にする
+			//＝いずれか一つ以上のProxyが選択状態の場合はtrueとする
+			var proxies = sourceDU._rootStage._proxyManager.getAllProxiesOf(sourceDU);
+			var isSelectedMerged = false;
+			for (var i = 0, len = proxies.length; i < len; i++) {
+				var proxyDU = proxies[i];
+				if (proxyDU._isSelectedOfThisProxy) {
+					isSelectedMerged = true;
+					break;
+				}
+			}
+			sourceDU._isSelected = isSelectedMerged;
+		},
+
 		'{this._selectionLogic} selectionChange': function(context) {
 			var ev = context.event;
-			var focusedDU = ev.focused;
+			var focusedDU = this._getSourceDU(ev.focused);
 
 			var isFocusDirtyNotified = false;
 
@@ -11835,7 +12062,8 @@
 			var selected = ev.changes.selected;
 			for (var i = 0, len = selected.length; i < len; i++) {
 				var newSelectedDU = selected[i];
-				newSelectedDU._isSelected = true;
+
+				this._setSelected(newSelectedDU, true);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
 				if (newSelectedDU === focusedDU) {
@@ -11854,14 +12082,15 @@
 				newSelectedDU._setDirty(reasons);
 			}
 
-			var unfocusedDU = ev.changes.unfocused;
+			var unfocusedDU = this._getSourceDU(ev.changes.unfocused);
 			var isUnfocusDirtyNotified = false;
 
 			//今回非選択状態になったDUの選択フラグをOFFにする
 			var unselected = ev.changes.unselected;
 			for (var i = 0, len = unselected.length; i < len; i++) {
 				var unselectedDU = unselected[i];
-				unselectedDU._isSelected = false;
+
+				this._setSelected(unselectedDU, false);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
 				if (unselectedDU === unfocusedDU) {
