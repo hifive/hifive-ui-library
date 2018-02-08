@@ -3538,13 +3538,13 @@
 						moveTo: function(worldX, worldY) {
 							var isPositionChanged = false;
 
-							if (this._x !== worldX) {
-								this._x = worldX;
+							if (this.x !== worldX) {
+								this.x = worldX;
 								isPositionChanged = true;
 							}
 
-							if (this._y !== worldY) {
-								this._y = worldY;
+							if (this.y !== worldY) {
+								this.y = worldY;
 								isPositionChanged = true;
 							}
 
@@ -3560,8 +3560,8 @@
 								return;
 							}
 
-							this._x += worldDx;
-							this._y += worldDy;
+							this.x += worldDx;
+							this.y += worldDy;
 							this._worldGlobalPositionCache = null;
 							this._setDirty(REASON_POSITION_CHANGE);
 						},
@@ -4522,9 +4522,27 @@
 					}
 				},
 
+				isDraggable: {
+					get: function() {
+						return this._sourceDU.isDraggable;
+					},
+					set: function(value) {
+						this._sourceDU.isDraggable = value;
+					}
+				},
+
 				isDragging: {
 					get: function() {
 						return this._sourceDU._isDragging;
+					}
+				},
+
+				isResizable: {
+					get: function() {
+						return this._sourceDU.isResizable;
+					},
+					set: function(value) {
+						this._sourceDU.isResizable = value;
 					}
 				},
 
@@ -4694,6 +4712,22 @@
 					super_.constructor.call(this, id);
 					this._sourceDU = sourceDisplayUnit;
 					this._viewportContainer = viewportContainer;
+				},
+
+				setRect: function(rect) {
+					return this._sourceDU.setRect(rect);
+				},
+
+				setSize: function(width, height) {
+					return this._sourceDU.setSize(width, height);
+				},
+
+				moveTo: function(worldX, worldY) {
+					return this._sourceDU.moveTo(worldX, worldY);
+				},
+
+				moveBy: function(worldDx, worldDy) {
+					return this._sourceDU.moveBy(worldDx, worldDy);
 				},
 
 				__renderDOM: function(view) {
