@@ -11795,6 +11795,15 @@
 				return;
 			}
 
+			//ProxyDUの場合、ソースDUも自動的に選択に含める
+			//このループでは、現在の配列に対して増やすのみなので、このループ式でよい
+			for (var i = 0, len = actualSelection.length; i < len; i++) {
+				var selDU = actualSelection[i];
+				if (ProxyDisplayUnit.isClassOf(selDU)) {
+					actualSelection.push(selDU.sourceDisplayUnit);
+				}
+			}
+
 			this._selectionLogic.select(actualSelection, isExclusive);
 		},
 
