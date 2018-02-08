@@ -31,7 +31,7 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 
-	var VirtualPlane = classManager.getClass('h5.ui.components.stage.VirtualPlane');
+	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
 	var StackViewport = classManager.getClass('h5.ui.components.stage.StackViewport');
 	var ViewportDisplayUnitContainer = classManager
 			.getClass('h5.ui.components.stage.ViewportDisplayUnitContainer');
@@ -433,8 +433,8 @@
 
 			var numCreate = 30;
 
-			var plane = VirtualPlane.create();
-			this._stageController.addVirtualPlane(plane);
+			var plane = SingleLayerPlane.create();
+			this._stageController.addPlane(plane);
 
 			var stackViewport = StackViewport.create(plane);
 			stackViewport.setSize(2000, 100);

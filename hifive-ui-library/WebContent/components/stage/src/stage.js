@@ -3214,7 +3214,10 @@
 					isAbstract: true,
 					field: {
 						id: null,
-						extraData: null,
+
+						_logicalId: null,
+
+						_extraData: null,
 
 						_x: null,
 						_y: null,
@@ -3253,6 +3256,21 @@
 						_worldGlobalPositionCache: null
 					},
 					accessor: {
+						logicalId: {
+							get: function() {
+								if (this._logicalId == null) {
+									return this.id;
+								}
+								return this._logicalId;
+							},
+							set: function(value) {
+								if (this._logicalId === value) {
+									return;
+								}
+								this._logicalId = value;
+							}
+						},
+
 						x: {
 							get: function() {
 								return this._x;
@@ -3391,6 +3409,18 @@
 								}
 								this._renderPriority = value;
 							}
+						},
+
+						extraData: {
+							get: function() {
+								return this._extraData;
+							},
+							set: function(value) {
+								if (this._extraData === value) {
+									return;
+								}
+								this._extraData = value;
+							}
 						}
 					},
 					method: {
@@ -3408,6 +3438,8 @@
 								//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 								this.id = id;
 							}
+
+							this._logicalId = null;
 
 							this._renderPriority = RenderPriority.NORMAL;
 
@@ -3634,7 +3666,7 @@
 								return;
 							}
 
-							if (!this._isSelectable) {
+							if (!this.isSelectable) {
 								//TODO ログを出すべきか
 								return;
 							}
@@ -3654,7 +3686,7 @@
 								return;
 							}
 
-							if (!this._isSelectable) {
+							if (!this.isSelectable) {
 								return;
 							}
 
@@ -4028,7 +4060,7 @@
 				/**
 				 * この要素を現在ドラッグ可能かどうか
 				 */
-				isDraggable: null,
+				_isDraggable: null,
 
 				/**
 				 * 現在この要素をドラッグ中かどうか。
@@ -4038,7 +4070,7 @@
 				/**
 				 * この要素がリサイズ可能かどうか
 				 */
-				isResizable: null,
+				_isResizable: null,
 
 				/**
 				 * 現在この要素をリサイズ中かどうか
@@ -4048,12 +4080,12 @@
 				/**
 				 * このDUがリサイズ可能な場合に、リサイズ操作とみなす境界の幅
 				 */
-				resizeBoundary: null,
+				_resizeBoundary: null,
 
 				/**
 				 * リサイズの制限の設定
 				 */
-				resizeConstraint: null,
+				_resizeConstraint: null,
 
 				_renderer: null
 			},
@@ -4082,6 +4114,18 @@
 					}
 				},
 
+				isDraggable: {
+					get: function() {
+						return this._isDraggable;
+					},
+					set: function(value) {
+						if (this._isDraggable === value) {
+							return;
+						}
+						this._isDraggable = value;
+					}
+				},
+
 				width: {
 					get: function() {
 						return super_.width.get.call(this);
@@ -4106,25 +4150,64 @@
 					}
 				},
 
+				isResizable: {
+					get: function() {
+						return this._isResizable;
+					},
+					set: function(value) {
+						if (this._isResizable === value) {
+							return;
+						}
+						this._isResizable = value;
+					}
+				},
+
 				isResizing: {
 					get: function() {
 						return this._isResizing;
 					}
+				},
+
+				resizeBoundary: {
+					get: function() {
+						return this._resizeBoundary;
+					},
+					set: function(value) {
+						if (this._resizeBoundary === value) {
+							return;
+						}
+						this._resizeBoundary = value;
+					}
+				},
+
+				resizeConstraint: {
+					get: function() {
+						return this._resizeConstraint;
+					},
+					set: function(value) {
+						if (this._resizeConstraint === value) {
+							return;
+						}
+						this._resizeConstraint = value;
+					}
 				}
 			},
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.BasicDisplayUnit
+				 */
 				constructor: function BasicDisplayUnit(id) {
 					super_.constructor.call(this, id);
 
 					this._isEditable = true;
 					this._isEditing = false;
 
-					this.isDraggable = true;
+					this._isDraggable = true;
 					this._isDragging = false;
 
-					this.isResizable = false;
+					this._isResizable = false;
 					this._isResizing = false;
-					this.resizeBoundary = {
+					this._resizeBoundary = {
 						//isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
 						top: 6,
 						left: 6,
@@ -4134,8 +4217,6 @@
 				},
 				/**
 				 * rendererのシグネチャ：function(graphics, du)
-				 *
-				 * @memberOf h5.ui.components.stage.BasicDisplayUnit
 				 */
 				setRenderer: function(renderer) {
 					if (this._renderer === renderer) {
@@ -4300,6 +4381,242 @@
 					if (graphics != null && graphics.isDirty) {
 						graphics.render();
 					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	var ShadowDisplayUnit = BasicDisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.ShadowDisplayUnit',
+
+			field: {
+				_sourceDU: null,
+				_viewportContainer: null
+			},
+
+			accessor: {
+				isEditable: {
+					get: function() {
+						return this._sourceDU._isEditable;
+					},
+					set: function(value) {
+						if (this._sourceDU._isEditable === value) {
+							return;
+						}
+
+						if (this._sourceDU._isEditable === true && value === false) {
+							//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
+							this._sourceDU.cancelEdit();
+						}
+
+						this._sourceDU._isEditable = value;
+					}
+				},
+
+				isEditing: {
+					get: function() {
+						return this._sourceDU._isEditing;
+					}
+				},
+
+				width: {
+					get: function() {
+						return this._sourceDU.width;
+					},
+					set: function(value) {
+						this._sourceDU = value;
+					}
+				},
+
+				height: {
+					get: function() {
+						return this._sourceDU.height;
+					},
+					set: function(value) {
+						this._sourceDU.height = value;
+					}
+				},
+
+				isDragging: {
+					get: function() {
+						return this._sourceDU._isDragging;
+					}
+				},
+
+				isResizing: {
+					get: function() {
+						return this._sourceDU._isResizing;
+					}
+				},
+
+				resizeBoundary: {
+					get: function() {
+						return this._sourceDU.resizeBoundary;
+					}
+				},
+
+				resizeConstraint: {
+					get: function() {
+						return this._sourceDU.resizeConstraint;
+					}
+				},
+
+				//以下はDisplayUnitのオーバーライド
+
+				x: {
+					get: function() {
+						//TODO キャッシュすると多少高速化可能
+						return this._sourceDU.x - this._viewportContainer.viewportX;
+					},
+					set: function(value) {
+						this._sourceDU.x = value;
+
+						//						this._worldGlobalPositionCache = null;
+						//						this._setDirty(REASON_POSITION_CHANGE);
+					}
+				},
+				y: {
+					get: function() {
+						return this._sourceDU.y - this._viewportContainer.viewportY;
+					},
+					set: function(value) {
+						this._sourceDU.y = value;
+
+						//						this._worldGlobalPositionCache = null;
+						//						this._setDirty(REASON_POSITION_CHANGE);
+					}
+				},
+
+				zIndex: {
+					get: function() {
+						return this._sourceDU.zIndex;
+					},
+					set: function(value) {
+						this._sourceDU.zIndex = value;
+
+						//						var dirtyReason = {
+						//							type: REASON_Z_INDEX_CHANGE,
+						//							oldValue: oldValue,
+						//							newValue: value
+						//						};
+						//						this._setDirty(dirtyReason);
+					}
+				},
+
+				width: {
+					get: function() {
+						return this._sourceDU.width;
+					},
+					set: function(value) {
+						this._sourceDU.width = value;
+
+						//						this._setDirty(REASON_SIZE_CHANGE);
+					}
+				},
+				height: {
+					get: function() {
+						return this._sourceDU._height;
+					},
+					set: function(value) {
+						this._sourceDU.height = value;
+
+						//						this._setDirty(REASON_SIZE_CHANGE);
+					}
+				},
+				groupTag: {
+					get: function() {
+						return this._sourceDU._groupTag;
+					}
+				},
+				parentDisplayUnit: {
+					get: function() {
+						return this._parentDU;
+					}
+				},
+				//TODO isVisibleがfalseになったら、DOMごと消す。
+				//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
+				isVisible: {
+					get: function() {
+						return this._sourceDU.isVisible;
+					},
+					set: function(value) {
+						this._sourceDU.isVisible = value;
+
+						//						this._setDirty(REASON_VISIBILITY_CHANGE);
+					}
+				},
+
+				isSelectable: {
+					get: function() {
+						return this._sourceDU.isSelectable;
+					},
+					set: function(value) {
+						this._sourceDU.isSelectable = value;
+
+						//						if (value === false) {
+						//							//選択不能になったので、選択状態を解除
+						//							this.unselect();
+						//						}
+					}
+				},
+
+				isSelected: {
+					get: function() {
+						return this._sourceDU.isSelected;
+					}
+				},
+
+				isFocused: {
+					get: function() {
+						return this._sourceDU.isFocused;
+					}
+				},
+
+				renderPriority: {
+					get: function() {
+						return this._sourceDU.renderPriority;
+					},
+					set: function(value) {
+						this._sourceDU.renderPriority = value;
+					}
+				},
+
+				extraData: {
+					get: function() {
+						return this._sourceDU._extraData;
+					},
+					set: function(value) {
+						this._sourceDU.extraData = value;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.ShadowDisplayUnit
+				 */
+				constructor: function ShadowDisplayUnit(id, sourceDisplayUnit, viewportContainer) {
+					if (id == null || sourceDisplayUnit == null || viewportContainer == null) {
+						throw new Error('シャドウを生成するためのパラメータが足りません。');
+					}
+
+					this._logicalId = sourceDisplayUnit.id;
+
+					super_.constructor.call(this, id);
+					this._sourceDU = sourceDisplayUnit;
+					this._viewportContainer = viewportContainer;
+				},
+
+				__renderDOM: function(view) {
+					return this._sourceDU.__renderDOM.call(this, view);
+				},
+
+				__updateDOM: function(view, element, reason) {
+					//もう少し整理できるかも
+					this._renderer = this._sourceDU._renderer;
+					return this._sourceDU.__updateDOM.call(this, view, element, reason);
 				}
 			}
 		};
@@ -5636,7 +5953,8 @@
 
 			field: {
 				_viewportX: null,
-				_viewportY: null
+				_viewportY: null,
+				_duduMap: null
 			},
 
 			accessor: {
@@ -5670,6 +5988,40 @@
 				 */
 				constructor: function ViewportDisplayUnitContainer(id, viewportX, viewportY) {
 					super_.constructor.call(this, id);
+
+					this._duduMap = new Map();
+				},
+
+				addSourceDisplayUnit: function(displayUnit) {
+					if (this._duduMap.has(displayUnit)) {
+						//すでに追加済みのDUの場合は何もしない
+						return;
+					}
+
+					var shadowDU = this._createShadowDisplayUnit(displayUnit);
+
+					this._duduMap.set(displayUnit, shadowDU);
+
+					super_.addDisplayUnit.call(this, shadowDU);
+				},
+
+				addDisplayUnit: function(displayUnit) {
+					throw new Error('このコンテナに直接DisplayUnitを追加することはできません。');
+				},
+
+				removeDisplayUnit: function(displayUnit) {
+					super_.removeDisplayUnit.call(this, displayUnit);
+				},
+
+				_createShadowDisplayUnit: function(sourceDU) {
+					var shadowId = this._generateShadowDUId(sourceDU);
+					var shadowDU = ShadowDisplayUnit.create(shadowId, sourceDU, this);
+					return shadowDU;
+				},
+
+				_generateShadowDUId: function(sourceDU) {
+					var ret = sourceDU.id + '@' + this.id;
+					return ret;
 				}
 			}
 		};
@@ -5743,11 +6095,15 @@
 					var duAddListener = function(ev) {
 						that._duAddListener(ev);
 					};
+					var duDirtyListener = function(ev) {
+						that._duDirtyListener(ev);
+					};
 					var duRemoveListener = function(ev) {
 						that._duRemoveListener(ev);
 					};
 
 					plane.addEventListener('duAdd', duAddListener);
+					plane.addEventListener('duDirty', duDirtyListener);
 					plane.addEventListener('duRemove', duRemoveListener);
 				},
 
@@ -5813,6 +6169,73 @@
 					return this._viewportContainers;
 				},
 
+				_getCoveringContainers: function(du) {
+					var numPartitions = this._viewportContainers.length;
+
+
+					if (this.orientation === true) {
+						//水平方向にスタック
+
+						if (du.y > this.y + this.height || du.y + du.height < this.y) {
+							//このビューポートの下または上にDUがある場合はどのコンテナにも含まれない
+							return [];
+						}
+
+						var partitionWidth = this.width / numPartitions;
+
+						var duvpx = du.x - this.x;
+
+						var beginIndex = Math.floor(duvpx / partitionWidth);
+						var endIndex = Math.floor((duvpx + du.width) / partitionWidth) + 1;
+
+						if (beginIndex >= numPartitions || endIndex < 0) {
+							return [];
+						}
+
+						var sliceBeginIndex = beginIndex;
+						if (beginIndex < 0) {
+							sliceBeginIndex = 0;
+						}
+
+						var sliceEndIndex = endIndex;
+						if (endIndex > numPartitions) {
+							sliceEndIndex = numPartitions;
+						}
+
+						return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
+					}
+
+					//以下は垂直方向にスタックした場合
+
+					if (du.x + du.width < this.x || du.x > this.x + this.width) {
+						//このビューポートの左または右にDUがある場合はどのコンテナにも含まれない
+						return [];
+					}
+
+					var partitionHeight = this.height / numPartitions;
+
+					var duvpy = du.y - this.y;
+
+					var beginIndex = Math.floor(duvpy / partitionHeight);
+					var endIndex = Math.floor((duvpy + du.height) / partitionHeight);
+
+					if (beginIndex >= numPartitions || endIndex < 0) {
+						return [];
+					}
+
+					var sliceBeginIndex = beginIndex;
+					if (beginIndex < 0) {
+						sliceBeginIndex = 0;
+					}
+
+					var sliceEndIndex = endIndex;
+					if (endIndex >= numPartitions) {
+						sliceEndIndex = numPartitions;
+					}
+
+					return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
+				},
+
 				_generateContainerId: function() {
 					var time = new Date().getTime();
 					var r = Math.floor(Math.random() * 10000);
@@ -5828,32 +6251,15 @@
 
 					var du = event.displayUnit;
 
-					var numPartitions = this._viewportContainers.length;
-					var partitionIndex = 0;
-
-					if (this.orientation === true) {
-						//水平
-						partitionIndex = Math.floor(du.x / (this.width / numPartitions));
-					} else {
-						//垂直
-						partitionIndex = Math.floor(du.y / (this.height / numPartitions));
+					var coveringContainers = this._getCoveringContainers(du);
+					for (var i = 0, len = coveringContainers.length; i < len; i++) {
+						var container = coveringContainers[i];
+						container.addSourceDisplayUnit(du);
 					}
+				},
 
-					if (partitionIndex < 0 || partitionIndex >= numPartitions) {
-						return;
-					}
+				_duDirtyListener: function(event) {
 
-					//FIXME
-					if (this.orientation === true) {
-						//水平
-						du.x -= partitionIndex * Math.floor(this.width / numPartitions);
-					} else {
-						//垂直
-						du.y -= partitionIndex * Math.floor(this.height / numPartitions);
-					}
-
-					var vc = this._viewportContainers[partitionIndex];
-					vc.addDisplayUnit(du);
 				},
 
 				_duRemoveListener: function(event) {
@@ -5891,55 +6297,6 @@
 				constructor: function DisplayUnitEvent(type, du) {
 					super_.constructor.call(this, type);
 					this.displayUnit = du;
-				}
-			}
-		};
-		return desc;
-	});
-
-	var VirtualPlane = EventDispatcher.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.VirtualPlane',
-
-			//			field: {
-			//				_id: null
-			//			},
-			//
-			//			accessor: {
-			//				id: {
-			//					get: function() {
-			//						return this._id;
-			//					},
-			//					set: function(id) {
-			//						this._id = id;
-			//					}
-			//				}
-			//			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.VirtualPlane
-				 */
-				constructor: function VirtualPlane() {
-					super_.constructor.call(this);
-				},
-
-				addDisplayUnit: function(displayUnit) {
-					if (displayUnit == null) {
-						return;
-					}
-
-					var ev = DisplayUnitEvent.create('duAdd', displayUnit);
-					this.dispatchEvent(ev);
-				},
-
-				removeDisplayUnit: function(displayUnit) {
-					if (displayUnit == null) {
-						return;
-					}
-
-					var ev = DisplayUnitEvent.create('duRemove', displayUnit);
-					this.dispatchEvent(ev);
 				}
 			}
 		};
@@ -6142,6 +6499,92 @@
 		return desc;
 	});
 
+
+	EventDispatcher.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.SingleLayerPlane',
+
+			field: {
+				_layer: null
+			},
+
+			//
+			//			accessor: {
+			//				id: {
+			//					get: function() {
+			//						return this._id;
+			//					},
+			//					set: function(id) {
+			//						this._id = id;
+			//					}
+			//				}
+			//			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SingleLayerPlane
+				 */
+				constructor: function SingleLayerPlane() {
+					super_.constructor.call(this);
+
+					this._layer = Layer.create('singleLayerPlane-rootLayer', this, 'virtual');
+
+					var that = this;
+					var duAddListener = function(event) {
+						that._onDUAdd(event);
+					};
+					var duRemoveListener = function(event) {
+						that._onDURemove(event);
+					};
+					var duDirtyListener = function(event) {
+						that._onDUDirty(event);
+					};
+
+					this._layer.addEventListener('displayUnitAdd', duAddListener);
+					this._layer.addEventListener('displayUnitRemove', duRemoveListener);
+					this._layer.addEventListener('displayUnitDirty', duDirtyListener);
+				},
+
+				addDisplayUnit: function(displayUnit) {
+					if (displayUnit == null) {
+						return;
+					}
+
+					this._layer.addDisplayUnit(displayUnit);
+				},
+
+				removeDisplayUnit: function(displayUnit) {
+					if (displayUnit == null) {
+						return;
+					}
+
+					this._layer.removeDisplayUnit(displayUnit);
+
+					var ev = DisplayUnitEvent.create('duRemove', displayUnit);
+					this.dispatchEvent(ev);
+				},
+
+				_onDUAdd: function(event) {
+					var ev = DisplayUnitEvent.create('duAdd', event.displayUnit);
+					this.dispatchEvent(ev);
+				},
+
+				_onDURemove: function(event) {
+					var ev = DisplayUnitEvent.create('duRemove', event.displayUnit);
+					this.dispatchEvent(ev);
+				},
+
+				_onDUDirty: function(event) {
+					//displayUnitDirtyEventは専用がある。cloneして再送出する、という方式もよいかもしれない
+					var ev = DisplayUnitEvent.create('duDirty', event.displayUnit);
+					this.dispatchEvent(ev);
+				}
+			}
+		};
+		return desc;
+	});
+
+
 	var BulkOperation = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.BulkOperation',
@@ -6236,7 +6679,7 @@
 
 	var MasterClock = classManager.getClass('h5.ui.components.stage.MasterClock');
 
-	var VirtualPlane = classManager.getClass('h5.ui.components.stage.VirtualPlane');
+	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
 
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
@@ -12833,7 +13276,7 @@
 
 		_planes: null,
 
-		addVirtualPlane: function(plane) {
+		addPlane: function(plane) {
 			if (this._planes == null) {
 				this._planes = [];
 			}
