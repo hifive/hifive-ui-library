@@ -5638,6 +5638,15 @@
 				 */
 				constructor: function DisplayUnitDirtyEvent() {
 					super_.constructor.call(this, 'displayUnitDirty');
+				},
+
+				clone: function() {
+					//TODO Event自体でcloneを実装するべきか
+					var cloned = DisplayUnitDirtyEvent.create();
+					cloned.reason = this.reason;
+					cloned.displayUnit = this.displayUnit;
+					cloned.parentDisplayUnit = this.parentDisplayUnit;
+					return cloned;
 				}
 			}
 		};
@@ -6233,7 +6242,7 @@
 							};
 
 							plane.addEventListener('duAdd', duAddListener);
-							plane.addEventListener('duDirty', duDirtyListener);
+							plane.addEventListener('displayUnitDirty', duDirtyListener);
 							plane.addEventListener('duRemove', duRemoveListener);
 
 							plane.addViewport(this);
@@ -6421,7 +6430,15 @@
 						},
 
 						_duDirtyListener: function(event) {
+							var proxies = this._plane._proxyManager
+									.getAllProxiesOf(event.displayUnit);
+							var reasons = event.reason.getAll();
 
+							for (var i = 0, len = proxies.length; i < len; i++) {
+								//各プロキシDUをdirtyにする
+								var proxyDU = proxies[i];
+								proxyDU._setDirty(reasons);
+							}
 						},
 
 						_duRemoveListener: function(event) {
@@ -6750,9 +6767,6 @@
 					this._proxyManager.removeAllProxies(displayUnit);
 
 					this._layer.removeDisplayUnit(displayUnit);
-
-					var ev = DisplayUnitEvent.create('duRemove', displayUnit);
-					this.dispatchEvent(ev);
 				},
 
 				_onDUAdd: function(event) {
@@ -6767,7 +6781,7 @@
 
 				_onDUDirty: function(event) {
 					//displayUnitDirtyEventは専用がある。cloneして再送出する、という方式もよいかもしれない
-					var ev = DisplayUnitEvent.create('duDirty', event.displayUnit);
+					var ev = event.clone();
 					this.dispatchEvent(ev);
 				}
 			}
@@ -12079,7 +12093,8 @@
 
 					isFocusDirtyNotified = true;
 				}
-				newSelectedDU._setDirty(reasons);
+
+				this._getSourceDU(newSelectedDU)._setDirty(reasons);
 			}
 
 			var unfocusedDU = this._getSourceDU(ev.changes.unfocused);
@@ -12102,7 +12117,8 @@
 
 					isUnfocusDirtyNotified = true;
 				}
-				unselectedDU._setDirty(reasons);
+
+				this._getSourceDU(unselectedDU)._setDirty(reasons);
 			}
 
 			if (focusedDU && !isFocusDirtyNotified) {
