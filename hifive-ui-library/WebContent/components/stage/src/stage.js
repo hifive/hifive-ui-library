@@ -6964,7 +6964,7 @@
 
 	var MasterClock = classManager.getClass('h5.ui.components.stage.MasterClock');
 
-	//var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
+	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
 	var ProxyDisplayUnit = classManager.getClass('h5.ui.components.stage.ProxyDisplayUnit');
 
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
@@ -12174,6 +12174,43 @@
 			sourceDU._isSelected = isSelectedMerged;
 		},
 
+		/**
+		 * 引数で渡されたDUの配列から、論理DUの配列に正規化したものを生成して返します。
+		 * 同じ論理DUにマップされるProxyDUが複数ある場合でも、戻り値には1つの論理DUのみが含まれます。
+		 *
+		 * @param displayUnits
+		 * @returns {Array}
+		 */
+		_getSourceNormalizedDisplayUnits: function(displayUnits) {
+			if (displayUnits == null) {
+				return [];
+			}
+
+			if (!Array.isArray(displayUnits)) {
+				displayUnits = [displayUnits];
+			}
+
+			var ret = [];
+
+			for (var i = 0, len = displayUnits.length; i < len; i++) {
+				var du = displayUnits[i];
+				if (ProxyDisplayUnit.isClassOf(du)) {
+					this._pushIfNotExist(ret, du.sourceDisplayUnit);
+				} else {
+					ret.push(du);
+				}
+			}
+
+			return ret;
+		},
+
+		_pushIfNotExist: function(array, value) {
+			var idx = array.indexOf(value);
+			if (idx === -1) {
+				array.push(value);
+			}
+		},
+
 		'{this._selectionLogic} selectionChange': function(context) {
 			var ev = context.event;
 			var focusedDU = this._getSourceDU(ev.focused);
@@ -12181,14 +12218,15 @@
 			var isFocusDirtyNotified = false;
 
 			//今回新たに選択されたDUの選択フラグをONにする
-			var selected = ev.changes.selected;
-			for (var i = 0, len = selected.length; i < len; i++) {
-				var newSelectedDU = selected[i];
+			var changedSelectionOnStage = ev.changes.selected;
+			var changedSelectionLogical = [];
+			for (var i = 0, len = changedSelectionOnStage.length; i < len; i++) {
+				this._setSelected(changedSelectionOnStage[i], true);
 
-				this._setSelected(newSelectedDU, true);
+				var newSelectedDULogical = this._getSourceDU(changedSelectionOnStage[i]);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
-				if (newSelectedDU === focusedDU) {
+				if (newSelectedDULogical === focusedDU) {
 					//あるDUが選択され同時にフォーカスも得た場合には
 					//Dirtyの通知回数を減らすためreasonに追加
 					reasons.push(UpdateReasons.FOCUS_CHANGE);
@@ -12202,21 +12240,24 @@
 					isFocusDirtyNotified = true;
 				}
 
-				this._getSourceDU(newSelectedDU)._setDirty(reasons);
+				newSelectedDULogical._setDirty(reasons);
+
+				this._pushIfNotExist(changedSelectionLogical, newSelectedDULogical);
 			}
 
 			var unfocusedDU = this._getSourceDU(ev.changes.unfocused);
 			var isUnfocusDirtyNotified = false;
 
 			//今回非選択状態になったDUの選択フラグをOFFにする
-			var unselected = ev.changes.unselected;
-			for (var i = 0, len = unselected.length; i < len; i++) {
-				var unselectedDU = unselected[i];
+			var changedUnselectedOnStage = ev.changes.unselected;
+			var changedUnselectedLogical = [];
+			for (var i = 0, len = changedUnselectedOnStage.length; i < len; i++) {
+				var unselectedDULogical = this._getSourceDU(changedUnselectedOnStage[i]);
 
-				this._setSelected(unselectedDU, false);
+				this._setSelected(unselectedDULogical, false);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
-				if (unselectedDU === unfocusedDU) {
+				if (unselectedDULogical === unfocusedDU) {
 					//newSelectedと同様、Dirtyの回数を最適化
 					reasons.push(UpdateReasons.FOCUS_CHANGE);
 
@@ -12226,7 +12267,9 @@
 					isUnfocusDirtyNotified = true;
 				}
 
-				this._getSourceDU(unselectedDU)._setDirty(reasons);
+				unselectedDULogical._setDirty(reasons);
+
+				this._pushIfNotExist(changedUnselectedLogical, unselectedDULogical);
 			}
 
 			if (focusedDU && !isFocusDirtyNotified) {
@@ -12243,13 +12286,24 @@
 				unfocusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
 			}
 
+			var selectedLogical = this._getSourceNormalizedDisplayUnits(ev.selected);
+
 			var evArg = {
-				selected: ev.selected,
-				focused: ev.focused,
+				selectedOnStage: ev.selected,
+				selected: selectedLogical,
+
+				focusedOnStage: ev.focused,
+				focused: focusedDU,
+
 				changes: {
-					selected: ev.changes.selected,
-					unselected: ev.changes.unselected,
-					unfocused: ev.changes.unfocused
+					selectedOnStage: ev.changes.selected,
+					selected: changedSelectionLogical,
+
+					unselectedOnStage: ev.changes.unselected,
+					unselected: changedUnselectedLogical,
+
+					unfocusedOnStage: ev.changes.unfocused,
+					unfocused: unfocusedDU
 				}
 			};
 
