@@ -4506,24 +4506,6 @@
 					}
 				},
 
-				width: {
-					get: function() {
-						return this._sourceDU.width;
-					},
-					set: function(value) {
-						this._sourceDU = value;
-					}
-				},
-
-				height: {
-					get: function() {
-						return this._sourceDU.height;
-					},
-					set: function(value) {
-						this._sourceDU.height = value;
-					}
-				},
-
 				isDraggable: {
 					get: function() {
 						return this._sourceDU.isDraggable;
