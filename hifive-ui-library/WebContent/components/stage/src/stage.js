@@ -11942,21 +11942,19 @@
 		},
 
 		getSelectedDisplayUnits: function() {
-			var selected = this._selectionLogic.getSelected();
-			return selected;
+			if (!this._currentSelection) {
+				return [];
+			}
+			return this._currentSelection.selected;
 		},
 
 		isSelected: function(displayUnit) {
 			return displayUnit.isSelected;
-			//TODO 削除でよいはず。ProxyDUの場合にselectionLogic側での判定だと失敗する可能性がある。
-			//			var isSelected = this._selectionLogic.isSelected(displayUnit);
-			//			return isSelected;
 		},
 
 		focus: function(displayUnit) {
 			if (displayUnit.isSelectable) {
-				var sourceDU = this._getSourceDU(displayUnit);
-				return this._selectionLogic.focus(sourceDU);
+				return this._selectionLogic.focus(displayUnit);
 			}
 		},
 
@@ -11965,14 +11963,14 @@
 		},
 
 		getFocusedDisplayUnit: function() {
-			var focused = this._selectionLogic.getFocused();
-			return focused;
+			if (!this._currentSelection) {
+				return null;
+			}
+			return this._currentSelection.focused;
 		},
 
 		isFocused: function(displayUnit) {
 			return displayUnit.isFocused;
-			//			var isFocused = this._selectionLogic.isFocused(displayUnit);
-			//			return isFocused;
 		},
 
 		/**
@@ -12289,26 +12287,30 @@
 			var selectedLogical = this._getSourceNormalizedDisplayUnits(ev.selected);
 
 			var evArg = {
-				selectedOnStage: ev.selected,
+				selectedRaw: ev.selected,
 				selected: selectedLogical,
 
-				focusedOnStage: ev.focused,
+				focusedRaw: ev.focused,
 				focused: focusedDU,
 
 				changes: {
-					selectedOnStage: ev.changes.selected,
+					selectedRaw: ev.changes.selected,
 					selected: changedSelectionLogical,
 
-					unselectedOnStage: ev.changes.unselected,
+					unselectedRaw: ev.changes.unselected,
 					unselected: changedUnselectedLogical,
 
-					unfocusedOnStage: ev.changes.unfocused,
+					unfocusedRaw: ev.changes.unfocused,
 					unfocused: unfocusedDU
 				}
 			};
 
+			this._currentSelection = evArg;
+
 			this.trigger(SELECTION_CHANGE, evArg);
 		},
+
+		_currentSelection: null,
 
 		/**
 		 * targetで指定された要素を含むBasicDUを返す。 BasicDUに含まれていない場合はnullを返す。
