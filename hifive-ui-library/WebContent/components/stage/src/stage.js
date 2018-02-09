@@ -3584,7 +3584,7 @@
 							if (x === 0 && y === 0) {
 								return;
 							}
-
+							//removeDUが来たら、foreのコピーがあったら消す、なくて必要なら作る
 							var view = this._rootStage._getActiveView();
 							var wx = view._viewport.toWorldX(x);
 							var wy = view._viewport.toWorldY(y);
@@ -6205,7 +6205,8 @@
 				},
 
 				removeDisplayUnit: function(displayUnit) {
-					super_.removeDisplayUnit.call(this, displayUnit);
+					throw new Error('このコンテナから直接DisplayUnitを削除することはできません。');
+					//this.removeSourceDisplayUnit(displayUnit.sourceDisplayUnit);
 				}
 			}
 		};
@@ -6371,6 +6372,14 @@
 						},
 
 						_getCoveringContainers: function(du) {
+							var index = this._getCoveringContainersSliceIndex(du);
+							if (index == null) {
+								return [];
+							}
+							return this._viewportContainers.slice(index.begin, index.end);
+						},
+
+						_getCoveringContainersSliceIndex: function(du) {
 							var numPartitions = this._viewportContainers.length;
 
 							var globalPos = du.getWorldGlobalPosition();
@@ -6381,7 +6390,7 @@
 								if (globalPos.y > this.y + this.height
 										|| globalPos.y + du.height < this.y) {
 									//このビューポートの下または上にDUがある場合はどのコンテナにも含まれない
-									return [];
+									return null;
 								}
 
 								var partitionWidth = this.width / numPartitions;
@@ -6392,7 +6401,7 @@
 								var endIndex = Math.floor((duvpx + du.width) / partitionWidth) + 1;
 
 								if (beginIndex >= numPartitions || endIndex < 0) {
-									return [];
+									return null;
 								}
 
 								var sliceBeginIndex = beginIndex;
@@ -6405,8 +6414,11 @@
 									sliceEndIndex = numPartitions;
 								}
 
-								return this._viewportContainers.slice(sliceBeginIndex,
-										sliceEndIndex);
+								var retH = {
+									begin: sliceBeginIndex,
+									end: sliceEndIndex
+								};
+								return retH;
 							}
 
 							//以下は垂直方向にスタックした場合
@@ -6414,7 +6426,7 @@
 							if (globalPos.x + du.width < this.x
 									|| globalPos.x > this.x + this.width) {
 								//このビューポートの左または右にDUがある場合はどのコンテナにも含まれない
-								return [];
+								return null;
 							}
 
 							var partitionHeight = this.height / numPartitions;
@@ -6425,7 +6437,7 @@
 							var endIndex = Math.floor((duvpy + du.height) / partitionHeight);
 
 							if (beginIndex >= numPartitions || endIndex < 0) {
-								return [];
+								return null;
 							}
 
 							var sliceBeginIndex = beginIndex;
@@ -6438,7 +6450,11 @@
 								sliceEndIndex = numPartitions;
 							}
 
-							return this._viewportContainers.slice(sliceBeginIndex, sliceEndIndex);
+							var retV = {
+								begin: sliceBeginIndex,
+								end: sliceEndIndex
+							};
+							return retV;
 						},
 
 						_generateContainerId: function() {
@@ -6463,7 +6479,37 @@
 							}
 						},
 
+						/**
+						 * DUの位置・大きさが更新されたときに、新しく範囲内に含まれる位置にDUを追加します。
+						 *
+						 * @param displayUnit
+						 */
+						_updateInOut: function(displayUnit) {
+							var coveringIndex = this._getCoveringContainersSliceIndex(displayUnit);
+
+							var vcs = this._viewportContainers;
+							for (var i = 0, len = vcs.length; i < len; i++) {
+								var vc = vcs[i];
+								if (coveringIndex.begin <= i && i < coveringIndex.end) {
+									//DUの現在の範囲内
+									var proxyDU = vc.getProxyDisplayUnit(displayUnit);
+									if (!proxyDU) {
+										vc.addSourceDisplayUnit(displayUnit);
+									}
+								} else {
+									//DUの現在の範囲外
+									if (displayUnit.isDragging || displayUnit.isResizing) {
+										//ドラッグまたはリサイズ中は削除しない
+										continue;
+									}
+									vc.removeSourceDisplayUnit(displayUnit); //TODO リサイズorドラッグ完了時に掃除が必要
+								}
+							}
+						},
+
 						_duDirtyListener: function(event) {
+							this._updateInOut(event.displayUnit);
+
 							var proxies = this._plane._proxyManager
 									.getAllProxiesOf(event.displayUnit);
 							var reasons = event.reason.getAll();
@@ -8297,7 +8343,22 @@
 							this._dragTargetDUInfoMap = new Map();
 
 							var that = this;
+
+							var stageTargetDUs = [];
 							targetDUs.forEach(function(du) {
+								if (ProxyDisplayUnit.isClassOf(du)) {
+									//ProxyDUは一旦除外する追加しない
+								} else if (!SingleLayerPlane.isClassOf(du._rootStage)) {
+									stageTargetDUs.push(du);
+								} else {
+									//別PlaneにあるソースDUのときに、関連するProxyDUをまとめて追加する
+									var plane = du._rootStage;
+									var proxyDUs = plane._proxyManager.getAllProxiesOf(du);
+									Array.prototype.push.apply(stageTargetDUs, proxyDUs);
+								}
+							});
+
+							stageTargetDUs.forEach(function(du) {
 								var element = du.__renderDOM(that);
 								var $element = $(element);
 								//isVisible=falseをすることでDOMにdisplay:noneがつくので
@@ -11886,13 +11947,16 @@
 		},
 
 		isSelected: function(displayUnit) {
-			var isSelected = this._selectionLogic.isSelected(displayUnit);
-			return isSelected;
+			return displayUnit.isSelected;
+			//TODO 削除でよいはず。ProxyDUの場合にselectionLogic側での判定だと失敗する可能性がある。
+			//			var isSelected = this._selectionLogic.isSelected(displayUnit);
+			//			return isSelected;
 		},
 
 		focus: function(displayUnit) {
 			if (displayUnit.isSelectable) {
-				return this._selectionLogic.focus(displayUnit);
+				var sourceDU = this._getSourceDU(displayUnit);
+				return this._selectionLogic.focus(sourceDU);
 			}
 		},
 
@@ -11906,8 +11970,9 @@
 		},
 
 		isFocused: function(displayUnit) {
-			var isFocused = this._selectionLogic.isFocused(displayUnit);
-			return isFocused;
+			return displayUnit.isFocused;
+			//			var isFocused = this._selectionLogic.isFocused(displayUnit);
+			//			return isFocused;
 		},
 
 		/**
@@ -12723,6 +12788,9 @@
 					targetDU = targetDU.filter(function(dragTargetDU) {
 						return dragTargetDU.isDraggable;
 					});
+
+					//ProxyDUが選択状態のとき
+
 					this._dragSession.setTargets(targetDU);
 
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
