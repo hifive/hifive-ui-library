@@ -641,10 +641,10 @@
 
 					this._setDraggingFlag(false);
 
-					this._cleanUp();
-
 					var event = Event.create('dragSessionEnd');
 					this.dispatchEvent(event);
+
+					this._cleanUp();
 				},
 
 				/**
@@ -670,10 +670,10 @@
 
 					this._setDraggingFlag(false);
 
-					this._cleanUp();
-
 					var event = Event.create('dragSessionCancel');
 					this.dispatchEvent(event);
+
+					this._cleanUp();
 				},
 
 				//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
@@ -1039,10 +1039,12 @@
 					}
 					this._isCompleted = true;
 
-					this._cleanUp();
+					this._setResizingFlag(false);
 
 					var event = Event.create('resizeSessionEnd');
 					this.dispatchEvent(event);
+
+					this._cleanUp();
 				},
 
 				/**
@@ -1066,10 +1068,12 @@
 						this._rollbackStates();
 					}
 
-					this._cleanUp();
+					this._setResizingFlag(false);
 
 					var event = Event.create('resizeSessionCancel');
 					this.dispatchEvent(event);
+
+					this._cleanUp();
 				},
 
 				//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
@@ -1387,8 +1391,6 @@
 					this._resizeFunction = null;
 					this._resizeFunctionDataMap = null;
 					this._constraintOverrideMap = null;
-
-					this._setResizingFlag(false);
 
 					if (this._proxyElement) {
 						$(this._proxyElement).remove();
@@ -6479,12 +6481,33 @@
 							}
 						},
 
+						updateProxies: function(displayUnits) {
+							if (!displayUnits) {
+								return;
+							}
+
+							if (!Array.isArray(displayUnits)) {
+								displayUnits = [displayUnits];
+							}
+
+							for (var i = 0, len = displayUnits.length; i < len; i++) {
+								var du = displayUnits[i];
+								this._updateProxiesOf(du);
+							}
+						},
+
 						/**
 						 * DUの位置・大きさが更新されたときに、新しく範囲内に含まれる位置にDUを追加します。
+						 * また、範囲外のDUを削除します。ただし、ドラッグ中またはリサイズ中のDUは削除対象外にします。
 						 *
 						 * @param displayUnit
 						 */
-						_updateInOut: function(displayUnit) {
+						_updateProxiesOf: function(displayUnit) {
+							if (displayUnit._rootStage !== this._plane) {
+								//このビューポートが属するPlaneのDUでない場合は何もしない
+								return;
+							}
+
 							var coveringIndex = this._getCoveringContainersSliceIndex(displayUnit);
 
 							var vcs = this._viewportContainers;
@@ -6502,13 +6525,15 @@
 										//ドラッグまたはリサイズ中は削除しない
 										continue;
 									}
-									vc.removeSourceDisplayUnit(displayUnit); //TODO リサイズorドラッグ完了時に掃除が必要
+
+									//空振りする場合がある
+									vc.removeSourceDisplayUnit(displayUnit);
 								}
 							}
 						},
 
 						_duDirtyListener: function(event) {
-							this._updateInOut(event.displayUnit);
+							this.updateProxies(event.displayUnit);
 
 							var proxies = this._plane._proxyManager
 									.getAllProxiesOf(event.displayUnit);
@@ -6528,15 +6553,12 @@
 
 							var du = event.displayUnit;
 
-							//FIXME 適切なコンテナからのみremoveする
+							//TODO 適切なコンテナからのみremoveする。ただし、今のコードでも問題はない（空振りするだけ）
 							var numPartitions = this._viewportContainers.length;
 							for (var i = 0; i < numPartitions; i++) {
 								var vc = this._viewportContainers[i];
 								vc.removeDisplayUnit(du);
 							}
-
-							//					var vc = this._viewportContainers[0];
-							//					vc.removeDisplayUnit(du);
 						}
 					}
 
@@ -6771,18 +6793,6 @@
 				_proxyManager: null
 			},
 
-			//
-			//			accessor: {
-			//				id: {
-			//					get: function() {
-			//						return this._id;
-			//					},
-			//					set: function(id) {
-			//						this._id = id;
-			//					}
-			//				}
-			//			},
-
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.SingleLayerPlane
@@ -6847,6 +6857,12 @@
 					this._proxyManager.removeAllProxies(displayUnit);
 
 					this._layer.removeDisplayUnit(displayUnit);
+				},
+
+				updateAllViewports: function(displayUnits) {
+					this._viewports.forEach(function(vp) {
+						vp.updateProxies(displayUnits);
+					});
 				},
 
 				_onDUAdd: function(event) {
@@ -13531,6 +13547,15 @@
 			this._dragSession.removeEventListener('dragSessionCancel',
 					this._dragSessionCancelHandlerWrapper);
 
+			var targetDUs = this._dragSession.getTargets();
+
+			if (this._planes) {
+				//Planeのすべてのビューポートをリフレッシュする（ドラッグ・リサイズ中に追加して不要になったDUの削除等が行われる）
+				this._planes.forEach(function(plane) {
+					plane.updateAllViewports(targetDUs);
+				});
+			}
+
 			this._dragSession = null; //TODO dragSessionをdisposeする
 		},
 
@@ -13542,6 +13567,15 @@
 					this._resizeSessionEndHandlerWrapper);
 			this._resizeSession.removeEventListener('resizeSessionCancel',
 					this._resizeSessionCancelHandlerWrapper);
+
+			var targetDUs = this._resizeSession.getTargets();
+
+			if (this._planes) {
+				//Planeのすべてのビューポートをリフレッシュする（ドラッグ・リサイズ中に追加して不要になったDUの削除等が行われる）
+				this._planes.forEach(function(plane) {
+					plane.updateAllViewports(targetDUs);
+				});
+			}
 
 			this._resizeSession = null; //TODO resizeSessionをdisposeする
 		},
