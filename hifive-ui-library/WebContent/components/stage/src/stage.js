@@ -509,6 +509,8 @@
 				 */
 				_targets: null,
 
+				_onStageTargets: null,
+
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTargets()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
@@ -615,6 +617,15 @@
 
 				begin: function() {
 					this._setDraggingFlag(true);
+
+					this._onStageTargets = this._stage
+							._getOnStageNormalizedDisplayUnits(this._targets);
+
+					this._onStageTargets.forEach(function(du) {
+						if (ProxyDisplayUnit.isClassOf(du)) {
+							du.isSyncEnabled = false;
+						}
+					});
 				},
 
 				/**
@@ -640,6 +651,12 @@
 					}
 
 					this._setDraggingFlag(false);
+
+					this._onStageTargets.forEach(function(du) {
+						if (ProxyDisplayUnit.isClassOf(du)) {
+							du.isSyncEnabled = true;
+						}
+					});
 
 					var event = Event.create('dragSessionEnd');
 					this.dispatchEvent(event);
@@ -669,6 +686,12 @@
 					}
 
 					this._setDraggingFlag(false);
+
+					this._onStageTargets.forEach(function(du) {
+						if (ProxyDisplayUnit.isClassOf(du)) {
+							du.isSyncEnabled = true;
+						}
+					});
 
 					var event = Event.create('dragSessionCancel');
 					this.dispatchEvent(event);
@@ -757,7 +780,7 @@
 						return;
 					}
 
-					var targets = this._targets;
+					var targets = this._onStageTargets;
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
@@ -782,6 +805,11 @@
 						if (move.isWorld === true) {
 							du.moveBy(dx, dy);
 						} else {
+							//							var view = this._stage._getActiveView();
+							//							var wdx = view._viewport.toWorldX(dx);
+							//							var wdy = view._viewport.toWorldY(dy);
+							//							du.moveBy(wdx, wdy);
+
 							du.moveDisplayBy(dx, dy);
 						}
 					}
@@ -810,6 +838,8 @@
 				 */
 				_cleanUp: function() {
 					this._targets = null;
+					this._onStageTargets = null;
+
 					this._targetInitialPositions = null;
 					this._targetInitialParentDU = null;
 					this._moveFunction = null;
@@ -4425,7 +4455,11 @@
 				},
 
 				getAllProxiesOf: function(sourceDisplayUnit) {
-					return this._sourceToProxyMap.get(sourceDisplayUnit);
+					var proxies = this._sourceToProxyMap.get(sourceDisplayUnit);
+					if (!proxies) {
+						return [];
+					}
+					return proxies;
 				},
 
 				removeAllProxies: function(sourceDisplayUnit) {
@@ -4461,7 +4495,8 @@
 			field: {
 				_sourceDU: null,
 				_viewportContainer: null,
-				_isSelectedOfThisProxy: null
+				_isSelectedOfThisProxy: null,
+				_isSyncEnabled: null
 			},
 
 			accessor: {
@@ -4487,12 +4522,6 @@
 						if (this._sourceDU.isEditable === value) {
 							return;
 						}
-
-						//if (this._sourceDU.isEditable === true && value === false) {
-						//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
-						//	this._sourceDU.cancelEdit();
-						//}
-
 						this._sourceDU.isEditable = value;
 					}
 				},
@@ -4550,37 +4579,14 @@
 
 				/* ----------------------------- 以下 DisplayUnitのオーバーライド ------------------------------- */
 
-				x: {
-					get: function() {
-						//TODO キャッシュすると多少高速化可能
-						return this._sourceDU.x - this._viewportContainer.viewportX;
-					},
-					set: function(value) {
-						//TODO ソースDUがルートに直接配置されている前提。コンテナに含まれている場合の考慮は今後追加
-						this._sourceDU.x = value + this._viewportContainer.viewportX;
-
-						//						this._worldGlobalPositionCache = null;
-						//						this._setDirty(REASON_POSITION_CHANGE);
-					}
-				},
-				y: {
-					get: function() {
-						return this._sourceDU.y - this._viewportContainer.viewportY;
-					},
-					set: function(value) {
-						this._sourceDU.y = value + this._viewportContainer.viewportY;
-
-						//						this._worldGlobalPositionCache = null;
-						//						this._setDirty(REASON_POSITION_CHANGE);
-					}
-				},
-
 				zIndex: {
 					get: function() {
 						return this._sourceDU.zIndex;
 					},
 					set: function(value) {
 						this._sourceDU.zIndex = value;
+
+						//TODO zIndexは表示固有としてProxy側で持つべき
 
 						//						var dirtyReason = {
 						//							type: REASON_Z_INDEX_CHANGE,
@@ -4597,8 +4603,6 @@
 					},
 					set: function(value) {
 						this._sourceDU.width = value;
-
-						//						this._setDirty(REASON_SIZE_CHANGE);
 					}
 				},
 				height: {
@@ -4607,8 +4611,6 @@
 					},
 					set: function(value) {
 						this._sourceDU.height = value;
-
-						//						this._setDirty(REASON_SIZE_CHANGE);
 					}
 				},
 				groupTag: {
@@ -4629,8 +4631,6 @@
 					},
 					set: function(value) {
 						this._sourceDU.isVisible = value;
-
-						//						this._setDirty(REASON_VISIBILITY_CHANGE);
 					}
 				},
 
@@ -4640,11 +4640,6 @@
 					},
 					set: function(value) {
 						this._sourceDU.isSelectable = value;
-
-						//						if (value === false) {
-						//							//選択不能になったので、選択状態を解除
-						//							this.unselect();
-						//						}
 					}
 				},
 
@@ -4676,6 +4671,24 @@
 					set: function(value) {
 						this._sourceDU.extraData = value;
 					}
+				},
+
+				isSyncEnabled: {
+					get: function() {
+						return this._isSyncEnabled;
+					},
+					set: function(value) {
+						if (this._isSyncEnabled !== value) {
+							//現在の値とvalueが異なり、かつvalueがtrue ＝ フラグがtrueに変わるので、syncを行うべき
+							var shouldSyncNow = (value === true);
+
+							this._isSyncEnabled = value;
+
+							if (shouldSyncNow) {
+								this.sync();
+							}
+						}
+					}
 				}
 			},
 
@@ -4690,12 +4703,16 @@
 
 					this._logicalId = sourceDisplayUnit.id;
 
+					this._isSyncEnabled = true;
+
 					//TODO プロキシをStageに追加した時点でソースDUがisSelected===trueの場合にstage.select()する必要がある
 					this._isSelectedOfThisProxy = sourceDisplayUnit.isSelected;
 
 					super_.constructor.call(this, id);
 					this._sourceDU = sourceDisplayUnit;
 					this._viewportContainer = viewportContainer;
+
+					this.sync();
 				},
 
 				setRect: function(rect) {
@@ -4706,12 +4723,25 @@
 					return this._sourceDU.setSize(width, height);
 				},
 
-				moveTo: function(worldX, worldY) {
-					return this._sourceDU.moveTo(worldX, worldY);
+				sync: function() {
+					if (!this._sourceDU) {
+						return;
+					}
+
+					var src = this._sourceDU;
+
+					var myX = src.x - this._viewportContainer.viewportX;
+					var myY = src.y - this._viewportContainer.viewportY;
+
+					this.moveTo(myX, myY);
 				},
 
-				moveBy: function(worldDx, worldDy) {
-					return this._sourceDU.moveBy(worldDx, worldDy);
+				_setDirty: function(reasons) {
+					if (this.isSyncEnabled) {
+						this.sync();
+					}
+
+					super_._setDirty.call(this, reasons);
 				},
 
 				__renderDOM: function(view) {
@@ -6224,7 +6254,7 @@
 								}
 								this._orientation = isHorizontal;
 							}
-						},
+						}
 
 					},
 
@@ -6786,7 +6816,7 @@
 
 					this._proxyManager = ProxyManager.create();
 
-					this._layer = Layer.create('singleLayerPlane-rootLayer', this, 'virtual');
+					this._layer = Layer.create('singleLayerPlane-rootLayer', this, 'svg');
 
 					var that = this;
 					var duAddListener = function(event) {
@@ -8334,27 +8364,13 @@
 						 */
 						__onDragDUStart: function(dragSession) {
 							var targetDUs = dragSession.getTargets();
-							if (!Array.isArray(targetDUs)) {
-								targetDUs = [targetDUs];
-							}
 
 							this._dragTargetDUInfoMap = new Map();
 
 							var that = this;
 
-							var stageTargetDUs = [];
-							targetDUs.forEach(function(du) {
-								if (ProxyDisplayUnit.isClassOf(du)) {
-									//ProxyDUは一旦除外する追加しない
-								} else if (!SingleLayerPlane.isClassOf(du._rootStage)) {
-									stageTargetDUs.push(du);
-								} else {
-									//別PlaneにあるソースDUのときに、関連するProxyDUをまとめて追加する
-									var plane = du._rootStage;
-									var proxyDUs = plane._proxyManager.getAllProxiesOf(du);
-									Array.prototype.push.apply(stageTargetDUs, proxyDUs);
-								}
-							});
+							var stageTargetDUs = this._stage
+									._getOnStageNormalizedDisplayUnits(targetDUs);
 
 							stageTargetDUs.forEach(function(du) {
 								var element = du.__renderDOM(that);
@@ -12171,9 +12187,68 @@
 		},
 
 		/**
+		 * @private
+		 * @param sourceDisplayUnit
+		 * @returns {Array}
+		 */
+		_getAllProxyDisplayUnitsOf: function(sourceDisplayUnit) {
+			if (!sourceDisplayUnit) {
+				return [];
+			}
+
+			if (ProxyDisplayUnit.isClassOf(sourceDisplayUnit)) {
+				return [sourceDisplayUnit];
+			}
+
+			if (!this._planes) {
+				return [];
+			}
+
+			var ret = [];
+			this._planes.forEach(function(plane) {
+				var proxies = plane._proxyManager.getAllProxiesOf(sourceDisplayUnit);
+				Array.prototype.push.apply(ret, proxies);
+			});
+			return ret;
+		},
+
+		/**
+		 * @private
+		 * @param displayUnits
+		 * @returns {Array}
+		 */
+		_getOnStageNormalizedDisplayUnits: function(displayUnits) {
+			if (displayUnits == null) {
+				return [];
+			}
+
+			if (!Array.isArray(displayUnits)) {
+				displayUnits = [displayUnits];
+			}
+
+			var ret = [];
+
+			for (var i = 0, len = displayUnits.length; i < len; i++) {
+				var du = displayUnits[i];
+				if (SingleLayerPlane.isClassOf(du._rootStage)) {
+					var proxies = this._getAllProxyDisplayUnitsOf(du);
+					for (var j = 0, jLen = proxies.length; j < jLen; j++) {
+						this._pushIfNotExist(ret, proxies[j]);
+					}
+				} else {
+					//Stage上に存在しているDUの場合はそのまま追加
+					this._pushIfNotExist(ret, du);
+				}
+			}
+
+			return ret;
+		},
+
+		/**
 		 * 引数で渡されたDUの配列から、論理DUの配列に正規化したものを生成して返します。
 		 * 同じ論理DUにマップされるProxyDUが複数ある場合でも、戻り値には1つの論理DUのみが含まれます。
 		 *
+		 * @private
 		 * @param displayUnits
 		 * @returns {Array}
 		 */
@@ -12877,6 +12952,11 @@
 						this._disposeDragSession();
 						return;
 					}
+
+					//ProxyDUがユーザーによって追加された場合に備えて正規化する
+					var normalizedTargets = this._getSourceNormalizedDisplayUnits(this._dragSession
+							.getTargets());
+					this._dragSession.setTargets(normalizedTargets);
 
 					this._currentDragMode = DRAG_MODE_DU_DRAG;
 					this._setRootCursor('default');
