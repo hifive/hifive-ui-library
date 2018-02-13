@@ -5509,9 +5509,10 @@
 						 * @param reason
 						 */
 						__updateDOM: function(view, line, reason) {
+							var isLogicallyVisible = this._isVisible && this._isSystemVisible;
+
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
-								line.style.display = this._isVisible && this._isSystemVisible ? ''
-										: 'none';
+								line.style.display = isLogicallyVisible ? '' : 'none';
 							}
 
 							if (!reason.isInitialRender && !reason.isRenderRequested
@@ -5521,12 +5522,15 @@
 
 							this._updateLinePosition();
 
-							if (!this._isDrawable && line.style.display !== 'none') {
-								line.style.display = 'none';
-							} else if (this._isDrawable && line.style.display === 'none') {
-								line.style.display = '';
+							if (isLogicallyVisible) {
+								//論理的には表示状態だが、From/ToどちらかのDUがStage上にないために
+								//実際には表示できない場合、非表示にするs
+								if (!this._isDrawable && line.style.display !== 'none') {
+									line.style.display = 'none';
+								} else if (this._isDrawable && line.style.display === 'none') {
+									line.style.display = '';
+								}
 							}
-
 
 							//Edgeの場合、自身が最初のrender時に返しているのは<line>なので、
 							//Update時に渡されるelementはline要素である
