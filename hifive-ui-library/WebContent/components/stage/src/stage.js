@@ -278,6 +278,7 @@
 	var REASON_FOCUS_CHANGE = '__duFocusChange__';
 	var REASON_GLOBAL_POSITION_CHANGE = '__duGlobalPositionChange__';
 	var REASON_EDIT_CHANGE = '__duEditChange__';
+	var REASON_UPDATE_DEPENDENCY_REQUEST = '__duUpdateDependencyRequest__';
 
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
@@ -291,7 +292,8 @@
 		SELECTION_CHANGE: REASON_SELECTION_CHANGE,
 		FOCUS_CHANGE: REASON_FOCUS_CHANGE,
 		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE,
-		REASON_EDIT_CHANGE: REASON_EDIT_CHANGE
+		EDIT_CHANGE: REASON_EDIT_CHANGE,
+		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST
 	};
 
 	h5.u.obj.expose('h5.ui.components.stage', {
@@ -302,6 +304,32 @@
 		RenderPriority: RenderPriority
 	});
 
+	function getUniqueArray(array) {
+		if (!array) {
+			return [];
+		}
+
+		var ret = [];
+		for (var i = 0, len = array.length; i < len; i++) {
+			var elem = array[i];
+			if (ret.indexOf(elem) === -1) {
+				ret.push(elem);
+			}
+		}
+		return ret;
+	}
+
+	function getUniquelyMergedArray(array1, array2) {
+		var ret = array1.slice(0);
+
+		array2.forEach(function(elem) {
+			if (ret.indexOf(elem) === -1) {
+				ret.push(elem);
+			}
+		});
+
+		return ret;
+	}
 
 	function containsElement(element, containerElement) {
 		return containerElement.compareDocumentPosition(element)
@@ -595,7 +623,8 @@
 				},
 
 				setTargets: function(targets) {
-					this._targets = Array.isArray(targets) ? targets : [targets];
+					var t = Array.isArray(targets) ? targets : [targets];
+					this._targets = getUniqueArray(t);
 					this._saveInitialStates();
 				},
 
@@ -664,6 +693,13 @@
 
 					this._setDraggingFlag(false);
 
+					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+					//依存しているDUのアップデートを要求する
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
+
 					var event = Event.create('dragSessionEnd');
 					this.dispatchEvent(event);
 
@@ -692,6 +728,11 @@
 					}
 
 					this._setDraggingFlag(false);
+
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
 
 					var event = Event.create('dragSessionCancel');
 					this.dispatchEvent(event);
@@ -1026,7 +1067,8 @@
 				 * @param {number} y
 				 */
 				setTargets: function(targets) {
-					this._targets = Array.isArray(targets) ? targets : [targets];
+					var t = Array.isArray(targets) ? targets : [targets];
+					this._targets = getUniqueArray(t);
 					this._saveInitialStates();
 				},
 
@@ -1093,6 +1135,13 @@
 
 					this._setResizingFlag(false);
 
+					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+					//依存しているDUのアップデートを要求する
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
+
 					var event = Event.create('resizeSessionEnd');
 					this.dispatchEvent(event);
 
@@ -1121,6 +1170,13 @@
 					}
 
 					this._setResizingFlag(false);
+
+					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+					//依存しているDUのアップデートを要求する
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
 
 					var event = Event.create('resizeSessionCancel');
 					this.dispatchEvent(event);
@@ -4036,6 +4092,12 @@
 					get: function() {
 						return this.has(REASON_EDIT_CHANGE);
 					}
+				},
+
+				isUpdateDependencyRequested: {
+					get: function() {
+						return this.has(REASON_UPDATE_DEPENDENCY_REQUEST);
+					}
 				}
 			},
 
@@ -5032,7 +5094,8 @@
 								var reason = event.reason;
 
 								if (reason.isPositionChanged || reason.isSizeChanged
-										|| reason.isGlobalPositionChanged) {
+										|| reason.isGlobalPositionChanged
+										|| reason.isUpdateDependencyRequested) {
 									that.requestRender();
 								}
 							};
