@@ -4899,6 +4899,10 @@
 						if (!reasons) {
 							reasons = [];
 						}
+						if (!Array.isArray(reasons)) {
+							reasons = [reasons];
+						}
+
 						reasons.push(REASON_POSITION_CHANGE);
 						this._worldGlobalPositionCache = null;
 					}
