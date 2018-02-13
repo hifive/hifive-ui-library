@@ -621,9 +621,21 @@
 					this._onStageTargets = this._stage
 							._getOnStageNormalizedDisplayUnits(this._targets);
 
+					var rawFocusedDU = this._stage._getOnStageFocusedDisplayUnit();
+
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
-							du.isSyncEnabled = false;
+							var forceRepresentativeDU = null;
+							if (ProxyDisplayUnit.isClassOf(rawFocusedDU)
+									&& du.sourceDisplayUnit === rawFocusedDU.sourceDisplayUnit) {
+								forceRepresentativeDU = rawFocusedDU;
+							}
+
+							//TODO viewportsが複数の場合への対応
+							//OnStageなProxyDUについて、どれが代表DUかを変更する
+							var plane = du.viewportContainer._plane;
+							plane._viewports[0].updateProxyRepresentative(du.sourceDisplayUnit,
+									forceRepresentativeDU);
 						}
 					});
 				},
@@ -654,7 +666,7 @@
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
-							du.isSyncEnabled = true;
+							//							du.isSyncEnabled = true;
 						}
 					});
 
@@ -689,7 +701,7 @@
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
-							du.isSyncEnabled = true;
+							//							du.isSyncEnabled = true;
 						}
 					});
 
@@ -3570,13 +3582,13 @@
 						moveTo: function(worldX, worldY) {
 							var isPositionChanged = false;
 
-							if (this.x !== worldX) {
-								this.x = worldX;
+							if (this._x !== worldX) {
+								this._x = worldX;
 								isPositionChanged = true;
 							}
 
-							if (this.y !== worldY) {
-								this.y = worldY;
+							if (this._y !== worldY) {
+								this._y = worldY;
 								isPositionChanged = true;
 							}
 
@@ -3592,8 +3604,8 @@
 								return;
 							}
 
-							this.x += worldDx;
-							this.y += worldDy;
+							this._x += worldDx;
+							this._y += worldDy;
 							this._worldGlobalPositionCache = null;
 							this._setDirty(REASON_POSITION_CHANGE);
 						},
@@ -4462,6 +4474,33 @@
 					return proxies;
 				},
 
+				getRepresentativeProxy: function(sourceDisplayUnit) {
+					var proxies = this.getAllProxiesOf(sourceDisplayUnit);
+					for (var i = 0, len = proxies.length; i < len; i++) {
+						var p = proxies[i];
+						if (p._isRepresentative) {
+							return p;
+						}
+					}
+					return null;
+				},
+
+				getProxyIn: function(sourceDisplayUnit, viewportContainer) {
+					var proxies = this._sourceToProxyMap.get(sourceDisplayUnit);
+					if (!proxies) {
+						return null;
+					}
+
+					for (var i = 0, len = proxies.length; i < len; i++) {
+						var p = proxies[i];
+
+						if (p.viewportContainer === viewportContainer) {
+							return p;
+						}
+					}
+					return null;
+				},
+
 				removeAllProxies: function(sourceDisplayUnit) {
 					this._sourceToProxyMap['delete'](sourceDisplayUnit);
 				},
@@ -4496,7 +4535,8 @@
 				_sourceDU: null,
 				_viewportContainer: null,
 				_isSelectedOfThisProxy: null,
-				_isSyncEnabled: null
+				_isSyncEnabled: null,
+				_isRepresentative: null
 			},
 
 			accessor: {
@@ -4578,6 +4618,37 @@
 				},
 
 				/* ----------------------------- 以下 DisplayUnitのオーバーライド ------------------------------- */
+
+				//TODO x,yはPlane直下に存在することを仮定している
+				x: {
+					get: function() {
+						return this._x;
+					},
+					set: function(value) {
+						if (this.isDragging) {
+							if (this._isRepresentative) {
+								this._sourceDU.x = value + this._viewportContainer.viewportX;
+							}
+							return;
+						}
+						this._sourceDU.x = value + this._viewportContainer.viewportX;
+					}
+				},
+
+				y: {
+					get: function() {
+						return this._y;
+					},
+					set: function(value) {
+						if (this.isDragging) {
+							if (this._isRepresentative) {
+								this._sourceDU.y = value + this._viewportContainer.viewportY;
+							}
+							return;
+						}
+						this._sourceDU.y = value + this._viewportContainer.viewportY;
+					}
+				},
 
 				zIndex: {
 					get: function() {
@@ -4704,6 +4775,7 @@
 					this._logicalId = sourceDisplayUnit.id;
 
 					this._isSyncEnabled = true;
+					this._isRepresentative = false;
 
 					//TODO プロキシをStageに追加した時点でソースDUがisSelected===trueの場合にstage.select()する必要がある
 					this._isSelectedOfThisProxy = sourceDisplayUnit.isSelected;
@@ -4723,7 +4795,7 @@
 					return this._sourceDU.setSize(width, height);
 				},
 
-				sync: function() {
+				sync: function(reasons) {
 					if (!this._sourceDU) {
 						return;
 					}
@@ -4733,15 +4805,51 @@
 					var myX = src.x - this._viewportContainer.viewportX;
 					var myY = src.y - this._viewportContainer.viewportY;
 
-					this.moveTo(myX, myY);
+					var isPositionChanged = false;
+
+					if (this._x !== myX) {
+						this._x = myX;
+						isPositionChanged = true;
+					}
+
+					if (this._y !== myY) {
+						this._y = myY;
+						isPositionChanged = true;
+					}
+
+					if (isPositionChanged) {
+						if (!reasons) {
+							reasons = [];
+						}
+						reasons.push(REASON_POSITION_CHANGE);
+						this._worldGlobalPositionCache = null;
+					}
+
+					super_._setDirty.call(this, reasons);
+				},
+
+				moveTo: function(worldX, worldY) {
+					if (!this.isDragging) {
+						this._sourceDU.moveTo(worldX, worldY);
+					} else if (this._isRepresentative) {
+						this._sourceDU.moveTo(worldX, worldY);
+					}
+				},
+
+				moveBy: function(worldDx, worldDy) {
+					if (!this.isDragging) {
+						this._sourceDU.moveBy(worldDx, worldDy);
+					} else if (this._isRepresentative) {
+						this._sourceDU.moveBy(worldDx, worldDy);
+					}
 				},
 
 				_setDirty: function(reasons) {
 					if (this.isSyncEnabled) {
-						this.sync();
+						this.sync(reasons);
+					} else {
+						super_._setDirty.call(this, reasons);
 					}
-
-					super_._setDirty.call(this, reasons);
 				},
 
 				__renderDOM: function(view) {
@@ -4817,6 +4925,8 @@
 						_endpoint_propertyChangeListener: null,
 
 						_isUpdateLinePositionRequired: null,
+
+						_isDrawable: null,
 
 						_x1: null,
 						_x2: null,
@@ -4897,6 +5007,8 @@
 							this._endpointTo = EdgeEndpoint.create();
 
 							this._isUpdateLinePositionRequired = true;
+
+							this._isDrawable = true;
 
 							var that = this;
 
@@ -5118,11 +5230,26 @@
 							}
 
 							var actualDUFrom = this._getActualDU(this._from, x1, y1);
+							var actualDUTo = this._getActualDU(this._to, x2, y2);
+
+							if (!actualDUFrom || !actualDUTo) {
+								//actualを取得した結果、対応するProxyが存在しない可能性がある。その場合は
+								//Edgeは一時的に非表示にする
+								this._isDrawable = false;
+								this._x1 = 0;
+								this._x2 = 0;
+								this._y1 = 0;
+								this._y2 = 0;
+								super_.setRect.call(this, 0, 0, 0, 0);
+								return;
+							}
+
+							this._isDrawable = true;
+
 							var actualFromPos = this._getActualGlobalPosition(actualDUFrom, x1, y1);
 							var ax1 = actualFromPos.x;
 							var ay1 = actualFromPos.y;
 
-							var actualDUTo = this._getActualDU(this._to, x2, y2);
 							var actualToPos = this._getActualGlobalPosition(actualDUTo, x2, y2);
 							var ax2 = actualToPos.x;
 							var ay2 = actualToPos.y;
@@ -5149,6 +5276,13 @@
 
 							//sourceDUの親DUは(SingleLayerPlaneの)Layer
 							var plane = sourceDU._rootStage;
+
+							if (sourceDU.isDragging) {
+								//ドラッグ中は代表DUに対して線を引く
+								var reprDU = plane._proxyManager.getRepresentativeProxy(sourceDU);
+								return reprDU;
+							}
+
 							//TODO 現在の実装では、Viewportは重ならないので、対応するProxyDUは必ず1つ
 							var proxyDU = plane.getProxyDisplayUnitsAt(sourceDU, globalX, globalY)[0];
 							return proxyDU;
@@ -5304,6 +5438,13 @@
 							}
 
 							this._updateLinePosition();
+
+							if (!this._isDrawable && line.style.display !== 'none') {
+								line.style.display = 'none';
+							} else if (this._isDrawable && line.style.display === 'none') {
+								line.style.display = '';
+							}
+
 
 							//Edgeの場合、自身が最初のrender時に返しているのは<line>なので、
 							//Update時に渡されるelementはline要素である
@@ -6207,6 +6348,8 @@
 					}
 					this._duduMap['delete'](sourceDisplayUnit);
 
+					this._plane._proxyManager.removeProxy(proxyDU);
+
 					super_.removeDisplayUnit.call(this, proxyDU);
 				},
 
@@ -6385,6 +6528,64 @@
 							return sourceDU;
 						},
 
+						_getRepresentativeDisplayUnit: function(sourceDU) {
+							var numPartitions = this._viewportContainers.length;
+
+							var totalSize = this.width;
+							var duGpos = sourceDU.getWorldGlobalPosition();
+							var globalPos = duGpos.x;
+
+							if (this.orientation !== true) {
+								//垂直方向にスタックの場合
+								totalSize = this.height;
+								globalPos = duGpos.y;
+							}
+
+							var partitionSize = totalSize / numPartitions;
+
+							var idx = Math.floor(globalPos / partitionSize);
+
+							if (idx < 0 || idx >= numPartitions) {
+								return null;
+							}
+
+							var reprContainer = this._viewportContainers[idx];
+							var reprDU = this._plane._proxyManager.getProxyIn(sourceDU,
+									reprContainer);
+							return reprDU;
+						},
+
+						updateProxyRepresentative: function(sourceDU, forceRepresentativeDU) {
+							var proxies = this._plane._proxyManager.getAllProxiesOf(sourceDU);
+							if (!proxies) {
+								return;
+							}
+
+							if (forceRepresentativeDU) {
+								//このDUを代表にすると強制されている場合
+								for (var i = 0, len = proxies.length; i < len; i++) {
+									var p = proxies[i];
+									if (p === forceRepresentativeDU) {
+										p._isRepresentative = true;
+									} else {
+										p._isRepresentative = false;
+									}
+								}
+								return;
+							}
+
+							var reprDU = this._getRepresentativeDisplayUnit(sourceDU);
+
+							for (var i = 0, len = proxies.length; i < len; i++) {
+								var p = proxies[i];
+								if (p === reprDU) {
+									p._isRepresentative = true;
+								} else {
+									p._isRepresentative = false;
+								}
+							}
+						},
+
 						_getCoveringContainers: function(du) {
 							var index = this._getCoveringContainersSliceIndex(du);
 							if (index == null) {
@@ -6520,12 +6721,18 @@
 								return;
 							}
 
+							if (displayUnit.isDragging || displayUnit.isResizing) {
+								//このソースDUがドラッグまたはリサイズ中はプロキシは削除しない
+								return;
+							}
+
 							var coveringIndex = this._getCoveringContainersSliceIndex(displayUnit);
 
 							var vcs = this._viewportContainers;
 							for (var i = 0, len = vcs.length; i < len; i++) {
 								var vc = vcs[i];
-								if (coveringIndex.begin <= i && i < coveringIndex.end) {
+								if (coveringIndex
+										&& (coveringIndex.begin <= i && i < coveringIndex.end)) {
 									//DUの現在の範囲内
 									var proxyDU = vc.getProxyDisplayUnit(displayUnit);
 									if (!proxyDU) {
@@ -6533,10 +6740,6 @@
 									}
 								} else {
 									//DUの現在の範囲外
-									if (displayUnit.isDragging || displayUnit.isResizing) {
-										//ドラッグまたはリサイズ中は削除しない
-										continue;
-									}
 
 									//空振りする場合がある
 									vc.removeSourceDisplayUnit(displayUnit);
@@ -8363,16 +8566,23 @@
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							var targetDUs = dragSession.getTargets();
-
 							this._dragTargetDUInfoMap = new Map();
 
 							var that = this;
 
-							var stageTargetDUs = this._stage
-									._getOnStageNormalizedDisplayUnits(targetDUs);
+							dragSession._onStageTargets.forEach(function(du) {
 
-							stageTargetDUs.forEach(function(du) {
+								//レイヤーに存在する元々のDUは非表示にする
+								var originalDOM = that._domManager.getElement(du);
+								if (originalDOM) {
+									du._updateActualDisplayStyle(originalDOM);
+								}
+
+								if (ProxyDisplayUnit.isClassOf(du) && !du._isRepresentative) {
+									//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
+									return;
+								}
+
 								var element = du.__renderDOM(that);
 								var $element = $(element);
 								//isVisible=falseをすることでDOMにdisplay:noneがつくので
@@ -8407,12 +8617,6 @@
 									});
 									that._foremostDiv.appendChild(element);
 								}
-
-								//レイヤーに存在する元々のDUは非表示にする
-								var originalDOM = that._domManager.getElement(du);
-								if (originalDOM) {
-									du._updateActualDisplayStyle(originalDOM);
-								}
 							});
 						},
 
@@ -8428,7 +8632,10 @@
 						 */
 						__onDragDUDrop: function(dragSession) {
 							var that = this;
-							this._dragTargetDUInfoMap.forEach(function(element, du) {
+
+							//							this._dragTargetDUInfoMap.forEach(function(element, du) {
+
+							dragSession._onStageTargets.forEach(function(du) {
 								var originalDOM = that._domManager.getElement(du);
 								if (originalDOM) {
 									du._updateActualDisplayStyle(originalDOM);
@@ -11576,12 +11783,7 @@
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							var targetDUs = dragSession.getTargets();
-							if (!Array.isArray(targetDUs)) {
-								targetDUs = [targetDUs];
-							}
-
-							targetDUs.forEach(function(du) {
+							dragSession._onStageTargets.forEach(function(du) {
 								//強制的に元のDUを非表示にする
 								du._isForceHidden = true;
 							});
@@ -11605,12 +11807,7 @@
 						 * @private
 						 */
 						__onDragDUDrop: function(dragSession) {
-							var targetDUs = dragSession.getTargets();
-							if (!Array.isArray(targetDUs)) {
-								targetDUs = [targetDUs];
-							}
-
-							targetDUs.forEach(function(du) {
+							dragSession._onStageTargets.forEach(function(du) {
 								//レイヤーに元々属するDUを強制的に非表示にしていたのを解除
 								du._isForceHidden = false;
 							});
@@ -11981,6 +12178,13 @@
 				return null;
 			}
 			return this._currentSelection.focused;
+		},
+
+		_getOnStageFocusedDisplayUnit: function() {
+			if (!this._currentSelection) {
+				return null;
+			}
+			return this._currentSelection.focusedRaw;
 		},
 
 		isFocused: function(displayUnit) {
