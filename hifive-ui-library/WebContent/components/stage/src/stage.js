@@ -3774,12 +3774,12 @@
 						},
 
 						select: function(isExclusive) {
-							if (!this._rootStage) {
+							if (!this._rootStage || !this.isSelectable) {
 								return;
 							}
 
-							if (!this.isSelectable) {
-								//TODO ログを出すべきか
+							if (this._isSelected && isExclusive !== true) {
+								//すでに選択済みで、かつ排他的選択でない場合は何もする必要がない
 								return;
 							}
 
@@ -3787,19 +3787,21 @@
 						},
 
 						unselect: function() {
-							if (!this._rootStage) {
+							if (!this._rootStage || !this._isSelected) {
+								//Stageに追加されていない、もしくはすでに非選択状態の場合は何もしない
 								return;
 							}
+
 							this._rootStage.unselect(this);
 						},
 
 						focus: function() {
-							if (!this._rootStage || SingleLayerPlane.isClassOf(this._rootStage)) {
-								this._isFocused = true;
+							if (!this._rootStage || !this.isSelectable) {
 								return;
 							}
 
-							if (!this.isSelectable) {
+							if (this._isFocused) {
+								//すでにフォーカス状態の場合は何もしない
 								return;
 							}
 
@@ -3810,6 +3812,12 @@
 							if (!this._rootStage) {
 								return;
 							}
+
+							if (!this._isFocused && andUnselect !== true) {
+								//すでに非フォーカス状態で、かつ同時に非選択状態にするオプションが指定されていない場合は何もしない
+								return;
+							}
+
 							this._rootStage.unfocus(andUnselect);
 						},
 
@@ -4907,6 +4915,14 @@
 					}
 
 					super_._setDirty.call(this, reasons);
+				},
+
+				focus: function() {
+					this._sourceDU.focus();
+				},
+
+				unfocus: function(andUnselect) {
+					this._sourceDU.unfocus(andUnselect);
 				},
 
 				moveTo: function(worldX, worldY) {
@@ -7096,7 +7112,9 @@
 
 				_viewports: null,
 
-				_proxyManager: null
+				_proxyManager: null,
+
+				_stage: null
 			},
 
 			method: {
@@ -7106,6 +7124,7 @@
 				constructor: function SingleLayerPlane() {
 					super_.constructor.call(this);
 
+					this._stage = null;
 					this._viewports = [];
 
 					this._proxyManager = ProxyManager.create();
@@ -7173,6 +7192,30 @@
 					this._viewports.forEach(function(vp) {
 						vp.updateProxies(displayUnits);
 					});
+				},
+
+				select: function(displayUnit, isExclusive) {
+					if (this._stage) {
+						this._stage.select(displayUnit, isExclusive);
+					}
+				},
+
+				unselect: function(displayUnit) {
+					if (this._stage) {
+						this._stage.unselect(displayUnit);
+					}
+				},
+
+				focus: function(displayUnit) {
+					if (this._stage) {
+						this._stage.focus(displayUnit);
+					}
+				},
+
+				unfocus: function(andUnselect) {
+					if (this._stage) {
+						this._stage.unfocus(andUnselect);
+					}
 				},
 
 				_onDUAdd: function(event) {
@@ -12226,8 +12269,8 @@
 			return ret;
 		},
 
-		unselect: function(du) {
-			this._selectionLogic.unselect(du);
+		unselect: function(displayUnit) {
+			this._selectionLogic.unselect(displayUnit);
 		},
 
 		unselectAll: function() {
@@ -12637,12 +12680,14 @@
 			var isFocusDirtyNotified = false;
 
 			//今回新たに選択されたDUの選択フラグをONにする
-			var changedSelectionOnStage = ev.changes.selected;
+			var rawNewSelectedList = ev.changes.selected;
 			var changedSelectionLogical = [];
-			for (var i = 0, len = changedSelectionOnStage.length; i < len; i++) {
-				this._setSelected(changedSelectionOnStage[i], true);
+			for (var i = 0, len = rawNewSelectedList.length; i < len; i++) {
+				var rawNewSelected = rawNewSelectedList[i];
 
-				var newSelectedDULogical = this._getSourceDU(changedSelectionOnStage[i]);
+				this._setSelected(rawNewSelected, true);
+
+				var newSelectedDULogical = this._getSourceDU(rawNewSelected);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
 				if (newSelectedDULogical === focusedDU) {
@@ -12664,16 +12709,25 @@
 				this._pushIfNotExist(changedSelectionLogical, newSelectedDULogical);
 			}
 
-			var unfocusedDU = this._getSourceDU(ev.changes.unfocused);
+			var rawUnfocusedDU = ev.changes.unfocused;
+			var unfocusedDU = this._getSourceDU(rawUnfocusedDU);
+			if (focusedDU === unfocusedDU) {
+				//論理DUとしてfocusedとunfocusedが同じ場合は
+				//フォーカス状態を優先する
+				unfocusedDU = null;
+			}
+
 			var isUnfocusDirtyNotified = false;
 
 			//今回非選択状態になったDUの選択フラグをOFFにする
-			var changedUnselectedOnStage = ev.changes.unselected;
+			var rawUnselectedList = ev.changes.unselected;
 			var changedUnselectedLogical = [];
-			for (var i = 0, len = changedUnselectedOnStage.length; i < len; i++) {
-				var unselectedDULogical = this._getSourceDU(changedUnselectedOnStage[i]);
+			for (var i = 0, len = rawUnselectedList.length; i < len; i++) {
+				var rawUnselected = rawUnselectedList[i];
 
-				this._setSelected(unselectedDULogical, false);
+				this._setSelected(rawUnselected, false);
+
+				var unselectedDULogical = this._getSourceDU(rawUnselected);
 
 				var reasons = [UpdateReasons.SELECTION_CHANGE];
 				if (unselectedDULogical === unfocusedDU) {
@@ -12715,13 +12769,13 @@
 				focused: focusedDU,
 
 				changes: {
-					selectedRaw: ev.changes.selected,
+					selectedRaw: rawNewSelectedList,
 					selected: changedSelectionLogical,
 
-					unselectedRaw: ev.changes.unselected,
+					unselectedRaw: rawUnselectedList,
 					unselected: changedUnselectedLogical,
 
-					unfocusedRaw: ev.changes.unfocused,
+					unfocusedRaw: rawUnfocusedDU,
 					unfocused: unfocusedDU
 				}
 			};
@@ -14141,6 +14195,7 @@
 			if (this._planes == null) {
 				this._planes = [];
 			}
+			plane._stage = this;
 			this._planes.push(plane);
 		},
 
