@@ -7073,6 +7073,10 @@
 					}
 				},
 
+				getDisplayUnitById: function(id) {
+					return this._layer.getDisplayUnitById(id);
+				},
+
 				addDisplayUnit: function(displayUnit) {
 					if (displayUnit == null) {
 						return;
@@ -12322,6 +12326,12 @@
 			this._duCascadeRemovingListener = function(event) {
 				that._onDUCascadeRemoving(event);
 			};
+			this._duAddListenerWrapper = function(event) {
+				that._onDUAdded(event);
+			};
+			this._duRemoveListenerWrapper = function(event) {
+				that._onDURemoved(event);
+			};
 
 			this._viewCollection = GridStageViewCollection.create(this);
 		},
@@ -14007,7 +14017,6 @@
 		},
 
 		addDisplayUnit: function(displayUnit) {
-			this._units.set(displayUnit.id, displayUnit);
 			this._defaultLayer.addDisplayUnit(displayUnit);
 		},
 
@@ -14016,8 +14025,6 @@
 		},
 
 		removeDisplayUnitById: function(id) {
-			this._unit["delete"](id);
-
 			var duToBeRemoved = this.getDisplayUnitById(id);
 			duToBeRemoved.remove();
 		},
@@ -14035,6 +14042,10 @@
 		 * @private
 		 */
 		_duCascadeRemovingListener: null,
+
+		_duAddListenerWrapper: null,
+
+		_duRemoveListenerWrapper: null,
 
 		/**
 		 * @private
@@ -14065,11 +14076,15 @@
 				throw new Error('レイヤーインスタンスがnullです。');
 			}
 
+			this._validateAndAddToIdToDUMap(layer);
+
 			if (this._layers.length === 0 || isDefault === true) {
 				this._defaultLayer = layer;
 			}
 
 			layer.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
+			layer.addEventListener('displayUnitAdd', this._duAddListenerWrapper);
+			layer.addEventListener('displayUnitRemove', this._duRemoveListenerWrapper);
 
 			if (index != null) {
 				this._layers.splice(index, 0, layer);
@@ -14091,11 +14106,52 @@
 
 			//TODO レイヤーを外したときにStageViewのリスナーを削除する
 
+			this._removeFromIdToDUMap(layer);
+
 			this._layers.splice(idx, 1);
 			layer
 					.removeEventListener('displayUnitCascadeRemoving',
 							this._duCascadeRemovingListener);
+			layer.removeEventListener('displayUnitAdd', this._duAddListenerWrapper);
+			layer.removeEventListener('displayUnitRemove', this._duRemoveListenerWrapper);
+
 			layer._onRemovedFromStage();
+		},
+
+		/**
+		 * @private
+		 * @param event
+		 */
+		_onDUAdded: function(event) {
+			var du = event.displayUnit;
+			this._validateAndAddToIdToDUMap(du);
+		},
+
+		_validateAndAddToIdToDUMap: function(du) {
+			var duId = du.id;
+
+			if (duId == null) {
+				throw new Error('DUのidがnullです。');
+			}
+
+			if (this._units.has(duId)) {
+				throw new Error('同じIDを持つDisplayUnitを同じStageに追加することはできません。');
+			}
+
+			this._units.set(duId, du);
+		},
+
+		_removeFromIdToDUMap: function(du) {
+			this._units['delete'](du.id);
+		},
+
+		/**
+		 * @private
+		 * @param event
+		 */
+		_onDURemoved: function(event) {
+			var du = event.displayUnit;
+			this._removeFromIdToDUMap(du)
 		},
 
 		/**
