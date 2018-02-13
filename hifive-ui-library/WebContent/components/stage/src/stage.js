@@ -664,12 +664,6 @@
 
 					this._setDraggingFlag(false);
 
-					this._onStageTargets.forEach(function(du) {
-						if (ProxyDisplayUnit.isClassOf(du)) {
-							//							du.isSyncEnabled = true;
-						}
-					});
-
 					var event = Event.create('dragSessionEnd');
 					this.dispatchEvent(event);
 
@@ -698,12 +692,6 @@
 					}
 
 					this._setDraggingFlag(false);
-
-					this._onStageTargets.forEach(function(du) {
-						if (ProxyDisplayUnit.isClassOf(du)) {
-							//							du.isSyncEnabled = true;
-						}
-					});
 
 					var event = Event.create('dragSessionCancel');
 					this.dispatchEvent(event);
@@ -926,6 +914,8 @@
 				 */
 				_targets: null,
 
+				_onStageTargets: null,
+
 				//_targetsで指定されたオブジェクトの初期位置を覚えておく配列。
 				//setTargets()のタイミングでセットされる。
 				//同じインデックスの位置を保持。
@@ -1060,9 +1050,29 @@
 					this._constraintOverrideMap = constraintObject;
 				},
 
-				//TODO start()
 				begin: function() {
 					this._setResizingFlag(true);
+
+					this._onStageTargets = this._stage
+							._getOnStageNormalizedDisplayUnits(this._targets);
+
+					var rawFocusedDU = this._stage._getOnStageFocusedDisplayUnit();
+
+					this._onStageTargets.forEach(function(du) {
+						if (ProxyDisplayUnit.isClassOf(du)) {
+							var forceRepresentativeDU = null;
+							if (ProxyDisplayUnit.isClassOf(rawFocusedDU)
+									&& du.sourceDisplayUnit === rawFocusedDU.sourceDisplayUnit) {
+								forceRepresentativeDU = rawFocusedDU;
+							}
+
+							//TODO viewportsが複数の場合への対応
+							//OnStageなProxyDUについて、どれが代表DUかを変更する
+							var plane = du.viewportContainer._plane;
+							plane._viewports[0].updateProxyRepresentative(du.sourceDisplayUnit,
+									forceRepresentativeDU);
+						}
+					});
 				},
 
 				/**
@@ -1428,6 +1438,8 @@
 				 */
 				_cleanUp: function() {
 					this._targets = null;
+					this._onStageTargets = null;
+
 					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
 					this._resizeFunction = null;
@@ -6721,8 +6733,10 @@
 								return;
 							}
 
-							if (displayUnit.isDragging || displayUnit.isResizing) {
-								//このソースDUがドラッグまたはリサイズ中はプロキシは削除しない
+							if (displayUnit.isDragging) {
+								//ドラッグ時、Stage上では、1つのソースDUに対して1つのProxyDUしか表示しない仕様にしており、また
+								//ドラッグ処理はOnStageなDU（＝ProxyDUそのもの）を動かすようにしているので
+								//ドラッグ中はProxyDUのビューポートコンテナからの出し入れはしない
 								return;
 							}
 
@@ -8570,54 +8584,25 @@
 
 							var that = this;
 
-							dragSession._onStageTargets.forEach(function(du) {
+							dragSession._onStageTargets
+									.forEach(function(du) {
 
-								//レイヤーに存在する元々のDUは非表示にする
-								var originalDOM = that._domManager.getElement(du);
-								if (originalDOM) {
-									du._updateActualDisplayStyle(originalDOM);
-								}
+										//レイヤーに存在する元々のDUは非表示にする
+										var originalDOM = that._domManager.getElement(du);
+										if (originalDOM) {
+											du._updateActualDisplayStyle(originalDOM);
+										}
 
-								if (ProxyDisplayUnit.isClassOf(du) && !du._isRepresentative) {
-									//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
-									return;
-								}
+										if (DragSession.isClassOf(dragSession)
+												&& ProxyDisplayUnit.isClassOf(du)
+												&& !du._isRepresentative) {
+											//ドラッグの場合は、代表DU以外は非表示にする。リサイズ時は代表でないDUも表示(foreレイヤーにコピー)する
+											//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
+											return;
+										}
 
-								var element = du.__renderDOM(that);
-								var $element = $(element);
-								//isVisible=falseをすることでDOMにdisplay:noneがつくので
-								//強制的に解除
-								$element.css({
-									display: ''
-								});
-
-								//DUに対応する、ドラッグ中のみ表示する表層コピーエレメントをマップに保存
-								that._dragTargetDUInfoMap.set(du, element);
-
-								var gpos = du.getWorldGlobalPosition();
-
-								if (du._isOnSvgLayer) {
-									//SVGレイヤーの場合はforemostSvgに追加
-									SvgUtil.setAttributes(element, {
-										x: gpos.x,
-										y: gpos.y,
-										width: du.width,
-										height: du.height,
-										'pointer-events': 'none'
+										that._addTemporaryForemostClone(du);
 									});
-									that._foremostSvgGroup.appendChild(element);
-								} else {
-									//DIVレイヤーの場合はforemostDivに追加
-									$element.css({
-										left: gpos.x,
-										top: gpos.y,
-										width: du.width,
-										height: du.height,
-										'pointer-events': 'none'
-									});
-									that._foremostDiv.appendChild(element);
-								}
-							});
 						},
 
 						/**
@@ -8664,6 +8649,60 @@
 						__onResizeDURelease: function(resizeSession) {
 						//リサイズ時の挙動はViewCollectionで
 						//__onDragDUReleaseに移譲しているのでここでは何もしない
+						},
+
+						/**
+						 * @private
+						 * @param du クローン元のDisplayUnit。OnStageである必要がある
+						 */
+						_addTemporaryForemostClone: function(du) {
+							var element = du.__renderDOM(this);
+							var $element = $(element);
+							//isVisible=falseをすることでDOMにdisplay:noneがつくので
+							//強制的に解除
+							$element.css({
+								display: ''
+							});
+
+							//DUに対応する、ドラッグ中のみ表示する表層コピーエレメントをマップに保存
+							this._dragTargetDUInfoMap.set(du, element);
+
+							var gpos = du.getWorldGlobalPosition();
+
+							if (du._isOnSvgLayer) {
+								//SVGレイヤーの場合はforemostSvgに追加
+								SvgUtil.setAttributes(element, {
+									x: gpos.x,
+									y: gpos.y,
+									width: du.width,
+									height: du.height,
+									'pointer-events': 'none'
+								});
+								this._foremostSvgGroup.appendChild(element);
+							} else {
+								//DIVレイヤーの場合はforemostDivに追加
+								$element.css({
+									left: gpos.x,
+									top: gpos.y,
+									width: du.width,
+									height: du.height,
+									'pointer-events': 'none'
+								});
+								this._foremostDiv.appendChild(element);
+							}
+						},
+
+						_removeTemporaryForemostClone: function(du) {
+							if (!this._dragTargetDUInfoMap) {
+								//ドラッグorリサイズ中でない場合は何もしない
+								return;
+							}
+
+							var clonedElement = this._dragTargetDUInfoMap.get(du);
+							if (clonedElement) {
+								$(clonedElement).remove();
+								this._dragTargetDUInfoMap['delete'](du);
+							}
 						},
 
 						dispose: function() {
@@ -9528,6 +9567,12 @@
 							var elem = du.__renderDOM(this, reason);
 							domManager.add(du, elem);
 
+							if (du.isResizing) {
+								//リサイズ中は、ソースDUの大きさに応じて動的にProxyDUが追加・削除される場合がある。
+								//従い、DUがリサイズ中の時はそのProxyDUに対してもフォアレイヤーのクローンを追加する。
+								this._addTemporaryForemostClone(du);
+							}
+
 							//待機リストに入っていたら削除
 							this._duRenderStandbyMap['delete'](du);
 						},
@@ -9748,6 +9793,8 @@
 						 */
 						_onDURemove: function(event) {
 							this._removeDOMForDU(event.displayUnit, event.parentDisplayUnit);
+
+							this._removeTemporaryForemostClone(event.displayUnit);
 
 							//DU自体が削除された場合、待機リストからも削除
 							//(shouldExit()によりDOMのみ削除する場合は再び待機リストに入るので
