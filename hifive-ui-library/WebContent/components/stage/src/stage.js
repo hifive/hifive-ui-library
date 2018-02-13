@@ -621,7 +621,7 @@
 					this._onStageTargets = this._stage
 							._getOnStageNormalizedDisplayUnits(this._targets);
 
-					var rawFocusedDU = this._stage._getOnStageFocusedDisplayUnit();
+					var rawFocusedDU = this._stage._dragStartDisplayUnit;
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
@@ -1056,7 +1056,7 @@
 					this._onStageTargets = this._stage
 							._getOnStageNormalizedDisplayUnits(this._targets);
 
-					var rawFocusedDU = this._stage._getOnStageFocusedDisplayUnit();
+					var rawFocusedDU = this._stage._dragStartDisplayUnit;
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
@@ -3738,7 +3738,8 @@
 						},
 
 						focus: function() {
-							if (!this._rootStage) {
+							if (!this._rootStage || SingleLayerPlane.isClassOf(this._rootStage)) {
+								this._isFocused = true;
 								return;
 							}
 
@@ -3786,6 +3787,8 @@
 							this._rootStage = stage;
 							this._belongingLayer = belongingLayer;
 
+							this._isFocused = false;
+
 							//キャッシュ：SVGレイヤーの子孫要素かどうか。onRemovedでfalseにする
 							this._isOnSvgLayer = belongingLayer.type === 'svg';
 
@@ -3800,6 +3803,7 @@
 							this._rootStage = null;
 							this._belongingLayer = null;
 							this._isOnSvgLayer = false;
+							this._isFocused = false;
 
 							var event = Event.create('removeFromStage');
 							this.dispatchEvent(event);
@@ -12537,6 +12541,8 @@
 			var ev = context.event;
 			var focusedDU = this._getSourceDU(ev.focused);
 
+			this._setSelected(ev.focused, true);
+
 			var isFocusDirtyNotified = false;
 
 			//今回新たに選択されたDUの選択フラグをONにする
@@ -12938,7 +12944,11 @@
 					du.select(true);
 				}
 				//フォーカスは必ずあてる
-				du.focus();
+				if (ProxyDisplayUnit.isClassOf(du)) {
+					du.sourceDisplayUnit.focus();
+				} else {
+					du.focus();
+				}
 			}
 
 			var $root = $(this.rootElement);

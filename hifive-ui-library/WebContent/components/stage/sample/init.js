@@ -561,9 +561,9 @@
 
 		'{rootElement} stageSelectionChange': function(context) {
 			var ev = context.evArg;
-			this.log.debug('stageSelectionChange: focused.id={2}, selected={0},unselected={1}',
+			this.log.debug('stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocusedRaw={4}, unselected={1}',
 					ev.changes.selected.length, ev.changes.unselected.length,
-					ev.focused ? ev.focused.id : 'null');
+					ev.focused ? ev.focused.id : 'null', ev.focusedRaw ? ev.focusedRaw.id : 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null');
 		},
 
 		'{rootElement} duKeyDown': function(context) {
