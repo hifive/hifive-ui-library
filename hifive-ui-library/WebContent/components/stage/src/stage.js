@@ -14135,7 +14135,7 @@
 			}
 
 			if (this._units.has(duId)) {
-				throw new Error('同じIDを持つDisplayUnitを同じStageに追加することはできません。');
+				throw new Error('同じIDを持つDisplayUnitを同じStageインスタンスに追加することはできません。');
 			}
 
 			this._units.set(duId, du);
