@@ -14151,7 +14151,7 @@
 		 */
 		_onDURemoved: function(event) {
 			var du = event.displayUnit;
-			this._removeFromIdToDUMap(du)
+			this._removeFromIdToDUMap(du);
 		},
 
 		/**
