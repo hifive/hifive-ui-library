@@ -12406,6 +12406,11 @@
 			this._editManager.cancelEdit(du);
 		},
 
+		/**
+		 * @private
+		 * @param du
+		 * @returns
+		 */
 		_getSourceDU: function(du) {
 			if (ProxyDisplayUnit.isClassOf(du)) {
 				return du.sourceDisplayUnit;
@@ -12539,9 +12544,12 @@
 
 		'{this._selectionLogic} selectionChange': function(context) {
 			var ev = context.event;
-			var focusedDU = this._getSourceDU(ev.focused);
+			var rawFocusedDU = ev.focused;
+			var focusedDU = this._getSourceDU(rawFocusedDU);
 
-			this._setSelected(ev.focused, true);
+			if (rawFocusedDU) {
+				this._setSelected(rawFocusedDU, true);
+			}
 
 			var isFocusDirtyNotified = false;
 
@@ -12620,7 +12628,7 @@
 				selectedRaw: ev.selected,
 				selected: selectedLogical,
 
-				focusedRaw: ev.focused,
+				focusedRaw: rawFocusedDU,
 				focused: focusedDU,
 
 				changes: {

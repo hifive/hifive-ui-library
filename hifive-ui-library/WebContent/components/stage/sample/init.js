@@ -561,9 +561,12 @@
 
 		'{rootElement} stageSelectionChange': function(context) {
 			var ev = context.evArg;
-			this.log.debug('stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocusedRaw={4}, unselected={1}',
-					ev.changes.selected.length, ev.changes.unselected.length,
-					ev.focused ? ev.focused.id : 'null', ev.focusedRaw ? ev.focusedRaw.id : 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null');
+			this.log
+					.debug(
+							'stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocusedRaw={4}, unselected={1}',
+							ev.changes.selected.length, ev.changes.unselected.length,
+							ev.focused ? ev.focused.id : 'null', ev.focusedRaw ? ev.focusedRaw.id
+									: 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null');
 		},
 
 		'{rootElement} duKeyDown': function(context) {
@@ -694,6 +697,16 @@
 
 		'{rootElement} duResizeCancel': function(context) {
 			console.log(context.event.type);
+		},
+
+		'input[name="setRectDU"] click': function(context) {
+			var du = this._units[5];
+			du.setRect({
+				x: 10,
+				y: 20,
+				width: 300,
+				height: 80
+			});
 		},
 
 		'input[name="splitView"] click': function(context) {
