@@ -5515,10 +5515,14 @@
 								line.style.display = isLogicallyVisible ? '' : 'none';
 							}
 
-							if (!reason.isInitialRender && !reason.isRenderRequested
-									&& !reason.isPositionChanged) {
+							if (this._isBothOnStageEndpoint() && !reason.isInitialRender
+									&& !reason.isRenderRequested && !reason.isPositionChanged) {
+								//From,To両方ともOnStageなDUの場合、指定の条件以外では再計算の必要はない
 								return;
 							}
+
+							//From,Toどちらかが別Plane上にある場合、
+							//実際に線を描画する先のDUは異なる可能性があるので再計算が必要
 
 							this._updateLinePosition();
 
@@ -5542,6 +5546,12 @@
 								x2: this._x2,
 								y2: this._y2
 							});
+						},
+
+						_isBothOnStageEndpoint: function() {
+							var ret = (this._rootStage === this._from._rootStage)
+									&& (this._rootStage === this._to._rootStage);
+							return ret;
 						},
 
 						/**
