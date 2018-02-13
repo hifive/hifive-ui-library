@@ -4896,10 +4896,9 @@
 					}
 
 					if (isPositionChanged) {
-						if (!reasons) {
+						if (reasons == null) {
 							reasons = [];
-						}
-						if (!Array.isArray(reasons)) {
+						} else if (!Array.isArray(reasons)) {
 							reasons = [reasons];
 						}
 
