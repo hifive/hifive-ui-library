@@ -6853,7 +6853,7 @@
 							var numPartitions = this._viewportContainers.length;
 							for (var i = 0; i < numPartitions; i++) {
 								var vc = this._viewportContainers[i];
-								vc.removeDisplayUnit(du);
+								vc.removeSourceDisplayUnit(du);
 							}
 						}
 					}
