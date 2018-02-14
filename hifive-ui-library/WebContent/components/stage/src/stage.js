@@ -3867,6 +3867,7 @@
 							this._rootStage = null;
 							this._belongingLayer = null;
 							this._isOnSvgLayer = false;
+							this._isSelected = false;
 							this._isFocused = false;
 
 							var event = Event.create('removeFromStage');
@@ -5015,6 +5016,10 @@
 					} else if (this._isRepresentative) {
 						this._sourceDU.moveBy(worldDx, worldDy);
 					}
+				},
+
+				remove: function() {
+					throw new Error('このDisplayUnitは直接removeできません。元となるDisplayUnitをremoveしてください。');
 				},
 
 				_setDirty: function(reasons) {
@@ -6217,6 +6222,11 @@
 					//TODO ここで記述するのがよいか？
 					if (typeof du._onRemoving === 'function') {
 						du._onRemoving();
+					}
+
+					if (this._rootStage) {
+						//DUを非選択状態にする
+						this._rootStage.unselect(du);
 					}
 
 					this._children.splice(idx, 1);
@@ -12669,6 +12679,12 @@
 			du._isSelectedOfThisProxy = value;
 
 			var sourceDU = du.sourceDisplayUnit;
+
+			if (!sourceDU._rootStage) {
+				//ソースDUのルートステージがない＝ソースDUはPlaneから削除されているので
+				//選択状態を変更する必要がない（その概念を持たない状態）ので何もしない
+				return;
+			}
 
 			//Proxyの場合は、すべてのProxyの選択状態のORをオリジナルの状態にする
 			//＝いずれか一つ以上のProxyが選択状態の場合はtrueとする

@@ -247,6 +247,11 @@
 				}
 			}
 
+			if (actuals.length === 0) {
+				//指定された要素はそもそもすべて選択状態でなかった＝何も変わらなかったのでイベントも発生させない
+				return 0;
+			}
+
 			this._dispatchSelectionChangeEvent([], actuals, oldFocused);
 
 			return actuals;
