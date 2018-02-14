@@ -4988,7 +4988,9 @@
 
 					//Position,Size以外の理由もあるので、setDirty自体は呼ぶ必要がある
 					//不要な場合は呼ばないように若干の最適化は可能
-					super_._setDirty.call(this, reasons);
+					if (reasons != null) {
+						super_._setDirty.call(this, reasons);
+					}
 				},
 
 				focus: function() {
