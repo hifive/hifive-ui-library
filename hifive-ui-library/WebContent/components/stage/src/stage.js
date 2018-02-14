@@ -5420,11 +5420,13 @@
 
 							this._isDrawable = true;
 
-							var actualFromPos = this._getActualGlobalPosition(actualDUFrom, x1, y1);
+							var actualFromPos = this._getActualGlobalPosition(this._from,
+									actualDUFrom, x1, y1);
 							var ax1 = actualFromPos.x;
 							var ay1 = actualFromPos.y;
 
-							var actualToPos = this._getActualGlobalPosition(actualDUTo, x2, y2);
+							var actualToPos = this._getActualGlobalPosition(this._to, actualDUTo,
+									x2, y2);
 							var ax2 = actualToPos.x;
 							var ay2 = actualToPos.y;
 
@@ -5462,7 +5464,8 @@
 							return proxyDU;
 						},
 
-						_getActualGlobalPosition: function(actualDU, sourceGlobalX, sourceGlobalY) {
+						_getActualGlobalPosition: function(sourceDU, actualDU, sourceGlobalX,
+								sourceGlobalY) {
 							if (!ProxyDisplayUnit.isClassOf(actualDU)) {
 								var pos = {
 									x: sourceGlobalX,
@@ -5471,14 +5474,36 @@
 								return pos;
 							}
 
-							//TODO actualDUがViewportDUContainer直下に配置されている前提
-							var vc = actualDU.parentDisplayUnit;
-							var vcGlobalPos = vc.getWorldGlobalPosition();
-							var pos = {
-								x: sourceGlobalX - vc.viewportX + vcGlobalPos.x,
-								y: sourceGlobalY - vc.viewportY + vcGlobalPos.y
+							//ProxyDUの場合、DUのサイズがソースと異なる可能性がある。
+							//そこで、sourceDUとactualDUのサイズの比率に応じて座標を調整する。
+
+							var sourceDUGPos = sourceDU.getWorldGlobalPosition();
+							var actualDUGPos = actualDU.getWorldGlobalPosition();
+
+							var actualGlobalX = this._calcActualGlobalPosition(sourceGlobalX,
+									sourceDUGPos.x, sourceDU.width, actualDU.width, actualDUGPos.x);
+							var actualGlobalY = this._calcActualGlobalPosition(sourceGlobalY,
+									sourceDUGPos.y, sourceDU.height, actualDU.height,
+									actualDUGPos.y);
+
+							var actualGPos = {
+								x: actualGlobalX,
+								y: actualGlobalY
 							};
-							return pos;
+							return actualGPos;
+						},
+
+						_calcActualGlobalPosition: function(sourceGlobalPos, sourceDUGlobalPos,
+								srcDUSize, actualDUSize, actualDUGlobalPos) {
+							if (srcDUSize == 0) {
+								return actualDUGlobalPos;
+							}
+
+							var sourceLocalPos = sourceGlobalPos - sourceDUGlobalPos;
+							var srcToActualRatio = actualDUSize / srcDUSize;
+							var actualGlobalPos = (sourceLocalPos * srcToActualRatio)
+									+ actualDUGlobalPos;
+							return actualGlobalPos;
 						},
 
 						hasClass: function(cssClass) {
