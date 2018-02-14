@@ -6360,6 +6360,11 @@
 				 * @param targetDU
 				 */
 				__onDescendantAdded: function(displayUnit) {
+					var event = DisplayUnitContainerEvent.create('displayUnitAdd');
+					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = displayUnit.parentDisplayUnit;
+					this.dispatchEvent(event);
+
 					if (this._parentDU) {
 						this._parentDU.__onDescendantAdded(displayUnit);
 					}
@@ -6369,6 +6374,11 @@
 				 * @private
 				 */
 				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
+					var event = DisplayUnitContainerEvent.create('displayUnitRemove');
+					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = parentDisplayUnit;
+					this.dispatchEvent(event);
+
 					if (this._parentDU) {
 						this._parentDU.__onDescendantRemoved(displayUnit, parentDisplayUnit);
 					}
@@ -7059,6 +7069,7 @@
 				__onDescendantAdded: function(displayUnit) {
 					var event = DisplayUnitContainerEvent.create('displayUnitAdd');
 					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = displayUnit.parentDisplayUnit;
 					this.dispatchEvent(event);
 				},
 
