@@ -4622,7 +4622,8 @@
 				_viewportContainer: null,
 				_isSelectedOfThisProxy: null,
 				_isSyncEnabled: null,
-				_isRepresentative: null
+				_isRepresentative: null,
+				_syncHookFunction: null
 			},
 
 			accessor: {
@@ -4635,6 +4636,24 @@
 				viewportContainer: {
 					get: function() {
 						return this._viewportContainer;
+					}
+				},
+
+				isSyncEnabled: {
+					get: function() {
+						return this._isSyncEnabled;
+					},
+					set: function(value) {
+						if (this._isSyncEnabled !== value) {
+							//現在の値とvalueが異なり、かつvalueがtrue ＝ フラグがtrueに変わるので、syncを行うべき
+							var shouldSyncNow = (value === true);
+
+							this._isSyncEnabled = value;
+
+							if (shouldSyncNow) {
+								this.sync();
+							}
+						}
 					}
 				},
 
@@ -4711,6 +4730,7 @@
 						return this._x;
 					},
 					set: function(value) {
+						//TODO ドラッグ時はソースのmoveByが使われるので、この処理は不要
 						if (this.isDragging) {
 							if (this._isRepresentative) {
 								this._sourceDU.x = value + this._viewportContainer.viewportX;
@@ -4736,6 +4756,38 @@
 					}
 				},
 
+				width: {
+					get: function() {
+						return this._width;
+					},
+					set: function(value) {
+						if (this._width !== value) {
+							this._width = value;
+							this._setDirty(REASON_SIZE_CHANGE);
+
+							if (!this.isResizing || (this.isResizing && this._isRepresentative)) {
+								this._sourceDU.width = value;
+							}
+						}
+					}
+				},
+
+				height: {
+					get: function() {
+						return this._height;
+					},
+					set: function(value) {
+						if (this._height !== value) {
+							this._height = value;
+							this._setDirty(REASON_SIZE_CHANGE);
+
+							if (!this.isResizing || (this.isResizing && this._isRepresentative)) {
+								this._sourceDU.height = value;
+							}
+						}
+					}
+				},
+
 				zIndex: {
 					get: function() {
 						return this._sourceDU.zIndex;
@@ -4754,22 +4806,6 @@
 					}
 				},
 
-				width: {
-					get: function() {
-						return this._sourceDU.width;
-					},
-					set: function(value) {
-						this._sourceDU.width = value;
-					}
-				},
-				height: {
-					get: function() {
-						return this._sourceDU._height;
-					},
-					set: function(value) {
-						this._sourceDU.height = value;
-					}
-				},
 				groupTag: {
 					get: function() {
 						return this._sourceDU._groupTag;
@@ -4828,24 +4864,6 @@
 					set: function(value) {
 						this._sourceDU.extraData = value;
 					}
-				},
-
-				isSyncEnabled: {
-					get: function() {
-						return this._isSyncEnabled;
-					},
-					set: function(value) {
-						if (this._isSyncEnabled !== value) {
-							//現在の値とvalueが異なり、かつvalueがtrue ＝ フラグがtrueに変わるので、syncを行うべき
-							var shouldSyncNow = (value === true);
-
-							this._isSyncEnabled = value;
-
-							if (shouldSyncNow) {
-								this.sync();
-							}
-						}
-					}
 				}
 			},
 
@@ -4854,6 +4872,8 @@
 				 * @memberOf h5.ui.components.stage.ProxyDisplayUnit
 				 */
 				constructor: function ProxyDisplayUnit(id, sourceDisplayUnit, viewportContainer) {
+					super_.constructor.call(this, id);
+
 					if (id == null || sourceDisplayUnit == null || viewportContainer == null) {
 						throw new Error('シャドウを生成するためのパラメータが足りません。');
 					}
@@ -4862,11 +4882,11 @@
 
 					this._isSyncEnabled = true;
 					this._isRepresentative = false;
+					this._syncHookFunction = null;
 
 					//TODO プロキシをStageに追加した時点でソースDUがisSelected===trueの場合にstage.select()する必要がある
 					this._isSelectedOfThisProxy = sourceDisplayUnit.isSelected;
 
-					super_.constructor.call(this, id);
 					this._sourceDU = sourceDisplayUnit;
 					this._viewportContainer = viewportContainer;
 
@@ -4878,12 +4898,39 @@
 				},
 
 				setSize: function(width, height) {
-					return this._sourceDU.setSize(width, height);
+					if (this.isSyncEnabled) {
+						//TODO syncを書き戻しの制御フラグにもするかどうか
+						return this._sourceDU.setSize(width, height);
+					}
+					return super_.setSize.call(this, width, height);
+				},
+
+				/**
+				 * ソースDUとの値の同期時に呼ばれます。 trueを返すと同期し、falseまたは何も返さないなどtrue以外の場合は同期しません。
+				 *
+				 * @param syncFilterFunction function(propertyName, newValue, proxyDisplayUnit,
+				 *            sourceDisplayUnit)
+				 */
+				setSyncHook: function(syncHookFunction) {
+					this._syncHookFunction = syncHookFunction;
+				},
+
+				_getHookedSyncValue: function(propertyName, newValue) {
+					if (!this._syncHookFunction) {
+						return newValue;
+					}
+					return this._syncHookFunction(propertyName, newValue, this, this._sourceDU);
 				},
 
 				sync: function(reasons) {
 					if (!this._sourceDU) {
 						return;
+					}
+
+					if (Array.isArray(reasons)) {
+						//reasonsの配列は複数のインスタンスで共有されている可能性があるので
+						//もし最初に渡された場合はシャローコピーにしておく
+						reasons = reasons.slice(0);
 					}
 
 					var src = this._sourceDU;
@@ -4893,13 +4940,15 @@
 
 					var isPositionChanged = false;
 
-					if (this._x !== myX) {
-						this._x = myX;
+					var hookedX = this._getHookedSyncValue('x', myX);
+					if (this._x !== hookedX) {
+						this._x = hookedX;
 						isPositionChanged = true;
 					}
 
-					if (this._y !== myY) {
-						this._y = myY;
+					var hookedY = this._getHookedSyncValue('y', myY);
+					if (this._y !== hookedY) {
+						this._y = hookedY;
 						isPositionChanged = true;
 					}
 
@@ -4914,6 +4963,31 @@
 						this._worldGlobalPositionCache = null;
 					}
 
+					var isSizeChanged = false;
+
+					var hookedWidth = this._getHookedSyncValue('width', src.width);
+					if (this._width !== hookedWidth) {
+						this._width = hookedWidth;
+						isSizeChanged = true;
+					}
+
+					var hookedHeight = this._getHookedSyncValue('height', src.height);
+					if (this._height !== hookedHeight) {
+						this._height = hookedHeight;
+						isSizeChanged = true;
+					}
+
+					if (isSizeChanged) {
+						if (reasons == null) {
+							reasons = [];
+						} else if (!Array.isArray(reasons)) {
+							reasons = [reasons];
+						}
+						reasons.push(REASON_SIZE_CHANGE);
+					}
+
+					//Position,Size以外の理由もあるので、setDirty自体は呼ぶ必要がある
+					//不要な場合は呼ばないように若干の最適化は可能
 					super_._setDirty.call(this, reasons);
 				},
 
