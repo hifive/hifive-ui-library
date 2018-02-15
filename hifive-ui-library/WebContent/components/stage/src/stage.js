@@ -12249,6 +12249,8 @@
 	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
 	var EVENT_VIEW_REGION_CHANGE = 'stageViewRegionChange';
 
+	var EVENT_STAGE_VIEW_UPDATE = 'stageViewUpdate';
+
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
 	 */
@@ -12562,6 +12564,8 @@
 
 			this._viewMasterClock = MasterClock.create();
 
+			this._viewMasterClock.listen(this._viewMasterClockNextListener, this);
+
 			this._editManager = EditManager.create(this);
 
 			this._isDblclickEmulationEnabled = true;
@@ -12607,6 +12611,10 @@
 
 		__dispose: function() {
 			this._viewMasterClock.dispose();
+		},
+
+		_viewMasterClockNextListener: function() {
+			this.trigger(EVENT_STAGE_VIEW_UPDATE);
 		},
 
 		/**
