@@ -9712,9 +9712,20 @@
 						 * @param {Boolean} isImmediate アニメーションフレームを待たず、すぐに描画を更新するかどうか。デフォルト：false
 						 * @param {Rect} renderRect 描画範囲とする矩形領域。isImmediateがtrueの場合のみ適用されます。
 						 */
-						update: function(isImmediate, renderRect) {
+						update: function(isImmediate, renderRect,
+								_supressFireImmediateViewUpdateEvent) {
 							if (isImmediate) {
 								this._doUpdate(renderRect);
+
+								//第3引数は隠し引数で、StageViewCollectionから呼ばれる際、
+								//個別Viewから都度イベントが発火するのを抑制するためのパラメータ。
+								//この場合、StageViewCollectionから発火命令を一度だけ出す。
+								//なお、immediateでない場合は、viewMasterClockをListenしている
+								//StageControllerが発火させる。
+								if (_supressFireImmediateViewUpdateEvent !== true) {
+									this._stage._fireStageViewUpdateEvent(this);
+								}
+
 								return;
 							}
 
@@ -11162,10 +11173,25 @@
 							return this._columns;
 						},
 
+						/**
+						 * すべてのビューを更新します。
+						 *
+						 * @param isImmediate 同期的にビューを更新するかどうか。デフォルト：false
+						 */
 						update: function(isImmediate) {
-							this.getViewAll().forEach(function(v) {
-								v.update(isImmediate);
+							var allViews = this.getViewAll();
+
+							var isUpdateImmediately = isImmediate === true;
+
+							allViews.forEach(function(v) {
+								//第3引数のtrueは隠し引数で、個別ViewごとのupdateでのstageViewUpdateイベントの発火を抑制するパラメータ
+								v.update(isImmediate, null, isUpdateImmediately);
 							});
+
+							//immediateで更新した場合、stageViewUpdateイベントは一度だけ出す
+							if (isUpdateImmediately) {
+								this._stage._fireStageViewUpdateEvent(allViews);
+							}
 						},
 
 						/**
@@ -12226,6 +12252,8 @@
 
 	var EVENT_VIEW_UNIFIED_SIGHT_CHANGE = 'stageViewUnifiedSightChange';
 
+	var EVENT_STAGE_VIEW_UPDATE = 'stageViewUpdate';
+
 	var EVENT_DU_CASCADE_REMOVING = 'duCascadeRemoving';
 
 	var EVENT_DU_CLICK = 'duClick';
@@ -12248,8 +12276,6 @@
 
 	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
 	var EVENT_VIEW_REGION_CHANGE = 'stageViewRegionChange';
-
-	var EVENT_STAGE_VIEW_UPDATE = 'stageViewUpdate';
 
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
@@ -12613,8 +12639,27 @@
 			this._viewMasterClock.dispose();
 		},
 
+		/**
+		 * @private
+		 */
 		_viewMasterClockNextListener: function() {
-			this.trigger(EVENT_STAGE_VIEW_UPDATE);
+			this._fireStageViewUpdateEvent(this._viewCollection.getViewAll());
+		},
+
+		/**
+		 * @private
+		 * @param updatedViews
+		 */
+		_fireStageViewUpdateEvent: function(updatedViews) {
+			if (!Array.isArray(updatedViews)) {
+				updatedViews = [updatedViews];
+			}
+
+			var evArg = {
+				views: updatedViews
+			};
+
+			this.trigger(EVENT_STAGE_VIEW_UPDATE, evArg);
 		},
 
 		/**
