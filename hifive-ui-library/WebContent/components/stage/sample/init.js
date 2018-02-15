@@ -630,7 +630,8 @@
 		},
 
 		'[name="scrollIntoView"] click': function() {
-			var du = this._stageController.getDisplayUnitById('duid_4');
+			//var du = this._stageController.getDisplayUnitById('duid_4');
+			var du = this._units[4];
 			du.scrollIntoView('center');
 		},
 

@@ -3716,6 +3716,12 @@
 								return;
 							}
 
+							if (SingleLayerPlane.isClassOf(this._rootStage)) {
+								//このDUがOnStageでない場合、Proxyを代わりにscroll-into-viewする
+								this._scrollIntoViewProxy(mode, view);
+								return;
+							}
+
 							if (!view) {
 								view = this._rootStage._getActiveView();
 							}
@@ -3748,6 +3754,17 @@
 								moveDy = gpos.y + this.height - (wr.y + wr.height);
 							}
 							view.scrollWorldBy(moveDx, moveDy);
+						},
+
+						_scrollIntoViewProxy: function(mode, view) {
+							var plane = this._rootStage;
+
+							//TODO viewportsが1つという仮定を置いている
+							var reprProxyDU = plane._viewports[0]
+									._getRepresentativeDisplayUnit(this);
+							if (reprProxyDU) {
+								reprProxyDU.scrollIntoView(mode, view);
+							}
 						},
 
 						getWorldGlobalPosition: function() {
