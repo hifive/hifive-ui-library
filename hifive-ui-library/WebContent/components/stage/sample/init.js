@@ -652,6 +652,10 @@
 			this._stageController.UIDragMode = 5; //
 		},
 
+		'{rootElement} stageViewUpdate': function() {
+			//console.log('Views are actually Updated');
+		},
+
 		'{rootElement} stageDragRegionStart': function(context) {
 			console.log(context.event.type);
 		},
