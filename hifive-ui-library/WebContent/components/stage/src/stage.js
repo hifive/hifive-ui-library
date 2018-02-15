@@ -12651,6 +12651,10 @@
 		 * @param updatedViews
 		 */
 		_fireStageViewUpdateEvent: function(updatedViews) {
+			if (!this._isViewInitialized) {
+				return;
+			}
+
 			if (!Array.isArray(updatedViews)) {
 				updatedViews = [updatedViews];
 			}
