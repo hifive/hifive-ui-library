@@ -3605,6 +3605,11 @@
 								isSizeChanged = true;
 							}
 
+							if (!isSizeChanged && !isPositionChanged) {
+								//サイズも位置も変わっていない場合は何もしない
+								return;
+							}
+
 							var reasons = [];
 							if (isPositionChanged) {
 								reasons.push(REASON_POSITION_CHANGE);
@@ -3844,6 +3849,10 @@
 						_setDirty: function(reasons) {
 							if (!reasons) {
 								throw new Error('_setDirty()時は引数のリーズンは必須です。');
+							}
+
+							if (Array.isArray(reasons) && reasons.length === 0) {
+								throw new Error('_setDirty()で配列が渡されてましたが、中身がありません。リーズンは必須です。');
 							}
 
 							this.__onDirtyNotify(this, reasons);
