@@ -12979,7 +12979,7 @@
 				if (ProxyDisplayUnit.isClassOf(du)) {
 					this._pushIfNotExist(ret, du.sourceDisplayUnit);
 				} else {
-					ret.push(du);
+					this._pushIfNotExist(ret, du);
 				}
 			}
 
