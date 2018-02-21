@@ -114,7 +114,7 @@
 			var focused = this._focused;
 			this._focused = null;
 			if (andUnselect !== false) {
-				unselected = this._unselect(focused);
+				unselected = this.unselectSilently(focused);
 			} else {
 				//andUnselectがtrueの場合は、unselectされるものはないので空配列をセットする
 				unselected = [];
@@ -160,7 +160,7 @@
 			var unselected = null;
 
 			if (isExclusive === true) {
-				unselected = this._unselectAll();
+				unselected = this.unselectAllSilently();
 			} else {
 				//isExclusiveがfalseの場合は、今回unselectされるものはないので空配列をイベントのchangesに入れる
 				unselected = [];
@@ -229,7 +229,7 @@
 			//unselect()するとフォーカス状態も変わってしまうので、先に以前の状態を覚えておく
 			var oldFocused = this._focused;
 
-			var unselected = this._unselect(objs);
+			var unselected = this.unselectSilently(objs);
 
 			if (unselected.length > 0) {
 				//実際に非選択状態になったものがある場合のみイベントを発火させる
@@ -240,11 +240,10 @@
 		},
 
 		/**
-		 * @private
 		 * @param objs
 		 * @returns {Array}
 		 */
-		_unselect: function(objs) {
+		unselectSilently: function(objs) {
 			var objs = $.isArray(objs) ? objs : [objs];
 			var unselected = [];
 			for (var i = 0, l = objs.length; i < l; i++) {
@@ -275,7 +274,7 @@
 		 */
 		unselectAll: function() {
 			var oldFocused = this._focused;
-			var oldSelected = this._unselectAll();
+			var oldSelected = this.unselectAllSilently();
 
 			this._dispatchSelectionChangeEvent([], oldSelected, oldFocused);
 
@@ -285,11 +284,10 @@
 		/**
 		 * 全ての選択状態のオブジェクトについて選択状態を解除する（イベントは発生させない）
 		 *
-		 * @private
 		 * @instance
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す
 		 */
-		_unselectAll: function() {
+		unselectAllSilently: function() {
 			var oldSelected = this._selected;
 			this._selected = [];
 			this._focused = null;
