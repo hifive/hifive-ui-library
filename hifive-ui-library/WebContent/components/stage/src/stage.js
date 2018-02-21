@@ -3322,7 +3322,11 @@
 				//DUのID自動採番時のカウントの上限。この値に達したらカウンタをリセットする。
 				var MAX_DU_ID_LOOP = 2000000000;
 
-				var duIdSequence = 0;
+				//現在のIDカウンタのリセット日時
+				var currentDUIDCounterDate = new Date().getTime();
+
+				//ID自動生成カウンタ
+				var DUIDCounter = 0;
 
 				var classDesc = {
 					name: 'h5.ui.components.stage.DisplayUnit',
@@ -3544,20 +3548,20 @@
 						 */
 						constructor: function DisplayUnit(id) {
 							super_.constructor.call(this);
-							//TODO 引数のIDは必須にする？？
+
 							if (id == null) {
-								//TODO ただの連番でなくGUID等にする
-								var time = new Date().getTime();
+								//1ms以内に20億個のIDを生成するとIDがかぶるが、現実的には起こらないと思われるのでこの仕組みにする
+								this.id = 'duid_' + currentDUIDCounterDate + '-' + DUIDCounter;
 
-								this.id = 'duid_' + time + '-' + duIdSequence;
-
-								if (duIdSequence >= MAX_DU_ID_LOOP) {
-									duIdSequence = 0;
+								if (DUIDCounter >= MAX_DU_ID_LOOP) {
+									//カウンタと、カウンタの生成日時をリセットする
+									DUIDCounter = 0;
+									currentDUIDCounterDate = new Date().getTime();
 								} else {
-									duIdSequence++;
+									DUIDCounter++;
 								}
 							} else {
-								//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
+								//IDの一意性チェックは、ここではなく、StageにaddされるときにStage側で行う
 								this.id = id;
 							}
 
@@ -6638,6 +6642,8 @@
 				//IDの自動生成カウンタの最大値（20億。32bit signed intの21億を意識）。この値を超えたらカウンタをゼロにリセットする。
 				var MAX_VC_ID_LOOP = 2000000000;
 
+				var currentIdCounterDate = new Date().getTime();
+
 				//IDの自動生成カウンタ。VCContainerを生成するたびにインクリメントされる。
 				var vcIdCounter = 0;
 
@@ -6950,13 +6956,13 @@
 						 * @returns {String}
 						 */
 						_generateContainerId: function() {
-							var time = new Date().getTime();
-
-							var ret = 'vcid_' + time + '-' + vcIdCounter;
+							var ret = 'vcid_' + currentIdCounterDate + '-' + vcIdCounter;
 
 							if (vcIdCounter >= MAX_VC_ID_LOOP) {
-								//カウンタの上限に達したらゼロに戻す。
+								//カウンタの上限に達したらゼロに戻す
 								vcIdCounter = 0;
+								//カウンタをリセットしたので、リセット時刻も更新する
+								currentIdCounterDate = new Date().getTime();
 							} else {
 								//カウントアップ
 								vcIdCounter++;
