@@ -103,7 +103,7 @@
 		 *
 		 * @instance
 		 * @param {Boolean} [andUnselect=true] trueの場合はunselectも実行する(デフォルトtrue)
-		 * @returns フォーカスが当たっていたオブジェクト
+		 * @returns フォーカスが当たっていたオブジェクト。もともとフォーカスが当たったオブジェクトがない場合はnull
 		 */
 		unfocus: function(andUnselect) {
 			if (!this._focused) {
@@ -114,7 +114,7 @@
 			var focused = this._focused;
 			this._focused = null;
 			if (andUnselect !== false) {
-				unselected = this.unselect(focused);
+				unselected = this._unselect(focused);
 			} else {
 				//andUnselectがtrueの場合は、unselectされるものはないので空配列をセットする
 				unselected = [];
@@ -226,10 +226,27 @@
 		 * @returns {Any[]} 実際に選択の解除されたオブジェクトの配列を返す(既に選択状態ではなかったものは除く)
 		 */
 		unselect: function(objs) {
+			//unselect()するとフォーカス状態も変わってしまうので、先に以前の状態を覚えておく
 			var oldFocused = this._focused;
 
+			var unselected = this._unselect(objs);
+
+			if (unselected.length > 0) {
+				//実際に非選択状態になったものがある場合のみイベントを発火させる
+				this._dispatchSelectionChangeEvent([], unselected, oldFocused);
+			}
+
+			return unselected;
+		},
+
+		/**
+		 * @private
+		 * @param objs
+		 * @returns {Array}
+		 */
+		_unselect: function(objs) {
 			var objs = $.isArray(objs) ? objs : [objs];
-			var actuals = [];
+			var unselected = [];
 			for (var i = 0, l = objs.length; i < l; i++) {
 				var obj = objs[i];
 				if (this.isSelected(obj)) {
@@ -239,7 +256,7 @@
 					}
 					// 選択状態を解除
 					var spliced = this._selected.splice(idx, 1);
-					actuals.push(spliced[0]);
+					unselected.push(spliced[0]);
 					if (this._focused === obj) {
 						// フォーカス状態ならフォーカスも解除
 						this._focused = null;
@@ -247,14 +264,7 @@
 				}
 			}
 
-			if (actuals.length === 0) {
-				//指定された要素はそもそもすべて選択状態でなかった＝何も変わらなかったのでイベントも発生させない
-				return 0;
-			}
-
-			this._dispatchSelectionChangeEvent([], actuals, oldFocused);
-
-			return actuals;
+			return unselected;
 		},
 
 		/**
