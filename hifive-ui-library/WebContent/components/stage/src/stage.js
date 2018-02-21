@@ -3319,6 +3319,9 @@
 	//layouterがフックして強制ブロック・別の値をセット等できるようにする
 	var DisplayUnit = EventDispatcher
 			.extend(function(super_) {
+				//DUのID自動採番時のカウントの上限。この値に達したらカウンタをリセットする。
+				var MAX_DU_ID_LOOP = 2000000000;
+
 				var duIdSequence = 0;
 
 				var classDesc = {
@@ -3544,8 +3547,15 @@
 							//TODO 引数のIDは必須にする？？
 							if (id == null) {
 								//TODO ただの連番でなくGUID等にする
-								this.id = 'duid_' + duIdSequence;
-								duIdSequence++;
+								var time = new Date().getTime();
+
+								this.id = 'duid_' + time + '-' + duIdSequence;
+
+								if (duIdSequence >= MAX_DU_ID_LOOP) {
+									duIdSequence = 0;
+								} else {
+									duIdSequence++;
+								}
 							} else {
 								//TODO IDが渡された場合は一意性チェックを入れたい(※ここではなく、StageにaddされるときにStage側が行う)
 								this.id = id;
@@ -6624,6 +6634,13 @@
 
 	var StackViewport = RootClass
 			.extend(function(super_) {
+
+				//IDの自動生成カウンタの最大値（20億。32bit signed intの21億を意識）。この値を超えたらカウンタをゼロにリセットする。
+				var MAX_VC_ID_LOOP = 2000000000;
+
+				//IDの自動生成カウンタ。VCContainerを生成するたびにインクリメントされる。
+				var vcIdCounter = 0;
+
 				var desc = {
 					name: 'h5.ui.components.stage.StackViewport',
 
@@ -6924,11 +6941,27 @@
 							return retV;
 						},
 
+						/**
+						 * 現在の方式だと、1ms以内にMAX_VC_ID_LOOP個以上IDを生成すると
+						 * IDが重複するが、現実的には起こらないと考えてよい（1msに生成できるのはせいぜい数十）ので
+						 * 生成負荷等も考え、乱数を用いるUUIDではなくこの方式にしている。
+						 *
+						 * @private
+						 * @returns {String}
+						 */
 						_generateContainerId: function() {
 							var time = new Date().getTime();
-							var r = Math.floor(Math.random() * 10000);
 
-							var ret = 'vcid_' + time + '-' + r;
+							var ret = 'vcid_' + time + '-' + vcIdCounter;
+
+							if (vcIdCounter >= MAX_VC_ID_LOOP) {
+								//カウンタの上限に達したらゼロに戻す。
+								vcIdCounter = 0;
+							} else {
+								//カウントアップ
+								vcIdCounter++;
+							}
+
 							return ret;
 						},
 
