@@ -15017,10 +15017,11 @@
 				return;
 			}
 
+			//DU.focus()を直接呼んでいた場合はPlane上のDUが入っている場合もある
 			var du = this._getOnStageFocusedDisplayUnit();
 
 			if (!du) {
-				//DUにフォーカスが当たっていない場合は何もしない
+				//フォーカスの当たっているDUがない場合はduKey*イベントはあげない
 				return;
 			}
 
@@ -15029,7 +15030,7 @@
 			if (SingleLayerPlane.isClassOf(du._rootStage)) {
 				var planeDUGlobalPos = du.getWorldGlobalPosition();
 
-				//TODO 代表DU
+				//TODO 代表ProxyDU
 				onStageDU = du._rootStage.getProxyDisplayUnitsAt(du, planeDUGlobalPos.x,
 						planeDUGlobalPos.y)[0];
 			}
@@ -15037,11 +15038,18 @@
 			var activeView = this._getActiveView();
 			var duDOM = activeView.getElementForDisplayUnit(onStageDU);
 
+			var eventSource = duDOM;
+
+			if (!duDOM) {
+				//対応するDOMがない場合は現在のアクティブビューからイベントを出す
+				//TODO private参照をやめる
+				eventSource = activeView._rootElement;
+			}
+
 			//duKey*イベントの発生元は、現在アクティブなビューのDUのルート要素またはその子孫要素とする
 			//なお、再描画が適宜発生するため、
 			//input要素が子孫の場合はその要素になるが、それ以外の場合は
 			//DUのrootElementがそうなる場合が多い
-			var eventSource = duDOM;
 
 			var ev = $.event.fix(event.originalEvent);
 			ev.type = eventName;
@@ -15049,7 +15057,7 @@
 			ev.currentTarget = eventSource;
 
 			$(eventSource).trigger(ev, {
-				displayUnit: onStageDU
+				displayUnit: du
 			});
 		},
 
