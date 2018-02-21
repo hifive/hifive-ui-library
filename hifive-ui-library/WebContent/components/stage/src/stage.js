@@ -15024,8 +15024,18 @@
 				return;
 			}
 
+			var onStageDU = du;
+
+			if (SingleLayerPlane.isClassOf(du._rootStage)) {
+				var planeDUGlobalPos = du.getWorldGlobalPosition();
+
+				//TODO 代表DU
+				onStageDU = du._rootStage.getProxyDisplayUnitsAt(du, planeDUGlobalPos.x,
+						planeDUGlobalPos.y)[0];
+			}
+
 			var activeView = this._getActiveView();
-			var duDOM = activeView.getElementForDisplayUnit(du);
+			var duDOM = activeView.getElementForDisplayUnit(onStageDU);
 
 			//duKey*イベントの発生元は、現在アクティブなビューのDUのルート要素またはその子孫要素とする
 			//なお、再描画が適宜発生するため、
@@ -15039,7 +15049,7 @@
 			ev.currentTarget = eventSource;
 
 			$(eventSource).trigger(ev, {
-				displayUnit: du
+				displayUnit: onStageDU
 			});
 		},
 
