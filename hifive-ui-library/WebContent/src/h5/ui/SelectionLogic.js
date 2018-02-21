@@ -81,12 +81,36 @@
 				return;
 			}
 
+			var result = this._focusSilently(obj);
+
+			this._dispatchSelectionChangeEvent(result.newSelected, [], result.oldFocused);
+		},
+
+		/**
+		 * @param obj
+		 */
+		focusSilently: function(obj) {
+			//focus()と戻り値の仕様を合わせる（void）ため、_focusSilentlyと分ける
+			this._focusSilently(obj);
+		},
+
+		/**
+		 * @private
+		 * @param obj
+		 * @returns {___anonymous1892_1954}
+		 */
+		_focusSilently: function(obj) {
+			if (obj === this._focused) {
+				//新たにフォーカスを当てる要素が現在フォーカスが当たっている要素そのものの場合は何もしない
+				return;
+			}
+
 			var oldFocused = this._focused;
 
 			var newSelected = null;
 			if (!this.isSelected(obj)) {
 				//非選択状態であれば自動的に選択状態に(追加)する
-				this._select(obj);
+				this.selectSilently(obj);
 				newSelected = [obj];
 			} else {
 				//既に選択済みだったので、新規選択リストは空をセット
@@ -95,7 +119,11 @@
 
 			this._focused = obj;
 
-			this._dispatchSelectionChangeEvent(newSelected, [], oldFocused);
+			var ret = {
+				newSelected: newSelected,
+				oldFocused: oldFocused
+			};
+			return ret;
 		},
 
 		/**
@@ -143,33 +171,37 @@
 				return 0;
 			}
 
-			var result = this._select(objs, isExclusive);
+			var result = this.selectSilently(objs, isExclusive);
+
+			this
+					._dispatchSelectionChangeEvent(result.actuals, result.unselected,
+							result.oldFocused);
+
 			return result.actuals;
 		},
 
 		/**
-		 * 選択処理の実体です。
+		 * 要素を選択します。ただし、イベントは発火しません。
 		 *
-		 * @private
 		 * @param objs
 		 * @param isExclusive
 		 * @returns {___anonymous4240_4326}
 		 */
-		_select: function(objs, isExclusive) {
+		selectSilently: function(objs, isExclusive) {
 			var oldFocused = this._focused;
+			var oldSelected = this._selected.slice(0);
 			var unselected = null;
 
 			if (isExclusive === true) {
-				unselected = this.unselectAllSilently();
+				//排他的選択の場合、現在選択しているものをいったんすべてunselectedに入れる
+				unselected = oldSelected.slice(0);
+				this._selected = [];
 			} else {
 				//isExclusiveがfalseの場合は、今回unselectされるものはないので空配列をイベントのchangesに入れる
 				unselected = [];
 			}
 
 			objs = Array.isArray(objs) ? objs : [objs];
-
-			// デフォルトで、先頭のものをfocus状態にする
-			var shouldRefocus = this._selected.length === 0;
 
 			var actuals = [];
 
@@ -191,22 +223,27 @@
 						unselected.splice(reselectIdx, 1);
 					}
 				}
-				//TODO unselectAllを最初にやってしまうと、ここのisSelectedのチェックの意味がなくなり
-				//actualsがおかしくなる
-				if (this.isSelected(obj)) {
-					// 選択済みなら何もしない
-					continue;
+
+				if (!this.isSelected(obj)) {
+					//まだ選択状態でない要素の場合のみ、選択状態リストに追加
+					this._selected.push(obj);
+
+					if (oldSelected.indexOf(obj) === -1) {
+						//前回は選択されておらず、今回追加する場合のみ追加
+						//isExclusive=trueに場合、this._selectedは空配列になっているので
+						//「変化分」の計算はoldSelectedに基づいて行う必要がある
+						actuals.push(obj);
+					}
 				}
-
-				this._selected.push(obj);
-				actuals.push(obj);
 			}
-			if (actuals.length > 0 && shouldRefocus) {
+
+			//今回の更新後の選択状態リストに、今までフォーカスが当たっていた要素がなければ、再フォーカスが必要
+			var shouldRefocus = this._selected.indexOf(oldFocused) === -1;
+
+			if (shouldRefocus) {
 				// フォーカスされているものが無ければ、今回追加したものの先頭をフォーカスする
-				this._focused = actuals[0];
+				this._focused = this._selected[0];
 			}
-
-			this._dispatchSelectionChangeEvent(actuals, unselected, oldFocused);
 
 			return {
 				actuals: actuals,

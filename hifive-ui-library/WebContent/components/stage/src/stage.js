@@ -6539,102 +6539,150 @@
 		return desc;
 	});
 
-	var ViewportDisplayUnitContainer = DisplayUnitContainer.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.ViewportDisplayUnitContainer',
+	var ViewportDisplayUnitContainer = DisplayUnitContainer
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.ViewportDisplayUnitContainer',
 
-			field: {
-				_viewportX: null,
-				_viewportY: null,
-				_duduMap: null,
-				_plane: null,
-				_viewport: null
-			},
-
-			accessor: {
-				viewportX: {
-					get: function() {
-						return this._viewportX;
+					field: {
+						_viewportX: null,
+						_viewportY: null,
+						_duduMap: null,
+						_plane: null,
+						_viewport: null
 					},
-					set: function(value) {
-						if (value === this._viewportX) {
-							return;
+
+					accessor: {
+						viewportX: {
+							get: function() {
+								return this._viewportX;
+							},
+							set: function(value) {
+								if (value === this._viewportX) {
+									return;
+								}
+								this._viewportX = value;
+							}
+						},
+						viewportY: {
+							get: function() {
+								return this._viewportY;
+							},
+							set: function(value) {
+								if (value === this._viewportY) {
+									return;
+								}
+								this._viewportY = value;
+							}
 						}
-						this._viewportX = value;
-					}
-				},
-				viewportY: {
-					get: function() {
-						return this._viewportY;
 					},
-					set: function(value) {
-						if (value === this._viewportY) {
-							return;
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.ViewportDisplayUnitContainer
+						 */
+						constructor: function ViewportDisplayUnitContainer(id, viewport) {
+							super_.constructor.call(this, id);
+
+							if (viewport == null) {
+								throw new Error('viewportがnullです。');
+							}
+
+							this._duduMap = new Map();
+
+							this._viewport = viewport;
+							this._plane = viewport._plane;
+						},
+
+						addSourceDisplayUnit: function(sourceDisplayUnit) {
+							if (this._duduMap.has(sourceDisplayUnit)) {
+								//すでに追加済みのDUの場合は何もしない
+								return;
+							}
+
+							var proxyDU = this._plane._proxyManager.createProxyDisplayUnit(
+									sourceDisplayUnit, this);
+
+							this._duduMap.set(sourceDisplayUnit, proxyDU);
+
+							if (sourceDisplayUnit.isSelected) {
+								this._rootStage._selectionLogic.selectSilently(proxyDU);
+							}
+
+							super_.addDisplayUnit.call(this, proxyDU);
+						},
+
+						removeSourceDisplayUnit: function(sourceDisplayUnit) {
+							var proxyDU = this._duduMap.get(sourceDisplayUnit);
+							if (!proxyDU) {
+								return;
+							}
+							this._duduMap['delete'](sourceDisplayUnit);
+
+							this._plane._proxyManager.removeProxy(proxyDU);
+
+							this._removeProxyDisplayUnit(proxyDU);
+						},
+
+						getProxyDisplayUnit: function(sourceDisplayUnit) {
+							return this._duduMap.get(sourceDisplayUnit);
+						},
+
+						addDisplayUnit: function(displayUnit) {
+							throw new Error('このコンテナに直接DisplayUnitを追加することはできません。');
+						},
+
+						removeDisplayUnit: function(displayUnit) {
+							throw new Error('このコンテナから直接DisplayUnitを削除することはできません。');
+							//this.removeSourceDisplayUnit(displayUnit.sourceDisplayUnit);
+						},
+
+						/**
+						 * @private
+						 * @param du 削除するProxyDisplayUnit
+						 */
+						_removeProxyDisplayUnit: function(du) {
+							var idx = this._children.indexOf(du);
+							if (idx === -1) {
+								return;
+							}
+
+							//削除されるDU側にクリーンアップのタイミングを与える
+							//TODO ここで記述するのがよいか？
+							if (typeof du._onRemoving === 'function') {
+								du._onRemoving();
+							}
+
+							if (this._rootStage) {
+								var shouldRestoreFocus = this._rootStage._selectionLogic
+										.getFocused() === du;
+
+								//DUを非選択状態にする
+								this._rootStage._selectionLogic.unselectSilently(du);
+
+								if (shouldRestoreFocus) {
+									this._rootStage._selectionLogic
+											.focusSilently(du.sourceDisplayUnit);
+								}
+							}
+
+							this._children.splice(idx, 1);
+
+							du._parentDU = null;
+
+							//TODO 指定されたduがコンテナの場合にそのduの子供のrootStageも再帰的にnullにする
+							du._rootStage = null;
+
+							//親に対してDUを削除したことを通知
+							this.__onDescendantRemoved(du, this);
+
+							//DU自身に削除されたことを通知
+							du._onRemovedFromStage();
 						}
-						this._viewportY = value;
 					}
-				}
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.ViewportDisplayUnitContainer
-				 */
-				constructor: function ViewportDisplayUnitContainer(id, viewport) {
-					super_.constructor.call(this, id);
-
-					if (viewport == null) {
-						throw new Error('viewportがnullです。');
-					}
-
-					this._duduMap = new Map();
-
-					this._viewport = viewport;
-					this._plane = viewport._plane;
-				},
-
-				addSourceDisplayUnit: function(sourceDisplayUnit) {
-					if (this._duduMap.has(sourceDisplayUnit)) {
-						//すでに追加済みのDUの場合は何もしない
-						return;
-					}
-
-					var proxyDU = this._plane._proxyManager.createProxyDisplayUnit(
-							sourceDisplayUnit, this);
-
-					this._duduMap.set(sourceDisplayUnit, proxyDU);
-
-					super_.addDisplayUnit.call(this, proxyDU);
-				},
-
-				removeSourceDisplayUnit: function(sourceDisplayUnit) {
-					var proxyDU = this._duduMap.get(sourceDisplayUnit);
-					if (!proxyDU) {
-						return;
-					}
-					this._duduMap['delete'](sourceDisplayUnit);
-
-					this._plane._proxyManager.removeProxy(proxyDU);
-
-					super_.removeDisplayUnit.call(this, proxyDU);
-				},
-
-				getProxyDisplayUnit: function(sourceDisplayUnit) {
-					return this._duduMap.get(sourceDisplayUnit);
-				},
-
-				addDisplayUnit: function(displayUnit) {
-					throw new Error('このコンテナに直接DisplayUnitを追加することはできません。');
-				},
-
-				removeDisplayUnit: function(displayUnit) {
-					throw new Error('このコンテナから直接DisplayUnitを削除することはできません。');
-					//this.removeSourceDisplayUnit(displayUnit.sourceDisplayUnit);
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	var StackViewport = RootClass
 			.extend(function(super_) {
