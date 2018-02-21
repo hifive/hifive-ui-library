@@ -12280,6 +12280,33 @@
 		return ret;
 	}
 
+	function hasSameContents(array1, array2) {
+		if (!array1 || !array2) {
+			//どちらかがnullの場合はfalse
+			return false;
+		}
+
+		if (!Array.isArray(array1) || !Array.isArray(array2)) {
+			//どちらかが配列でない場合はfalse
+			return false;
+		}
+
+		if (array1.length !== array2.length) {
+			//配列の要素数が違う場合はfalse
+			return false;
+		}
+
+		for (var i = 0, len = array1.length; i < len; i++) {
+			var elem1 = array1[i];
+			if (array2.indexOf(elem1) === -1) {
+				//配列1にある要素が配列2にない＝false
+				return false;
+			}
+		}
+		//要素数が同じ、かつ、配列1にあるすべての要素が配列2にもある＝2つの配列は同じ要素を持つ
+		return true;
+	}
+
 	var DRAG_MODE_NONE = DragMode.NONE;
 	var DRAG_MODE_AUTO = DragMode.AUTO;
 	var DRAG_MODE_SCREEN = DragMode.SCREEN;
@@ -13030,9 +13057,18 @@
 				}
 			};
 
+			var lastSelection = this._currentSelection;
+
 			this._currentSelection = evArg;
 
-			this.trigger(SELECTION_CHANGE, evArg);
+			//フォーカスが変わった、または
+			//論理DUの選択状態が変わった場合のみイベントを発生させる。
+			//ProxyDUの追加・削除のみの場合は、Rawな状態は内部的には変更しておくが、外にはイベントを上げない。
+			if (!lastSelection
+					|| (lastSelection.focused !== focusedDU || !hasSameContents(
+							lastSelection.selected, selectedLogical))) {
+				this.trigger(SELECTION_CHANGE, evArg);
+			}
 		},
 
 		_currentSelection: null,
@@ -15036,13 +15072,18 @@
 			}
 
 			var activeView = this._getActiveView();
-			var duDOM = activeView.getElementForDisplayUnit(onStageDU);
+			var eventSource = null;
 
-			var eventSource = duDOM;
-
-			if (!duDOM) {
-				//対応するDOMがない場合は現在のアクティブビューからイベントを出す
-				//TODO private参照をやめる
+			if (onStageDU) {
+				var duDOM = activeView.getElementForDisplayUnit(onStageDU);
+				if (duDOM) {
+					eventSource = duDOM;
+				} else {
+					//対応するDOMがない場合は現在のアクティブビューからイベントを出す
+					//TODO private参照をやめる
+					eventSource = activeView._rootElement;
+				}
+			} else {
 				eventSource = activeView._rootElement;
 			}
 
