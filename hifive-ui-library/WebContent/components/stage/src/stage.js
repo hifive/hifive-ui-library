@@ -13455,7 +13455,7 @@
 					}
 					this._resizeSession.direction = resizeDirection;
 
-					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
+					//デフォルトでは、選択中かつリサイズ可能なDUがドラッグ対象となる。
 					var targetDU = this.getSelectedDisplayUnits();
 					targetDU = targetDU.filter(function(resizeTargetDU) {
 						return resizeTargetDU.isResizable;
@@ -14978,7 +14978,7 @@
 				return;
 			}
 
-			var du = this.getFocusedDisplayUnit();
+			var du = this._getOnStageFocusedDisplayUnit();
 
 			if (!du) {
 				//DUにフォーカスが当たっていない場合は何もしない
