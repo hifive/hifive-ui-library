@@ -365,6 +365,259 @@
 		containsElement: containsElement
 	});
 
+	var NineSlicePosition = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.NineSlicePosition',
+
+			field: {
+				_x: null,
+				_y: null
+			},
+
+			accessor: {
+				rawX: {
+					get: function() {
+						return this._x;
+					}
+				},
+
+				rawY: {
+					get: function() {
+						return this._y;
+					}
+				},
+
+				isLeft: {
+					get: function() {
+						return this._x < 0;
+					}
+				},
+				isCenter: {
+					get: function() {
+						return this._x === 0;
+					}
+				},
+				isRight: {
+					get: function() {
+						return this._x > 0;
+					}
+				},
+
+				isTop: {
+					get: function() {
+						return this._y < 0;
+					}
+				},
+				isMiddle: {
+					get: function() {
+						return this._y === 0;
+					}
+				},
+				isBottom: {
+					get: function() {
+						return this._y > 0;
+					}
+				},
+
+				isTopLeft: {
+					get: function() {
+						return this.isLeft && this.isTop;
+					}
+				},
+				isMiddleLeft: {
+					get: function() {
+						return this.isLeft && this.isCenter;
+					}
+				},
+				isBottomLeft: {
+					get: function() {
+						return this.isLeft && this.isBottom;
+					}
+				},
+
+				isTopCenter: {
+					get: function() {
+						return this.isCenter && this.isTop;
+					}
+				},
+				isMiddleCenter: {
+					get: function() {
+						return this.isCenter && this.isMiddle;
+					}
+				},
+				isBottomCenter: {
+					get: function() {
+						return this.isCenter && this.isBottom;
+					}
+				},
+
+				isTopRight: {
+					get: function() {
+						return this.isRight && this.isTop;
+					}
+				},
+				isMiddleRight: {
+					get: function() {
+						return this.isRight && this.isMiddle;
+					}
+				},
+				isBottomRight: {
+					get: function() {
+						return this.isRight && this.isBottom;
+					}
+				},
+
+				isCorner: {
+					get: function() {
+						return this.isTopLeft || this.isTopRight || this.isBottomLeft
+								|| this.isBottomRight;
+					}
+				},
+
+				isSide: {
+					get: function() {
+						return this.isTopCenter || this.isMiddleRight || this.isBottomCenter
+								|| this.isMiddleLeft;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.NineSlicePosition
+				 */
+				constructor: function NineSlicePosition(x, y) {
+					super_.constructor.call(this);
+
+					if (typeof x !== 'number') {
+						throw new Error('xは数値でなければいけません。');
+					}
+					if (typeof y !== 'number') {
+						throw new Error('yは数値でなければいけません。');
+					}
+
+					this._x = x;
+					this._y = y;
+				}
+			}
+		};
+		return desc;
+	});
+
+	var BorderedNineSlicePosition = NineSlicePosition.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.BorderedNineSlicePosition',
+
+			accessor: {
+				isBorderLeft: {
+					get: function() {
+						return this._x === -1 && -1 <= this._y && this._y <= 1;
+					}
+				},
+
+				isBorderRight: {
+					get: function() {
+						return this._x === 1 && -1 <= this._y && this._y <= 1;
+					}
+				},
+
+				isBorderTop: {
+					get: function() {
+						return this._y === -1 && -1 <= this._x && this._x <= 1;
+					}
+				},
+
+				isBorderBottom: {
+					get: function() {
+						return this._y === 1 && -1 <= this._x && this._x <= 1;
+					}
+				},
+
+				isBorderTopLeft: {
+					get: function() {
+						return this._x === -1 && this._y === -1;
+					}
+				},
+				isBorderTopCenter: {
+					get: function() {
+						return this._x === 0 && this._y === -1;
+					}
+				},
+				isBorderTopRight: {
+					get: function() {
+						return this._x === 1 && this._y === -1;
+					}
+				},
+
+				isBorderMiddleLeft: {
+					get: function() {
+						return this._x === -1 && this._y === 0;
+					}
+				},
+				isBorderMiddleRight: {
+					get: function() {
+						return this._x === 1 && this._y === 0;
+					}
+				},
+
+				isBorderBottomLeft: {
+					get: function() {
+						return this._x === -1 && this._y === 1;
+					}
+				},
+				isBorderBottomCenter: {
+					get: function() {
+						return this._x === 0 && this._y === 1;
+					}
+				},
+				isBorderBottomRight: {
+					get: function() {
+						return this._x === 1 && this._y === 1;
+					}
+				},
+
+				isBorder: {
+					get: function() {
+						return this.isBorderTop || this.isBorderRight || this.isBorderBottom
+								|| this.isBorderLeft;
+					}
+				},
+
+				isOuterLeft: {
+					get: function() {
+						return this._x < -1;
+					}
+				},
+				isOuterRight: {
+					get: function() {
+						return this._x > 1;
+					}
+				},
+
+				isOuterTop: {
+					get: function() {
+						return this._y < -1;
+					}
+				},
+				isOuterBottom: {
+					get: function() {
+						return this._y > 1;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.BorderedNineSlicePosition
+				 */
+				constructor: function BorderedNineSlicePosition(x, y) {
+					super_.constructor.call(this, x, y);
+				}
+			}
+		};
+		return desc;
+	});
+
 	RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.MasterClock',
@@ -1002,6 +1255,12 @@
 					get: function() {
 						return this._isCompleted;
 					}
+				},
+
+				handlingPosition: {
+					get: function() {
+						return this._handlingPosition;
+					}
 				}
 			},
 			method: {
@@ -1315,7 +1574,7 @@
 					var newX = initialState.x;
 					var newY = initialState.y;
 
-					if (this._handlingPosition.x < 0) {
+					if (this._handlingPosition.isLeft) {
 						//左の境界を操作している
 
 						if (wmx > initialState.width) {
@@ -1328,7 +1587,7 @@
 						wmx *= -1;
 					}
 
-					if (this._handlingPosition.y < 0) {
+					if (this._handlingPosition.isTop) {
 						//上の境界を操作している
 
 						if (wmy > initialState.height) {
@@ -1372,12 +1631,12 @@
 
 						if (minWidth != null && width < minWidth) {
 							width = minWidth;
-							if (this._handlingPosition.x < 0) {
+							if (this._handlingPosition.isLeft) {
 								newX = initialState.x + initialState.width - minWidth;
 							}
 						} else if (maxWidth != null && maxWidth < width) {
 							width = maxWidth;
-							if (this._handlingPosition.x < 0) {
+							if (this._handlingPosition.isLeft) {
 								newX = initialState.x + initialState.width - maxWidth;
 							}
 						}
@@ -1387,12 +1646,12 @@
 
 						if (minHeight != null && height < minHeight) {
 							height = minHeight;
-							if (this._handlingPosition.y < 0) {
+							if (this._handlingPosition.isTop) {
 								newY = initialState.y + initialState.height - minHeight;
 							}
 						} else if (maxHeight != null && maxHeight < height) {
 							height = maxHeight;
-							if (this._handlingPosition.y < 0) {
+							if (this._handlingPosition.isTop) {
 								newY = initialState.y + initialState.height - maxHeight;
 							}
 						}
@@ -1445,7 +1704,7 @@
 							//量子化した幅を代入すればよい
 							width = quantizedWidth;
 
-							if (this._handlingPosition.x < 0) {
+							if (this._handlingPosition.isLeft) {
 								//左側を操作している＝右端を固定して、X位置を調整
 								var initialRight = initialState.x + initialState.width;
 								newX = initialRight - quantizedWidth;
@@ -1460,7 +1719,7 @@
 
 							height = quantizedHeight;
 
-							if (this._handlingPosition.y < 0) {
+							if (this._handlingPosition.isTop) {
 								//上側を操作している＝下端を固定して、Y位置を調整
 								var initialBottom = initialState.y + initialState.height;
 								newY = initialBottom - quantizedHeight;
@@ -2046,11 +2305,8 @@
 								nsy = -2;
 							}
 
-							var nineSlice = {
-								x: nsx,
-								y: nsy
-							};
-							return nineSlice;
+							var nsPos = BorderedNineSlicePosition.create(nsx, nsy);
+							return nsPos;
 						}
 					}
 				};
@@ -7571,6 +7827,10 @@
 	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
 	var ProxyDisplayUnit = classManager.getClass('h5.ui.components.stage.ProxyDisplayUnit');
 
+	var NineSlicePosition = classManager.getClass('h5.ui.components.stage.NineSlicePosition');
+	var BorderedNineSlicePosition = classManager
+			.getClass('h5.ui.components.stage.BorderedNineSlicePosition');
+
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
@@ -8031,30 +8291,30 @@
 				 *          -1の場合は上端または左端、1は下端または右端、0は中央部分
 				 */
 				getNineSlicePosition: function(displayX, displayY) {
-					var nineSlice = {
-						x: 0,
-						y: 0
-					};
+					var nsx = 0;
 
 					if (this.displayWidth > this.boundaryWidth * 2) {
 						//境界とみなす幅(上下あるので2倍する)より現在の描画サイズが小さい場合は
 						//必ず「中央」とみなす
 						if (displayX < this.boundaryWidth) {
-							nineSlice.x = -1;
+							nsx = -1;
 						} else if (displayX > (this.displayWidth - this.boundaryWidth)) {
-							nineSlice.x = 1;
+							nsx = 1;
 						}
 					}
+
+					var nsy = 0;
 
 					if (this.displayHeight > this.boundaryWidth * 2) {
 						if (displayY < this.boundaryWidth) {
-							nineSlice.y = -1;
+							nsy = -1;
 						} else if (displayY > (this.displayHeight - this.boundaryWidth)) {
-							nineSlice.y = 1;
+							nsy = 1;
 						}
 					}
 
-					return nineSlice;
+					var nsPos = NineSlicePosition.create(nsx, nsy);
+					return nsPos;
 				},
 
 				createReadOnlyReference: function() {
@@ -13529,9 +13789,7 @@
 				//NineSliceが「外側(2/-2)」という結果を返す可能性がある。
 				//そのため、"!==0"での比較ではなく、明示的に1/-1かどうかをチェックすることで、
 				//boundaryをゼロにしているのに「リサイズ」と判定されることを防ぐ。
-				if (du
-						&& du.isResizable
-						&& ((duNineSlicePos.x === 1 || duNineSlicePos.x === -1) || (duNineSlicePos.y === 1 || duNineSlicePos.y === -1))) {
+				if (du && du.isResizable && duNineSlicePos.isBorder) {
 					isResize = true;
 				}
 
@@ -13554,8 +13812,8 @@
 							this._resizeSessionCancelHandlerWrapper);
 
 					var resizeDirection = ResizeDirection.NONE;
-					if (duNineSlicePos.x < 0) {
-						if (duNineSlicePos.y === 0) {
+					if (duNineSlicePos.isLeft) {
+						if (duNineSlicePos.isMiddle) {
 							//左中央
 							resizeDirection = ResizeDirection.X;
 						} else {
@@ -13563,8 +13821,8 @@
 							//左下
 							resizeDirection = ResizeDirection.XY;
 						}
-					} else if (duNineSlicePos.x > 0) {
-						if (duNineSlicePos.y === 0) {
+					} else if (duNineSlicePos.isRight) {
+						if (duNineSlicePos.isMiddle) {
 							//右中央
 							resizeDirection = ResizeDirection.X;
 						} else {
@@ -14161,9 +14419,9 @@
 			var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left - activeView.x;
 			var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top - activeView.y;
 
-			var nineSlice = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
-			if (nineSlice.x !== 0 || nineSlice.y !== 0) {
-				this._beginBoundaryScroll(nineSlice, callback);
+			var nineSlicePosition = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
+			if (!nineSlicePosition.isMiddleCenter) {
+				this._beginBoundaryScroll(nineSlicePosition, callback);
 			} else {
 				this._endBoundaryScroll();
 			}
@@ -14423,8 +14681,23 @@
 			var that = this;
 			this._boundaryScrollTimerId = setInterval(function() {
 				//ディスプレイ座標系での移動量
-				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.x;
-				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * that._nineSlice.y;
+
+				var dirx = 0;
+				if (that._nineSlice.isLeft) {
+					dirx = -1;
+				} else if (that._nineSlice.isRight) {
+					dirx = 1;
+				}
+
+				var diry = 0;
+				if (that._nineSlice.isTop) {
+					diry = -1;
+				} else if (that._nineSlice.isBottom) {
+					diry = 1;
+				}
+
+				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * dirx;
+				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * diry;
 
 				var actualDiff = that._scrollBy(boundaryScrX, boundaryScrY);
 				callback(actualDiff.dx, actualDiff.dy);
@@ -14978,30 +15251,30 @@
 
 			this._resizeOverNineSlice = nineSlicePos;
 
-			if (nineSlicePos.x === -1) {
-				if (nineSlicePos.y === -1) {
+			if (nineSlicePos.isLeft) {
+				if (nineSlicePos.isTop) {
 					//カーソルは「左上」にある
 					this._setRootCursor('nw-resize');
-				} else if (nineSlicePos.y === 1) {
+				} else if (nineSlicePos.isBottom) {
 					//カーソルは「左下」にある
 					this._setRootCursor('ne-resize');
 				} else {
 					//カーソルは「左中」にある
 					this._setRootCursor('w-resize');
 				}
-			} else if (nineSlicePos.x === 1) {
-				if (nineSlicePos.y === -1) {
+			} else if (nineSlicePos.isRight) {
+				if (nineSlicePos.isTop) {
 					//カーソルは「右上」にある
 					this._setRootCursor('ne-resize');
-				} else if (nineSlicePos.y === 1) {
+				} else if (nineSlicePos.isBottom) {
 					//カーソルは「右下」にある
 					this._setRootCursor('nw-resize');
 				} else {
 					//カーソルは「右中央」にある
 					this._setRootCursor('w-resize');
 				}
-			} else if (nineSlicePos.x === 0) {
-				if (nineSlicePos.y === 1 || nineSlicePos.y === -1) {
+			} else if (nineSlicePos.isCenter) {
+				if (nineSlicePos.isTop || nineSlicePos.isBottom) {
 					//カーソルは「中上」または「中下」にある
 					this._setRootCursor('n-resize');
 				} else {
