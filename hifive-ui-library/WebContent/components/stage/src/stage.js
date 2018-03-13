@@ -4910,78 +4910,79 @@
 		return desc;
 	});
 
-	var SyncHookContext = RootClass.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.SyncHookContext',
+	var SyncHookContext = RootClass
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.SyncHookContext',
 
-			field: {
-				_value: null,
-				_isValueHooked: null,
-				_propertyName: null,
-				_sourceNewValue: null,
-				_target: null,
-				_source: null
-			},
+					field: {
+						_value: null,
+						_isValueHooked: null,
+						_propertyName: null,
+						_sourceNewValue: null,
+						_target: null,
+						_source: null
+					},
 
-			accessor: {
-				propertyName: {
-					get: function() {
-						return this._propertyName;
+					accessor: {
+						propertyName: {
+							get: function() {
+								return this._propertyName;
+							}
+						},
+
+						sourceNewValue: {
+							get: function() {
+								return this._sourceNewValue;
+							}
+						},
+
+						target: {
+							get: function() {
+								return this._target;
+							}
+						},
+
+						source: {
+							get: function() {
+								return this._source;
+							}
+						}
+					},
+
+					method: {
+						constructor: function SyncHookContext(propertyName, sourceNewValue,
+								targetDU, sourceDU) {
+							super_.constructor.call(this);
+
+							this._value = null;
+							this._isValueHooked = false;
+
+							this._propertyName = propertyName;
+							this._sourceNewValue = sourceNewValue;
+							this._target = targetDU;
+							this._source = sourceDU;
+						},
+
+						setValue: function(value) {
+							this._value = value;
+							this._isValueHooked = true;
+						},
+
+						getValue: function() {
+							return this._value;
+						},
+
+						__reset: function(propertyName, sourceNewValue) {
+							this._isValueHooked = false;
+							this._propertyName = propertyName;
+							this._sourceNewValue = sourceNewValue;
+							this._value = null;
+						}
 					}
-				},
-
-				sourceNewValue: {
-					get: function() {
-						return this._sourceNewValue;
-					}
-				},
-
-				target: {
-					get: function() {
-						return this._target;
-					}
-				},
-
-				source: {
-					get: function() {
-						return this._source;
-					}
-				}
-			},
-
-			method: {
-				constructor: function SyncHookContext(propertyName, sourceNewValue, targetDU,
-						sourceDU) {
-					super_.constructor.call(this);
-
-					this._value = null;
-					this._isValueHooked = false;
-
-					this._propertyName = propertyName;
-					this._sourceNewValue = sourceNewValue;
-					this._target = targetDU;
-					this._source = sourceDU;
-				},
-
-				setValue: function(value) {
-					this._value = value;
-					this._isValueHooked = true;
-				},
-
-				getValue: function() {
-					return this._value;
-				},
-
-				__reset: function(propertyName, sourceNewValue) {
-					this._isValueHooked = false;
-					this._propertyName = propertyName;
-					this._sourceNewValue = sourceNewValue;
-					this._value = null;
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	var ProxyDisplayUnit = BasicDisplayUnit.extend(function(super_) {
 		var desc = {
@@ -4993,7 +4994,8 @@
 				_isSelectedOfThisProxy: null,
 				_isSyncEnabled: null,
 				_isRepresentative: null,
-				_syncHookFunction: null
+				_syncHookFunction: null,
+				_syncHookContextHolder: null
 			},
 
 			accessor: {
