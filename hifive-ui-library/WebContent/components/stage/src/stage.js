@@ -4910,6 +4910,71 @@
 		return desc;
 	});
 
+	var SyncHookContext = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.SyncHookContext',
+
+			field: {
+				_value: null,
+				_isValueHooked: null,
+				_propertyName: null,
+				_sourceNewValue: null,
+				_target: null,
+				_source: null
+			},
+
+			accessor: {
+				propertyName: {
+					get: function() {
+						return this._propertyName;
+					}
+				},
+
+				sourceNewValue: {
+					get: function() {
+						return this._sourceNewValue;
+					}
+				},
+
+				target: {
+					get: function() {
+						return this._target;
+					}
+				},
+
+				source: {
+					get: function() {
+						return this._source;
+					}
+				}
+			},
+
+			method: {
+				constructor: function SyncHookContext(propertyName, sourceNewValue, targetDU,
+						sourceDU) {
+					super_.constructor.call(this);
+
+					this._isValueHooked = false;
+
+					this._propertyName = propertyName;
+					this._sourceNewValue = sourceNewValue;
+					this._target = targetDU;
+					this._source = sourceDU;
+				},
+
+				setValue: function(value) {
+					this._value = value;
+					this._isValueHooked = true;
+				},
+
+				getValue: function() {
+					return this._value;
+				}
+			}
+		};
+		return desc;
+	});
+
 	var ProxyDisplayUnit = BasicDisplayUnit.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.ProxyDisplayUnit',
@@ -5216,7 +5281,14 @@
 					if (!this._syncHookFunction) {
 						return newValue;
 					}
-					return this._syncHookFunction(propertyName, newValue, this, this._sourceDU);
+
+					var context = SyncHookContext.create(propertyName, newValue, this,
+							this._sourceDU);
+
+					this._syncHookFunction(context);
+
+					var ret = context._isValueHooked ? context.getValue() : newValue;
+					return ret;
 				},
 
 				sync: function(reasons) {
