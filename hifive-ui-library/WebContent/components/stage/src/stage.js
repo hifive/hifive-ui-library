@@ -4954,6 +4954,7 @@
 						sourceDU) {
 					super_.constructor.call(this);
 
+					this._value = null;
 					this._isValueHooked = false;
 
 					this._propertyName = propertyName;
@@ -4969,6 +4970,13 @@
 
 				getValue: function() {
 					return this._value;
+				},
+
+				__reset: function(propertyName, sourceNewValue) {
+					this._isValueHooked = false;
+					this._propertyName = propertyName;
+					this._sourceNewValue = sourceNewValue;
+					this._value = null;
 				}
 			}
 		};
@@ -5252,6 +5260,12 @@
 					this._sourceDU = sourceDisplayUnit;
 					this._viewportContainer = viewportContainer;
 
+					//Syncのsourceとtarget(自分自身)はインスタンス生成後に変わることはないので
+					//SyncHookContextオブジェクトは（フック関数がシングルスレッドで実行されることを前提として）
+					//呼ばれる回数の多さを考慮し、インスタンス生成回数を最小限に抑える
+					this._syncHookContextHolder = SyncHookContext.create(null, null, this,
+							sourceDisplayUnit);
+
 					this.sync();
 				},
 
@@ -5282,8 +5296,9 @@
 						return newValue;
 					}
 
-					var context = SyncHookContext.create(propertyName, newValue, this,
-							this._sourceDU);
+					//SyncHookContextインスタンスはコンストラクタで生成済みなので
+					//ここではプロパティの情報とフック済みフラグのリセットのみを行う（インスタンス生成負荷削減）
+					this._syncHookContextHolder.__reset(propertyName, newValue);
 
 					this._syncHookFunction(context);
 
