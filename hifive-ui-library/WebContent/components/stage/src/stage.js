@@ -5283,10 +5283,9 @@
 				},
 
 				/**
-				 * ソースDUとの値の同期時に呼ばれます。 trueを返すと同期し、falseまたは何も返さないなどtrue以外の場合は同期しません。
+				 * ソースDUとの値の同期時に呼ばれます。
 				 *
-				 * @param syncFilterFunction function(propertyName, newValue, proxyDisplayUnit,
-				 *            sourceDisplayUnit)
+				 * @param syncFilterFunction function(SyncHookContext)
 				 */
 				setSyncHook: function(syncHookFunction) {
 					this._syncHookFunction = syncHookFunction;

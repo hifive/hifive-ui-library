@@ -372,12 +372,16 @@
 		_createEdge: function(duFrom, duTo) {
 			var edge = Edge.create(duFrom, duTo);
 
-			edge.endpointTo.verticalAlign = 'top';
+			edge.endpointFrom.verticalAlign = 'nearestSide';
+//			edge.endpointFrom.verticalAlign = 'bottom';
+			edge.endpointFrom.horizontalAlign = 'left';
 
-			edge.endpointFrom.verticalAlign = 'bottom';
+			edge.endpointTo.verticalAlign = 'nearestSide';
+//			edge.endpointTo.verticalAlign = 'top';
+			edge.endpointTo.horizontalAlign = 'left';
 
-			edge.endpointFrom.horizontalAlign = 'offset';
-			edge.endpointFrom.alignOffsetX = 15;
+//			edge.endpointFrom.horizontalAlign = 'offset';
+//			edge.endpointFrom.alignOffsetX = 15;
 
 			edge.addClass('myEdge');
 			edge.addClass('edge-type-1');
@@ -563,10 +567,10 @@
 			var ev = context.evArg;
 			this.log
 					.debug(
-							'stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocusedRaw={4}, unselected={1}',
+							'stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocused={5}, unfocusedRaw={4}, unselected={1}',
 							ev.changes.selected.length, ev.changes.unselected.length,
 							ev.focused ? ev.focused.id : 'null', ev.focusedRaw ? ev.focusedRaw.id
-									: 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null');
+									: 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null', ev.unfocused ? ev.unfocused.id : 'null');
 		},
 
 		'{rootElement} duKeyDown': function(context) {
