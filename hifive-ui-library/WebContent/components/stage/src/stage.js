@@ -6544,6 +6544,34 @@
 					set: function(value) {
 						throw new Error(MSG_RENDER_PRIORITY_MUST_BE_ALWAYS);
 					}
+				},
+
+				/**
+				 * コンテナ内部のコンテンツのX方向のスクロール量。ワールド座標系の値をとる。
+				 */
+				scrollX: {
+					get: function() {
+						return this._scrollX;
+					},
+					set: function(value) {
+						if (this._scrollX !== value) {
+							this._scrollTo(value, this._scrollY);
+						}
+					}
+				},
+
+				/**
+				 * コンテナ内部のコンテンツのY方向のスクロール量。ワールド座標系の値をとる。
+				 */
+				scrollY: {
+					get: function() {
+						return this._scrollY;
+					},
+					set: function(value) {
+						if (this._scrollY !== value) {
+							this._scrollTo(this._scrollX, value);
+						}
+					}
 				}
 			},
 
