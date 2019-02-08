@@ -249,7 +249,8 @@
 		DU_DRAG: 3,
 		SELECT: 4,
 		REGION: 5,
-		DU_RESIZE: 6
+		DU_RESIZE: 6,
+		CUSTOM: 7
 	};
 
 	var ScrollDirection = {
@@ -905,7 +906,7 @@
 					this._onStageTargets = this._stage
 							._getOnStageNormalizedDisplayUnits(this._targets);
 
-					var rawFocusedDU = this._stage._dragStartDisplayUnit;
+					var rawFocusedDU = this._stage._dragStartingInfo.displayUnit;
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
@@ -1359,7 +1360,7 @@
 					this._onStageTargets = this._stage
 							._getOnStageNormalizedDisplayUnits(this._targets);
 
-					var rawFocusedDU = this._stage._dragStartDisplayUnit;
+					var rawFocusedDU = this._stage._dragStartingInfo.displayUnit;
 
 					this._onStageTargets.forEach(function(du) {
 						if (ProxyDisplayUnit.isClassOf(du)) {
@@ -6624,6 +6625,8 @@
 					this._scrollX = 0;
 					this._scrollY = 0;
 
+					//DUContainerのルート要素のoverflowはデフォルトで明示的にvisibleに設定する
+					//例えばBootstrapは、not(:root)なSVG要素のoverflowをhiddenに設定するため。
 					this._overflow = 'visible';
 
 					this._isUpdateTransformReserved = false;
@@ -12770,6 +12773,7 @@
 	var DRAG_MODE_SELECT = DragMode.SELECT;
 	var DRAG_MODE_REGION = DragMode.REGION;
 	var DRAG_MODE_DU_RESIZE = DragMode.DU_RESIZE;
+	var DRAG_MODE_CUSTOM = DragMode.CUSTOM;
 
 	var SCROLL_DIRECTION_NONE = ScrollDirection.NONE;
 	var SCROLL_DIRECTION_X = ScrollDirection.X;
@@ -13798,7 +13802,7 @@
 			var event = context.event;
 
 			//ドラッグ対象のDUがある場合はmousedownのタイミングで決定済み
-			var du = this._dragStartDisplayUnit;
+			var du = this._dragStartingInfo.displayUnit;
 
 			if (du && du.isEditing) {
 				//対象のDUがエディタによって編集中の場合はドラッグ操作は開始しない
@@ -13815,7 +13819,12 @@
 			};
 			this.trigger(stageDragStartingEvent, {
 				displayUnit: du,
-				stageController: this
+				stageController: this,
+				view: this._dragStartingInfo.view,
+				targetElement: this._dragStartingInfo.targetElement,
+				duRelativePosition: this._dragStartingInfo.duRelativePosition,
+				position: this._dragStartingInfo.position,
+				pagePosition: this._dragStartingInfo.pagePosition
 			});
 
 			if (stageDragStartingEvent.isDefaultPrevented()) {
@@ -13845,6 +13854,10 @@
 			switch (dragStartMode) {
 			case DRAG_MODE_NONE:
 				//UI操作によるドラッグを行わないモードの場合は、何もしない
+				break;
+			case DRAG_MODE_CUSTOM:
+				//カスタムドラッグ処理モードの場合。StageControllerでは移動やリサイズなどの処理は行わないが、
+				//ユーザーが独自に「ドラッグ処理」を記述したい場合に使用。
 				break;
 			case DRAG_MODE_DU_DRAG:
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
@@ -14285,47 +14298,55 @@
 				return;
 			}
 
+			var evPageX = event.pageX;
+			var evPageY = event.pageY;
+
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
 
 			this._dragStartPagePos = {
-				x: event.pageX,
-				y: event.pageY
+				x: evPageX,
+				y: evPageY
 			};
 
 			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
+				x: evPageX,
+				y: evPageY
 			};
-
-			var view = this._getOwnerViewOfElement(event.target);
-			if (view) {
-				this._viewCollection.setActiveView(view);
-			}
-
-			var currentMouseOverDU = this._getIncludingDisplayUnit(event.target);
-
-			if ($(event.target).hasClass('stageGridSeparator')) {
-				//ドラッグ対象がグリッドセパレータの場合は
-				//グリッドのサイズ変更とみなす
-				this._startGridSeparatorDrag(context);
-			} else {
-				//StageViewのドラッグの場合は、対象となるDUを取得(DUがない場合もある)
-				//初回のmousemoveのタイミングで
-				//動作対象を決めると、DUの端の方にカーソルがあったときに
-				//mousedown時にはDUの上にカーソルがあったのに
-				//moveのときに離れてしまい、スクリーンドラッグと判定されるなど
-				//挙動が一貫しない可能性がある。
-				//そのため、ドラッグモードについては
-				//mousedownのタイミングで決定しつつ、
-				//実際にdragStartとみなす（イベントを発生させる）のは
-				//moveのタイミングにする。
-				this._dragStartDisplayUnit = currentMouseOverDU;
-			}
 
 			//DUのドラッグの場合、IE、Firefoxではmousedownの場合textなどでドラッグすると
 			//文字列選択になってしまうのでキャンセルする
 			event.preventDefault();
+
+			if ($(event.target).hasClass('stageGridSeparator')) {
+				//ドラッグ対象がグリッドセパレータの場合は
+				//グリッドのサイズ変更処理を開始
+				this._startGridSeparatorDrag(context);
+				return;
+			}
+
+			//ここに到達した場合は、いずれかのStageView内で起きたドラッグ操作の開始（のmousedown）
+
+			var view = this._getOwnerViewOfElement(event.target);
+			if (!view) {
+				//viewは絶対にあるはずだが、もしいずれのStageViewにも属さない要素をmousedownした場合は無視
+				return;
+			}
+
+			this._viewCollection.setActiveView(view);
+
+			var currentMouseOverDU = this._getIncludingDisplayUnit(event.target);
+
+			//StageViewのドラッグの場合は、対象となるDUを取得(DUがない場合もある)
+			//初回のmousemoveのタイミングで
+			//動作対象を決めると、DUの端の方にカーソルがあったときに
+			//mousedown時にはDUの上にカーソルがあったのに
+			//moveのときに離れてしまい、スクリーンドラッグと判定されるなど
+			//挙動が一貫しない可能性がある。
+			//そのため、ドラッグモードについては
+			//mousedownのタイミングで決定しつつ、
+			//実際にdragStartとみなす（イベントを発生させる）のは
+			//moveのタイミングにする。
 
 			//Chrome(62で確認)では、mouseover時にカーソルのスタイルを変更しても
 			//それが反映されないことがある。そのため、リサイズのカーソルが見えていたのに
@@ -14347,9 +14368,31 @@
 			} else {
 				this._setRootCursor('auto');
 			}
+
+			var viewPagePos = view.getPagePosition();
+			//mousedownした位置のグローバルワールド座標値を計算
+			var wPos = view._viewport.getWorldPositionFromDisplayOffset(evPageX - viewPagePos.x,
+					evPageY - viewPagePos.y);
+
+			//DUをmousedownした場合、そのDUの左上を原点とした相対座標値を計算。DUがターゲットでない場合はnull
+			var duRelativePos = null;
+			if (currentMouseOverDU) {
+				var duWPos = currentMouseOverDU.getWorldGlobalPosition();
+				//DUをmousedownした場合
+				duRelativePos = WorldPoint.create(wPos.x - duWPos.x, wPos.y - duWPos.y);
+			}
+
+			this._dragStartingInfo = {
+				view: view,
+				targetElement: eventTarget,
+				position: wPos,
+				displayUnit: currentMouseOverDU,
+				duRelativePosition: duRelativePos,
+				pagePosition: DisplayPoint.create(evPageX, evPageY)
+			};
 		},
 
-		_dragStartDisplayUnit: null,
+		_dragStartingInfo: null,
 
 		/**
 		 * @private
@@ -14742,7 +14785,7 @@
 			this._dragSelectStartSelectedDU = null;
 			this._dragStartPagePos = null;
 			this._dragLastPagePos = null;
-			this._dragStartDisplayUnit = null;
+			this._dragStartingInfo = null;
 			this._setRootCursor('auto');
 		},
 
