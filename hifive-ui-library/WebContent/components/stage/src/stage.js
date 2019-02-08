@@ -279,6 +279,7 @@
 	var REASON_GLOBAL_POSITION_CHANGE = '__duGlobalPositionChange__';
 	var REASON_EDIT_CHANGE = '__duEditChange__';
 	var REASON_UPDATE_DEPENDENCY_REQUEST = '__duUpdateDependencyRequest__';
+	var REASON_OVERFLOW_CHANGE = '__duOverflowChange__';
 
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
@@ -293,7 +294,8 @@
 		FOCUS_CHANGE: REASON_FOCUS_CHANGE,
 		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE,
 		EDIT_CHANGE: REASON_EDIT_CHANGE,
-		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST
+		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST,
+		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE
 	};
 
 	h5.u.obj.expose('h5.ui.components.stage', {
@@ -4248,7 +4250,8 @@
 							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
 									width: this.width,
-									height: this.height
+									height: this.height,
+									viewBox: '0 0 ' + this.width + ' ' + this.height
 								});
 							} else {
 								$(element).css({
@@ -4402,6 +4405,12 @@
 				isUpdateDependencyRequested: {
 					get: function() {
 						return this.has(REASON_UPDATE_DEPENDENCY_REQUEST);
+					}
+				},
+
+				isOverflowChanged: {
+					get: function() {
+						return this.has(REASON_OVERFLOW_CHANGE);
 					}
 				}
 			},
@@ -6532,7 +6541,8 @@
 				_minScaleY: null,
 				_maxScaleX: null,
 				_maxScaleY: null,
-				_isUpdateTransformReserved: null
+				_isUpdateTransformReserved: null,
+				_overflow: null
 			},
 
 			accessor: {
@@ -6572,6 +6582,18 @@
 							this._scrollTo(this._scrollX, value);
 						}
 					}
+				},
+
+				overflow: {
+					get: function() {
+						return this._overflow;
+					},
+					set: function(value) {
+						if (this._overflow !== value) {
+							this._overflow = value;
+							this._setDirty(REASON_OVERFLOW_CHANGE);
+						}
+					}
 				}
 			},
 
@@ -6601,6 +6623,8 @@
 
 					this._scrollX = 0;
 					this._scrollY = 0;
+
+					this._overflow = 'visible';
 
 					this._isUpdateTransformReserved = false;
 
@@ -6822,7 +6846,10 @@
 					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
 					//属性ではなくスタイル指定によってoverflow:visibleを指定する。
 					//レイヤーについても同様。
-					root.style.overflow = 'visible';
+					//since 2019/2/8: DUContainerではoverflowを指定可能になったので、
+					//固定でvisibleをセットするのではなくoverflowプロパティの値をセットする。
+					//なお、overflowのデフォルト値はvisible（コンストラクタでセットしている）
+					root.style.overflow = this.overflow;
 
 					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
 					root.setAttribute('data-h5-dyn-du-id', this.id);
@@ -6871,6 +6898,10 @@
 				 */
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
+
+					if (reason.isOverflowChanged) {
+						element.style.overflow = this.overflow;
+					}
 
 					if (reason.isScaleChanged || reason.isScrollPositionChanged) {
 						this._updateTransform(element);
