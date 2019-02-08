@@ -13082,6 +13082,10 @@
 			return this._currentSelection.focused;
 		},
 
+		/**
+		 * @private
+		 * @returns
+		 */
 		_getOnStageFocusedDisplayUnit: function() {
 			if (!this._currentSelection) {
 				return null;
@@ -13304,6 +13308,11 @@
 			return du;
 		},
 
+		/**
+		 * @private
+		 * @param du
+		 * @param value
+		 */
 		_setSelected: function(du, value) {
 			if (!ProxyDisplayUnit.isClassOf(du)) {
 				//通常のDUの場合は直接選択状態をセットして終了
@@ -13427,6 +13436,11 @@
 			return ret;
 		},
 
+		/**
+		 * @private
+		 * @param array
+		 * @param value
+		 */
 		_pushIfNotExist: function(array, value) {
 			var idx = array.indexOf(value);
 			if (idx === -1) {
@@ -14227,6 +14241,11 @@
 			return false;
 		},
 
+		/**
+		 * @private
+		 * @param eventTarget
+		 * @returns {Boolean}
+		 */
 		_isOverlayContentsEvent: function(eventTarget) {
 			if (!this._$overlay) {
 				return false;
@@ -15082,6 +15101,10 @@
 			this._validateAndAddToIdToDUMap(du);
 		},
 
+		/**
+		 * @private
+		 * @param du
+		 */
 		_validateAndAddToIdToDUMap: function(du) {
 			var duId = du.id;
 
@@ -15096,6 +15119,10 @@
 			this._units.set(duId, du);
 		},
 
+		/**
+		 * @private
+		 * @param du
+		 */
 		_removeFromIdToDUMap: function(du) {
 			this._units['delete'](du.id);
 		},
@@ -15368,6 +15395,10 @@
 
 		_lastCursor: null,
 
+		/**
+		 * @private
+		 * @param cursor
+		 */
 		_setRootCursor: function(cursor) {
 			if (this._lastCursor === cursor) {
 				return;
@@ -15458,6 +15489,11 @@
 			}
 		},
 
+		/**
+		 * @private
+		 * @param mouseoverDU
+		 * @param event
+		 */
 		_updateResizeCursor: function(mouseoverDU, event) {
 			var bRect = this.rootElement.getBoundingClientRect();
 
