@@ -1629,10 +1629,10 @@
 					}
 
 					if (constraint != null) {
-						var minWidth = constraint.minWidth;
+						var minWidth = constraint.minWidth != null ? constraint.minWidth : 0;
 						var maxWidth = constraint.maxWidth;
 
-						if (minWidth != null && width < minWidth) {
+						if (width < minWidth) {
 							width = minWidth;
 							if (this._handlingPosition.isLeft) {
 								newX = initialState.x + initialState.width - minWidth;
@@ -1644,10 +1644,10 @@
 							}
 						}
 
-						var minHeight = constraint.minHeight;
+						var minHeight = constraint.minHeight != null ? constraint.minHeight : 0;
 						var maxHeight = constraint.maxHeight;
 
-						if (minHeight != null && height < minHeight) {
+						if (height < minHeight) {
 							height = minHeight;
 							if (this._handlingPosition.isTop) {
 								newY = initialState.y + initialState.height - minHeight;
@@ -1667,15 +1667,27 @@
 								//その移動量分だけ幅を縮めることでバーの右端がずれないようにする
 								var clippedWidth = cRegion.left - newX;
 								width -= clippedWidth;
+								if (width < minWidth) {
+									//もしminWidthより小さい値になってしまった場合は強制的にminWidthの値にする
+									//なお、minWidthは、未定義の場合0がセットされている
+									width = minWidth;
+								}
 								newX = cRegion.left;
 							}
 
 							if (cRegion.right != null && (newX + width) > cRegion.right) {
 								if (newX > cRegion.right) {
-									newX = cRegion.right;
-									width = 0;
+									newX = cRegion.right - minWidth;
+									width = minWidth;
 								} else {
 									width = cRegion.right - newX;
+									if (width < minWidth) {
+										//newXがrightよりも左側ではあるがminWidthの制約を満たしていない場合、minWidth制約を優先する
+										newX = cRegion.right - minWidth;
+										width = minWidth;
+									} else if (maxWidth != null && width > maxWidth) {
+										width = maxWidth;
+									}
 								}
 							}
 
@@ -1683,15 +1695,26 @@
 								//leftと同様の調整を行う
 								var clippedHeight = cRegion.top - newY;
 								height -= clippedHeight;
+								if (height < minHeight) {
+									//もしminHeightより小さい値になってしまった場合は強制的にminHeightの値にする
+									height = minHeight;
+								}
 								newY = cRegion.top;
 							}
 
 							if (cRegion.bottom != null && (newY + height) > cRegion.bottom) {
 								if (newY > cRegion.bottom) {
-									newY = cRegion.bottom;
-									height = 0;
+									newY = cRegion.bottom - minHeight;
+									height = minHeight;
 								} else {
 									height = cRegion.bottom - newY;
+									if (height < minHeight) {
+										//newYがbottomよりも上側ではあるがminHeightの制約を満たしていない場合、minHeight制約を優先する
+										newY = cRegion.bottom - minHeight;
+										height = minHeight;
+									} else if (maxHeight != null && height > maxHeight) {
+										height = maxHeight;
+									}
 								}
 							}
 						}
@@ -1703,14 +1726,17 @@
 							//parseIntで切り捨てになるので、ステップ適用後は最大値を超えることはない
 							var quantizedWidth = stepX * parseInt(width / stepX);
 
-							//右側を操作している場合は左端を固定して、幅を調整すればよいので
-							//量子化した幅を代入すればよい
-							width = quantizedWidth;
+							//切り捨てした結果min以下になってしまう場合はstepは適用しない
+							if (quantizedWidth > minWidth) {
+								//右側を操作している場合は左端を固定して、幅を調整すればよいので
+								//量子化した幅を代入すればよい
+								width = quantizedWidth;
 
-							if (this._handlingPosition.isLeft) {
-								//左側を操作している＝右端を固定して、X位置を調整
-								var initialRight = initialState.x + initialState.width;
-								newX = initialRight - quantizedWidth;
+								if (this._handlingPosition.isLeft) {
+									//左側を操作している＝右端を固定して、X位置を調整
+									var initialRight = initialState.x + initialState.width;
+									newX = initialRight - quantizedWidth;
+								}
 							}
 						}
 
@@ -1720,12 +1746,15 @@
 						if (stepY != null) {
 							var quantizedHeight = stepY * parseInt(height / stepY);
 
-							height = quantizedHeight;
+							//切り捨てした結果min以下になってしまう場合はstepは適用しない
+							if (quantizedHeight > minHeight) {
+								height = quantizedHeight;
 
-							if (this._handlingPosition.isTop) {
-								//上側を操作している＝下端を固定して、Y位置を調整
-								var initialBottom = initialState.y + initialState.height;
-								newY = initialBottom - quantizedHeight;
+								if (this._handlingPosition.isTop) {
+									//上側を操作している＝下端を固定して、Y位置を調整
+									var initialBottom = initialState.y + initialState.height;
+									newY = initialBottom - quantizedHeight;
+								}
 							}
 						}
 
