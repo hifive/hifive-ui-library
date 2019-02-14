@@ -1818,6 +1818,342 @@
 		return desc;
 	});
 
+	//TODO DragSession, ResizeSessionと共通の親クラスを作ってI/F統一する
+	//TODO カスタムドラッグ処理で「移動」もしたい場合に、
+	//ドラッグプロキシの生成などを行うためのヘルパーも提供する
+	//(現時点では、リサイズ用途のみ想定している)
+	/**
+	 * カスタムドラッグモードのドラッグセッションです。
+	 *
+	 * @param super_ 親クラス
+	 * @returns クラス定義
+	 */
+	EventDispatcher.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.CustomDragSession',
+			field: {
+				isAsync: null,
+
+				_isReleased: null,
+
+				_targets: null,
+
+				_startingInfo: null,
+
+				_startPagePosition: null,
+				_lastPagePosition: null,
+				_relativePosition: null,
+				_totalMove: null,
+
+				//ステージコントローラ
+				_stage: null,
+
+				_isCompleted: null,
+
+				//汎用なdataプロパティ。ユーザーが自由に値をセットしてよい。
+				data: null,
+
+				//ドラッグ時に呼び出すコールバック関数
+				_callbackFunc: null,
+				_thisObject: null
+			},
+
+			accessor: {
+				isCompleted: {
+					get: function() {
+						return this._isCompleted;
+					}
+				},
+				isReleased: {
+					get: function() {
+						return this._isReleased;
+					}
+				},
+				startingInfo: {
+					get: function() {
+						return this._startingInfo;
+					}
+				},
+				startPagePosition: {
+					get: function() {
+						return this._startPagePosition;
+					}
+				},
+				lastPagePosition: {
+					get: function() {
+						return this._lastPagePosition;
+					}
+				},
+				relativePosition: {
+					get: function() {
+						return this._relativePosition;
+					}
+				},
+				totalMove: {
+					get: function() {
+						return this._totalMove;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.CustomDragSession
+				 * @param target
+				 * @param dragMode
+				 */
+				constructor: function CustomDragSession(stage, startingInfo, callback, thisObject) {
+					super_.constructor.call(this);
+
+					this.data = null;
+					this.isAsync = false;
+
+					this._isReleased = false;
+					this._isCompleted = false;
+
+					this._stage = stage;
+					this._startingInfo = startingInfo;
+
+					this._startPagePosition = DisplayPoint.create(startPagePos.x, startPagePos.y);
+					this._lastPagePosition = DisplayPoint.create(startPagePos.x, startPagePos.y);
+					this._relativePosition = DisplayPoint.create(0, 0);
+					this._totalMove = DisplayPoint.create(0, 0);
+
+					this._callbackFunc = callback;
+					this._thisObject = thisObject === undefined ? null : thisObject; //undefinedの場合はnullにする
+				},
+
+				setDragCallback: function(callBackFunction, thisObject) {
+					this._callbackFunc = callBackFunction;
+
+					if (thisObject !== undefined) {
+						//thisObjectが指定されていた場合上書き
+						this._thisObject = thisObject;
+					}
+				},
+
+				setTargets: function(targets) {
+					var t = Array.isArray(targets) ? targets : [targets];
+					this._targets = getUniqueArray(t);
+				},
+
+				getTargets: function() {
+					return this._targets;
+				},
+
+				/**
+				 * @private
+				 */
+				_begin: function() {
+				//TODO 一旦、CustomDragSessionではProxyDUの代表DUに関する処理は省く。
+				//なお、この関連処理はDragSession側でなくStage内部で処理するようにすべき。
+				/*
+				this._onStageTargets = this._stage
+						._getOnStageNormalizedDisplayUnits(this._targets);
+
+				var rawFocusedDU = this._stage._dragStartingInfo.displayUnit;
+
+				this._onStageTargets.forEach(function(du) {
+					if (ProxyDisplayUnit.isClassOf(du)) {
+						var forceRepresentativeDU = null;
+						if (ProxyDisplayUnit.isClassOf(rawFocusedDU)
+								&& du.sourceDisplayUnit === rawFocusedDU.sourceDisplayUnit) {
+							forceRepresentativeDU = rawFocusedDU;
+						}
+
+						//TODO viewportsが複数の場合への対応
+						//OnStageなProxyDUについて、どれが代表DUかを変更する
+						var plane = du.viewportContainer._plane;
+						plane._viewports[0].updateProxyRepresentative(du.sourceDisplayUnit,
+								forceRepresentativeDU);
+					}
+				});
+				*/
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を確定させる
+				 * <p>
+				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。ただし、canDropがfalseの場合には代わりにキャンセルが行われます。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @instance
+				 * @returns {DragSession}
+				 */
+				end: function() {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+					//依存しているDUのアップデートを要求する
+					/*
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
+					*/
+
+					var event = Event.create('sessionEnd');
+					this.dispatchEvent(event);
+
+					this._cleanUp();
+				},
+
+				/**
+				 * ドラッグセッションを終了して位置を元に戻す
+				 * <p>
+				 * moveメソッドで移動させた処理を元に戻します。
+				 * </p>
+				 *
+				 * @memberOf DragSession
+				 * @returns {DragSession}
+				 */
+				cancel: function() {
+					if (this._isCompleted) {
+						return;
+					}
+					this._isCompleted = true;
+
+					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+					//依存しているDUのアップデートを要求する
+					/*
+					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+					allTargets.forEach(function(du) {
+						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+					});
+					*/
+
+					var event = Event.create('sessionCancel');
+					this.dispatchEvent(event);
+
+					this._cleanUp();
+				},
+
+				/**
+				 * @private
+				 * @param event
+				 */
+				_update: function(event, isPseudo) {
+					if (this._isCompleted) {
+						return;
+					}
+
+					//TODO バウンダリスクロール対応
+
+					var pageX = event.pageX;
+					var pageY = event.pageY;
+
+					//前回のカーソル位置からの差分量を計算。コールバックに渡す
+					var displayDx = pageX - this._lastPagePosition.x;
+					var displayDy = pageY - this._lastPagePosition.y;
+					var diff = DisplayPoint.create(displayDx, displayDy);
+
+					//最新のカーソル位置を更新
+					this._lastPagePosition.x = pageX;
+					this._lastPagePosition.y = pageY;
+
+					//ドラッグ開始位置を原点とした現在のカーソル位置を更新
+					this._relativePosition.x = pageX - this._startPagePosition.x;
+					this._relativePosition.y = pageY - this._startPagePosition.y;
+
+					//トータル移動量を更新。totalMoveXYには絶対値で加算していく
+					this._totalMove.x += cursorDx < 0 ? -cursorDx : cursorDx;
+					this._totalMove.y += cursorDy < 0 ? -cursorDy : cursorDy;
+
+					//コールバックを呼び出す
+					if (this._callbackFunc != null) {
+						this._callbackFunc.call(this._thisObject, this, diff);
+					}
+				},
+
+				setCursor: function(cursorStyle) {
+					if (cursorStyle == null) {
+						cursorStyle = '';
+					}
+					this._stage._setRootCursor(cursorStyle);
+				},
+
+				/**
+				 * セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
+				 *
+				 * @private
+				 */
+				_saveInitialPositionAndSize: function() {
+					if (!this._targets) {
+						return;
+					}
+
+					var parentDUs = [];
+					var states = [];
+					var targets = this._targets;
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var targetDU = targets[i];
+						var state = {
+							x: targetDU.x,
+							y: targetDU.y,
+							width: targetDU.width,
+							height: targetDU.height
+						};
+						states.push(state);
+						parentDUs.push(targetDU.parentDisplayUnit);
+					}
+
+					this._targetInitialStates = states;
+					this._targetInitialParentDU = parentDUs;
+				},
+
+				rollbackPosition: function() {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = this._targets;
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						var state = this._targetInitialStates[i];
+						du.moveTo(state.x, state.y);
+					}
+				},
+
+				rollbackSize: function() {
+					if (!this._targets) {
+						return;
+					}
+
+					var targets = this._targets;
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						var state = this._targetInitialStates[i];
+						du.setSize(state.width, state.height);
+					}
+				},
+
+				/**
+				 * @private
+				 */
+				_cleanUp: function() {
+					this._targets = null;
+
+					this._startingInfo = null;
+
+					this._callbackFunc = null;
+					this._stage = null;
+
+					this._startPagePosition = null;
+					this._lastPagePosition = null;
+					this._relativePosition = null;
+					this._totalMove = null;
+
+					this._targetInitialStates = null;
+					this._targetInitialParentDU = null;
+				}
+			}
+		};
+		return desc;
+	});
 
 	/**
 	 * EditSession
@@ -4090,7 +4426,7 @@
 							while (!Layer.isClassOf(parentDU)) {
 								wgx += parentDU.x;
 								wgy += parentDU.y;
-								parentDU = this._parentDU._parentDU;
+								parentDU = parentDU._parentDU;
 							}
 
 							this._worldGlobalPositionCache = WorldPoint.create(wgx, wgy);
@@ -12846,6 +13182,11 @@
 	 */
 	var EVENT_STAGE_DRAG_STARTING = 'stageDragStarting';
 
+	var EVENT_DRAG_CUSTOM_BEGIN = 'stageCustomDragBegin';
+	var EVENT_DRAG_CUSTOM_RELEASE = 'stageCustomDragRelease';
+	var EVENT_DRAG_CUSTOM_END = 'stageCustomDragEnd';
+	var EVENT_DRAG_CUSTOM_CANCEL = 'stageCustomDragCancel';
+
 	var EVENT_DRAG_DU_BEGIN = 'duDragBegin';
 	var EVENT_DRAG_DU_MOVE = 'duDragMove';
 	var EVENT_DRAG_DU_END = 'duDragEnd';
@@ -13839,7 +14180,7 @@
 		 */
 		_startDrag: function(context) {
 			// 前回のDUドラッグまたはDUリサイズが（非同期処理の待ちのために）終了していない場合、新規に開始しない
-			if (this._dragSession || this._resizeSession) {
+			if (this._dragSession || this._resizeSession || this._customDragSession) {
 				return;
 			}
 			var event = context.event;
@@ -13901,6 +14242,49 @@
 			case DRAG_MODE_CUSTOM:
 				//カスタムドラッグ処理モードの場合。StageControllerでは移動やリサイズなどの処理は行わないが、
 				//ユーザーが独自に「ドラッグ処理」を記述したい場合に使用。
+
+				var customDragSession = CustomDragSession.create(this, this._dragStartingInfo);
+
+				//デフォルトでは、選択中のDUをドラッグ対象とする。
+				//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
+				var targetDU = this.getSelectedDisplayUnits();
+				customDragSession.setTargets(targetDU);
+
+				//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
+
+				delegatedJQueryEvent.type = EVENT_DRAG_CUSTOM_BEGIN;
+				delegatedJQueryEvent.target = this.rootElement;
+				delegatedJQueryEvent.currentTarget = this.rootElement;
+				//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+				//defaultPreventedの値を引き継いで返してしまう。
+				//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+				//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+				//クロージャで持っているため外から変更できない。
+				//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+				//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+				var isDelegatedJQueryEventDefaultPrevented = false;
+				delegatedJQueryEvent.preventDefault = function() {
+					isDelegatedJQueryEventDefaultPrevented = true;
+				};
+				delegatedJQueryEvent.isDefaultPrevented = function() {
+					return isDelegatedJQueryEventDefaultPrevented;
+				};
+
+				//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+				var customDragBeginEvent = this.trigger(delegatedJQueryEvent, {
+					session: custonDragSession
+				});
+
+				if (customDragBeginEvent.isDefaultPrevented()) {
+					this._disposeCustomDragSession();
+					return;
+				}
+
+				this._currentDragMode = DRAG_MODE_CUSTOM;
+				customDragSession._begin();
+				this._customDragSession = customDragSession;
+
 				break;
 			case DRAG_MODE_DU_DRAG:
 				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
@@ -14221,6 +14605,8 @@
 			}
 		},
 
+		_customDragSession: null,
+
 		/**
 		 * @private
 		 */
@@ -14501,6 +14887,7 @@
 			var dispDx = event.pageX - this._dragLastPagePos.x;
 			var dispDy = event.pageY - this._dragLastPagePos.y;
 
+			//TODO UIDragSessionに寄せる
 			this._dragLastPagePos = {
 				x: event.pageX,
 				y: event.pageY
@@ -14517,8 +14904,11 @@
 			var that = this;
 
 			switch (this._currentDragMode) {
+			case DRAG_MODE_CUSTOM:
+				//TODO カスタムドラッグでのバウンダリスクロール
+				this._customDragSession._update(event);
+				break;
 			case DRAG_MODE_DU_RESIZE:
-				//TODO リサイズ中のバウンダリスクロール
 				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
 					that._resizeSession.doPseudoMoveBy(dispScrX, dispScrY);
 				});
@@ -14815,6 +15205,10 @@
 				if (!this._resizeSession.isCompleted && !this._resizeSession.isAsync) {
 					this._resizeSession.end();
 				}
+			} else if (this._currentDragMode === DRAG_MODE_CUSTOM) {
+				this._customDragSession._isReleased = true;
+				this._customDragSession._update(event);
+				this._customDragSession.end();
 			}
 
 			this._isMousedown = false;
@@ -14877,6 +15271,31 @@
 			}
 
 			this._resizeSession = null; //TODO resizeSessionをdisposeする
+		},
+
+		/**
+		 * @private
+		 */
+		_disposeCustomDragSession: function() {
+			//TODO UIDragSessionにまとめる
+			/*
+			this._customDragSession.removeEventListener('sessionEnd',
+					this._customDragSessionEndHandlerWrapper);
+			this._customDragSession.removeEventListener('sessionCancel',
+					this._customDragSessionCancelHandlerWrapper);
+			*/
+
+			/*
+			var targetDUs = this._customDragSession.getTargets();
+			if (this._planes) {
+				//Planeのすべてのビューポートをリフレッシュする（ドラッグ・リサイズ中に追加して不要になったDUの削除等が行われる）
+				this._planes.forEach(function(plane) {
+					plane.updateAllViewports(targetDUs);
+				});
+			}
+			*/
+
+			this._customDragSession = null;
 		},
 
 		/**
