@@ -4424,8 +4424,9 @@
 
 							var parentDU = this._parentDU;
 							while (!Layer.isClassOf(parentDU)) {
-								wgx += parentDU.x;
-								wgy += parentDU.y;
+								//DUContainerの内部スクロール量を考慮し、scrollXY分を引く
+								wgx += parentDU.x - parentDU.scrollX;
+								wgy += parentDU.y - parentDU.scrollY;
 								parentDU = parentDU._parentDU;
 							}
 
@@ -4664,7 +4665,12 @@
 						 */
 						_willGlobalPositionChangeByParentDirty: function(reasons) {
 							if (!Array.isArray(reasons)) {
-								reasons = [reasons];
+								if (reasons === REASON_POSITION_CHANGE
+										|| reasons === REASON_SCROLL_POSITION_CHANGE
+										|| reasons === REASON_SCALE_CHANGE) {
+									return true;
+								}
+								return false;
 							}
 
 							if (reasons.indexOf(REASON_POSITION_CHANGE) !== -1
@@ -4711,6 +4717,12 @@
 				isPositionChanged: {
 					get: function() {
 						return this.has(REASON_POSITION_CHANGE);
+					}
+				},
+
+				isScrollPositionChanged: {
+					get: function() {
+						return this.has(REASON_SCROLL_POSITION_CHANGE);
 					}
 				},
 
