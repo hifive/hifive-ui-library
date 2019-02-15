@@ -4842,21 +4842,22 @@
 					}
 
 					var that = this;
+					for (var i = 0, len = reasons.length; i < len; i++) {
+						var reason = reasons[i];
 
-					reasons.forEach(function(r) {
 						//既に同じtypeのReasonがあった場合は上書き
 
-						if (typeof r === 'string') {
-							that._reasonMap[r] = {
-								type: r
+						if (typeof reason === 'string') {
+							that._reasonMap[reason] = {
+								type: reason
 							};
 						} else {
-							if (r.type == null) {
+							if (reason.type == null) {
 								throw new Error('アップデート理由オブジェクトにtypeがありません。typeは必須です。');
 							}
-							that._reasonMap[r.type] = r;
+							that._reasonMap[reason.type] = reason;
 						}
-					});
+					}
 				}
 			}
 		};
