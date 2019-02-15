@@ -299,8 +299,22 @@
 		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE
 	};
 
+	var DragLiveMode = {
+		//ドラッグを開始したら、ソースを非表示にする（オーバーレイも表示しない）
+		HIDE: 1,
+		//ソースをその位置にとどめる（オーバーレイは表示しない）
+		STAY: 2,
+		//ソースを直接動かす
+		SOURCE: 3,
+		//オーバーレイのみを動かす
+		OVERLAY: 4,
+		//オーバーレイを表示し、かつ、ソースを元の位置にとどめる
+		OVERLAY_AND_STAY: 5
+	};
+
 	h5.u.obj.expose('h5.ui.components.stage', {
 		DragMode: DragMode,
+		DragLiveMode: DragLiveMode,
 		ScrollDirection: ScrollDirection,
 		UpdateReasons: UpdateReasons,
 		ResizeDirection: ResizeDirection,
@@ -829,14 +843,27 @@
 				//移動関数。移動対象のDUごとに呼ばれる
 				_moveFunction: null,
 
-
 				//du.id -> 当該DU用のdataオブジェクト へのマップ
-				_moveFunctionDataMap: null
+				_moveFunctionDataMap: null,
+
+				_liveMode: null
 			},
 			accessor: {
 				isCompleted: {
 					get: function() {
 						return this._isCompleted;
+					}
+				},
+
+				liveMode: {
+					get: function() {
+						return this._liveMode;
+					},
+					set: function(value) {
+						//TODO 一度begin()した後は変更不可にする
+						if (this._liveMode !== value) {
+							this._liveMode = value;
+						}
 					}
 				}
 			},
@@ -876,6 +903,9 @@
 
 					this._totalMoveX = 0;
 					this._totalMoveY = 0;
+
+					//デフォルトでは「オーバーレイモード」にする
+					this._liveMode = DragLiveMode.OVERLAY;
 				},
 
 				setTargets: function(targets) {
