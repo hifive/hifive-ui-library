@@ -846,7 +846,10 @@
 				//du.id -> 当該DU用のdataオブジェクト へのマップ
 				_moveFunctionDataMap: null,
 
-				_liveMode: null
+				//ドラッグライブモード
+				_liveMode: null,
+
+				_hasBegun: null
 			},
 			accessor: {
 				isCompleted: {
@@ -860,6 +863,9 @@
 						return this._liveMode;
 					},
 					set: function(value) {
+						if (this._hasBegun) {
+							throw new Error('ドラッグ処理を開始した後（begin()呼出後）はliveModeは変更できません。');
+						}
 						//TODO 一度begin()した後は変更不可にする
 						if (this._liveMode !== value) {
 							this._liveMode = value;
@@ -882,6 +888,7 @@
 					this.isAsync = false;
 
 					this._isCompleted = false;
+					this._hasBegun = false;
 
 					/**
 					 * @private
@@ -931,6 +938,7 @@
 				},
 
 				begin: function() {
+					this._hasBegun = true;
 					this._setDraggingFlag(true);
 
 					this._onStageTargets = this._stage
@@ -13125,6 +13133,52 @@
 						 */
 						__onResizeDURelease: function(resizeSession) {
 							this.__onDragDUDrop(resizeSession);
+						},
+
+						/**
+						 * 指定された座標に対応するStageViewインスタンスを返します。対応するインスタンスがない場合や
+						 * 指定された位置にあるものがグリッドの仕切り線の場合はnullを返します。
+						 * 座標はディスプレイ座標系で、StageControllerのルート要素を原点とする相対座標です。
+						 *
+						 * @param displayX StageControllerのルート要素を原点とする相対X座標（ディスプレイ座標系）
+						 * @param displayY StageControllerのルート要素を原点とする相対Y座標（ディスプレイ座標系）
+						 */
+						getViewAt: function(displayX, displayY) {
+							var rows = this.getRowsOfAllTypes();
+
+							var totalRowHeight = 0;
+							for (var ir = 0, len = rows.length; ir < len; ir++) {
+								var row = rows[ir];
+								totalRowHeight += row.height;
+								if (displayY < totalRowHeight) {
+									//Y座標はこのrowに対応
+									if (row.type !== GRID_TYPE_CONTENTS) {
+										//コンテンツ行でなかった
+										return null;
+									}
+									break;
+								}
+							}
+
+							var cols = this.getColumnsOfAllTypes();
+
+							var totalColumnWidth = 0;
+							for (var ic = 0, len = cols.length; ic < len; ic++) {
+								var col = cols[ic];
+								totalColumnWidth += col.width;
+								if (displayX < totalColumnWidth) {
+									//X座標はこのcolに対応
+									if (col.type !== GRID_TYPE_CONTENTS) {
+										//コンテンツ行でなかった
+										return null;
+									}
+									break;
+								}
+							}
+
+							//行、列ともコンテンツ行であることが確定している＝viewは必ずStageViewのインスタンス
+							var view = this.getView(ir, ic);
+							return view;
 						}
 					}
 				};
