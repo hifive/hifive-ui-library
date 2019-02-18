@@ -938,7 +938,16 @@
 
 					var rawFocusedDU = this._stage._dragStartingInfo.displayUnit;
 
+					var that = this;
+
 					this._onStageTargets.forEach(function(du) {
+						if (that.liveMode === DragLiveMode.OVERLAY_AND_STAY
+								|| that.liveMode === DragLiveMode.STAY) {
+							//ドラッグモードでSTAYの場合、ソースDUの描画位置をドラッグ開始時点の位置でオーバーライドする
+							//＝ドラッグ中、DUの描画位置は移動しない。
+							du._viewPositionOverride = WorldPoint.create(du.x, du.y);
+						}
+
 						if (ProxyDisplayUnit.isClassOf(du)) {
 							var forceRepresentativeDU = null;
 							if (ProxyDisplayUnit.isClassOf(rawFocusedDU)
@@ -1164,6 +1173,15 @@
 				 * @private
 				 */
 				_cleanUp: function() {
+					if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+							|| this.liveMode === DragLiveMode.STAY) {
+						//ドラッグ時のライブモードがSTAYの場合に設定していたソースDUの表示位置のオーバーライドを解除する
+						this._onStageTargets.forEach(function(du) {
+							du._viewPositionOverride = null;
+							du._setDirty(REASON_POSITION_CHANGE);
+						});
+					}
+
 					this._targets = null;
 					this._onStageTargets = null;
 
@@ -4026,6 +4044,8 @@
 						_isSelected: null,
 						_isFocused: null,
 
+						_viewPositionOverride: null,
+
 						_worldGlobalPositionCache: null
 					},
 					accessor: {
@@ -4247,6 +4267,8 @@
 
 							this._belongingLayer = null;
 							this._isOnSvgLayer = false;
+
+							this._viewPositionOverride = null;
 						},
 
 						setRect: function(rect) {
@@ -4630,15 +4652,20 @@
 						},
 
 						_updatePosition: function(element) {
+							var x = this._viewPositionOverride != null ? this._viewPositionOverride.x
+									: this.x;
+							var y = this._viewPositionOverride != null ? this._viewPositionOverride.y
+									: this.y;
+
 							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
-									x: this.x,
-									y: this.y
+									x: x,
+									y: y
 								});
 							} else {
 								$(element).css({
-									left: this.x,
-									top: this.y
+									left: x,
+									top: y
 								});
 							}
 						},
