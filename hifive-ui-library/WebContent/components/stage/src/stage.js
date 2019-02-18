@@ -8393,6 +8393,7 @@
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
+	var DragLiveMode = h5.ui.components.stage.DragLiveMode;
 	var SvgUtil = h5.ui.components.stage.SvgUtil;
 	var ResizeDirection = h5.ui.components.stage.ResizeDirection;
 	var RenderPriority = h5.ui.components.stage.RenderPriority;
@@ -13034,10 +13035,16 @@
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							dragSession._onStageTargets.forEach(function(du) {
-								//強制的に元のDUを非表示にする
-								du._isForceHidden = true;
-							});
+							dragSession._onStageTargets
+									.forEach(function(du) {
+										//強制的に元のDUを非表示にする
+										//ドラッグ時のライブモードがOVERLAYの場合は、元のDUは非表示にする。
+										//OVERLAY_AND_STAYなど他のモードの場合は強制非表示にはしない(DUのもともとのisVisibleに依存)
+										//TODO 他のライブモードへの対応、オーバーレイ時にソースDOMを使うよう改修した際はそれとの整合性
+										var isForceHidden = dragSession.liveMode === DragLiveMode.OVERLAY ? true
+												: false;
+										du._isForceHidden = isForceHidden;
+									});
 
 							//各ビューのドラッグスタート処理を呼ぶ
 							this.getViewAll().forEach(function(v) {
@@ -14236,8 +14243,6 @@
 				return;
 			}
 
-			this._currentDragMode = DRAG_MODE_NONE;
-
 			var dragStartMode = this.UIDragMode;
 
 			var stageDragStartingEvent = $.Event(EVENT_STAGE_DRAG_STARTING);
@@ -14259,8 +14264,21 @@
 				return;
 			}
 
+			var $root = $(this.rootElement);
+
+			this._dragStartRootOffset = $root.offset(); //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
+
+			if (dragStartMode === DRAG_MODE_AUTO) {
+				dragStartMode = this._autodetectDragMode(event, du);
+			}
+
+			//this._currentDragModeは、それぞれのドラッグ開始イベントでpreventDefault()される可能性があるので
+			//そのイベントでキャンセルされなかったことが確定した後にセットする
+			this._currentDragMode = DRAG_MODE_NONE;
+
 			//TODO shiftKeyやctrlKeyが押されていた場合…など、特殊な場合の選択挙動を調整
-			if (du && du.isSelectable) {
+			//DRAG_MODE_REGIONの場合はDUの上でドラッグを開始してもselect()しない
+			if (du && du.isSelectable && dragStartMode !== DRAG_MODE_REGION) {
 				//FIXME du.isSelectedのフラグ値がおかしいので要修正
 				if (!this.isSelected(du)) {
 					//選択されていない場合は、単独選択する
@@ -14274,378 +14292,400 @@
 				}
 			}
 
-			var $root = $(this.rootElement);
-
-			this._dragStartRootOffset = $root.offset(); //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
-
 			switch (dragStartMode) {
-			case DRAG_MODE_NONE:
-				//UI操作によるドラッグを行わないモードの場合は、何もしない
-				break;
 			case DRAG_MODE_CUSTOM:
 				//カスタムドラッグ処理モードの場合。StageControllerでは移動やリサイズなどの処理は行わないが、
 				//ユーザーが独自に「ドラッグ処理」を記述したい場合に使用。
-
-				var customDragSession = CustomDragSession.create(this, this._dragStartingInfo);
-
-				//デフォルトでは、選択中のDUをドラッグ対象とする。
-				//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
-				var targetDU = this.getSelectedDisplayUnits();
-				customDragSession.setTargets(targetDU);
-
-				//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
-				var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-
-				delegatedJQueryEvent.type = EVENT_DRAG_CUSTOM_BEGIN;
-				delegatedJQueryEvent.target = this.rootElement;
-				delegatedJQueryEvent.currentTarget = this.rootElement;
-				//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
-				//defaultPreventedの値を引き継いで返してしまう。
-				//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
-				//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
-				//クロージャで持っているため外から変更できない。
-				//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
-				//「preventDefaultされていない状態」でイベントを発火させられるようにする。
-				var isDelegatedJQueryEventDefaultPrevented = false;
-				delegatedJQueryEvent.preventDefault = function() {
-					isDelegatedJQueryEventDefaultPrevented = true;
-				};
-				delegatedJQueryEvent.isDefaultPrevented = function() {
-					return isDelegatedJQueryEventDefaultPrevented;
-				};
-
-				//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
-				var customDragBeginEvent = this.trigger(delegatedJQueryEvent, {
-					session: custonDragSession
-				});
-
-				if (customDragBeginEvent.isDefaultPrevented()) {
-					this._disposeCustomDragSession();
-					return;
-				}
-
-				this._currentDragMode = DRAG_MODE_CUSTOM;
-				customDragSession._begin();
-				this._customDragSession = customDragSession;
-
+				this._beginDragCustom(event);
+				break;
+			case DRAG_MODE_DU_RESIZE:
+				this._beginDragDUResize(event);
 				break;
 			case DRAG_MODE_DU_DRAG:
-				//DUドラッグモード、かつ実際にDUをつかんでいたら、DUドラッグを開始
-				//DUを掴んでいなかった場合は、何もしない
-				if (du && du.isDraggable) {
-					this._dragSession = DragSession.create(this, this.rootElement,
-							this._foremostLayer._rootG, this._dragStartPagePos);
-					this._dragSession.addEventListener('dragSessionEnd', this
-							.own(this._dragSessionEndHandler));
-					this._dragSession.addEventListener('dragSessionCancel', this
-							.own(this._dragSessionCancelHandler));
-					this._dragSession.setTargets(targetDU);
-					this._currentDragMode = DRAG_MODE_DU_DRAG;
-					this._setRootCursor('default');
-					this.trigger(EVENT_DRAG_DU_BEGIN, {
-						dragSession: this._dragSession
-					});
-
-					//TODO 処理をAUTOの場合と統一
-					if (dragSession.getProxy()) {
-						//TODO プロキシを出す
-					}
-				}
+				this._beginDragDU(event);
 				break;
 			case DRAG_MODE_SCREEN:
-				if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
-					//SCREENドラッグモード固定、かつ、
-					//UI操作によるスクロールがX,Yどちらかの方向に移動可能な場合はスクリーンドラッグを開始
-					this._currentDragMode = DRAG_MODE_SCREEN;
-					this._setRootCursor('move');
-				}
+				//SCROLL_DIRECTION_NONEの場合はドラッグモードはNONEになるので
+				//この分岐には入らない
+				this._beginDragScreen();
 				break;
 			case DRAG_MODE_SELECT:
-				//SELECTモード固定なら、SELECTドラッグを開始
-				//TODO コード共通化
-				this._currentDragMode = DRAG_MODE_SELECT;
-				saveDragSelectStartPos.call(this);
-				this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
-				this.trigger(EVENT_DRAG_SELECT_START, {
-					stageController: this
-				});
-				this._setRootCursor('default');
-
-				this._dragSelectOverlayRect = SvgUtil.createElement('rect');
-				this._dragSelectOverlayRect.className.baseVal = ('stageDragSelectRangeOverlay');
-				SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-					x: this._dragSelectStartPos.x,
-					y: this._dragSelectStartPos.y,
-					width: 0,
-					height: 0,
-					'pointer-events': 'none'
-				});
-				this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
+				this._beginDragSelection(event);
 				break;
 			case DRAG_MODE_REGION:
-				this.trigger(EVENT_DRAG_REGION_START, {
-					stageController: this
-				});
-
-				this._setRootCursor('default');
-				this._currentDragMode = DRAG_MODE_REGION;
-				saveDragSelectStartPos.call(this);
-
-				this._dragSelectOverlayRect = SvgUtil.createElement('rect');
-				this._dragSelectOverlayRect.className.baseVal = ('stageDragRegionOverlay');
-				SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-					x: this._dragSelectStartPos.x,
-					y: this._dragSelectStartPos.y,
-					width: 0,
-					height: 0,
-					'pointer-events': 'none'
-				});
-				this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
-
+				this._beginDragRegion(event);
 				break;
+
 			case DRAG_MODE_AUTO:
+				//通常ないはず、もしここに入った場合はバグの可能性が高い
+				this.log.debug('_startDrag終了時にDRAG_MODE_AUTOで終了しました。このモードには通常なりません。');
+				break;
 			default:
-				//UIDragModeがAUTOの場合
-
-				var isResize = false;
-
-				//mousedown時に計算済みの9-Sliceの値に基づいてリサイズモードを決定する。
-				//mousemoveのイベントハンドラのタイミングで（mousemoveのイベントオブジェクトに基づいて）計算すると
-				//カーソルがマウスオーバー時の9-Sliceの位置からずれてしまう可能性があり、
-				//予想される挙動と判定結果が変わってしまうため。
-				var duNineSlicePos = this._resizeOverNineSlice;
-
-				//拡大縮小やDOM要素の微妙な位置により、カーソル座標あるいはその他の値が小数値になることがある。
-				//このとき、計算結果によっては（ブラウザ的にはカーソルがDUの上に乗っていると判定していても）
-				//NineSliceが「外側(2/-2)」という結果を返す可能性がある。
-				//そのため、"!==0"での比較ではなく、明示的に1/-1かどうかをチェックすることで、
-				//boundaryをゼロにしているのに「リサイズ」と判定されることを防ぐ。
-				if (du && du.isResizable && duNineSlicePos.isBorder) {
-					isResize = true;
-				}
-
-				if (isResize) {
-					//DUを掴んでいて、かつそれがドラッグ可能で周囲にカーソルがある場合はDUリサイズを開始
-					this._resizeSession = ResizeSession.create(this, this.rootElement,
-							this._dragStartPagePos, duNineSlicePos);
-
-					var that = this;
-					this._resizeSessionEndHandlerWrapper = function(ev) {
-						that._resizeSessionEndHandler(ev);
-					};
-					this._resizeSessionCancelHandlerWrapper = function(ev) {
-						that._resizeSessionCancelHandler(ev);
-					};
-
-					this._resizeSession.addEventListener('resizeSessionEnd',
-							this._resizeSessionEndHandlerWrapper);
-					this._resizeSession.addEventListener('resizeSessionCancel',
-							this._resizeSessionCancelHandlerWrapper);
-
-					var resizeDirection = ResizeDirection.NONE;
-					if (duNineSlicePos.isLeft) {
-						if (duNineSlicePos.isMiddle) {
-							//左中央
-							resizeDirection = ResizeDirection.X;
-						} else {
-							//左上
-							//左下
-							resizeDirection = ResizeDirection.XY;
-						}
-					} else if (duNineSlicePos.isRight) {
-						if (duNineSlicePos.isMiddle) {
-							//右中央
-							resizeDirection = ResizeDirection.X;
-						} else {
-							//右上または右下
-							resizeDirection = ResizeDirection.XY;
-						}
-					} else {
-						//リサイズであることが確定している＝DUの中央にいることはないので
-						//必ず境界の上または下にカーソルがある
-						resizeDirection = ResizeDirection.Y;
-					}
-					this._resizeSession.direction = resizeDirection;
-
-					//デフォルトでは、選択中かつリサイズ可能なDUがドラッグ対象となる。
-					var targetDU = this.getSelectedDisplayUnits();
-					targetDU = targetDU.filter(function(resizeTargetDU) {
-						return resizeTargetDU.isResizable;
-					});
-					this._resizeSession.setTargets(targetDU);
-
-					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
-					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-
-					delegatedJQueryEvent.type = EVENT_RESIZE_DU_BEGIN;
-					delegatedJQueryEvent.target = this.rootElement;
-					delegatedJQueryEvent.currentTarget = this.rootElement;
-					//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
-					//defaultPreventedの値を引き継いで返してしまう。
-					//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
-					//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
-					//クロージャで持っているため外から変更できない。
-					//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
-					//「preventDefaultされていない状態」でイベントを発火させられるようにする。
-					var isDelegatedJQueryEventDefaultPrevented = false;
-					delegatedJQueryEvent.preventDefault = function() {
-						isDelegatedJQueryEventDefaultPrevented = true;
-					};
-					delegatedJQueryEvent.isDefaultPrevented = function() {
-						return isDelegatedJQueryEventDefaultPrevented;
-					};
-
-					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
-					var resizeStartEvent = this.trigger(delegatedJQueryEvent, {
-						resizeSession: this._resizeSession
-					});
-
-					if (resizeStartEvent.isDefaultPrevented()) {
-						this._disposeResizeSession();
-						return;
-					}
-
-					this._currentDragMode = DRAG_MODE_DU_RESIZE;
-
-					this._resizeSession.begin();
-
-					this._viewCollection.__onResizeDUStart(this._resizeSession);
-
-					//プロキシが設定されたらそれを表示
-					var proxyElem = this._resizeSession.getProxyElement();
-					var proxyLeft = event.pageX - this._dragStartRootOffset.left;
-					var proxyTop = event.pageY - this._dragStartRootOffset.top;
-					if (proxyElem) {
-						$root.append(proxyElem);
-						$(proxyElem).css({
-							position: 'absolute',
-							left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
-							top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
-						});
-					}
-				} else if (du && du.isDraggable) {
-					//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
-					this._dragSession = DragSession.create(this, this.rootElement,
-							this._dragStartPagePos);
-
-					var that = this;
-					this._dragSessionEndHandlerWrapper = function(ev) {
-						that._dragSessionEndHandler(ev);
-					};
-					this._dragSessionCancelHandlerWrapper = function(ev) {
-						that._dragSessionCancelHandler(ev);
-					};
-
-					this._dragSession.addEventListener('dragSessionEnd',
-							this._dragSessionEndHandlerWrapper);
-					this._dragSession.addEventListener('dragSessionCancel',
-							this._dragSessionCancelHandlerWrapper);
-
-					//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
-					var targetDU = this.getSelectedDisplayUnits();
-					targetDU = targetDU.filter(function(dragTargetDU) {
-						return dragTargetDU.isDraggable;
-					});
-
-					//ProxyDUが選択状態のとき
-
-					this._dragSession.setTargets(targetDU);
-
-					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
-					var delegatedJQueryEvent = $.event.fix(context.event.originalEvent);
-
-					delegatedJQueryEvent.type = EVENT_DRAG_DU_BEGIN;
-					delegatedJQueryEvent.target = this.rootElement;
-					delegatedJQueryEvent.currentTarget = this.rootElement;
-					//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
-					//defaultPreventedの値を引き継いで返してしまう。
-					//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
-					//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
-					//クロージャで持っているため外から変更できない。
-					//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
-					//「preventDefaultされていない状態」でイベントを発火させられるようにする。
-					var isDelegatedJQueryEventDefaultPrevented = false;
-					delegatedJQueryEvent.preventDefault = function() {
-						isDelegatedJQueryEventDefaultPrevented = true;
-					};
-					delegatedJQueryEvent.isDefaultPrevented = function() {
-						return isDelegatedJQueryEventDefaultPrevented;
-					};
-
-					//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
-					var dragStartEvent = this.trigger(delegatedJQueryEvent, {
-						dragSession: this._dragSession
-					});
-
-					if (dragStartEvent.isDefaultPrevented()) {
-						this._disposeDragSession();
-						return;
-					}
-
-					//ProxyDUがユーザーによって追加された場合に備えて正規化する
-					var normalizedTargets = this._getSourceNormalizedDisplayUnits(this._dragSession
-							.getTargets());
-					this._dragSession.setTargets(normalizedTargets);
-
-					this._currentDragMode = DRAG_MODE_DU_DRAG;
-					this._setRootCursor('default');
-
-					this._dragSession.begin();
-
-					this._viewCollection.__onDragDUStart(this._dragSession);
-
-					//プロキシが設定されたらそれを表示
-					var proxyElem = this._dragSession.getProxyElement();
-					var proxyLeft = event.pageX - this._dragStartRootOffset.left;
-					var proxyTop = event.pageY - this._dragStartRootOffset.top;
-					if (proxyElem) {
-						$root.append(proxyElem);
-						$(proxyElem).css({
-							position: 'absolute',
-							left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
-							top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
-						});
-					}
-				} else {
-					//DUを掴んでいない場合またはDU.isDraggable=falseの場合、
-					//・Shiftキーを押している場合はSELECTドラッグ
-					//・押していなくてかつスクロール方向がNONE以外ならSCREENドラッグ　を開始
-					if (event.shiftKey) {
-						var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_START, {
-							stageController: this
-						});
-
-						if (dragSelectStartEvent.isDefaultPrevented()) {
-							return;
-						}
-
-						this._setRootCursor('default');
-						this._currentDragMode = DRAG_MODE_SELECT;
-						saveDragSelectStartPos.call(this);
-						this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
-
-						this._viewCollection.__onSelectDUStart(this._dragSelectStartPos);
-					} else if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
-						//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
-
-						this._currentDragMode = DRAG_MODE_SCREEN;
-						this._setRootCursor('move');
-					}
-				}
+				//認識できないモードが指定された
+				this.log.warn('不正なドラッグモードが指定されました。ドラッグ処理は行われません。指定されたモード=' + dragStartMode);
+				break;
+			case DRAG_MODE_NONE:
+				//startingイベントで明示的にNONEが指定された、またはauto-detectの結果NONEになった
 				break;
 			}
 
-			function saveDragSelectStartPos() {
-				//TODO rootOffsetの取得をDUドラッグの場合と共通化
-				var rootOffset = $(this.rootElement).offset();
+		},
 
-				var activeView = this._getActiveView();
+		/**
+		 * @private
+		 */
+		_autodetectDragMode: function(event, du) {
+			//mousedown時に計算済みの9-Sliceの値に基づいてリサイズモードを決定する。
+			//mousemoveのイベントハンドラのタイミングで（mousemoveのイベントオブジェクトに基づいて）計算すると
+			//カーソルがマウスオーバー時の9-Sliceの位置からずれてしまう可能性があり、
+			//予想される挙動と判定結果が変わってしまうため。
+			var duNineSlicePos = this._resizeOverNineSlice;
 
-				var dispStartOffX = event.pageX - rootOffset.left - activeView.x;
-				var dispStartOffY = event.pageY - rootOffset.top - activeView.y;
-				this._dragSelectStartPos = activeView._viewport
-						.getDisplayPositionFromDisplayOffset(dispStartOffX, dispStartOffY);
+			//拡大縮小やDOM要素の微妙な位置により、カーソル座標あるいはその他の値が小数値になることがある。
+			//このとき、計算結果によっては（ブラウザ的にはカーソルがDUの上に乗っていると判定していても）
+			//NineSliceが「外側(2/-2)」という結果を返す可能性がある。
+			//そのため、"!==0"での比較ではなく、明示的に1/-1かどうかをチェックすることで、
+			//boundaryをゼロにしているのに「リサイズ」と判定されることを防ぐ。
+			if (du && du.isResizable && duNineSlicePos.isBorder) {
+				return DRAG_MODE_DU_RESIZE;
 			}
+
+			if (du && du.isDraggable) {
+				return DRAG_MODE_DU_DRAG;
+			}
+
+			//DUを掴んでいない場合またはDU.isDraggable=falseの場合、
+			//・Shiftキーを押している場合はSELECTドラッグ
+			//・押していなくてかつスクロール方向がNONE以外ならSCREENドラッグ　を開始
+			if (event.shiftKey) {
+				return DRAG_MODE_SELECT;
+			}
+
+			if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
+				//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
+				return DRAG_MODE_SCREEN;
+			}
+
+			//画面スクロールの方向がNONE（＝SCROLL_DIRECTION_NONE）の場合はドラッグ操作で何もしない
+			return DRAG_MODE_NONE;
+		},
+
+		/**
+		 * @private
+		 * @param event
+		 */
+		_beginDragCustom: function(event) {
+			var customDragSession = CustomDragSession.create(this, this._dragStartingInfo);
+
+			//デフォルトでは、選択中のDUをドラッグ対象とする。
+			//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
+			var targetDU = this.getSelectedDisplayUnits();
+			customDragSession.setTargets(targetDU);
+
+			//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+			var delegatedJQueryEvent = $.event.fix(event.originalEvent);
+
+			delegatedJQueryEvent.type = EVENT_DRAG_CUSTOM_BEGIN;
+			delegatedJQueryEvent.target = this.rootElement;
+			delegatedJQueryEvent.currentTarget = this.rootElement;
+			//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+			//defaultPreventedの値を引き継いで返してしまう。
+			//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+			//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+			//クロージャで持っているため外から変更できない。
+			//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+			//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+			var isDelegatedJQueryEventDefaultPrevented = false;
+			delegatedJQueryEvent.preventDefault = function() {
+				isDelegatedJQueryEventDefaultPrevented = true;
+			};
+			delegatedJQueryEvent.isDefaultPrevented = function() {
+				return isDelegatedJQueryEventDefaultPrevented;
+			};
+
+			//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+			var customDragBeginEvent = this.trigger(delegatedJQueryEvent, {
+				session: custonDragSession
+			});
+
+			if (customDragBeginEvent.isDefaultPrevented()) {
+				this._disposeCustomDragSession();
+				return;
+			}
+
+			this._currentDragMode = DRAG_MODE_CUSTOM;
+			customDragSession._begin();
+			this._customDragSession = customDragSession;
+		},
+
+		/**
+		 * @private
+		 */
+		_beginDragDUResize: function(event) {
+			var duNineSlicePos = this._resizeOverNineSlice;
+
+			//DUを掴んでいて、かつそれがドラッグ可能で周囲にカーソルがある場合はDUリサイズを開始
+			this._resizeSession = ResizeSession.create(this, this.rootElement,
+					this._dragStartPagePos, duNineSlicePos);
+
+			var that = this;
+			this._resizeSessionEndHandlerWrapper = function(ev) {
+				that._resizeSessionEndHandler(ev);
+			};
+			this._resizeSessionCancelHandlerWrapper = function(ev) {
+				that._resizeSessionCancelHandler(ev);
+			};
+
+			this._resizeSession.addEventListener('resizeSessionEnd',
+					this._resizeSessionEndHandlerWrapper);
+			this._resizeSession.addEventListener('resizeSessionCancel',
+					this._resizeSessionCancelHandlerWrapper);
+
+			var resizeDirection = ResizeDirection.NONE;
+			if (duNineSlicePos.isLeft) {
+				if (duNineSlicePos.isMiddle) {
+					//左中央
+					resizeDirection = ResizeDirection.X;
+				} else {
+					//左上
+					//左下
+					resizeDirection = ResizeDirection.XY;
+				}
+			} else if (duNineSlicePos.isRight) {
+				if (duNineSlicePos.isMiddle) {
+					//右中央
+					resizeDirection = ResizeDirection.X;
+				} else {
+					//右上または右下
+					resizeDirection = ResizeDirection.XY;
+				}
+			} else {
+				//リサイズであることが確定している＝DUの中央にいることはないので
+				//必ず境界の上または下にカーソルがある
+				resizeDirection = ResizeDirection.Y;
+			}
+			this._resizeSession.direction = resizeDirection;
+
+			//デフォルトでは、選択中かつリサイズ可能なDUがドラッグ対象となる。
+			var targetDU = this.getSelectedDisplayUnits();
+			targetDU = targetDU.filter(function(resizeTargetDU) {
+				return resizeTargetDU.isResizable;
+			});
+			this._resizeSession.setTargets(targetDU);
+
+			//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+			var delegatedJQueryEvent = $.event.fix(event.originalEvent);
+
+			delegatedJQueryEvent.type = EVENT_RESIZE_DU_BEGIN;
+			delegatedJQueryEvent.target = this.rootElement;
+			delegatedJQueryEvent.currentTarget = this.rootElement;
+			//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+			//defaultPreventedの値を引き継いで返してしまう。
+			//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+			//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+			//クロージャで持っているため外から変更できない。
+			//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+			//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+			var isDelegatedJQueryEventDefaultPrevented = false;
+			delegatedJQueryEvent.preventDefault = function() {
+				isDelegatedJQueryEventDefaultPrevented = true;
+			};
+			delegatedJQueryEvent.isDefaultPrevented = function() {
+				return isDelegatedJQueryEventDefaultPrevented;
+			};
+
+			//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+			var resizeStartEvent = this.trigger(delegatedJQueryEvent, {
+				resizeSession: this._resizeSession
+			});
+
+			if (resizeStartEvent.isDefaultPrevented()) {
+				this._disposeResizeSession();
+				this._currentDragMode = DRAG_MODE_NONE;
+				return;
+			}
+
+			this._currentDragMode = DRAG_MODE_DU_RESIZE;
+
+			this._resizeSession.begin();
+
+			this._viewCollection.__onResizeDUStart(this._resizeSession);
+
+			//TODO 実際のビューの扱いはStageViewに任せる
+			//プロキシが設定されたらそれを表示
+			var proxyElem = this._resizeSession.getProxyElement();
+			var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+			var proxyTop = event.pageY - this._dragStartRootOffset.top;
+			if (proxyElem) {
+				$(this.rootElement).append(proxyElem);
+				$(proxyElem).css({
+					position: 'absolute',
+					left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+					top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+				});
+			}
+		},
+
+		/**
+		 * @private
+		 */
+		_beginDragDU: function(event) {
+			//DUを掴んでいて、かつそれがドラッグ可能な場合はDUドラッグを開始
+			this._dragSession = DragSession.create(this, this.rootElement, this._dragStartPagePos);
+
+			var that = this;
+			this._dragSessionEndHandlerWrapper = function(ev) {
+				that._dragSessionEndHandler(ev);
+			};
+			this._dragSessionCancelHandlerWrapper = function(ev) {
+				that._dragSessionCancelHandler(ev);
+			};
+
+			this._dragSession
+					.addEventListener('dragSessionEnd', this._dragSessionEndHandlerWrapper);
+			this._dragSession.addEventListener('dragSessionCancel',
+					this._dragSessionCancelHandlerWrapper);
+
+			//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
+			var targetDU = this.getSelectedDisplayUnits();
+			targetDU = targetDU.filter(function(dragTargetDU) {
+				return dragTargetDU.isDraggable;
+			});
+
+			//ProxyDUが選択状態のとき
+
+			this._dragSession.setTargets(targetDU);
+
+			//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
+			var delegatedJQueryEvent = $.event.fix(event.originalEvent);
+
+			delegatedJQueryEvent.type = EVENT_DRAG_DU_BEGIN;
+			delegatedJQueryEvent.target = this.rootElement;
+			delegatedJQueryEvent.currentTarget = this.rootElement;
+			//$.event.fix()を使用すると、isDefaultPrevented()はoriginalEventの
+			//defaultPreventedの値を引き継いで返してしまう。
+			//しかし、originalEventのdefaultPreventedの値はユーザーは書き換えられず、
+			//またjQueryが追加するisDefaultPrevented()は内部フラグ値を
+			//クロージャで持っているため外から変更できない。
+			//そのため、preventDefaultとisDefaultPreventedを両方書き換えて
+			//「preventDefaultされていない状態」でイベントを発火させられるようにする。
+			var isDelegatedJQueryEventDefaultPrevented = false;
+			delegatedJQueryEvent.preventDefault = function() {
+				isDelegatedJQueryEventDefaultPrevented = true;
+			};
+			delegatedJQueryEvent.isDefaultPrevented = function() {
+				return isDelegatedJQueryEventDefaultPrevented;
+			};
+
+			//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
+			var dragStartEvent = this.trigger(delegatedJQueryEvent, {
+				dragSession: this._dragSession
+			});
+
+			if (dragStartEvent.isDefaultPrevented()) {
+				this._disposeDragSession();
+				this._currentDragMode = DRAG_MODE_NONE;
+				return;
+			}
+
+			//ProxyDUがユーザーによって追加された場合に備えて正規化する
+			var normalizedTargets = this._getSourceNormalizedDisplayUnits(this._dragSession
+					.getTargets());
+			this._dragSession.setTargets(normalizedTargets);
+
+			this._currentDragMode = DRAG_MODE_DU_DRAG;
+			this._setRootCursor('default');
+
+			this._dragSession.begin();
+
+			this._viewCollection.__onDragDUStart(this._dragSession);
+
+			//TODO 実際のビューの扱いはStageViewに任せる
+			//プロキシが設定されたらそれを表示
+			var proxyElem = this._dragSession.getProxyElement();
+			var proxyLeft = event.pageX - this._dragStartRootOffset.left;
+			var proxyTop = event.pageY - this._dragStartRootOffset.top;
+			if (proxyElem) {
+				$(this.rootElement).append(proxyElem);
+				$(proxyElem).css({
+					position: 'absolute',
+					left: proxyLeft + PROXY_DEFAULT_CURSOR_OFFSET,
+					top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
+				});
+			}
+		},
+
+		/**
+		 * @private
+		 */
+		_beginDragSelection: function(event) {
+			var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_START, {
+				stageController: this
+			});
+
+			if (dragSelectStartEvent.isDefaultPrevented()) {
+				this._currentDragMode = DRAG_MODE_NONE;
+				return;
+			}
+
+			this._setRootCursor('default');
+			this._currentDragMode = DRAG_MODE_SELECT;
+			this._saveDragSelectStartPos(event);
+			this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
+
+			this._viewCollection.__onSelectDUStart(this._dragSelectStartPos);
+		},
+
+		/**
+		 * @private
+		 */
+		_beginDragScreen: function() {
+			//SCREENドラッグモード固定、かつ、
+			//UI操作によるスクロールがX,Yどちらかの方向に移動可能な場合はスクリーンドラッグを開始
+			this._currentDragMode = DRAG_MODE_SCREEN;
+			this._setRootCursor('move');
+		},
+
+		/**
+		 * @private
+		 * @param event
+		 */
+		_beginDragRegion: function(event) {
+			this.trigger(EVENT_DRAG_REGION_START, {
+				stageController: this
+			});
+
+			this._setRootCursor('default');
+			this._currentDragMode = DRAG_MODE_REGION;
+			this._saveDragSelectStartPos(event);
+
+			//TODO 具体的なビュー生成はStageControllerでなくStageView側で行うようにする（DragSelectと同様の構造）
+			this._dragSelectOverlayRect = SvgUtil.createElement('rect');
+			this._dragSelectOverlayRect.className.baseVal = ('stageDragRegionOverlay');
+			SvgUtil.setAttributes(this._dragSelectOverlayRect, {
+				x: this._dragSelectStartPos.x,
+				y: this._dragSelectStartPos.y,
+				width: 0,
+				height: 0,
+				'pointer-events': 'none'
+			});
+			this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
+
+		},
+
+		/**
+		 * @private
+		 */
+		_saveDragSelectStartPos: function(event) {
+			//TODO rootOffsetの取得をDUドラッグの場合と共通化
+			var rootOffset = $(this.rootElement).offset();
+
+			var activeView = this._getActiveView();
+
+			var dispStartOffX = event.pageX - rootOffset.left - activeView.x;
+			var dispStartOffY = event.pageY - rootOffset.top - activeView.y;
+			this._dragSelectStartPos = activeView._viewport.getDisplayPositionFromDisplayOffset(
+					dispStartOffX, dispStartOffY);
 		},
 
 		_customDragSession: null,
@@ -14859,6 +14899,7 @@
 				duRelativePos = WorldPoint.create(wPos.x - duWPos.x, wPos.y - duWPos.y);
 			}
 
+			//DUにマウスが乗っている場合、NineSlicePositionも含めても良いかもしれない
 			this._dragStartingInfo = {
 				view: view,
 				targetElement: eventTarget,
