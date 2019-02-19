@@ -15658,6 +15658,9 @@
 
 			this._viewMasterClock.unlisten(this._doDragMove, this);
 
+			//現在、DU_DRAGモードの場合はDUコンテナ境界スクロール対応のため
+			//これとは別のタイマーで境界スクロール処理を行っている。
+			//そのため、DU_DRAGの場合はその分岐の中で別途タイマーを解除している。
 			this._endBoundaryScroll();
 
 			if (this._isGridSeparatorDragging) {
@@ -15691,6 +15694,12 @@
 					worldRect: worldRect
 				});
 			} else if (this._currentDragMode === DRAG_MODE_DU_DRAG) {
+				//DU_DRAG用の境界スクロールタイマーを最初に解除
+				if (this._duDragBoundaryScrollTimerId) {
+					clearInterval(this._duDragBoundaryScrollTimerId);
+					this._duDragBoundaryScrollTimerId = null;
+				}
+
 				var dragOverDU = this._getDragOverDisplayUnit(event);
 
 				var delegatedJQueryEvent = $.event.fix(event.originalEvent);
@@ -15799,11 +15808,6 @@
 				this._planes.forEach(function(plane) {
 					plane.updateAllViewports(targetDUs);
 				});
-			}
-
-			if (this._duDragBoundaryScrollTimerId) {
-				clearInterval(this._duDragBoundaryScrollTimerId);
-				this._duDragBoundaryScrollTimerId = null;
 			}
 
 			this._dragSession = null; //TODO dragSessionをdisposeする
