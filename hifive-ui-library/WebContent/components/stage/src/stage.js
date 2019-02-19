@@ -15741,9 +15741,32 @@
 					this._resizeSession.end();
 				}
 			} else if (this._currentDragMode === DRAG_MODE_CUSTOM) {
+				//TODO 非同期対応
 				this._customDragSession._isReleased = true;
 				this._customDragSession._update(event);
+
+				var dragCustomReleaseEvent = $.event.fix(event.originalEvent);
+				dragCustomReleaseEvent.type = EVENT_DRAG_CUSTOM_RELEASE;
+				dragCustomReleaseEvent.target = this.rootElement;
+				dragCustomReleaseEvent.currentTarget = this.rootElement;
+				this.trigger(dragCustomReleaseEvent, {
+					stage: this,
+					session: this._customDragSession
+				});
+
 				this._customDragSession.end();
+
+				//TODO DragSession等と同様イベントハンドラで拾うようにする
+				var dragCustomEndEvent = $.event.fix(event.originalEvent);
+				dragCustomEndEvent.type = EVENT_DRAG_CUSTOM_END;
+				dragCustomEndEvent.target = this.rootElement;
+				dragCustomEndEvent.currentTarget = this.rootElement;
+				this.trigger(dragCustomEndEvent, {
+					stage: this,
+					session: this._customDragSession
+				});
+
+				this._disposeCustomDragSession();
 			}
 
 			this._isMousedown = false;
