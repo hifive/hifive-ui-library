@@ -600,6 +600,13 @@
 					}
 				},
 
+				isOuter: {
+					get: function() {
+						return this.isOuterLeft || this.isOuterRight || this.isOuterTop
+								|| this.isOuterBottom;
+					}
+				},
+
 				isOuterLeft: {
 					get: function() {
 						return this._x < -1;
@@ -1970,8 +1977,10 @@
 					this._stage = stage;
 					this._startingInfo = startingInfo;
 
-					this._startPagePosition = DisplayPoint.create(startPagePos.x, startPagePos.y);
-					this._lastPagePosition = DisplayPoint.create(startPagePos.x, startPagePos.y);
+					this._startPagePosition = DisplayPoint.create(startingInfo.pagePosition.x,
+							startingInfo.pagePosition.y);
+					this._lastPagePosition = DisplayPoint.create(startingInfo.pagePosition.x,
+							startingInfo.pagePosition.y);
 					this._relativePosition = DisplayPoint.create(0, 0);
 					this._totalMove = DisplayPoint.create(0, 0);
 
@@ -2116,6 +2125,8 @@
 					this._relativePosition.y = pageY - this._startPagePosition.y;
 
 					//トータル移動量を更新。totalMoveXYには絶対値で加算していく
+					var cursorDx = pageX - this._lastPagePosition.x;
+					var cursorDy = pageY - this._lastPagePosition.y;
 					this._totalMove.x += cursorDx < 0 ? -cursorDx : cursorDx;
 					this._totalMove.y += cursorDy < 0 ? -cursorDy : cursorDy;
 
@@ -2774,7 +2785,7 @@
 		return desc;
 	});
 
-	Point.extend(function(super_) {
+	var DisplayPoint = Point.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayPoint',
 			method: {
@@ -6976,6 +6987,12 @@
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
+				//境界スクロールを有効にするかどうか。デフォルト：false
+				isBoundaryScrollEnabled: null,
+
+				//コンテンツのスクロール範囲制約（制約の形はコンストラクタ参照）
+				scrollConstraint: null,
+
 				_children: null,
 				_scaleX: null,
 				_scaleY: null,
@@ -7077,6 +7094,15 @@
 					this._belongingLayer = null;
 
 					this._children = [];
+
+					this.isBoundaryScrollEnabled = false;
+
+					this.scrollConstraint = {
+						minX: -Infinity,
+						maxX: Infinity,
+						minY: -Infinity,
+						maxY: Infinity
+					};
 				},
 
 				addDisplayUnit: function(du) {
@@ -7383,6 +7409,113 @@
 					if (this._parentDU) {
 						this._parentDU.__onDescendantRemoved(displayUnit, parentDisplayUnit);
 					}
+				},
+
+				/**
+				 * 指定されたグローバル座標がこのDUコンテナの外部サイズの中に含まれるかどうかを判定します。
+				 *
+				 * @private
+				 * @param globalX
+				 * @param globalY
+				 * @returns {Boolean} 含まれる場合はtrue、含まれない場合はfalse
+				 */
+				_includesPointGlobal: function(globalX, globalY) {
+					var gPos = this.getWorldGlobalPosition();
+
+					if (globalX < gPos.x || gPos.x + this.width < globalX) {
+						return false;
+					}
+					if (globalY < gPos.y || gPos.y + this.height < globalY) {
+						return false;
+					}
+					return true;
+				},
+
+				/**
+				 * このDUコンテナで境界スクロールを試みる。
+				 *
+				 * @private
+				 * @param globalX
+				 * @param globalY
+				 * @returns {Boolean}
+				 */
+				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, scrollAmount) {
+					if (!this.isBoundaryScrollEnabled) {
+						//境界スクロールが無効化されている、または指定された座標がこのコンテナの内部でない場合はスクロールしない
+						return false;
+					}
+
+					var globalPos = this.getWorldGlobalPosition();
+					var boundingRect = Rect.create(globalPos.x, globalPos.y, this.width,
+							this.height);
+					//TODO サイズが変わっていない場合はキャッシュすべき
+					var boundary = {
+						top: boundaryWidth,
+						right: boundaryWidth,
+						bottom: boundaryWidth,
+						left: boundaryWidth
+					};
+					var borderedNineSlicePosition = boundingRect.getNineSlicePosition(globalX,
+							globalY, boundary);
+
+					if (!borderedNineSlicePosition.isBorder) {
+						//DUコンテナの境界部以外（＝中央部または外側）の場合はバウンダリスクロールしない
+						return false;
+					}
+
+					//restrictContentScrollしている場合はゼロ～maxContentX/Yまでの間しかスクロールできない
+
+					var maxX = this.scrollConstraint.maxX;
+					var minX = this.scrollConstraint.minX;
+
+					var xVal = 0;
+					//境界スクロール量をセット。ただし、その方向にそれ以上スクロールできない場合はスクロール量をゼロにする
+					if (borderedNineSlicePosition.isBorderLeft) {
+						//左にスクロール
+						xVal = -scrollAmount;
+						/*
+						var rawNewX = this.scrollX - scrollAmount;
+						var clampedNewX = StageUtil.clamp(rawNewX, minX, maxX);
+
+						if (rawNewX - clampedNewX < 0) {
+							xVal = 0;
+						} else {
+							xVal = this.scrollX - scrollAmount;
+							if (xVal < 0) {
+								xVal = -scrollAmount + this._scrollX;
+							}
+						}
+						*/
+					} else if (borderedNineSlicePosition.isBorderRight) {
+						//右にスクロール
+						xVal = scrollAmount;
+						/*
+						var scrollRestX = maxX - this.width - this._scrollX;
+
+						if (scrollRestX <= 0) {
+							xVal = 0;
+						} else if (scrollRestX < scrollAmount) {
+							xVal = scrollRestX;
+						} else {
+							xVal = scrollAmount;
+						}
+						*/
+					}
+
+					var yVal = 0;
+					if (borderedNineSlicePosition.isBorderTop) {
+						yVal = -scrollAmount;
+					} else if (borderedNineSlicePosition.isBorderBottom) {
+						yVal = scrollAmount;
+					}
+
+					var isScrolled = (xVal !== 0 || yVal !== 0);
+
+					if (isScrolled) {
+						this.scrollBy(xVal, yVal);
+					}
+
+					return isScrolled;
 				}
 			}
 		};
@@ -8407,6 +8540,8 @@
 	var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var DragSession = classManager.getClass('h5.ui.components.stage.DragSession');
 	var ResizeSession = classManager.getClass('h5.ui.components.stage.ResizeSession');
+	var CustomDragSession = classManager.getClass('h5.ui.components.stage.CustomDragSession');
+
 	var UpdateReasonSet = classManager.getClass('h5.ui.components.stage.UpdateReasonSet');
 
 	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
@@ -14081,6 +14216,86 @@
 
 		/**
 		 * @private
+		 * @param globalX
+		 * @param globalY
+		 */
+		_getForemostDisplayUnitContainerAt: function(gX, gY) {
+			var layers = this._layers;
+
+			if (layers.length === 0) {
+				//レイヤーが一つもない場合はDUコンテナも一つもないので必ずnull
+				return null;
+			}
+
+			//レイヤーの配列インデックスが後ろの方が手前に表示されるレイヤーなので降順ループ
+			for (var i = layers.length - 1; i >= 0; i--) {
+				var layer = layers[i];
+				var foremostContainer = getForemostDUContainer(layer, gX, gY);
+
+				if (foremostContainer != null && foremostContainer !== layer) {
+					return foremostContainer;
+				}
+			}
+
+			//ここに到達したということは、ForemostなDUコンテナがレイヤーだったということ（レイヤーはDUContainerのサブクラスであることに注意）
+			//ForemostなDUコンテナがレイヤーだった場合はnullを返す
+			return null;
+
+
+			/* ---- 以下は再帰用関数 ---- */
+
+			function getForemostDUContainer(duContainer, globalX, globalY) {
+				//DUコンテナのzIndexが大きい順、かつ、zIndexが同じ場合はchildrenの配列内のインデックスが大きい（より後ろにある）順で
+				//DUコンテナが手前にある
+
+				var children = duContainer._children;
+
+				//cihldrenの中からDUContainerのみをフィルタして取り出す
+				var childContainers = children.filter(function(du) {
+					if (DisplayUnitContainer.isClassOf(du)) {
+						return true;
+					}
+					return false;
+				});
+
+				childContainers.sort(function(a, b) {
+					//zIndexが大きいほうが手前
+					var v = a.zIndex - b.zIndex;
+					if (v !== 0) {
+						return v;
+					}
+
+					//zIndexが同じ場合は、children配列のインデックスが大きいほうが手前
+					var aIdx = children.indexOf(a);
+					var bIdx = children.indexOf(b);
+					return aIdx - bIdx;
+				});
+
+				var retContainer = null;
+
+				//昇順ソートになっているので後ろから走査
+				for (var i = childContainers.length - 1; i >= 0; i--) {
+					var childDU = childContainers[i];
+					if (DisplayUnitContainer.isClassOf(childDU)) {
+						retContainer = getForemostDUContainer(childDU, globalX, globalY);
+						if (retContainer != null) {
+							//子（子孫）のDUコンテナで条件を満たすコンテナが見つかったのでこれを返す（再帰）
+							return retContainer;
+						}
+					}
+				}
+
+				//自分の子要素にDUコンテナがあったが、どのコンテナも指定された座標を含んでいなかった場合、
+				//自分が指定座標を含んでいれば自分がForemostなDUコンテナ。含んでいない場合はnull
+				if (duContainer._includesPointGlobal(globalX, globalY)) {
+					return duContainer;
+				}
+				return null;
+			}
+		},
+
+		/**
+		 * @private
 		 */
 		_isDblclickEmulationEnabled: null,
 
@@ -14486,7 +14701,7 @@
 
 			//イベントをあげ終わったタイミングで、ドラッグ対象が決定する
 			var customDragBeginEvent = this.trigger(delegatedJQueryEvent, {
-				session: custonDragSession
+				session: customDragSession
 			});
 
 			if (customDragBeginEvent.isDefaultPrevented()) {
@@ -14694,7 +14909,17 @@
 					top: proxyTop + PROXY_DEFAULT_CURSOR_OFFSET
 				});
 			}
+
+			var that = this;
+			function timerCallback() {
+				that._doBoundaryScrollDUDrag();
+			}
+
+			//DUコンテナを含めた境界スクロール
+			this._duDragBoundaryScrollTimerId = setInterval(timerCallback, BOUNDARY_SCROLL_INTERVAL);
 		},
+
+		_duDragBoundaryScrollTimerId: null,
 
 		/**
 		 * @private
@@ -15109,10 +15334,6 @@
 
 				break;
 			case DRAG_MODE_DU_DRAG:
-				this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
-					that._dragSession.doPseudoMoveBy(dispScrX, dispScrY);
-				});
-
 				//doMoveの中でStageViewCollection.__onDragDUMoveが呼ばれる
 				this._dragSession.doMove(context.event);
 
@@ -15219,6 +15440,76 @@
 			} else {
 				this._endBoundaryScroll();
 			}
+		},
+
+		/**
+		 * @private
+		 * @param callback
+		 */
+		_doBoundaryScrollDUDrag: function(callback) {
+			var activeView = this._getActiveView();
+
+			var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left - activeView.x;
+			var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top - activeView.y;
+
+			var viewport = activeView._viewport;
+
+			var globalPos = viewport.getWorldPositionFromDisplayOffset(pointerX, pointerY);
+
+			var foremostDUContainer = this._getForemostDisplayUnitContainerAt(globalPos.x,
+					globalPos.y);
+
+			var isScrolled = false;
+
+			if (foremostDUContainer) {
+				var targetContainer = foremostDUContainer;
+				var shouldRetry = true;
+				do {
+					isScrolled = targetContainer._attemptBoundaryScroll(globalPos.x, globalPos.y,
+							8, 5); //FIXME マジックナンバー
+
+					//境界スクロールを試すDUコンテナを一つ上に移動する
+					targetContainer = targetContainer.parentDisplayUnit;
+					if (Layer.isClassOf(targetContainer)) {
+						//レイヤーに到達したら、DUコンテナの境界スクロールはストップ
+						shouldRetry = false;
+					}
+				} while (shouldRetry && !isScrolled);
+			}
+
+			if (isScrolled) {
+				//DUコンテナのスクロールを行ったので、今回の境界スクロールは終了
+				return;
+			}
+
+			var nineSlicePosition = viewport.getNineSlicePosition(pointerX, pointerY);
+			if (nineSlicePosition.isMiddleCenter) {
+				//ActiveViewにおいて、カーソル位置が中央部の場合は境界スクロールしない
+				//ただし、StageViewの外側にカーソルがある場合は境界スクロールする
+				return;
+			}
+
+			//以下は、StageView全体の（スクリーン）スクロール
+
+			var dirx = 0;
+			if (nineSlicePosition.isLeft) {
+				dirx = -1;
+			} else if (nineSlicePosition.isRight) {
+				dirx = 1;
+			}
+
+			var diry = 0;
+			if (nineSlicePosition.isTop) {
+				diry = -1;
+			} else if (nineSlicePosition.isBottom) {
+				diry = 1;
+			}
+
+			var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * dirx;
+			var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * diry;
+
+			var actualDiff = this._scrollBy(boundaryScrX, boundaryScrY);
+			this._dragSession.doPseudoMoveBy(actualDiff.dx, actualDiff.dy);
 		},
 
 		/**
@@ -15412,6 +15703,11 @@
 				this._planes.forEach(function(plane) {
 					plane.updateAllViewports(targetDUs);
 				});
+			}
+
+			if (this._duDragBoundaryScrollTimerId) {
+				clearInterval(this._duDragBoundaryScrollTimerId);
+				this._duDragBoundaryScrollTimerId = null;
 			}
 
 			this._dragSession = null; //TODO dragSessionをdisposeする
