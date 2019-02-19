@@ -1053,13 +1053,15 @@
 				//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
 				//（境界スクロールなどのときに使用）
 				//引数にはディスプレイ座標系での移動差分量を渡す。
-				doPseudoMoveBy: function(dx, dy) {
+				//duContainerが指定された場合、そのコンテナの子孫要素のDUに対してのみdeltaMoveを行う
+				//（DUContainerの境界スクロール対応）
+				doPseudoMoveBy: function(dx, dy, duContainer) {
 					var delta = {
 						x: dx,
 						y: dy
 					};
 
-					this._deltaMove(null, delta);
+					this._deltaMove(null, delta, duContainer);
 				},
 
 				doMove: function(event) {
@@ -1126,7 +1128,7 @@
 				/**
 				 * @private
 				 */
-				_deltaMove: function(event, delta) {
+				_deltaMove: function(event, delta, duContainer) {
 					if (!this._targets) {
 						return;
 					}
@@ -1135,6 +1137,12 @@
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
+
+						if (duContainer && !duContainer.isDescendant(du)) {
+							//DUコンテナが指定された場合、そのコンテナの子孫要素でない場合は
+							//移動させない
+							continue;
+						}
 
 						var data = this._moveFunctionDataMap[du.id];
 						if (!data) {
@@ -6984,6 +6992,33 @@
 			return ret;
 		}
 
+		/**
+		 * containerの子孫にdisplayUnitが含まれているかどうかを返します。
+		 *
+		 * @private
+		 * @param displayUnit
+		 * @param container
+		 * @returns containerの子孫にdisplayUnitが含まれているかどうか
+		 */
+		function isDescendantOfContainer(displayUnit, container) {
+			for (var i = 0, len = container._children.length; i < len; i++) {
+				var child = container._children[i];
+				if (child === displayUnit) {
+					//この子DUが探しているDUの場合はtrue
+					return true;
+				} else if (DisplayUnitContainer.isClassOf(child)) {
+					//ある子DUが探しているDU以外かつコンテナの場合、
+					//そのコンテナの子孫に探しているDUがあればtrue。
+					var childRet = isDescendantOfContainer(displayUnit, child);
+					if (childRet) {
+						return true;
+					}
+				}
+			}
+			//このcontainerの子孫には探しているDUはない
+			return false;
+		}
+
 		var desc = {
 			name: 'h5.ui.components.stage.DisplayUnitContainer',
 			field: {
@@ -7026,7 +7061,7 @@
 					},
 					set: function(value) {
 						if (this._scrollX !== value) {
-							this._scrollTo(value, this._scrollY);
+							this.scrollTo(value, this._scrollY);
 						}
 					}
 				},
@@ -7040,7 +7075,7 @@
 					},
 					set: function(value) {
 						if (this._scrollY !== value) {
-							this._scrollTo(this._scrollX, value);
+							this.scrollTo(this._scrollX, value);
 						}
 					}
 				},
@@ -7439,7 +7474,8 @@
 				 * @param globalY
 				 * @returns {Boolean}
 				 */
-				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, scrollAmount) {
+				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, scrollIncrementX,
+						scrollIncrementY) {
 					if (!this.isBoundaryScrollEnabled) {
 						//境界スクロールが無効化されている、または指定された座標がこのコンテナの内部でない場合はスクロールしない
 						return false;
@@ -7472,7 +7508,7 @@
 					//境界スクロール量をセット。ただし、その方向にそれ以上スクロールできない場合はスクロール量をゼロにする
 					if (borderedNineSlicePosition.isBorderLeft) {
 						//左にスクロール
-						xVal = -scrollAmount;
+						xVal = -scrollIncrementX;
 						/*
 						var rawNewX = this.scrollX - scrollAmount;
 						var clampedNewX = StageUtil.clamp(rawNewX, minX, maxX);
@@ -7488,7 +7524,7 @@
 						*/
 					} else if (borderedNineSlicePosition.isBorderRight) {
 						//右にスクロール
-						xVal = scrollAmount;
+						xVal = scrollIncrementX;
 						/*
 						var scrollRestX = maxX - this.width - this._scrollX;
 
@@ -7504,9 +7540,9 @@
 
 					var yVal = 0;
 					if (borderedNineSlicePosition.isBorderTop) {
-						yVal = -scrollAmount;
+						yVal = -scrollIncrementY;
 					} else if (borderedNineSlicePosition.isBorderBottom) {
-						yVal = scrollAmount;
+						yVal = scrollIncrementY;
 					}
 
 					var isScrolled = (xVal !== 0 || yVal !== 0);
@@ -7515,7 +7551,17 @@
 						this.scrollBy(xVal, yVal);
 					}
 
-					return isScrolled;
+					var ret = {
+						isScrolled: isScrolled,
+						dx: xVal,
+						dy: yVal
+					};
+
+					return ret;
+				},
+
+				isDescendant: function(displayUnit) {
+					return isDescendantOfContainer(displayUnit, this);
 				}
 			}
 		};
@@ -15447,6 +15493,8 @@
 		 * @param callback
 		 */
 		_doBoundaryScrollDUDrag: function(callback) {
+			var DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH = 8; //FIXME 定数宣言場所
+
 			var activeView = this._getActiveView();
 
 			var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left - activeView.x;
@@ -15459,14 +15507,26 @@
 			var foremostDUContainer = this._getForemostDisplayUnitContainerAt(globalPos.x,
 					globalPos.y);
 
-			var isScrolled = false;
+			var containerScrollResult = {
+				isScrolled: false,
+				dx: 0,
+				dy: 0
+			};
 
 			if (foremostDUContainer) {
+				var scrollIncrementWorldX = viewport.toWorldX(BOUNDARY_SCROLL_INCREMENT);
+				var scrollIncrementWorldY = viewport.toWorldY(BOUNDARY_SCROLL_INCREMENT);
+
 				var targetContainer = foremostDUContainer;
 				var shouldRetry = true;
 				do {
-					isScrolled = targetContainer._attemptBoundaryScroll(globalPos.x, globalPos.y,
-							8, 5); //FIXME マジックナンバー
+					containerScrollResult = targetContainer._attemptBoundaryScroll(globalPos.x,
+							globalPos.y, DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH,
+							scrollIncrementWorldX, scrollIncrementWorldY);
+
+					if (containerScrollResult.isScrolled) {
+						break;
+					}
 
 					//境界スクロールを試すDUコンテナを一つ上に移動する
 					targetContainer = targetContainer.parentDisplayUnit;
@@ -15474,11 +15534,14 @@
 						//レイヤーに到達したら、DUコンテナの境界スクロールはストップ
 						shouldRetry = false;
 					}
-				} while (shouldRetry && !isScrolled);
+				} while (shouldRetry && !containerScrollResult.isScrolled);
 			}
 
-			if (isScrolled) {
-				//DUコンテナのスクロールを行ったので、今回の境界スクロールは終了
+			if (containerScrollResult.isScrolled) {
+				//DUコンテナのスクロールを行った（ので、レイヤーの境界スクロールは行わない）
+				//スクロールしたDUコンテナの子孫のドラッグ対象DUはさらに位置を移動させる
+				this._dragSession.doPseudoMoveBy(containerScrollResult.dx,
+						containerScrollResult.dy, targetContainer);
 				return;
 			}
 
