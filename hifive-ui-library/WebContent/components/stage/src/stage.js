@@ -14972,7 +14972,13 @@
 				that._doBoundaryScrollDUDrag();
 			}
 
-			//DUコンテナを含めた境界スクロール
+			if (this._duDragBoundaryScrollTimerId) {
+				//もし何らかの原因でmouseupのタイミングでのタイマー解除が行われていなかった場合の保険として
+				//タイマーがセットされていたら一旦解除する
+				clearInterval(this._duDragBoundaryScrollTimerId);
+			}
+
+			//DUコンテナを含めた境界スクロール用タイマーを起動
 			this._duDragBoundaryScrollTimerId = setInterval(timerCallback, BOUNDARY_SCROLL_INTERVAL);
 		},
 
