@@ -7474,8 +7474,8 @@
 				 * @param globalY
 				 * @returns {Boolean}
 				 */
-				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, scrollIncrementX,
-						scrollIncrementY) {
+				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, boundaryHeight,
+						scrollIncrementX, scrollIncrementY) {
 					if (!this.isBoundaryScrollEnabled) {
 						//境界スクロールが無効化されている、または指定された座標がこのコンテナの内部でない場合はスクロールしない
 						return false;
@@ -7486,9 +7486,9 @@
 							this.height);
 					//TODO サイズが変わっていない場合はキャッシュすべき
 					var boundary = {
-						top: boundaryWidth,
+						top: boundaryHeight,
 						right: boundaryWidth,
-						bottom: boundaryWidth,
+						bottom: boundaryHeight,
 						left: boundaryWidth
 					};
 					var borderedNineSlicePosition = boundingRect.getNineSlicePosition(globalX,
@@ -15517,12 +15517,15 @@
 				var scrollIncrementWorldX = viewport.toWorldX(BOUNDARY_SCROLL_INCREMENT);
 				var scrollIncrementWorldY = viewport.toWorldY(BOUNDARY_SCROLL_INCREMENT);
 
+				var boundaryX = viewport.toWorldX(DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH);
+				var boundaryY = viewport.toWorldY(DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH);
+
 				var targetContainer = foremostDUContainer;
 				var shouldRetry = true;
 				do {
 					containerScrollResult = targetContainer._attemptBoundaryScroll(globalPos.x,
-							globalPos.y, DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH,
-							scrollIncrementWorldX, scrollIncrementWorldY);
+							globalPos.y, boundaryX, boundaryY, scrollIncrementWorldX,
+							scrollIncrementWorldY);
 
 					if (containerScrollResult.isScrolled) {
 						break;
@@ -15540,8 +15543,10 @@
 			if (containerScrollResult.isScrolled) {
 				//DUコンテナのスクロールを行った（ので、レイヤーの境界スクロールは行わない）
 				//スクロールしたDUコンテナの子孫のドラッグ対象DUはさらに位置を移動させる
-				this._dragSession.doPseudoMoveBy(containerScrollResult.dx,
-						containerScrollResult.dy, targetContainer);
+				var displayDx = viewport.toDisplayX(containerScrollResult.dx);
+				var displayDy = viewport.toDisplayY(containerScrollResult.dy);
+
+				this._dragSession.doPseudoMoveBy(displayDx, displayDy, targetContainer);
 				return;
 			}
 
