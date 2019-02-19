@@ -2132,8 +2132,8 @@
 					this._lastPagePosition.y = pageY;
 
 					//ドラッグ開始位置を原点とした現在のカーソル位置を更新
-					this._relativePosition.x = pageX - this._startPagePosition.x;
-					this._relativePosition.y = pageY - this._startPagePosition.y;
+					this._relativePosition.x = pageX - this.startingInfo._startPagePosition.x;
+					this._relativePosition.y = pageY - this.startingInfo._startPagePosition.y;
 
 					//現在のカーソル位置のGlobal座標を更新
 					var view = this._startingInfo.view;
@@ -2228,10 +2228,10 @@
 					this._callbackFunc = null;
 					this._stage = null;
 
-					this._startPagePosition = null;
 					this._lastPagePosition = null;
 					this._relativePosition = null;
 					this._totalMove = null;
+					this._lastGlobalPosition = null;
 
 					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
