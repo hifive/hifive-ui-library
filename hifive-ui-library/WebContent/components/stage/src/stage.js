@@ -1912,9 +1912,8 @@
 				_startingInfo: null,
 
 				_lastPagePosition: null,
-				_relativePosition: null,
-				_totalMove: null,
 				_lastGlobalPosition: null,
+				_totalMove: null,
 
 				//ステージコントローラ
 				_stage: null,
@@ -1948,11 +1947,6 @@
 				lastPagePosition: {
 					get: function() {
 						return this._lastPagePosition;
-					}
-				},
-				relativePosition: {
-					get: function() {
-						return this._relativePosition;
 					}
 				},
 
@@ -1989,7 +1983,6 @@
 
 					this._lastPagePosition = DisplayPoint.create(startingInfo.pagePosition.x,
 							startingInfo.pagePosition.y);
-					this._relativePosition = DisplayPoint.create(0, 0);
 					this._totalMove = DisplayPoint.create(0, 0);
 
 					this._lastGlobalPosition = WorldPoint.create(startingInfo.globalPosition.x,
@@ -2131,10 +2124,6 @@
 					this._lastPagePosition.x = pageX;
 					this._lastPagePosition.y = pageY;
 
-					//ドラッグ開始位置を原点とした現在のカーソル位置を更新
-					this._relativePosition.x = pageX - this.startingInfo._startPagePosition.x;
-					this._relativePosition.y = pageY - this.startingInfo._startPagePosition.y;
-
 					//現在のカーソル位置のGlobal座標を更新
 					var view = this._startingInfo.view;
 					var viewPagePos = view.getPagePosition();
@@ -2229,9 +2218,8 @@
 					this._stage = null;
 
 					this._lastPagePosition = null;
-					this._relativePosition = null;
-					this._totalMove = null;
 					this._lastGlobalPosition = null;
+					this._totalMove = null;
 
 					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
