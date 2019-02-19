@@ -1911,10 +1911,10 @@
 
 				_startingInfo: null,
 
-				_startPagePosition: null,
 				_lastPagePosition: null,
 				_relativePosition: null,
 				_totalMove: null,
+				_lastGlobalPosition: null,
 
 				//ステージコントローラ
 				_stage: null,
@@ -1945,11 +1945,6 @@
 						return this._startingInfo;
 					}
 				},
-				startPagePosition: {
-					get: function() {
-						return this._startPagePosition;
-					}
-				},
 				lastPagePosition: {
 					get: function() {
 						return this._lastPagePosition;
@@ -1960,6 +1955,13 @@
 						return this._relativePosition;
 					}
 				},
+
+				lastGlobalPosition: {
+					get: function() {
+						return this._lastGlobalPosition;
+					}
+				},
+
 				totalMove: {
 					get: function() {
 						return this._totalMove;
@@ -1985,12 +1987,13 @@
 					this._stage = stage;
 					this._startingInfo = startingInfo;
 
-					this._startPagePosition = DisplayPoint.create(startingInfo.pagePosition.x,
-							startingInfo.pagePosition.y);
 					this._lastPagePosition = DisplayPoint.create(startingInfo.pagePosition.x,
 							startingInfo.pagePosition.y);
 					this._relativePosition = DisplayPoint.create(0, 0);
 					this._totalMove = DisplayPoint.create(0, 0);
+
+					this._lastGlobalPosition = WorldPoint.create(startingInfo.globalPosition.x,
+							startingInfo.globalPosition.y);
 
 					this._callbackFunc = callback;
 					this._thisObject = thisObject === undefined ? null : thisObject; //undefinedの場合はnullにする
@@ -2131,6 +2134,14 @@
 					//ドラッグ開始位置を原点とした現在のカーソル位置を更新
 					this._relativePosition.x = pageX - this._startPagePosition.x;
 					this._relativePosition.y = pageY - this._startPagePosition.y;
+
+					//現在のカーソル位置のGlobal座標を更新
+					var view = this._startingInfo.view;
+					var viewPagePos = view.getPagePosition();
+					var vdx = pageX - viewPagePos.x;
+					var vdy = pageY - viewPagePos.y;
+					this._lastGlobalPosition = view._viewport.getWorldPositionFromDisplayOffset(
+							vdx, vdy);
 
 					//トータル移動量を更新。totalMoveXYには絶対値で加算していく
 					var cursorDx = pageX - this._lastPagePosition.x;
@@ -14597,7 +14608,7 @@
 				view: this._dragStartingInfo.view,
 				targetElement: this._dragStartingInfo.targetElement,
 				duRelativePosition: this._dragStartingInfo.duRelativePosition,
-				position: this._dragStartingInfo.position,
+				globalPosition: this._dragStartingInfo.globalPosition,
 				pagePosition: this._dragStartingInfo.pagePosition
 			});
 
@@ -15255,7 +15266,7 @@
 			this._dragStartingInfo = {
 				view: view,
 				targetElement: eventTarget,
-				position: wPos,
+				globalPosition: wPos,
 				displayUnit: currentMouseOverDU,
 				duRelativePosition: duRelativePos,
 				pagePosition: DisplayPoint.create(evPageX, evPageY)
