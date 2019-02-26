@@ -7143,12 +7143,6 @@
 
 					this._renderPriority = RenderPriority.ALWAYS;
 
-					//TODO defaultValue
-					this.x = 0;
-					this.y = 0;
-					this.width = 0;
-					this.height = 0;
-
 					this._scaleX = 1;
 					this._scaleY = 1;
 
