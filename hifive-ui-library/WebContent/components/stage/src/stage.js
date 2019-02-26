@@ -8174,13 +8174,19 @@
 			name: 'h5.ui.components.stage.Layer',
 			field: {
 				UIDragScreenScrollDirection: null,
-				_type: null
+				_type: null,
+				_isUnscaledRendering: null
 			},
 
 			accessor: {
 				type: {
 					get: function() {
 						return this._type;
+					}
+				},
+				isUnscaledRendering: {
+					get: function() {
+						return this._isUnscaledRendering;
 					}
 				}
 			},
@@ -8190,13 +8196,16 @@
 				 * @constructor
 				 * @memberOf h5.ui.components.stage.Layer
 				 */
-				constructor: function Layer(id, stage, type) {
+				constructor: function Layer(id, stage, type, isUnscaledRendering) {
 					super_.constructor.call(this);
 
 					if (type == null) {
 						throw new Error('レイヤーのtypeを"svg"または"div"どちらかで指定してください。');
 					}
 					this._type = type.toLowerCase() === 'svg' ? 'svg' : 'div';
+
+					//isUnscaledはデフォルトfalse。明示的にtrueが指定された場合のみtrueにする
+					this._isUnscaledRendering = isUnscaledRendering === true ? true : false;
 
 					//Layer自身はtrueとする。
 					//TODO DUContainerとのコード整理は可能か
@@ -9598,6 +9607,29 @@
 				var DU_POSITION_BEYOND_RIGHT = 3;
 				var DU_POSITION_BEYOND_BOTTOM = 4;
 
+				var formatString = h5.u.str.format;
+
+				var FRACTION_PRECISION = 10;
+
+				//小数表現を正規化して小数文字列を返す
+				function getNormalizedValueString(value) {
+					var intPart = Math.floor(value);
+					if (value === intPart) {
+						//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
+						return '' + intPart;
+					}
+					var str = value.toString();
+					var dotIdx = str.indexOf('.');
+					if (dotIdx === -1) {
+						return '' + intPart;
+					}
+					var decstr = str.slice(dotIdx + 1);
+					var len = decstr.length > FRACTION_PRECISION ? FRACTION_PRECISION
+							: decstr.length;
+					var ret = '' + intPart + '.' + decstr.slice(0, len);
+					return ret;
+				}
+
 				var desc = {
 					name: 'h5.ui.components.stage.StageView',
 
@@ -10590,14 +10622,15 @@
 
 								//scrollXYはビューポートの位置なので、
 								//レイヤーのtranslateにセットする値としては符号を逆にする
-								this._updateTransform(dom, -scrollX, -scrollY);
+								this._updateTransform(dom, -scrollX, -scrollY, layer._isOnSvgLayer,
+										layer.isUnscaledRendering);
 							}
 
 							//フォアレイヤーのスクロール位置も移動させる
 							this._updateTransform(this._foremostSvg, -this._viewport.worldX,
-									-this._viewport.worldY);
+									-this._viewport.worldY, true, false);
 							this._updateTransform(this._foremostDiv, -this._viewport.worldX,
-									-this._viewport.worldY);
+									-this._viewport.worldY, false, false);
 						},
 
 						/*
@@ -10868,51 +10901,32 @@
 						 * レイヤーではtranslate量にDUのx,yの値を用いる。
 						 *
 						 * @private
-						 * @param worldX
-						 * @param worldY
+						 * @param element transformをかけるDOM要素
+						 * @param scrollX スクロール量X
+						 * @param scrollY スクロール量Y
+						 * @param isSVG elementがSVG要素の場合true, DIV要素の場合false
+						 * @param isUnscaled
+						 *            このレイヤーがtransformによるスケーリングを行うかどうか。falseの場合はscaleは(1,1)にする
 						 */
-						_updateTransform: function(element, scrollX, scrollY) {
-							var scaleXStr = getNormalizedValueString(this._viewport.scaleX);
-							var scaleYStr = getNormalizedValueString(this._viewport.scaleY);
+						_updateTransform: function(element, scrollX, scrollY, isSVG, isUnscaled) {
+							var scaleXStr = isUnscaled ? '1'
+									: getNormalizedValueString(this._viewport.scaleX);
+							var scaleYStr = isUnscaled ? '1'
+									: getNormalizedValueString(this._viewport.scaleY);
 							var tx = getNormalizedValueString(scrollX);
 							var ty = getNormalizedValueString(scrollY);
 
-							//TODO レイヤーのスクロールはLayer側で吸収させる(SVG/DIVの違い)
-							var isDiv = element.tagName.toLowerCase() === 'div';
-
-							if (isDiv) {
-								element.style.transform = h5.u.str.format(
-										'scale({0},{1}) translate({2}px,{3}px)', scaleXStr,
-										scaleYStr, tx, ty);
-							} else {
+							if (isSVG) {
 								//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
 								//その<g>にtransformを設定する。
-								var transformStr = h5.u.str.format(
+								var transformStr = formatString(
 										'scale({0},{1}) translate({2},{3})', scaleXStr, scaleYStr,
 										tx, ty);
 								element.firstChild.setAttribute('transform', transformStr);
-							}
-
-							/* 処理ここまで */
-
-							//小数表現を正規化して小数文字列を返す
-							function getNormalizedValueString(value) {
-								var PRECISION = 10;
-
-								var intPart = Math.floor(value);
-								if (value === intPart) {
-									//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
-									return '' + intPart;
-								}
-								var str = value.toString();
-								var dotIdx = str.indexOf('.');
-								if (dotIdx === -1) {
-									return '' + intPart;
-								}
-								var decstr = str.slice(dotIdx + 1);
-								var len = decstr.length > PRECISION ? PRECISION : decstr.length;
-								var ret = '' + intPart + '.' + decstr.slice(0, len);
-								return ret;
+							} else {
+								element.style.transform = formatString(
+										'scale({0},{1}) translate({2}px,{3}px)', scaleXStr,
+										scaleYStr, tx, ty);
 							}
 						},
 
