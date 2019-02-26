@@ -282,6 +282,10 @@
 	var REASON_UPDATE_DEPENDENCY_REQUEST = '__duUpdateDependencyRequest__';
 	var REASON_OVERFLOW_CHANGE = '__duOverflowChange__';
 
+	var REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE = '__i_LayerScaledUpdate__';
+	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__i_LayerScaled__';
+
+
 	var UpdateReasons = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
 		SIZE_CHANGE: REASON_SIZE_CHANGE,
@@ -4668,20 +4672,31 @@
 								this._updateActualDisplayStyle(element);
 							}
 
-							if (reason.isInitialRender || reason.isPositionChanged) {
-								this._updatePosition(element);
+							if (reason.isInitialRender || reason.isPositionChanged
+									|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
+								this._updatePosition(element, stageView);
 							}
 
-							if (reason.isInitialRender || reason.isSizeChanged) {
-								this._updateSize(element);
+							if (reason.isInitialRender || reason.isSizeChanged
+									|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
+								this._updateSize(element, stageView);
 							}
 						},
 
-						_updatePosition: function(element) {
-							var x = this._viewPositionOverride != null ? this._viewPositionOverride.x
+						_updatePosition: function(element, stageView) {
+							var x, y;
+
+							x = this._viewPositionOverride != null ? this._viewPositionOverride.x
 									: this.x;
-							var y = this._viewPositionOverride != null ? this._viewPositionOverride.y
+							y = this._viewPositionOverride != null ? this._viewPositionOverride.y
 									: this.y;
+
+							if (this._belongingLayer.isUnscaledRendering) {
+								//unscaled描画レイヤーの場合、レイヤーに対してtransformによる拡縮がかかっていないので、
+								//ここで拡縮率をかけてDOMの座標自体を変更する
+								x = stageView._viewport.toDisplayX(x);
+								y = stageView._viewport.toDisplayY(y);
+							}
 
 							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
@@ -4696,17 +4711,30 @@
 							}
 						},
 
-						_updateSize: function(element) {
+						_updateSize: function(element, stageView) {
+							var width, height;
+
+							if (this._belongingLayer.isUnscaledRendering) {
+								//Unscaled描画レイヤーの場合は、レイヤーに対してtransformによる拡縮がかかっていないので
+								//ここでDOM要素自体の大きさを変更する
+								width = stageView._viewport.toDisplayX(this.width);
+								height = stageView._viewport.toDisplayY(this.height);
+							} else {
+								//通常レイヤーの場合はワールド座標系の値をそのまま使えばよい
+								width = this.width;
+								height = this.height;
+							}
+
 							if (this._isOnSvgLayer) {
 								setSvgAttributes(element, {
-									width: this.width,
-									height: this.height,
-									viewBox: '0 0 ' + this.width + ' ' + this.height
+									width: width,
+									height: height,
+									viewBox: '0 0 ' + width + ' ' + height
 								});
 							} else {
 								$(element).css({
-									width: this.width,
-									height: this.height
+									width: width,
+									height: height
 								});
 							}
 						},
@@ -4736,6 +4764,20 @@
 						 * @private
 						 */
 						__onParentDirtyNotify: function(du, reasons) {
+							if (this._belongingLayer && this._belongingLayer.isUnscaledRendering) {
+								//Unscaled描画を行うレイヤーの場合、レイヤーの拡縮によって
+								//DOMの位置・サイズを変更する必要があるので自身をsetDirtyする
+								if (!Array.isArray(reasons)) {
+									if (reasons === REASON_INTERNAL_LAYER_SCALE_CHANGE) {
+										this._setDirty(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE);
+									}
+								} else {
+									if (reasons.indexOf(REASON_INTERNAL_LAYER_SCALE_CHANGE) !== -1) {
+										this._setDirty(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE);
+									}
+								}
+							}
+
 							if (!this._willGlobalPositionChangeByParentDirty(reasons)) {
 								return;
 							}
@@ -8622,6 +8664,10 @@
 	var ResizeDirection = h5.ui.components.stage.ResizeDirection;
 	var RenderPriority = h5.ui.components.stage.RenderPriority;
 
+	//TODO クラス定義側にも同じ定義を書いているので統一する
+	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__i_LayerScaled__';
+
+
 	var SortedList = RootClass.extend(function(super_) {
 		function getInsertionIndex(array, target, compareFunc, start, end) {
 			var len = array.length;
@@ -10585,6 +10631,16 @@
 						 */
 						_updateLayerScrollPosition: function() {
 							this._isUpdateLayerScrollPositionRequired = true;
+
+							var layers = this._stage._layers;
+							for (var i = 0, len = layers.length; i < len; i++) {
+								var layer = layers[i];
+								if (layer.isUnscaledRendering) {
+									//unscaledレイヤーの場合のみsetDirtyにする(子へのdirtyの伝搬を最小限にするため)
+									layer._setDirty(REASON_INTERNAL_LAYER_SCALE_CHANGE);
+								}
+							}
+
 							this.update();
 						},
 
@@ -10915,6 +10971,13 @@
 									: getNormalizedValueString(this._viewport.scaleY);
 							var tx = getNormalizedValueString(scrollX);
 							var ty = getNormalizedValueString(scrollY);
+
+							if (isUnscaled) {
+								//Unscaled描画レイヤーの場合、scale()はかけないので
+								//他のレイヤーと原点が一致するようにtranslate量に対してのみscaleをかける
+								tx *= this._viewport.scaleX;
+								ty *= this._viewport.scaleY;
+							}
 
 							if (isSVG) {
 								//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
@@ -15966,7 +16029,8 @@
 					//下位互換性のため、明示的に"div"を指定された場合のみdivレイヤーとし、
 					//指定がない場合のデフォルトはsvgレイヤーとする
 					var layerType = layerDef.type === 'div' ? 'div' : 'svg';
-					var layer = Layer.create(layerDef.id, this, layerType);
+					var isUnscaledRendering = layerDef.isUnscaledRendering === true ? true : false;
+					var layer = Layer.create(layerDef.id, this, layerType, isUnscaledRendering);
 					this.addLayer(layer, null, layerDef.isDefault);
 				}
 			}
