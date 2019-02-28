@@ -4014,15 +4014,245 @@
 		return desc;
 	});
 
+	/**
+	 * DUに対する自動レイアウトを行うクラスのベースクラスです。
+	 *
+	 * @class LayoutHookBase
+	 * @param super_ スーパークラス
+	 * @returns クラス定義
+	 */
+	var LayoutHookBase = RootClass.extend(function(super_) {
+		var arrayPush = Array.prototype.push;
+
+		var desc = {
+			name: 'h5.ui.components.stage.LayoutHookBase',
+
+			isAbstract: true,
+
+			field: {
+				_displayUnits: null
+			},
+
+			accessor: {
+				displayUnits: {
+					get: function() {
+						return this._displayUnits;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.LayoutHookBase
+				 */
+				constructor: function LayoutHookBase() {
+					super_.constructor.call(this);
+					this._displayUnits = [];
+				},
+
+				__attachTo: function(displayUnits) {
+					if (!Array.isArray(displayUnits)) {
+						displayUnits = [displayUnits];
+					}
+
+					arrayPush.apply(this._displayUnits, displayUnits);
+
+					for (var i = 0, len = displayUnits.length; i < len; i++) {
+						var du = displayUnits[i];
+						du.__addLayoutHook(this);
+						this.__onAttached(du);
+					}
+				},
+
+				__detachFrom: function(displayUnits) {
+					if (!Array.isArray(displayUnits)) {
+						displayUnits = [displayUnits];
+					}
+
+					for (var i = 0, len = displayUnits.length; i < len; i++) {
+						var du = displayUnits[i];
+						var idx = this._displayUnits.indexOf(du);
+						if (idx !== -1) {
+							this.__onDetaching(du);
+							du.__removeLayoutHook(this);
+							this._displayUnits.splice(idx, 1);
+						}
+					}
+				},
+
+				__detachFromAll: function() {
+					var dus = this._displayUnits;
+
+					if (dus.length === 0) {
+						return;
+					}
+
+					//コールバック呼び出しがあるのでDetach処理はDUごとに行う
+					for (var i = 0, len = dus.length; i < len; i++) {
+						var du = dus[i];
+						this.__onDetaching(du);
+						du.__removeLayoutHook(this);
+					}
+
+					//内部のDU配列は最後にまとめて初期化
+					this._displayUnits = [];
+				},
+
+				__onAttach: function(displayUnit) {
+				//子クラスでオーバーライド
+				},
+
+				__onDetaching: function(displayUnit) {
+				//子クラスでオーバーライド
+				},
+
+				/**
+				 * アタッチしているDisplayUnitの位置またはサイズが変更されようとしたときに呼ばれます。 変更対象外の値の引数にはnullが渡されます。
+				 * DisplayUnitの実際の値はまだ変更されていません。従って、this.displayUnitの値を取得すると、変更前の値が返ります。
+				 */
+				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+				//子クラスでオーバーライド
+				},
+
+				/**
+				 * 親(先祖)のコンテナがスクロールしたなどの理由により、アタッチしているDisplayUnitのグローバル座標値が変化した場合に呼ばれます。
+				 * グローバル座標値はすでに変わっているので、this.displayUnit.getWorldGlobalPosition()を呼び出すと変更後の値が返ります。
+				 */
+				__onGlobalPositionChange: function(displayUnit) {
+
+				}
+			}
+		};
+		return desc;
+	});
+
+	/**
+	 * DUに対する自動レイアウトを行うクラスのベースクラスです。
+	 *
+	 * @class SingleLayoutHook
+	 * @param super_ スーパークラスオブジェクト
+	 * @returns クラス定義
+	 */
+	LayoutHookBase.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.SingleLayoutHook',
+
+			isAbstract: true,
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SingleLayoutHook
+				 */
+				constructor: function SingleLayoutHook() {
+					super_.constructor.call(this);
+				},
+
+				/**
+				 * このLayoutHookをDisplayUnitに取り付けます。
+				 */
+				attachTo: function(displayUnit) {
+					if (Array.isArray(displayUnit)) {
+						//SingleLayoutHookでは、DUは配列では渡せない
+						throw new Error(
+								'SingleLayoutHookとその子クラスでは、アタッチ先のDisplayUnitは1つのみ、非配列の形で渡してください');
+					}
+
+					if (this._displayUnits.length > 0) {
+						//SingleLayoutHookでは、2つ以上のDUに同時にアタッチできない
+						throw new Error('すでにDisplayUnitにアタッチされています。DisplayUnit.id = '
+								+ this._displayUnits[0].id);
+					}
+
+					this.__attachTo(displayUnit);
+				},
+
+				/**
+				 * このLayoutHookをDisplayUnitから取り外します。
+				 */
+				detach: function() {
+					//SingleLayoutHookの場合、アタッチ先は（アタッチされていれば）必ず1つに特定できるので引数はvoid
+					this.__detachFromAll();
+				}
+			}
+		};
+		return desc;
+	});
+
+
+	LayoutHookBase.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.GenericLayoutHook',
+
+			isAbstract: true,
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.GenericLayoutHook
+				 */
+				constructor: function GenericLayoutHook() {
+					super_.constructor.call(this);
+				},
+
+				/**
+				 * このLayoutHookをDisplayUnitに取り付けます。
+				 */
+				attachTo: function(displayUnits) {
+					this.__attachTo(displayUnits);
+				},
+
+				/**
+				 * このLayoutHookをDisplayUnitから取り外します。
+				 */
+				detachFrom: function(displayUnits) {
+					this.__detachFrom(displayUnits);
+				},
+
+				__detachFromAll: function() {
+					this.__detachFromAll();
+				}
+			}
+		};
+		return desc;
+	});
+
+	/**
+	 * DisplayUnitのレイアウトに関するプロパティ(x, y, width, height)値を保持するクラスです。
+	 */
+	var LayoutValue = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.LayoutValue',
+
+			field: {
+				x: null,
+				y: null,
+				width: null,
+				height: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.LayoutValue
+				 */
+				constructor: function LayoutValue(x, y, width, height) {
+					super_.constructor.call(this);
+					this.x = x;
+					this.y = y;
+					this.width = width;
+					this.height = height;
+				}
+			}
+		};
+		return desc;
+	});
+
+
 	var ERR_CANNOT_MOVE_OFFSTAGE_DU = 'Stageに追加されていないDisplayUnitはディスプレイ座標系に基づいた移動はできません。';
 
-	//TODO layouter(仮)を差し込めるようにし、
-	//layouterがいる場合にはx,y,w,hをセットしようとしたときに
-	//layouterがフックして強制ブロック・別の値をセット等できるようにする
 	var DisplayUnit = EventDispatcher
 			.extend(function(super_) {
 				//DUのID自動採番時のカウントの上限。この値に達したらカウンタをリセットする。
-				var MAX_DU_ID_LOOP = 2000000000;
+				//1ms以内にこの数を超えてIDを生成するとIDがかぶるので、あまり小さすぎる値にはしないこと。
+				var MAX_DU_ID_LOOP = 1000000;
 
 				//現在のIDカウンタのリセット日時
 				var currentDUIDCounterDate = new Date().getTime();
@@ -4076,7 +4306,9 @@
 
 						_viewPositionOverride: null,
 
-						_worldGlobalPositionCache: null
+						_worldGlobalPositionCache: null,
+
+						_layoutHooks: null
 					},
 					accessor: {
 						logicalId: {
@@ -4102,10 +4334,7 @@
 								if (value === this._x) {
 									return;
 								}
-								this._x = value;
-								this._worldGlobalPositionCache = null;
-
-								this._setDirty(REASON_POSITION_CHANGE);
+								this._setLayoutValue(value, null, null, null);
 							}
 						},
 						y: {
@@ -4116,10 +4345,7 @@
 								if (value === this._y) {
 									return;
 								}
-								this._y = value;
-								this._worldGlobalPositionCache = null;
-
-								this._setDirty(REASON_POSITION_CHANGE);
+								this._setLayoutValue(null, value, null, null);
 							}
 						},
 
@@ -4151,9 +4377,7 @@
 								if (value === this._width) {
 									return;
 								}
-								this._width = value;
-
-								this._setDirty(REASON_SIZE_CHANGE);
+								this._setLayoutValue(null, null, value, null);
 							}
 						},
 						height: {
@@ -4164,9 +4388,7 @@
 								if (value === this._height) {
 									return;
 								}
-								this._height = value;
-
-								this._setDirty(REASON_SIZE_CHANGE);
+								this._setLayoutValue(null, null, null, value);
 							}
 						},
 						groupTag: {
@@ -4254,7 +4476,7 @@
 							super_.constructor.call(this);
 
 							if (id == null) {
-								//1ms以内に20億個のIDを生成するとIDがかぶるが、現実的には起こらないと思われるのでこの仕組みにする
+								//1ms以内に大量のIDを生成するとIDがかぶるが、現実的には起こらないと思われるのでこの仕組みにする
 								this.id = 'duid_' + currentDUIDCounterDate + '-' + DUIDCounter;
 
 								if (DUIDCounter >= MAX_DU_ID_LOOP) {
@@ -4299,47 +4521,13 @@
 							this._isOnSvgLayer = false;
 
 							this._viewPositionOverride = null;
+
+							//初期状態ではLayoutHookの配列は持たない（メモリ節約）
+							this._layoutHooks = null;
 						},
 
 						setRect: function(rect) {
-							var isSizeChanged = false;
-							var isPositionChanged = false;
-
-							if (this._x !== rect.x) {
-								this._x = rect.x;
-								isPositionChanged = true;
-							}
-
-							if (this._y !== rect.y) {
-								this._y = rect.y;
-								isPositionChanged = true;
-							}
-
-							if (this._width !== rect.width) {
-								this._width = rect.width;
-								isSizeChanged = true;
-							}
-
-							if (this._height !== rect.height) {
-								this._height = rect.height;
-								isSizeChanged = true;
-							}
-
-							if (!isSizeChanged && !isPositionChanged) {
-								//サイズも位置も変わっていない場合は何もしない
-								return;
-							}
-
-							var reasons = [];
-							if (isPositionChanged) {
-								reasons.push(REASON_POSITION_CHANGE);
-								this._worldGlobalPositionCache = null;
-							}
-							if (isSizeChanged) {
-								reasons.push(REASON_SIZE_CHANGE);
-							}
-
-							this._setDirty(reasons);
+							this._setLayoutValue(rect.x, rect.y, rect.width, rect.height);
 						},
 
 						getRect: function() {
@@ -4348,22 +4536,7 @@
 						},
 
 						setSize: function(width, height) {
-							var isSizeChanged = false;
-
-							if (this._width !== width) {
-								this._width = width;
-								isSizeChanged = true;
-							}
-
-							if (this._height !== height) {
-								this._height = height;
-								isSizeChanged = true;
-							}
-
-							if (isSizeChanged) {
-								//実際にサイズが変更された場合に限りdirtyにする
-								this._setDirty(REASON_SIZE_CHANGE);
-							}
+							this._setLayoutValue(null, null, width, height);
 						},
 
 						remove: function() {
@@ -4373,22 +4546,7 @@
 						},
 
 						moveTo: function(worldX, worldY) {
-							var isPositionChanged = false;
-
-							if (this._x !== worldX) {
-								this._x = worldX;
-								isPositionChanged = true;
-							}
-
-							if (this._y !== worldY) {
-								this._y = worldY;
-								isPositionChanged = true;
-							}
-
-							if (isPositionChanged) {
-								this._worldGlobalPositionCache = null;
-								this._setDirty(REASON_POSITION_CHANGE);
-							}
+							this._setLayoutValue(worldX, worldY, null, null);
 						},
 
 						moveBy: function(worldDx, worldDy) {
@@ -4396,11 +4554,7 @@
 								//差分なので、移動量がどちらも0なら何もしない
 								return;
 							}
-
-							this._x += worldDx;
-							this._y += worldDy;
-							this._worldGlobalPositionCache = null;
-							this._setDirty(REASON_POSITION_CHANGE);
+							this._setLayoutValue(this._x + worldDx, this._y + worldDy, null, null);
 						},
 
 						moveDisplayTo: function(x, y) {
@@ -4815,13 +4969,138 @@
 							if (element) {
 								this._updateActualDisplayStyle(element);
 							}
+						},
+
+						__addLayoutHook: function(layoutHook) {
+							if (!this._layoutHooks) {
+								//初めてLayoutHookが付加される場合はリストを準備
+								this._layoutHooks = [];
+							}
+
+							if (this._layoutHooks.indexOf(layoutHook) !== -1) {
+								throw new Error(
+										'このLayoutHookはすでにこのDisplayUnitに追加されています。DisplayUnit.id='
+												+ this.id);
+							}
+							//このレイアウターがまだこのDUに付加されていない場合のみリストに追加
+							this._layoutHooks.push(layoutHook);
+						},
+
+						__removeLayoutHook: function(layoutHook) {
+							var hooks = this._layoutHooks;
+							if (hooks) {
+								//保持しているレイアウトフックリストに含まれていれば取り除く。
+								//付加されていないLayoutHookの場合は単純に無視する
+								var idx = hooks.indexOf(layoutHook);
+								if (idx !== -1) {
+									hooks.splice(idx, 1);
+								}
+							}
+						},
+
+						_setLayoutValue: function(x, y, width, height) {
+							var hooked = this._executeLayoutHooks(x, y, width, height);
+							var hx = hooked.x;
+							var hy = hooked.y;
+							var hw = hooked.width;
+							var hh = hooked.height;
+
+							var isSizeChanged = false;
+							var isPositionChanged = false;
+
+							if (hx != null && this._x !== hx) {
+								this._x = hx;
+								isPositionChanged = true;
+							}
+
+							if (hy != null && this._y !== hy) {
+								this._y = hy;
+								isPositionChanged = true;
+							}
+
+							if (hw != null && this._width !== hw) {
+								this._width = hw;
+								isSizeChanged = true;
+							}
+
+							if (hh != null && this._height !== hh) {
+								this._height = hh;
+								isSizeChanged = true;
+							}
+
+							if (!isSizeChanged && !isPositionChanged) {
+								//サイズも位置も変わっていない場合は何もしない
+								return;
+							}
+
+							var reasons = [];
+							if (isPositionChanged) {
+								reasons.push(REASON_POSITION_CHANGE);
+								this._worldGlobalPositionCache = null;
+							}
+							if (isSizeChanged) {
+								reasons.push(REASON_SIZE_CHANGE);
+							}
+
+							this._setDirty(reasons);
+						},
+
+						/**
+						 * レイアウトフックを実行し、フック後の値を返します。 複数のレイアウトフックがセットされていて、異なるフックで同じプロパティの値を変更した場合、
+						 * 値の変更は後勝ちです。
+						 *
+						 * @param x X座標（ワールド座標）
+						 * @param y Y座標（ワールド座標）
+						 * @param width 幅（ワールド座標）
+						 * @param height 高さ（ワールド座標）
+						 * @returns {LayoutValue} フックした後のレイアウト値。元の値を使用する場合はそのプロパティの値をnullにします。
+						 */
+						_executeLayoutHooks: function(x, y, width, height) {
+							//代入初期値を保持するインスタンス
+							var assigning = LayoutValue.create(x, y, width, height);
+
+							var hooks = this._layoutHooks;
+							if (!hooks) {
+								return assigning;
+							}
+
+							//上書き値を保持するインスタンス
+							var overwrite = LayoutValue.create(null, null, null, null);
+
+							//フックを実行
+							//複数のLayoutHookで同じプロパティを上書きした場合は後勝ちになる。
+							for (var i = 0, len = hooks.length; i < len; i++) {
+								hooks[i].__onLayoutChanging(this, assigning, overwrite);
+							}
+
+							//ループ終了後、overwriteの中でnull以外の値がセットされたら
+							//そのプロパティについてoverwriteの値を使用する。nullの場合は元の値を使用する。
+							//なお、インスタンス生成コストを抑えるためoverwriteインスタンスを使いまわす。
+
+							if (overwrite.x == null) {
+								overwrite.x = x;
+							}
+
+							if (overwrite.y == null) {
+								overwrite.y = y;
+							}
+
+							if (overwrite.width == null) {
+								overwrite.width = width;
+							}
+
+							if (overwrite.height == null) {
+								overwrite.height = height;
+							}
+
+							//最終的に、全てのLayoutHookを実行した後の値を返す。
+							return overwrite;
 						}
 					}
 				};
 
 				return classDesc;
 			});
-
 
 	var UpdateReasonSet = RootClass.extend(function(super_) {
 		var desc = {
