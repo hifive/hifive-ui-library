@@ -3571,11 +3571,9 @@
 	SVGElementWrapper.extend(function(super_) {
 		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
 		var desc = {
-			/**
-			 * @memberOf h5.ui.components.stage.SVGDefinitions
-			 */
 			name: 'h5.ui.components.stage.SVGDefinitions',
 			field: {
+				_element: null,
 				_definitions: null
 			},
 			method: {
@@ -9588,98 +9586,6 @@
 							parent.appendChild(dom);
 						}
 					}
-				}
-			}
-		};
-		return desc;
-	});
-
-	DisplayUnit.extend(function(super_) {
-
-		var SCROLL_BAR_DISPLAY_MODE_ALWAYS = 3;
-
-
-		var desc = {
-			name: 'h5.ui.components.stage.DUScrollBar',
-
-			field: {
-				_controller: null,
-				_viewControllerMap: null
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.DUScrollBar
-				 */
-				constructor: function DUScrollBar(id) {
-					super_.constructor.call(this, id);
-					//TODO controllerのbind/unbindに対応して、Alwaysでなくてもよいようにする
-					this.renderPriority = RenderPriority.ALWAYS;
-					this._viewControllerMap = new Map();
-				},
-
-				__renderDOM: function(stageView) {
-					var $root = $('<div class="vertical"></div>');
-					var rootElement = $root[0];
-
-					rootElement.style.position = 'absolute';
-					rootElement.style.cursor = 'default';
-
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
-
-					//TODO __updateDOMのINITIAL_RENDER呼出はStage側で行うようにする。
-					//これに伴い、__renderDOM -> __createDOM に改名したほうが意味が通りやすくなる。
-					//(SVG/DIVレイヤーの種類に応じて要素を変えたり、<table>など別のタグを出力したい場合もここをオーバーライドする)
-					this.__updateDOM(stageView, rootElement, reason);
-
-					var controller = h5.core.controller(rootElement,
-							h5.ui.components.stage.VerticalScrollBarController);
-
-					this._viewControllerMap.set(stageView, controller);
-
-					var that = this;
-					controller.readyPromise.done(function() {
-						that._setDirty([REASON_POSITION_CHANGE, REASON_SIZE_CHANGE,
-								REASON_GLOBAL_POSITION_CHANGE]);
-
-						controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
-
-						//						this.setBarSize(rightmostView.height);
-						//						that._updateScrollBarLogicalValues();
-					});
-
-					//this._controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
-
-					return rootElement;
-				},
-
-				__updateDOM: function(stageView, element, reason) {
-					super_.__updateDOM.call(this, stageView, element, reason);
-
-					var controller = this._viewControllerMap.get(stageView);
-
-					if (!controller) {
-						return;
-					}
-
-					if (reason.isInitialRender || reason.isSizeChanged
-							|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
-						controller.setBarSize($(element).height());
-						this._updateScrollBarLogicalValues(controller);
-						console.log('UPDATED SCROLLBAR');
-					}
-				},
-
-				_updateScrollBarLogicalValues: function(controller) {
-					if (!controller) {
-						return;
-					}
-
-					var scrollWorldAmount = 100; //this.getVisibleHeight() - worldHeight;
-					var worldY = 10; //reprView._viewport.worldY;
-
-					controller.setScrollSize(this.height, scrollWorldAmount);
-					controller.setScrollPosition(worldY);
 				}
 			}
 		};

@@ -175,7 +175,8 @@
 			type: 'svg'
 		}, {
 			id: LAYER_ID_DIV,
-			type: 'div'
+			type: 'div',
+			isUnscaledRendering: false
 		}, {
 			id: LAYER_ID_EDGE,
 			type: 'svg'
