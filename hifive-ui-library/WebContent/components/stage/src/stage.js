@@ -7966,6 +7966,8 @@
 	var MSG_RENDER_PRIORITY_MUST_BE_ALWAYS = 'DisplayUnitContainerおよびそのサブクラスのrenderPriorityは常にALWAYSです。変更できません。';
 
 	var DisplayUnitContainer = DisplayUnit.extend(function(super_) {
+		var arrayPush = Array.prototype.push;
+		var formatString = h5.u.str.format;
 
 		function getDisplayUnitByIdInner(container, id) {
 			var children = container._children;
@@ -7985,8 +7987,6 @@
 			}
 			return null;
 		}
-
-		var arrayPush = Array.prototype.push;
 
 		function getChildrenAll(duContainer) {
 			var ret = [];
@@ -8309,13 +8309,13 @@
 
 					if (this._isOnSvgLayer) {
 						//SVGレイヤーにいる場合は直下のgタグに対してtransformをかける
-						var transform = h5.u.str.format('scale({0},{1}) translate({2},{3})',
+						var transform = formatString('scale({0},{1}) translate({2},{3})',
 								this._scaleX, this._scaleY, -this._scrollX, -this._scrollY);
 						element.firstChild.setAttribute('transform', transform);
 					} else {
 						//DIVレイヤーにいる場合は自分自身に対してtransformをかける
 						//注：CSS Transformの場合、translateは"px"は必須。付けないと平行移動しない。
-						element.style.transform = h5.u.str.format(
+						element.style.transform = formatString(
 								'scale({0},{1}) translate({2}px,{3}px)', this._scaleX,
 								this._scaleY, -this._scrollX, -this._scrollY);
 					}
@@ -11219,6 +11219,7 @@
 									height: du.height,
 									'pointer-events': 'none'
 								});
+
 								this._foremostDiv.appendChild(element);
 							}
 						},
@@ -12028,15 +12029,22 @@
 									: getNormalizedValueString(this._viewport.scaleX);
 							var scaleYStr = isUnscaled ? '1'
 									: getNormalizedValueString(this._viewport.scaleY);
-							var tx = getNormalizedValueString(scrollX);
-							var ty = getNormalizedValueString(scrollY);
+
+							//スクロール量
+							var sx, sy;
 
 							if (isUnscaled) {
 								//Unscaled描画レイヤーの場合、scale()はかけないので
 								//他のレイヤーと原点が一致するようにtranslate量に対してのみscaleをかける
-								tx *= this._viewport.scaleX;
-								ty *= this._viewport.scaleY;
+								sx = scrollX * this._viewport.scaleX;
+								sy = scrollY * this._viewport.scaleY;
+							} else {
+								sx = scrollX;
+								sy = scrollY;
 							}
+
+							var tx = getNormalizedValueString(sx);
+							var ty = getNormalizedValueString(sy);
 
 							if (isSVG) {
 								//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
