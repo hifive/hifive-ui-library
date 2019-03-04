@@ -18,7 +18,10 @@
 	'use strict';
 
 	var LAYER_ID_MAIN = 'main';
+	var LAYER_ID_DIV = 'divlayer';
 	var LAYER_ID_EDGE = 'edge';
+	var LAYER_ID_UNSCALED = 'unscaled';
+
 
 	var classManager = h5.cls.manager;
 
@@ -30,11 +33,28 @@
 	//var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
-
+	console.log(BasicDisplayUnit.create('test-id'));
 	var SingleLayerPlane = classManager.getClass('h5.ui.components.stage.SingleLayerPlane');
 	var StackViewport = classManager.getClass('h5.ui.components.stage.StackViewport');
 	var ViewportDisplayUnitContainer = classManager
 			.getClass('h5.ui.components.stage.ViewportDisplayUnitContainer');
+	var DragLiveMode = h5.ui.components.stage.DragLiveMode;
+
+	var SynchronizeLayoutHook = classManager
+			.getClass('h5.ui.components.stage.SynchronizeLayoutHook');
+	var FollowPositionLayoutHook = classManager
+			.getClass('h5.ui.components.stage.FollowPositionLayoutHook');
+	var DisplaySizeLayoutHook = classManager
+			.getClass('h5.ui.components.stage.DisplaySizeLayoutHook');
+	var HorizontalLineLayoutHook = classManager
+			.getClass('h5.ui.components.stage.HorizontalLineLayoutHook');
+	var VisiblePositionLayoutHook = classManager
+			.getClass('h5.ui.components.stage.VisiblePositionLayoutHook');
+
+	var DUScrollBar = classManager.getClass('h5.ui.components.stage.DUScrollBar');
+
+	var DragMode = h5.ui.components.stage.DragMode;
+
 
 	var editorHtml = '<div class="simpleTextEditor"><div class="innerPad"><textarea class="simpleTextEditorTextarea"></textarea>'
 			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span>'
@@ -154,12 +174,16 @@
 			isDefault: true,
 			type: 'svg'
 		}, {
-			id: 'divlayer',
+			id: LAYER_ID_DIV,
 			type: 'div'
 		}, {
 			id: LAYER_ID_EDGE,
 			type: 'svg'
-		}, ]
+		}, {
+			id: LAYER_ID_UNSCALED,
+			type: 'div',
+			isUnscaledRendering: true
+		}]
 	};
 
 
@@ -311,6 +335,8 @@
 				userText: 'User-defined text'
 			};
 
+			unit.isEditable = false;
+
 			//TODO 引数はsvgではなくこのUnitインスタンス
 			unit.setRenderer(function(context, graphics) {
 				var reason = context.reason;
@@ -369,19 +395,19 @@
 			return unit;
 		},
 
-		_createEdge: function(duFrom, duTo) {
+		_createEdge: function(duFrom, duTo, hAlign) {
 			var edge = Edge.create(duFrom, duTo);
 
 			edge.endpointFrom.verticalAlign = 'nearestSide';
-//			edge.endpointFrom.verticalAlign = 'bottom';
-			edge.endpointFrom.horizontalAlign = 'left';
+			//			edge.endpointFrom.verticalAlign = 'bottom';
+			edge.endpointFrom.horizontalAlign = hAlign ? hAlign : 'left';
 
 			edge.endpointTo.verticalAlign = 'nearestSide';
-//			edge.endpointTo.verticalAlign = 'top';
-			edge.endpointTo.horizontalAlign = 'left';
+			//			edge.endpointTo.verticalAlign = 'top';
+			edge.endpointTo.horizontalAlign = hAlign ? hAlign : 'left';
 
-//			edge.endpointFrom.horizontalAlign = 'offset';
-//			edge.endpointFrom.alignOffsetX = 15;
+			//			edge.endpointFrom.horizontalAlign = 'offset';
+			//			edge.endpointFrom.alignOffsetX = 15;
 
 			edge.addClass('myEdge');
 			edge.addClass('edge-type-1');
@@ -389,11 +415,12 @@
 			return edge;
 		},
 
-		_createDivDU: function(rect) {
+		_createDivDU: function(rect, text) {
 			var du = BasicDisplayUnit.create();
 			du.setRect(rect);
 			du.extraData = {
-				text: 'this is a div DU'
+				type: 'text',
+				text: text ? text : 'this is a div DU'
 			};
 
 			//TODO 引数はsvgではなくこのUnitインスタンス
@@ -401,6 +428,16 @@
 				var reason = context.reason;
 				if (reason.isInitialRender) {
 					$(context.rootElement).addClass('commentDU');
+				}
+
+				if(du.isFocused) {
+					$(context.rootElement).addClass('focused');
+				} else {
+					$(context.rootElement).removeClass('focused');
+				}
+
+				if(!reason.isInitialRender && !reason.isRenderRequested) {
+					return;
 				}
 
 				var rawText = context.displayUnit.extraData.text;
@@ -417,6 +454,8 @@
 
 		_units: [],
 
+		fixLayout: null,
+
 		__ready: function() {
 			this._stageController.setup(stageInitParam);
 
@@ -428,11 +467,36 @@
 			var startTime = new Date().getTime();
 
 			var mainLayer = this._stageController.getLayer(LAYER_ID_MAIN);
+			var unscaledLayer = this._stageController.getLayer(LAYER_ID_UNSCALED);
+
+
+			var usContainer = DisplayUnitContainer.create();
+			usContainer.setRect(Rect.create(200, 50, 0, 0));
+			unscaledLayer.addDisplayUnit(usContainer);
+			var usDU = this._createDivDU(Rect.create(200, 200, 100, 40));
+			usContainer.addDisplayUnit(usDU);
+			usDU.isResizable = true;
+			usDU.isDraggable = true;
+			usDU.extraData = {
+				text: 'in unscaled-rendering layer with ScrollBar'
+			};
+
+			var usDU2 = this._createDivDU(Rect.create(200, 300, 100, 40));
+			usContainer.addDisplayUnit(usDU2);
+			usDU2.isResizable = true;
+			usDU2.isDraggable = true;
+
+			var sb = DUScrollBar.create();
+			sb.width = 16;
+			sb.height = 100;
+			sb.isDraggable = false;
+			sb.isResizable = false;
+			usContainer.addDisplayUnit(sb);
 
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
 			container.setRect(Rect.create(200, 100, 100, 100));
-
+			container.overflow = 'hidden';
 			this._container = container;
 
 			var numCreate = 30;
@@ -452,6 +516,11 @@
 				var vc = viewportContainers[i];
 				vc.x = 50;
 				vc.y = 300 + 100 * i;
+
+				if (i % 2 == 0) {
+					vc.overflow = 'hidden';
+				}
+
 				mainLayer.addDisplayUnit(vc);
 			}
 
@@ -459,6 +528,7 @@
 				var rect = Rect.create(i * 80 + 4, 10, 80, 40);
 				var unit = this._setupDU(BasicDisplayUnit.create(), rect);
 				unit.isResizable = true;
+				unit.isEditable = false;
 				unit.zIndex = numCreate - i;
 				//				container.addDisplayUnit(unit);
 
@@ -466,6 +536,7 @@
 
 				this._units.push(unit);
 			}
+
 
 			//			mainLayer.addDisplayUnit(container);
 
@@ -478,10 +549,11 @@
 			this._setupDU(dependentDU, depRect);
 			this._stageController.getLayer(LAYER_ID_MAIN).addDisplayUnit(dependentDU);
 			dependentDU.isResizable = true;
+			dependentDU.isEditable = false;
 			dependentDU.resizeConstraint = {
-				minWidth: 3,
+				minWidth: 20,
 				maxWidth: 300,
-				minHeight: 6,
+				minHeight: 20,
 				maxHeight: 100,
 				stepX: 30,
 				stepY: 20,
@@ -496,18 +568,41 @@
 
 			this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
 
+			this._containerTest();
+
 			//DIVレイヤーテスト
 			var divContainer = DisplayUnitContainer.create();
-			var rect = Rect.create(50, 200, 200, 60);
+			var rect = Rect.create(0, 0, 200, 60);
 			divContainer.setRect(rect);
 			var divDU = this._createDivDU(rect);
 			divDU.x = 0;
 			divDU.y = 0;
 			divContainer.addDisplayUnit(divDU);
-			this._stageController.getLayer('divlayer').addDisplayUnit(divContainer);
+			this._stageController.getLayer(LAYER_ID_DIV).addDisplayUnit(divContainer);
 			divDU.isResizable = true;
 
 			this._divDU = divDU;
+
+			var syncLayout = SynchronizeLayoutHook.create(false, true, false, true);
+			syncLayout.setSource(usDU);
+			syncLayout.addTargets(sb);
+
+			/*
+			var followLayout = FollowPositionLayoutHook.create(40, 30);
+			followLayout.setSource(divDU);
+			followLayout.addTargets(usDU);
+			*/
+
+			var displaySizeLayout = DisplaySizeLayoutHook.create();
+			displaySizeLayout.attachTo(sb, 16, null);
+
+			var visiblePositionLayout = VisiblePositionLayoutHook.create(null, null, 0, null);
+			visiblePositionLayout.attachTo(sb);
+
+			/*
+			var hLineLayout = HorizontalLineLayoutHook.create('top');
+			hLineLayout.attachTo([usDU, sb]);
+			 */
 
 			this._stageController.initView();
 
@@ -524,16 +619,125 @@
 			//this._stageController.setvisibleRangeY(-200, 200);
 		},
 
+		_containerTest: function() {
+			var container = DisplayUnitContainer.create();
+			container.setRect(Rect.create(300, 200, 200, 200));
+			this._stageController.addDisplayUnit(container);
+			container.isBoundaryScrollEnabled = true;
+			var du1 = BasicDisplayUnit.create();
+
+			du1.isEditable = false;
+			du1.setRect(Rect.create(0, 0, 100, 50));
+			du1.extraData = {
+				userText: 'テキスト文字列'
+			};
+			du1.setRenderer(renderer);
+			container.addDisplayUnit(du1);
+
+			var c2 = DisplayUnitContainer.create();
+			c2.setRect(Rect.create(300, 500, 200, 200));
+			this._stageController.addDisplayUnit(c2);
+			this._c2 = c2;
+
+			var du2 = BasicDisplayUnit.create();
+			du2.setRect(Rect.create(0, 0, 50, 50));
+			du2.extraData = {
+				userText: 'テキスト文字列'
+			};
+			du2.setRenderer(renderer);
+			du2.isEditable = false;
+			c2.addDisplayUnit(du2);
+			c2.overflow = 'hidden';
+
+			var e1 = this._createEdge(du1, du2);
+			this._stageController.addDisplayUnit(e1);
+
+			function renderer(context, graphics) {
+				var reason = context.reason;
+
+				if (!reason.isSizeChanged && !reason.isRenderRequested && !reason.isInitialRender
+						&& !reason.isFocusChanged && !reason.isSelectionChanged) {
+					//初回描画もしくはリクエスト以外では再描画の必要はない
+					return;
+				}
+
+				var du = context.displayUnit;
+
+				graphics.clear();
+
+				var rect2 = graphics.drawRect();
+				rect2.setAttributes({
+					x: 0,
+					y: 0,
+					width: du.width,
+					height: du.height,
+					opacity: 1
+				});
+				//				rect2.fill = du.isSelected ? 'red' : 'black';
+
+				if (du.isFocused) {
+					rect2._element.style.fill = 'blue';
+				} else if (du.isSelected) {
+					rect2._element.style.fill = 'red';
+				} else if (!du.isDraggable) {
+					rect2._element.style.fill = 'green';
+				} else {
+					rect2._element.style.fill = 'maroon';
+				}
+
+				var text = graphics.drawText();
+				text.setText('' + du.id);
+				text.setAttributes({
+					x: 0,
+					y: 0,
+					'font-fize': 10
+				});
+			}
+
+		},
+
+		_c2: null,
+
+		'[name="scrollC2"] click': function(context) {
+			this._c2.scrollBy(-10, -10);
+		},
+
 		'{rootElement} duClick': function(context) {
 			var du = context.evArg.displayUnit;
 			var duId = du.id;
-			this.log.debug('duClick! id={0}', duId);
+			//this.log.debug('duClick! id={0}', duId);
+
+			if(this._isCreatingEdge) {
+				//エッジ生成中
+				if(this._ceDUFrom && this._ceDUFrom !== du) {
+					//1つ目のDUが選択済み、かつ今回クリックしたのがそれとは異なるので、今回のDUとエッジを作る
+					var edge = this._createEdge(this._ceDUFrom, du, 'nearestSide');
+					this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
+
+					//エッジ生成モード解除
+					this._isCreatingEdge = false;
+					this.$find('#createEdgeMode').text('');
+				} else {
+					//1つ目のDUとして選択
+					this._ceDUFrom = du;
+					this.$find('#createEdgeMode').text('2つ目のDUを選択');
+				}
+				return;
+			}
+
+			var gp = du.getWorldGlobalPosition();
+			var foremostDUC = this._stageController._getForemostDisplayUnitContainerAt(gp.x, gp.y);
+			console.debug('duClick: foremostContainer = ', foremostDUC);
 		},
 
 		'{rootElement} duDblclick': function(context) {
 			var du = context.evArg.displayUnit;
 			var duId = du.id;
 			this.log.debug('duDblclick! id={0}', duId);
+
+			if(du.isEditable) {
+				du.beginEdit();
+			}
 		},
 
 		'{rootElement} duMouseEnter': function(context) {
@@ -570,7 +774,8 @@
 							'stageSelectionChange: focusedRaw={3}, focused.id={2}, selected={0}, unfocused={5}, unfocusedRaw={4}, unselected={1}',
 							ev.changes.selected.length, ev.changes.unselected.length,
 							ev.focused ? ev.focused.id : 'null', ev.focusedRaw ? ev.focusedRaw.id
-									: 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null', ev.unfocused ? ev.unfocused.id : 'null');
+									: 'null', ev.unfocusedRaw ? ev.unfocusedRaw.id : 'null',
+							ev.unfocused ? ev.unfocused.id : 'null');
 		},
 
 		'{rootElement} duKeyDown': function(context) {
@@ -599,6 +804,12 @@
 			//			setTimeout(function(){
 			//				context.evArg.dragSession.cancel();
 			//			}, 2000);
+
+			if(typeof context.evArg.dragSession.getTargets()[0].extraData.text === 'string') {
+				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY;
+			} else {
+				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY_AND_STAY;
+			}
 
 			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
 					+ context.evArg.dragSession.getTargets().length + '</div>')[0];
@@ -649,24 +860,16 @@
 		},
 
 		'{rootElement} stageDragStarting': function(context) {
-		//context.event.preventDefault();
+			console.log('stageDragStarting', context.evArg);
+			//context.event.preventDefault();
 		},
 
 		'[name="dragRegion"] click': function() {
-			this._stageController.UIDragMode = 5; //
+			this._stageController.UIDragMode = 7; //
 		},
 
 		'{rootElement} stageViewUpdate': function() {
-			//console.log('Views are actually Updated');
-		},
-
-		'{rootElement} stageDragRegionStart': function(context) {
-			console.log(context.event.type);
-		},
-
-		'{rootElement} stageDragRegionEnd': function(context) {
-			console.log(context.event.type);
-			console.log(context.evArg);
+		//console.log('Views are actually Updated');
 		},
 
 		'{rootElement} duResizeBegin': function(context) {
@@ -709,6 +912,9 @@
 		},
 
 		'input[name="setRectDU"] click': function(context) {
+			//this.fixLayout.width = 400;
+			//this.fixLayout.height = 500;
+
 			var du = this._units[5];
 			du.setRect({
 				x: 10,
@@ -873,6 +1079,7 @@
 		},
 
 		'input[name="editDivDU"] click': function() {
+			//this._container.scrollX = 10;
 			this._divDU.beginEdit();
 			//			du.startEdit();
 			//			du.commitEdit();
@@ -911,7 +1118,43 @@
 				followTarget: arg.displayUnit
 			};
 			arg.setAutoLayout(autoLayoutSetting);
-		}
+		},
+
+		'[name="createDUByRegion"] click': function() {
+			this._stageController.UIDragMode = DragMode.REGION;
+		},
+
+		'{rootElement} stageDragRegionStart': function(context) {
+			console.log(context.event.type);
+		},
+
+		'{rootElement} stageDragRegionEnd': function(context) {
+			var evArg = context.evArg;
+			console.log(evArg);
+			this._stageController.UIDragMode = DragMode.AUTO;
+
+			var region = evArg.region;
+
+			var now = new Date();
+			var nowStr = '生成時刻：' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds()
+					+ '.' + now.getMilliseconds();
+
+			var du = this._createDivDU(region, nowStr);
+			du.isDraggable = true;
+			du.isEditable = true;
+			du.isResizable = true;
+			this._stageController.getLayer(LAYER_ID_DIV).addDisplayUnit(du);
+		},
+
+		'{[name="createEdge"]} click': function(context) {
+			this._isCreatingEdge = true;
+			this._ceDUFrom = null;
+			this.$find('#createEdgeMode').text('1つ目のDUを選択');
+		},
+
+		_isCreatingEdge: false,
+
+		_ceDUFrom: null
 	};
 
 
@@ -925,6 +1168,43 @@
 		//		var dscClass = h5.cls.manager.getClass('h5.ui.components.stage.DragSessionController');
 		//		var c = dscClass.create();
 		//		var cc = h5.core.controller('body', c);
+
+		function Parent() {
+		// do nothing
+		}
+		Parent.prototype._f1 = 'f1-init-value';
+
+		function Child() {
+		// do nothing
+		}
+
+		Child.prototype = Object.create(Parent.prototype);
+		Child.prototype.constructor = Child;
+
+		var descriptor = {
+			enumerable: true,
+			configurable: false,
+			get: function() {
+				return this._f1;
+			},
+			set: function(value) {
+				this._f1 = value;
+			}
+		};
+		Object.defineProperty(Child.prototype, 'f1', descriptor);
+
+		var c1 = new Child();
+		console.log('c1.f1 = ' + c1.f1);
+
+		//Object.seal(c1);
+
+		c1.f1 = 'instance child value';
+		console.log('c1.f1 = ' + c1.f1);
+
+		var c2 = new Child();
+		console.log('c2.f1 = ' + c2.f1);
+
+		console.log(c1);
 
 	});
 
