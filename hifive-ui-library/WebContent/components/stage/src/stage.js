@@ -1625,7 +1625,7 @@
 						}
 
 						var newRect = this._getCorrectedRect(du);
-						du.setRect(newRect);
+						du.setLayoutRect(newRect);
 					}
 
 					this._stage._viewCollection.__onResizeDUChange(this);
@@ -4034,7 +4034,7 @@
 			},
 
 			accessor: {
-				displayUnits: {
+				attachedDisplayUnits: {
 					get: function() {
 						return this._displayUnits;
 					}
@@ -4050,6 +4050,21 @@
 					this._displayUnits = [];
 				},
 
+				__setLayoutValue: function(targetDisplayUnit, x, y, width, height) {
+					if (!targetDisplayUnit) {
+						throw new Error('値を設定するDisplayUnitが指定されていません。');
+					}
+					targetDisplayUnit._setLayoutValue(x, y, width, height, this);
+				},
+
+				__setLayoutValueAll: function(x, y, width, height) {
+					var targets = this._displayUnits;
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						du._setLayoutValue(x, y, width, height, this);
+					}
+				},
+
 				__attachTo: function(displayUnits) {
 					if (!Array.isArray(displayUnits)) {
 						displayUnits = [displayUnits];
@@ -4060,7 +4075,7 @@
 					for (var i = 0, len = displayUnits.length; i < len; i++) {
 						var du = displayUnits[i];
 						du.__addLayoutHook(this);
-						this.__onAttached(du);
+						this.__onAttach(du);
 					}
 				},
 
@@ -4119,7 +4134,7 @@
 				 * グローバル座標値はすでに変わっているので、this.displayUnit.getWorldGlobalPosition()を呼び出すと変更後の値が返ります。
 				 */
 				__onGlobalPositionChange: function(displayUnit) {
-
+				//子クラスでオーバーライド
 				}
 			}
 		};
@@ -4133,11 +4148,22 @@
 	 * @param super_ スーパークラスオブジェクト
 	 * @returns クラス定義
 	 */
-	LayoutHookBase.extend(function(super_) {
+	var SingleLayoutHook = LayoutHookBase.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SingleLayoutHook',
 
 			isAbstract: true,
+
+			accessor: {
+				source: {
+					get: function() {
+						if (this.attachedDisplayUnits.length === 0) {
+							return null;
+						}
+						return this.attachedDisplayUnits[0];
+					}
+				}
+			},
 
 			method: {
 				/**
@@ -4169,7 +4195,7 @@
 				/**
 				 * このLayoutHookをDisplayUnitから取り外します。
 				 */
-				detach: function() {
+				detachFrom: function() {
 					//SingleLayoutHookの場合、アタッチ先は（アタッチされていれば）必ず1つに特定できるので引数はvoid
 					this.__detachFromAll();
 				}
@@ -4178,8 +4204,7 @@
 		return desc;
 	});
 
-
-	LayoutHookBase.extend(function(super_) {
+	var GenericLayoutHook = LayoutHookBase.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.GenericLayoutHook',
 
@@ -4209,6 +4234,592 @@
 
 				__detachFromAll: function() {
 					this.__detachFromAll();
+				}
+			}
+		};
+		return desc;
+	});
+
+	var OneToManyLayoutHook = LayoutHookBase.extend(function(super_) {
+
+		var MSG_ERR_NO_ARRAY = 'ソースとなるDisplayUnitは1つのみ、非配列の形で渡してください。';
+
+		var arrayPush = Array.prototype.push;
+
+		var desc = {
+			name: 'h5.ui.components.stage.OneToManyLayoutHook',
+
+			isAbstract: true,
+
+			field: {
+				_source: null,
+				_targets: null
+			},
+
+			accessor: {
+				source: {
+					get: function() {
+						return this._source;
+					}
+				},
+
+				targets: {
+					get: function() {
+						return this._targets;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.OneToManyLayoutHook
+				 */
+				constructor: function OneToManyLayoutHook(source, targets) {
+					super_.constructor.call(this);
+					this._source = null;
+					this._targets = [];
+
+					this.setSource(source);
+					this.addTargets(targets);
+				},
+
+				/**
+				 * このLayoutHookをDisplayUnitに取り付けます。引数には高々1つのDisplayUnitのみ指定できます。
+				 * ソースを未指定にしたい場合は、引数にnullをセットします。
+				 */
+				setSource: function(displayUnit) {
+					if (Array.isArray(displayUnit)) {
+						//ソースDUは配列では渡せない
+						throw new Error(MSG_ERR_NO_ARRAY);
+					}
+
+					if (this._isSourceAttached()) {
+						//すでにソースとしてアタッチしていたら、先にそのソースからこのフックを外す
+						this.__detachFrom(this.attachedDisplayUnits);
+					}
+
+					if (displayUnit != null) {
+						//引数に新しいソースが渡されたら、そのDUにアタッチする
+						this._source = displayUnit;
+						this.__attachTo(displayUnit);
+					}
+				},
+
+				addTargets: function(displayUnits) {
+					if (!displayUnits) {
+						//引数がnullの場合は何もしない
+						return;
+					}
+
+					if (!Array.isArray(displayUnits)) {
+						displayUnits = [displayUnits];
+					}
+
+					if (displayUnits.length === 0) {
+						return;
+					}
+
+					arrayPush.apply(this._targets, displayUnits);
+
+					this.__onTargetsAdd(displayUnits);
+				},
+
+				removeTargets: function(displayUnits) {
+					if (!Array.isArray(displayUnits)) {
+						displayUnits = [displayUnits];
+					}
+
+					for (var i = 0, len = displayUnits.length; i < len; i++) {
+						var du = displayUnits[i];
+						var idx = this._targets.indexOf(du);
+						if (idx !== -1) {
+							this._targets.splice(idx, 1);
+						}
+					}
+
+					this.__onTargetsRemove(displayUnits);
+				},
+
+				removeAllTargets: function() {
+					this._targets = [];
+				},
+
+				/**
+				 * ソースとターゲットが初めて両方セットされた場合に一度だけ動作します。
+				 */
+				__onInit: function() {
+				//子クラスでオーバーライド
+				},
+
+				__onTargetsAdd: function(targetDisplayUnits) {
+				//子クラスでオーバーライド
+				},
+
+				__onTargetsRemove: function(targetDisplayUnits) {
+				//子クラスでオーバーライド
+				},
+
+				_isSourceAttached: function() {
+					var isAttached = this.attachedDisplayUnits.length > 0;
+					return isAttached;
+				}
+			}
+		};
+		return desc;
+	});
+
+	OneToManyLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.SynchronizeLayoutHook',
+
+			field: {
+				isXEnabled: null,
+				isYEnabled: null,
+				isWidthEnabled: null,
+				isHeightEnabled: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.SynchronizeLayoutHook
+				 */
+				constructor: function SynchronizeLayoutHook(isXEnabled, isYEnabled, isWidthEnabled,
+						isHeightEnabled) {
+					super_.constructor.call(this);
+
+					//デフォルト：true（同期させる）
+					//明示的にfalseを与えない限りtrueなので、引数をすべて省略すると、全てのプロパティが同期する
+					this.isXEnabled = isXEnabled !== false ? true : false;
+					this.isYEnabled = isYEnabled !== false ? true : false;
+					this.isWidthEnabled = isWidthEnabled !== false ? true : false;
+					this.isHeightEnabled = isHeightEnabled !== false ? true : false;
+				},
+
+				__onAttach: function(displayUnit) {
+					var value = LayoutValue.create(displayUnit.x, displayUnit.y, displayUnit.width,
+							displayUnit.height);
+					this._synchronize(value);
+				},
+
+				__onTargetsAdd: function(targets) {
+					var source = this.source;
+					if (source) {
+						var layout = LayoutValue.create(source.x, source.y, source.width,
+								source.height);
+						this._synchronize(layout, targets);
+					}
+				},
+
+				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+					this._synchronize(assigning);
+				},
+
+				_synchronize: function(layoutValue, targets) {
+					//同期対象のプロパティのみ値をコピーし、同期対象外のプロパティは変更しない（nullをセット）
+					var x = this.isXEnabled ? layoutValue.x : null;
+					var y = this.isYEnabled ? layoutValue.y : null;
+					var w = this.isWidthEnabled ? layoutValue.width : null;
+					var h = this.isHeightEnabled ? layoutValue.height : null;
+
+					targets = targets == null ? this.targets : targets;
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						this.__setLayoutValue(du, x, y, w, h);
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	OneToManyLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.FollowPositionLayoutHook',
+
+			field: {
+				offsetX: null,
+				offsetY: null
+			},
+
+			method: {
+				constructor: function FollowPositionLayoutHook(offsetX, offsetY) {
+					super_.constructor.call(this);
+
+					//コンストラクタでX, Yそれぞれのオフセット値が与えられていればセット。デフォルトは0
+					this.offsetX = typeof offsetX === 'number' ? offsetX : 0;
+					this.offsetY = typeof offsetY === 'number' ? offsetY : 0;
+				},
+
+				__onTargetsAdd: function(targets) {
+					var source = this.source;
+					if (source) {
+						//今回追加したターゲットに対して初期同期
+						var layout = LayoutValue.create(source.x, source.y, source.width,
+								source.height);
+						this._follow(layout, targets);
+					}
+				},
+
+				__onAttach: function(displayUnit) {
+					var layout = LayoutValue.create(displayUnit.x, displayUnit.y,
+							displayUnit.width, displayUnit.height);
+					this._follow(layout);
+				},
+
+				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+					this._follow(assigning);
+				},
+
+				_follow: function(layout, targets) {
+					var x = layout.x != null ? layout.x + this.offsetX : null;
+					var y = layout.y != null ? layout.y + this.offsetY : null;
+
+					targets = targets == null ? this.targets : targets;
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						this.__setLayoutValue(du, x, y, null, null);
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	SingleLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.VisiblePositionLayoutHook',
+
+			field: {
+				_view: null,
+				_left: null,
+				_top: null,
+				_right: null,
+				_bottom: null,
+				_isFirstAttach: null
+			},
+
+			accessor: {
+				left: {
+					get: function() {
+						return this._left;
+					},
+					set: function(value) {
+						if (this._left !== value) {
+							this._left = value;
+							this._update();
+						}
+					}
+				},
+				top: {
+					get: function() {
+						return this._top;
+					},
+					set: function(value) {
+						if (this._top !== value) {
+							this._top = value;
+							this._update();
+						}
+					}
+				},
+				right: {
+					get: function() {
+						return this._right;
+					},
+					set: function(value) {
+						if (this._right !== value) {
+							this._right = value;
+							this._update();
+						}
+					}
+				},
+				bottom: {
+					get: function() {
+						return this._bottom;
+					},
+					set: function(value) {
+						if (this._bottom !== value) {
+							this._bottom = value;
+							this._update();
+						}
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.VisiblePositionLayoutHook
+				 */
+				constructor: function VisiblePositionLayoutHook(displayLeft, displayTop,
+						displayRight, displayBottom) {
+					super_.constructor.call(this);
+
+					this._view = null;
+
+					this._isFirstAttach = true;
+
+					this._left = displayLeft;
+					this._top = displayTop;
+					this._right = displayRight;
+					this._bottom = displayBottom;
+				},
+
+				__onAttach: function(displayUnit) {
+					//TODO Viewの与え方
+					this._view = displayUnit._rootStage._getActiveView();
+					this._update();
+
+					if (this._isFirstAttach) {
+						this._isFirstAttach = false;
+						var that = this;
+						$(displayUnit._rootStage.rootElement).on('stageViewUnifiedSightChange',
+								function(event, evArg) {
+									//if (evArg.changes[0].scale.isChanged) {
+									//var newValue = evArg.changes[0].scale.newValue;
+									that._update();
+									//}
+								});
+					}
+				},
+
+				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+					var view = this._view;
+					if (!view) {
+						return;
+					}
+
+					var viewBottomRightWorldPos = view._viewport.getWorldPositionFromDisplayOffset(
+							view.width, view.height);
+
+					if (this._left != null) {
+						if (this._right == null) {
+							//leftだけが指定された場合⇒左端基準で位置のみ変更する
+						} else {
+							//left, rightが両方指定された場合⇒位置とサイズを両方変更する
+						}
+					} else if (this._right != null) {
+						//rightのみ指定された場合⇒右端基準で位置のみ変更する
+						var gx = viewBottomRightWorldPos.x - this.source.width
+								- view._viewport.toWorldX(this._right);
+
+						var localPos = this.source.parentDisplayUnit.globalToLocalPosition(gx, 0);
+
+						overwrite.x = localPos.x;
+					}
+				},
+
+				_update: function() {
+					var view = this._view;
+					if (!view) {
+						return;
+					}
+
+					var viewBottomRightWorldPos = view._viewport.getWorldPositionFromDisplayOffset(
+							view.width, view.height);
+
+					if (this._left != null) {
+						if (this._right == null) {
+							//leftだけが指定された場合⇒左端基準で位置のみ変更する
+						} else {
+							//left, rightが両方指定された場合⇒位置とサイズを両方変更する
+						}
+					} else if (this._right != null) {
+						//rightのみ指定された場合⇒右端基準で位置のみ変更する
+						var gx = viewBottomRightWorldPos.x - this.source.width
+								- view._viewport.toWorldX(this._right);
+
+						var localPos = this.source.parentDisplayUnit.globalToLocalPosition(gx, 0);
+
+						this.__setLayoutValue(this.source, localPos.x, null, null, null);
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	GenericLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.DisplaySizeLayoutHook',
+
+			field: {
+				_stage: null,
+				_isFirstAttach: null,
+				_duSizeMap: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplaySizeLayoutHook
+				 */
+				constructor: function DisplaySizeLayoutHook() {
+					super_.constructor.call(this);
+					this._isFirstAttach = true;
+					this._duSizeMap = new Map();
+				},
+
+				attachTo: function(displayUnits, displayWidth, displayHeight) {
+					if (!Array.isArray(displayUnits)) {
+						displayUnits = [displayUnits];
+					}
+
+					//指定されたDUの表示サイズを保存。nullの場合、その方向についてはサイズを固定しない
+					for (var i = 0, len = displayUnits.length; i < len; i++) {
+						var du = displayUnits[i];
+						this._duSizeMap.set(du, Rect.create(0, 0, displayWidth, displayHeight));
+					}
+
+					super_.attachTo.call(this, displayUnits);
+
+					this._overwriteSize(this._stage._getActiveView().getScale());
+				},
+
+				__onAttach: function(displayUnit) {
+					//TODO DUのstageをpublicにとる、attach時点でstageがnullの可能性を考慮
+					this._stage = displayUnit._rootStage;
+
+					if (this._isFirstAttach) {
+						this._isFirstAttach = false;
+						var that = this;
+						$(this._stage.rootElement).on('stageViewUnifiedSightChange',
+								function(event, evArg) {
+									if (evArg.changes[0].scale.isChanged) {
+										var newValue = evArg.changes[0].scale.newValue;
+										that._overwriteSize(newValue);
+									}
+								});
+					}
+				},
+
+				__onDetaching: function(displayUnit) {
+					//MEMO: Eclipse4.3のエディタだと.delete()は構文エラー扱いになってしまうのでこのようにしている
+					this._duSizeMap['delete'](displayUnit);
+				},
+
+				_overwriteSize: function(newScale) {
+					for (var i = 0, len = this.attachedDisplayUnits.length; i < len; i++) {
+						var du = this.attachedDisplayUnits[i];
+
+						var sizeForDU = this._duSizeMap.get(du);
+						if (sizeForDU) {
+							var w = sizeForDU.width ? sizeForDU.width / newScale.x : null;
+							var h = sizeForDU.height ? sizeForDU.height / newScale.y : null;
+
+							this.__setLayoutValue(du, null, null, w, h);
+						}
+
+					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	GenericLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.HorizontalLineLayoutHook',
+
+			field: {
+				_verticalAlignment: null
+			},
+
+			accessor: {
+				verticalAlignment: {
+					get: function() {
+						return this._verticalAlignment;
+					},
+					set: function(value) {
+						if (this._verticalAlignment !== value) {
+							this._verticalAlignment = value;
+							this._update();
+						}
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.HorizontalLineLayoutHook
+				 */
+				constructor: function HorizontalLineLayoutHook(alignment) {
+					super_.constructor.call(this);
+					//デフォルト：上揃え
+					this._verticalAlignment = alignment != null ? alignment : 'top';
+				},
+
+				__onAttach: function(displayUnit) {
+					this._update();
+				},
+
+				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+					if (assigning.x == null) {
+						return;
+					}
+					this._update(displayUnit, assigning.x - displayUnit.x);
+				},
+
+				_update: function(reference, dx) {
+					var targets = this.attachedDisplayUnits;
+
+					if (targets.length < 2) {
+						//アタッチされているDUが2個未満の場合、意味をなさないので何もしない
+						return;
+					}
+
+					//基準にするDUが与えられればそれを基準とし、そうでない場合は何もしない
+					var referenceDU = reference ? reference : targets[0];
+
+					var alignmentPos = 0;
+
+					switch (this._verticalAlignment) {
+					case 'top':
+						alignmentPos = referenceDU.y;
+						break;
+					case 'middle':
+						alignmentPos = referenceDU.y + referenceDU.height / 2;
+						break;
+					case 'bottom':
+						alignmentPos = referenceDU.y + referenceDU.height;
+						break;
+					}
+
+					//dxが与えられなかった場合は0
+					dx = dx != null ? dx : 0;
+
+					//アタッチしているDUの順に並べるので、
+					//X座標のスタートはreferenceDUではなくtargets[0]のx座標値にする
+					var total = targets[0].x + dx;
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+
+						var tx = total;
+
+						total += du.width;
+
+						if (du === referenceDU) {
+							//基準DUに対しては処理を行わない（無限ループ回避）
+							continue;
+						}
+
+						var ty = null;
+
+						switch (this._verticalAlignment) {
+						case 'top':
+							ty = alignmentPos;
+							break;
+						case 'middle':
+							ty = alignmentPos - du.height / 2;
+							break;
+						case 'bottom':
+							ty = alignmentPos - du.height;
+							break;
+						default:
+							break;
+						}
+
+						this.__setLayoutValue(du, tx, ty, null, null);
+					}
 				}
 			}
 		};
@@ -4509,6 +5120,8 @@
 							this._width = 0;
 							this._height = 0;
 
+							this._worldGlobalPositionCache = null;
+
 							this._isVisible = true;
 
 							this._isSystemVisible = true;
@@ -4526,19 +5139,75 @@
 							this._layoutHooks = null;
 						},
 
-						setRect: function(rect) {
+						/**
+						 * このDisplayUnitの位置と大きさをまとめて設定します。
+						 *
+						 * @param x {number} X座標
+						 * @param y {number} Y座標
+						 * @param width {number} 幅
+						 * @param height {number} 高さ
+						 */
+						setLayout: function(x, y, width, height) {
+							var x0 = x != null ? x : null;
+							var y0 = y != null ? y : null;
+							var w0 = width != null ? width : null;
+							var h0 = height != null ? height : null;
+							this._setLayoutValue(x0, y0, w0, h0);
+						},
+
+						/**
+						 * このDisplayUnitの位置と大きさをまとめて設定します。 個々の値を個別に引数で渡したい場合はsetLayout()を使用してください。
+						 *
+						 * @param rect {Rect} 設定する位置とサイズ（ワールド座標）
+						 */
+						setLayoutRect: function(rect) {
 							this._setLayoutValue(rect.x, rect.y, rect.width, rect.height);
 						},
 
-						getRect: function() {
+						/**
+						 * ※setLayoutRect()を使用してください。
+						 *
+						 * @deprecated
+						 * @param rect
+						 */
+						setRect: function(rect) {
+							return this.setLayoutRect(rect);
+						},
+
+						/**
+						 * このDisplayUnitの位置とサイズを取得します。呼び出すたびにRectインスタンスを生成して返すので、ループ内での呼び出し等
+						 * 大量に呼び出す場合はパフォーマンスに注意してください。
+						 *
+						 * @returns {Rect} このDisplayUnitの位置とサイズ（ワールド座標）
+						 */
+						getLayoutRect: function() {
 							var rect = Rect.create(this.x, this.y, this.width, this.height);
 							return rect;
 						},
 
+						/**
+						 * ※getLayoutRect()を使用してください。
+						 *
+						 * @deprecated
+						 * @returns
+						 */
+						getRect: function() {
+							return this.getLayoutRect();
+						},
+
+						/**
+						 * このDisplayUnitの幅と高さを設定します。
+						 *
+						 * @param width {number} 幅
+						 * @param height {number} 高さ
+						 */
 						setSize: function(width, height) {
 							this._setLayoutValue(null, null, width, height);
 						},
 
+						/**
+						 * このDisplayUnitを親から削除します。
+						 */
 						remove: function() {
 							if (this._parentDU) {
 								this._parentDU.removeDisplayUnit(this);
@@ -4668,6 +5337,22 @@
 
 							this._worldGlobalPositionCache = WorldPoint.create(wgx, wgy);
 							return this._worldGlobalPositionCache;
+						},
+
+						/**
+						 * このDisplayUnitの最終表示サイズ（ディスプレイ座標系）をRect型で返します。
+						 * ただし、x,yは常に0です。また、このDisplayUnitがStageに属していない場合、nullを返します。
+						 *
+						 * @returns {Rect} このDisplayUnitの最終表示サイズ（ディスプレイ座標）
+						 */
+						getDisplaySize: function() {
+							if (!this._rootStage) {
+								return null;
+							}
+							var dispW = this._rootStage._viewport.toDisplayX(this.width);
+							var dispH = this._rootStage._viewport.toDisplayY(this.height);
+							var rect = Rect.create(0, 0, dispW, dispH);
+							return rect;
 						},
 
 						select: function(isExclusive) {
@@ -4998,8 +5683,8 @@
 							}
 						},
 
-						_setLayoutValue: function(x, y, width, height) {
-							var hooked = this._executeLayoutHooks(x, y, width, height);
+						_setLayoutValue: function(x, y, width, height, hookOrigin) {
+							var hooked = this._executeLayoutHooks(x, y, width, height, hookOrigin);
 							var hx = hooked.x;
 							var hy = hooked.y;
 							var hw = hooked.width;
@@ -5053,9 +5738,10 @@
 						 * @param y Y座標（ワールド座標）
 						 * @param width 幅（ワールド座標）
 						 * @param height 高さ（ワールド座標）
+						 * @param hookOrigin 今回のプロパティ変更を実行しようとしたLayoutHookインスタンス。DU自身が変更起点の場合はnull
 						 * @returns {LayoutValue} フックした後のレイアウト値。元の値を使用する場合はそのプロパティの値をnullにします。
 						 */
-						_executeLayoutHooks: function(x, y, width, height) {
+						_executeLayoutHooks: function(x, y, width, height, hookOrigin) {
 							//代入初期値を保持するインスタンス
 							var assigning = LayoutValue.create(x, y, width, height);
 
@@ -5070,7 +5756,11 @@
 							//フックを実行
 							//複数のLayoutHookで同じプロパティを上書きした場合は後勝ちになる。
 							for (var i = 0, len = hooks.length; i < len; i++) {
-								hooks[i].__onLayoutChanging(this, assigning, overwrite);
+								var hook = hooks[i];
+								if (hook !== hookOrigin) {
+									//hookOriginが指定されている場合、無限ループしないよう、そのフックはスキップする
+									hook.__onLayoutChanging(this, assigning, overwrite);
+								}
 							}
 
 							//ループ終了後、overwriteの中でnull以外の値がセットされたら
@@ -6062,8 +6752,12 @@
 					this.sync();
 				},
 
+				setLayoutRect: function(rect) {
+					return this._sourceDU.setLayoutRect(rect);
+				},
+
 				setRect: function(rect) {
-					return this._sourceDU.setRect(rect);
+					return this.setLayoutRect(rect);
 				},
 
 				setSize: function(width, height) {
@@ -6618,13 +7312,13 @@
 							this._y2 = ay2;
 
 							//EdgeDUのサイズをアップデート
-							var left = ax1 <= ax2 ? ax1 : ax2;
-							var top = ay1 <= ay2 ? ay1 : ay2;
+							var x = ax1 <= ax2 ? ax1 : ax2;
+							var y = ay1 <= ay2 ? ay1 : ay2;
 
 							var width = Math.abs(ax2 - ax1);
 							var height = Math.abs(ay2 - ay1);
 
-							super_.setRect.call(this, left, top, width, height);
+							super_.setLayout.call(this, x, y, width, height);
 						},
 
 						_getActualDU: function(sourceDU, globalX, globalY) {
@@ -8891,6 +9585,98 @@
 		return desc;
 	});
 
+	DisplayUnit.extend(function(super_) {
+
+		var SCROLL_BAR_DISPLAY_MODE_ALWAYS = 3;
+
+
+		var desc = {
+			name: 'h5.ui.components.stage.DUScrollBar',
+
+			field: {
+				_controller: null,
+				_viewControllerMap: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DUScrollBar
+				 */
+				constructor: function DUScrollBar(id) {
+					super_.constructor.call(this, id);
+					//TODO controllerのbind/unbindに対応して、Alwaysでなくてもよいようにする
+					this.renderPriority = RenderPriority.ALWAYS;
+					this._viewControllerMap = new Map();
+				},
+
+				__renderDOM: function(stageView) {
+					var $root = $('<div class="vertical"></div>');
+					var rootElement = $root[0];
+
+					rootElement.style.position = 'absolute';
+					rootElement.style.cursor = 'default';
+
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+
+					//TODO __updateDOMのINITIAL_RENDER呼出はStage側で行うようにする。
+					//これに伴い、__renderDOM -> __createDOM に改名したほうが意味が通りやすくなる。
+					//(SVG/DIVレイヤーの種類に応じて要素を変えたり、<table>など別のタグを出力したい場合もここをオーバーライドする)
+					this.__updateDOM(stageView, rootElement, reason);
+
+					var controller = h5.core.controller(rootElement,
+							h5.ui.components.stage.VerticalScrollBarController);
+
+					this._viewControllerMap.set(stageView, controller);
+
+					var that = this;
+					controller.readyPromise.done(function() {
+						that._setDirty([REASON_POSITION_CHANGE, REASON_SIZE_CHANGE,
+								REASON_GLOBAL_POSITION_CHANGE]);
+
+						controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
+
+						//						this.setBarSize(rightmostView.height);
+						//						that._updateScrollBarLogicalValues();
+					});
+
+					//this._controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
+
+					return rootElement;
+				},
+
+				__updateDOM: function(stageView, element, reason) {
+					super_.__updateDOM.call(this, stageView, element, reason);
+
+					var controller = this._viewControllerMap.get(stageView);
+
+					if (!controller) {
+						return;
+					}
+
+					if (reason.isInitialRender || reason.isSizeChanged
+							|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
+						controller.setBarSize($(element).height());
+						this._updateScrollBarLogicalValues(controller);
+						console.log('UPDATED SCROLLBAR');
+					}
+				},
+
+				_updateScrollBarLogicalValues: function(controller) {
+					if (!controller) {
+						return;
+					}
+
+					var scrollWorldAmount = 100; //this.getVisibleHeight() - worldHeight;
+					var worldY = 10; //reprView._viewport.worldY;
+
+					controller.setScrollSize(this.height, scrollWorldAmount);
+					controller.setScrollPosition(worldY);
+				}
+			}
+		};
+		return desc;
+	});
+
 })(jQuery);
 
 (function($) {
@@ -10286,11 +11072,11 @@
 						/**
 						 * @private
 						 */
-						__onSelectDUStart: function(dragSelectStartPos) {
+						__onSelectDUStart: function(dragSelectStartPos, overlayClassName) {
 							var rect = SvgUtil.createElement('rect');
 							this._dragSelectOverlayRect = rect;
 
-							rect.className.baseVal = ('stageDragSelectRangeOverlay');
+							rect.className.baseVal = overlayClassName;
 							SvgUtil.setAttributes(rect, {
 								x: dragSelectStartPos.x,
 								y: dragSelectStartPos.y,
@@ -13572,9 +14358,9 @@
 						/**
 						 * @private
 						 */
-						__onSelectDUStart: function(dragStartPos) {
+						__onSelectDUStart: function(dragStartPos, overlayClassName) {
 							this.getViewAll().forEach(function(v) {
-								v.__onSelectDUStart(dragStartPos);
+								v.__onSelectDUStart(dragStartPos, overlayClassName);
 							});
 						},
 
@@ -15340,7 +16126,8 @@
 			this._saveDragSelectStartPos(event);
 			this._dragSelectStartSelectedDU = this.getSelectedDisplayUnits();
 
-			this._viewCollection.__onSelectDUStart(this._dragSelectStartPos);
+			this._viewCollection.__onSelectDUStart(this._dragSelectStartPos,
+					'stageDragSelectRangeOverlay');
 		},
 
 		/**
@@ -15366,18 +16153,8 @@
 			this._currentDragMode = DRAG_MODE_REGION;
 			this._saveDragSelectStartPos(event);
 
-			//TODO 具体的なビュー生成はStageControllerでなくStageView側で行うようにする（DragSelectと同様の構造）
-			this._dragSelectOverlayRect = SvgUtil.createElement('rect');
-			this._dragSelectOverlayRect.className.baseVal = ('stageDragRegionOverlay');
-			SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-				x: this._dragSelectStartPos.x,
-				y: this._dragSelectStartPos.y,
-				width: 0,
-				height: 0,
-				'pointer-events': 'none'
-			});
-			this._foremostLayer._rootG.appendChild(this._dragSelectOverlayRect);
-
+			this._viewCollection.__onSelectDUStart(this._dragSelectStartPos,
+					'stageDragRegionOverlay');
 		},
 
 		/**
@@ -16027,6 +16804,8 @@
 					stageController: this
 				});
 			} else if (this._currentDragMode === DRAG_MODE_REGION) {
+				this._viewCollection.__onSelectDUEnd();
+
 				var lastDragPos = this._getCurrentDragPosition();
 
 				var worldPos = this._getActiveView()._viewport.getWorldPosition(
@@ -16040,8 +16819,8 @@
 
 				this.trigger(EVENT_DRAG_REGION_END, {
 					stageController: this,
-					displayRect: dispRect,
-					worldRect: worldRect
+					regionDisplay: dispRect,
+					region: worldRect
 				});
 			} else if (this._currentDragMode === DRAG_MODE_DU_DRAG) {
 				//DU_DRAG用の境界スクロールタイマーを最初に解除
