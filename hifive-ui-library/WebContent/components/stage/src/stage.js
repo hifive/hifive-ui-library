@@ -14545,10 +14545,10 @@
 	var EVENT_DU_KEY_PRESS = 'duKeyPress';
 	var EVENT_DU_KEY_UP = 'duKeyUp';
 
-	var EVENT_DRAG_SELECT_START = 'stageDragSelectStart';
+	var EVENT_DRAG_SELECT_BEGIN = 'stageDragSelectBegin';
 	var EVENT_DRAG_SELECT_END = 'stageDragSelectEnd';
 
-	var EVENT_DRAG_REGION_START = 'stageDragRegionStart';
+	var EVENT_DRAG_REGION_BEGIN = 'stageDragRegionBegin';
 	var EVENT_DRAG_REGION_END = 'stageDragRegionEnd';
 
 	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
@@ -14557,7 +14557,7 @@
 	/**
 	 * ドラッグ開始直前に発生するイベント。デフォルト挙動：ドラッグの開始
 	 */
-	var EVENT_STAGE_DRAG_STARTING = 'stageDragStarting';
+	var EVENT_STAGE_DRAG_BEGINNING = 'stageDragBeginning';
 
 	var EVENT_DRAG_CUSTOM_BEGIN = 'stageCustomDragBegin';
 	var EVENT_DRAG_CUSTOM_RELEASE = 'stageCustomDragRelease';
@@ -15652,7 +15652,7 @@
 
 			var dragStartMode = this.UIDragMode;
 
-			var stageDragStartingEvent = $.Event(EVENT_STAGE_DRAG_STARTING);
+			var stageDragStartingEvent = $.Event(EVENT_STAGE_DRAG_BEGINNING);
 			stageDragStartingEvent.setDragMode = function(dragMode) {
 				dragStartMode = dragMode;
 			};
@@ -16042,7 +16042,7 @@
 		 * @private
 		 */
 		_beginDragSelection: function(event) {
-			var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_START, {
+			var dragSelectStartEvent = this.trigger(EVENT_DRAG_SELECT_BEGIN, {
 				stageController: this
 			});
 
@@ -16075,7 +16075,7 @@
 		 * @param event
 		 */
 		_beginDragRegion: function(event) {
-			this.trigger(EVENT_DRAG_REGION_START, {
+			this.trigger(EVENT_DRAG_REGION_BEGIN, {
 				stageController: this
 			});
 

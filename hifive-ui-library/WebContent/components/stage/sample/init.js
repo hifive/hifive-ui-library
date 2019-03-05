@@ -431,13 +431,13 @@
 					$(context.rootElement).addClass('commentDU');
 				}
 
-				if(du.isFocused) {
+				if (du.isFocused) {
 					$(context.rootElement).addClass('focused');
 				} else {
 					$(context.rootElement).removeClass('focused');
 				}
 
-				if(!reason.isInitialRender && !reason.isRenderRequested) {
+				if (!reason.isInitialRender && !reason.isRenderRequested) {
 					return;
 				}
 
@@ -708,9 +708,9 @@
 			var duId = du.id;
 			//this.log.debug('duClick! id={0}', duId);
 
-			if(this._isCreatingEdge) {
+			if (this._isCreatingEdge) {
 				//エッジ生成中
-				if(this._ceDUFrom && this._ceDUFrom !== du) {
+				if (this._ceDUFrom && this._ceDUFrom !== du) {
 					//1つ目のDUが選択済み、かつ今回クリックしたのがそれとは異なるので、今回のDUとエッジを作る
 					var edge = this._createEdge(this._ceDUFrom, du, 'nearestSide');
 					this._stageController.getLayer(LAYER_ID_EDGE).addDisplayUnit(edge);
@@ -736,7 +736,7 @@
 			var duId = du.id;
 			this.log.debug('duDblclick! id={0}', duId);
 
-			if(du.isEditable) {
+			if (du.isEditable) {
 				du.beginEdit();
 			}
 		},
@@ -806,7 +806,7 @@
 			//				context.evArg.dragSession.cancel();
 			//			}, 2000);
 
-			if(typeof context.evArg.dragSession.getTargets()[0].extraData.text === 'string') {
+			if (typeof context.evArg.dragSession.getTargets()[0].extraData.text === 'string') {
 				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY;
 			} else {
 				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY_AND_STAY;
@@ -856,12 +856,12 @@
 			du.scrollIntoView();
 		},
 
-		'{rootElement} stageDragSelectStart': function(context) {
+		'{rootElement} stageDragSelectBegin': function(context) {
 		//context.event.preventDefault();
 		},
 
-		'{rootElement} stageDragStarting': function(context) {
-			console.log('stageDragStarting', context.evArg);
+		'{rootElement} stageDragBeginning': function(context) {
+			console.log('stageDragBeginning', context.evArg);
 			//context.event.preventDefault();
 		},
 
@@ -1125,7 +1125,7 @@
 			this._stageController.UIDragMode = DragMode.REGION;
 		},
 
-		'{rootElement} stageDragRegionStart': function(context) {
+		'{rootElement} stageDragRegionBegin': function(context) {
 			console.log(context.event.type);
 		},
 
