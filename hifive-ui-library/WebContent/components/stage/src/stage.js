@@ -5000,6 +5000,13 @@
 								this._setLayoutValue(null, null, null, value);
 							}
 						},
+
+						stage: {
+							get: function() {
+								return this._rootStage;
+							}
+						},
+
 						groupTag: {
 							get: function() {
 								return this._groupTag;
