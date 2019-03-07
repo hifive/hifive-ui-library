@@ -4889,6 +4889,8 @@
 
 						_parentDU: null,
 
+						_space: null,
+
 						_rootStage: null,
 
 						_groupTag: null,
@@ -4998,6 +5000,12 @@
 									return;
 								}
 								this._setLayoutValue(null, null, null, value);
+							}
+						},
+
+						space: {
+							get: function() {
+								return this._space;
 							}
 						},
 
@@ -5142,6 +5150,9 @@
 
 							//初期状態ではLayoutHookの配列は持たない（メモリ節約）
 							this._layoutHooks = null;
+
+							this._space = null;
+							this._rootStage = null;
 						},
 
 						/**
@@ -5657,6 +5668,10 @@
 								return true;
 							}
 							return false;
+						},
+
+						__onSpace: function(space) {
+							this._space = space;
 						},
 
 						/**
@@ -8167,6 +8182,11 @@
 
 					this._children.push(du);
 
+					if (this.space) {
+						//このDUコンテナが空間に属していれば、今回追加したDU（およびその子孫DU）はすべて同じ空間に属する
+						du.__onSpace(this.space);
+					}
+
 					if (this._rootStage) {
 						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
@@ -8356,6 +8376,22 @@
 					this._children.forEach(function(childDU) {
 						childDU.__onParentDirtyNotify(that, reasons);
 					});
+				},
+
+				/**
+				 * このコンテナがDU空間に追加・削除されたときに呼ばれます。削除された場合引数はnullです。
+				 *
+				 * @private
+				 * @param space DU空間
+				 */
+				__onSpace: function(space) {
+					super_.__onSpace.call(this, space);
+
+					//全ての子要素に（実質再帰的に）新しいspaceを通知
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						children[i].__onSpace(space);
+					}
 				},
 
 				/**
@@ -9335,13 +9371,9 @@
 				 * @param du
 				 */
 				__onDirtyNotify: function(du, reasons) {
-					var event = DisplayUnitDirtyEvent.create();
-					event.displayUnit = du;
-
-					var reason = UpdateReasonSet.create(reasons);
-					event.reason = reason;
-
-					this.dispatchEvent(event);
+					if (this.space) {
+						this.space.__onDisplayUnitDirty(du, reasons);
+					}
 				},
 
 				/**
@@ -9351,10 +9383,9 @@
 				 * @param parentDU
 				 */
 				__onDescendantAdded: function(displayUnit) {
-					var event = DisplayUnitContainerEvent.create('displayUnitAdd');
-					event.displayUnit = displayUnit;
-					event.parentDisplayUnit = displayUnit.parentDisplayUnit;
-					this.dispatchEvent(event);
+					if (this.space) {
+						this.space.__onDisplayUnitAdd(displayUnit);
+					}
 				},
 
 				/**
@@ -9363,10 +9394,18 @@
 				 * @param du 取り外されたDisplayUnit
 				 */
 				__onDescendantRemoved: function(displayUnit, parentDisplayUnit) {
-					var event = DisplayUnitContainerEvent.create('displayUnitRemove');
-					event.displayUnit = displayUnit;
-					event.parentDisplayUnit = parentDisplayUnit;
-					this.dispatchEvent(event);
+					if (this.space) {
+						this.space.__onDisplayUnitRemove(displayUnit, parentDisplayUnit);
+					}
+				},
+
+				/**
+				 * @private
+				 */
+				__onCascadeRemoving: function(srcDU, relatedDU) {
+					if (this.space) {
+						this.space.__onCascadeRemoving(srcDU, relatedDU);
+					}
 				},
 
 				/**
@@ -9382,15 +9421,6 @@
 						var du = children[i];
 						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
-				},
-
-				/**
-				 * @private
-				 */
-				__onCascadeRemoving: function(srcDU, relatedDU) {
-					var ev = DisplayUnitCascadeRemovingEvent.create(srcDU, relatedDU);
-					var ret = this.dispatchEvent(ev);
-					return ret;
 				}
 			}
 		};
@@ -9403,6 +9433,8 @@
 			name: 'h5.ui.components.stage.SingleLayerPlane',
 
 			field: {
+				_space: null,
+
 				_layer: null,
 
 				_viewports: null,
@@ -9426,6 +9458,11 @@
 
 					this._layer = Layer.create('singleLayerPlane-rootLayer', this, 'svg');
 
+					var space = DisplayUnitSpace.create();
+					this._space = space;
+
+					space.addLayer(this._layer);
+
 					var that = this;
 					var duAddListener = function(event) {
 						that._onDUAdd(event);
@@ -9437,9 +9474,9 @@
 						that._onDUDirty(event);
 					};
 
-					this._layer.addEventListener('displayUnitAdd', duAddListener);
-					this._layer.addEventListener('displayUnitRemove', duRemoveListener);
-					this._layer.addEventListener('displayUnitDirty', duDirtyListener);
+					space.addEventListener('displayUnitAdd', duAddListener);
+					space.addEventListener('displayUnitRemove', duRemoveListener);
+					space.addEventListener('displayUnitDirty', duDirtyListener);
 				},
 
 				getProxyDisplayUnitsAt: function(displayUnit, globalX, globalY) {
@@ -9599,6 +9636,307 @@
 		return desc;
 	});
 
+	var DisplayUnitSpace = EventDispatcher.extend(function(super_) {
+
+		var EVENT_DISPLAY_UNIT_ADD = 'displayUnitAdd';
+		var EVENT_DISPLAY_UNIT_REMOVE = 'displayUnitRemove';
+
+
+		/**
+		 * コンテナを含む、全てのDUを返す
+		 *
+		 * @private
+		 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
+		 * @returns 全てのDisplayUnitを含む配列
+		 */
+		function getAllDisplayUnits(root) {
+			var ret = [];
+
+			if (typeof root._children !== 'undefined') {
+				//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
+				var children = root._children;
+				for (var i = 0, len = children.length; i < len; i++) {
+					var child = children[i];
+					var descendants = getAllDisplayUnits(child);
+					Array.prototype.push.apply(ret, descendants);
+				}
+			} else {
+				ret.push(root);
+			}
+			return ret;
+		}
+
+
+		/**
+		 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
+		 *
+		 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
+		 * @returns BasicDisplayUnitの配列
+		 */
+		function getAllSelectableDisplayUnits(root) {
+			var ret = [];
+
+			if (typeof root._children !== 'undefined') {
+				//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
+				var children = root._children;
+				for (var i = 0, len = children.length; i < len; i++) {
+					var child = children[i];
+					var descendants = getAllSelectableDisplayUnits(child);
+					var filtered = descendants.filter(function(du) {
+						return BasicDisplayUnit.isClassOf(du) && du.isSelectable;
+					});
+					Array.prototype.push.apply(ret, filtered);
+				}
+			} else {
+				ret.push(root);
+			}
+			return ret;
+		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.DisplayUnitSpace',
+
+			field: {
+				_layers: null,
+				_defaultLayer: null,
+				_idDUMap: null
+			},
+
+			accessor: {
+				/**
+				 * この空間が保持するレイヤーの配列を返します。この配列の内容を直接変更しないでください。
+				 * レイヤーの追加・削除はaddLayer()、removeLayer()を使用してください。
+				 */
+				layers: {
+					get: function() {
+						return this._layers;
+					}
+				},
+
+				defaultLayer: {
+					get: function() {
+						return this._defaultLayer;
+					},
+					set: function(layer) {
+						if (this._defaultLayer !== layer) {
+							var idx = this._layers.indexOf(layer);
+							if (idx === -1) {
+								throw new Error('このレイヤーはこの空間に属していません。ID='
+										+ (layer ? layer.id : '(null)'));
+							}
+							this._defaultLayer = layer;
+						}
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.DisplayUnitSpace
+				 */
+				constructor: function DisplayUnitSpace() {
+					super_.constructor.call(this);
+					this._layers = [];
+					this._defaultLayer = null;
+					this._idDUMap = new Map();
+				},
+
+				/**
+				 * レイヤーをこの空間に追加します。
+				 *
+				 * @param layer
+				 * @param index
+				 * @param isDefault
+				 */
+				addLayer: function(layer, index, isDefault) {
+					if (!layer) {
+						throw new Error('レイヤーインスタンスがnullです。');
+					}
+
+					this._addIdMap(layer);
+
+					if (this._layers.length === 0 || isDefault === true) {
+						//明示的にデフォルト指定されているか、１つ目のレイヤーの場合には
+						//このレイヤーをデフォルトレイヤーにする
+						this._defaultLayer = layer;
+					}
+
+					//TODO LayerAddイベントを出すべきか？
+
+					if (index != null) {
+						this._layers.splice(index, 0, layer);
+					} else {
+						this._layers.push(layer);
+					}
+
+					layer.__onSpace(this);
+				},
+
+				/**
+				 * 指定されたレイヤーをこの空間から削除します。
+				 *
+				 * @param layer
+				 */
+				removeLayer: function(layer) {
+					var idx = this._layers.indexOf(layer);
+
+					if (idx === -1) {
+						throw new Error('指定されたレイヤーを削除できませんでした。このレイヤーはこの空間に属していません。');
+					}
+
+					//TODO レイヤーを外したときにStageViewのリスナーを削除する
+					//TODO defaultLayerが外されたときの対応
+
+					//TODO Layer配下のDUをMapから削除
+					this._idDUMap['delete'](layer);
+
+					this._layers.splice(idx, 1);
+
+					//削除したレイヤーがデフォルトレイヤーだった場合、
+					//レイヤーがなくなった場合はnull、まだレイヤーが残っていれば先頭レイヤーをデフォルトに再設定する。
+					if (this._layers.length === 0) {
+						this._defaultLayer = null;
+					} else if (this._defaultLayer === layer) {
+						this._defaultLayer = this._layers[0];
+					}
+				},
+
+				/**
+				 * 指定されたIDのDisplayUnitを取得します。
+				 *
+				 * @param id
+				 * @returns
+				 */
+				getDisplayUnit: function(id) {
+					var layers = this._layers;
+					for (var i = 0, len = layers.length; i < len; i++) {
+						var layer = layers[i];
+						var du = layer.getDisplayUnitById(id);
+						if (du) {
+							return du;
+						}
+					}
+					return null;
+
+					//TODO SpaceはIDの一意性チェックのためにID⇒DUのマップを持っているのでそれを使うようにする
+
+					//var du = this._idDUMap.get(id);
+					//Map.get()は要素がない場合undefinedを返すので、代わりにnullを返す(undefinedは特に必要でない限り使わない方針)
+					//return du ? du : null;
+				},
+
+				getDisplayUnitsAll: function() {
+					//TODO idDUMapを使ってまとめて取得
+
+					var ret = [];
+					var layers = this._layers;
+					for (var i = 0, len = layers.length; i < len; i++) {
+						var units = getAllDisplayUnits(layers[i]);
+						Array.prototype.push.apply(ret, units);
+					}
+					return ret;
+				},
+
+				/**
+				 * 選択可能な(isSelectableがtrueな)全てのDisplayUnitを返します。
+				 *
+				 * @returns {Array} 選択可能なDisplayUnitの配列
+				 */
+				getAllSelectableDisplayUnits: function() {
+					var layers = this._layers;
+					var ret = [];
+					for (var i = 0, len = layers.length; i < len; i++) {
+						var layer = layers[i];
+						var units = getAllSelectableDisplayUnits(layer);
+						Array.prototype.push.apply(ret, units);
+					}
+					return ret;
+				},
+
+				/**
+				 * 全てのレイヤーをこの空間から削除します。
+				 */
+				clearLayers: function() {
+					var layers = this._layers.slice(0);
+					var that = this;
+					layers.forEach(function(layer) {
+						that.removeLayer(layer);
+					});
+				},
+
+				/**
+				 * 指定されたIDのレイヤーを取得します。
+				 *
+				 * @param id
+				 * @returns
+				 */
+				getLayer: function(id) {
+					for (var i = 0, len = this._layers.length; i < len; i++) {
+						var layer = this._layers[i];
+						if (layer.id === id) {
+							return layer;
+						}
+					}
+					return null;
+				},
+
+				/**
+				 * @private
+				 * @param displayUnit
+				 */
+				_addIdMap: function(displayUnit) {
+					if (!displayUnit) {
+						throw new Error('DisplayUnitが指定されていません。');
+					}
+
+					var id = displayUnit.id;
+
+					//IDはnull、空文字どちらもNGなので、あえてこのif文にしている
+					if (!id) {
+						throw new Error('IDがnullまたは空文字です。');
+					}
+
+					if (this._idDUMap.has(id)) {
+						throw new Error('同じIDを持つDisplayUnitを同じStageインスタンスに追加することはできません。 ID=' + id);
+					}
+
+					this._idDUMap.set(id, displayUnit);
+				},
+
+				__onDisplayUnitAdd: function(displayUnit) {
+					var event = DisplayUnitContainerEvent.create(EVENT_DISPLAY_UNIT_ADD);
+					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = displayUnit.parentDisplayUnit;
+					this.dispatchEvent(event);
+				},
+
+				__onDisplayUnitDirty: function(displayUnit, reasons) {
+					var event = DisplayUnitDirtyEvent.create();
+					event.displayUnit = displayUnit;
+
+					var reason = UpdateReasonSet.create(reasons);
+					event.reason = reason;
+
+					this.dispatchEvent(event);
+				},
+
+				__onDisplayUnitRemove: function(displayUnit, parentDisplayUnit) {
+					var event = DisplayUnitContainerEvent.create(EVENT_DISPLAY_UNIT_REMOVE);
+					event.displayUnit = displayUnit;
+					event.parentDisplayUnit = parentDisplayUnit;
+					this.dispatchEvent(event);
+				},
+
+				__onCascadeRemoving: function(srcDU, relatedDU) {
+					var ev = DisplayUnitCascadeRemovingEvent.create(srcDU, relatedDU);
+					var ret = this.dispatchEvent(ev);
+					return ret;
+				}
+			}
+		};
+		return desc;
+	});
+
 })(jQuery);
 
 (function($) {
@@ -9614,15 +9952,16 @@
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
 	var DisplayPoint = classManager.getClass('h5.ui.components.stage.DisplayPoint');
 	var WorldPoint = classManager.getClass('h5.ui.components.stage.WorldPoint');
-	var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var DragSession = classManager.getClass('h5.ui.components.stage.DragSession');
 	var ResizeSession = classManager.getClass('h5.ui.components.stage.ResizeSession');
 	var CustomDragSession = classManager.getClass('h5.ui.components.stage.CustomDragSession');
 
 	var UpdateReasonSet = classManager.getClass('h5.ui.components.stage.UpdateReasonSet');
 
-	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
+	var DisplayUnitSpace = classManager.getClass('h5.ui.components.stage.DisplayUnitSpace');
+	var Layer = classManager.getClass('h5.ui.components.stage.Layer');
 	var DisplayUnitContainer = classManager.getClass('h5.ui.components.stage.DisplayUnitContainer');
+	var BasicDisplayUnit = classManager.getClass('h5.ui.components.stage.BasicDisplayUnit');
 	var Edge = classManager.getClass('h5.ui.components.stage.Edge');
 	var SVGDefinitions = classManager.getClass('h5.ui.components.stage.SVGDefinitions');
 
@@ -10943,8 +11282,6 @@
 								height: this._height
 							});
 
-							var layers = this._stage._layers;
-
 							var that = this;
 							this._duAddListener = function(event) {
 								that._onDUAdd(event);
@@ -10956,18 +11293,19 @@
 								that._onDUDirty(event);
 							};
 
-							var len = layers.length;
-							for (var i = 0; i < len; i++) {
+							var space = this._stage.space;
+							space.addEventListener('displayUnitAdd', this._duAddListener);
+							space.addEventListener('displayUnitRemove', this._duRemoveListener);
+							space.addEventListener('displayUnitDirty', this._duDirtyListener);
+
+							var layers = space.layers;
+							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 
 								var layerRootElement = layer.__createRootElement(this);
 
 								//レイヤーと対応する要素をDOMマネージャに登録
 								this._domManager.add(layer, layerRootElement, true);
-
-								layer.addEventListener('displayUnitAdd', this._duAddListener);
-								layer.addEventListener('displayUnitRemove', this._duRemoveListener);
-								layer.addEventListener('displayUnitDirty', this._duDirtyListener);
 
 								//現時点で存在するレイヤー内のDUを描画
 								//レイヤー要素はビューのルート要素として先に生成しているため
@@ -11160,15 +11498,10 @@
 						},
 
 						dispose: function() {
-							var that = this;
-							this._stage._layers.forEach(function(layer) {
-								layer.removeEventListener('displayUnitAdd', that._duAddListener);
-								layer.removeEventListener('displayUnitRemove',
-										that._duRemoveListener);
-								layer
-										.removeEventListener('displayUnitDirty',
-												that._duDirtyListener);
-							});
+							var space = this._stage.space;
+							space.removeEventListener('displayUnitAdd', this._duAddListener);
+							space.removeEventListener('displayUnitRemove', this._duRemoveListener);
+							space.removeEventListener('displayUnitDirty', this._duDirtyListener);
 
 							this._layerDefsMap.clear();
 
@@ -11614,7 +11947,7 @@
 						_updateLayerScrollPosition: function() {
 							this._isUpdateLayerScrollPositionRequired = true;
 
-							var layers = this._stage._layers;
+							var layers = this._stage.space.layers;
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 								if (layer.isUnscaledRendering) {
@@ -11630,7 +11963,7 @@
 						 * @private
 						 */
 						_doUpdateLayerScrollPosition: function() {
-							var layers = this._stage._layers;
+							var layers = this._stage.space.layers;
 
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
@@ -14431,55 +14764,6 @@
 				return desc;
 			});
 
-	/**
-	 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
-	 *
-	 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
-	 * @returns BasicDisplayUnitの配列
-	 */
-	function getAllSelectableDisplayUnits(root) {
-		var ret = [];
-
-		if (typeof root._children !== 'undefined') {
-			//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
-			var children = root._children;
-			for (var i = 0, len = children.length; i < len; i++) {
-				var child = children[i];
-				var descendants = getAllSelectableDisplayUnits(child);
-				var filtered = descendants.filter(function(du) {
-					return BasicDisplayUnit.isClassOf(du) && du.isSelectable;
-				});
-				Array.prototype.push.apply(ret, filtered);
-			}
-		} else {
-			ret.push(root);
-		}
-		return ret;
-	}
-
-	/**
-	 * コンテナを含む、全てのDUを返す
-	 *
-	 * @private
-	 * @param {DisplayUnit} root 探索のルートとなるDisplayUnit
-	 * @returns 全てのDisplayUnitを含む配列
-	 */
-	function getAllDisplayUnits(root) {
-		var ret = [];
-
-		if (typeof root._children !== 'undefined') {
-			//rootが_childrenを持つ＝Containerの場合はroot自身は戻り値に含めない
-			var children = root._children;
-			for (var i = 0, len = children.length; i < len; i++) {
-				var child = children[i];
-				var descendants = getAllDisplayUnits(child);
-				Array.prototype.push.apply(ret, descendants);
-			}
-		} else {
-			ret.push(root);
-		}
-		return ret;
-	}
 
 	function hasSameContents(array1, array2) {
 		if (!array1 || !array2) {
@@ -14607,21 +14891,6 @@
 		/**
 		 * @private
 		 */
-		_layers: null,
-
-		/**
-		 * @private
-		 */
-		_units: null,
-
-		/**
-		 * @private
-		 */
-		_viewport: null,
-
-		/**
-		 * @private
-		 */
 		_initData: null,
 
 		/**
@@ -14708,14 +14977,7 @@
 		 * @private
 		 */
 		_getAllSelectableDisplayUnits: function() {
-			var layers = this._layers;
-			var ret = [];
-			for (var i = 0, len = layers.length; i < len; i++) {
-				var layer = layers[i];
-				var units = getAllSelectableDisplayUnits(layer);
-				Array.prototype.push.apply(ret, units);
-			}
-			return ret;
+			return this.space.getAllSelectableDisplayUnits();
 		},
 
 		unselect: function(displayUnit) {
@@ -14727,15 +14989,7 @@
 		},
 
 		getDisplayUnitById: function(id) {
-			var layers = this._layers;
-			for (var i = 0, len = layers.length; i < len; i++) {
-				var layer = layers[i];
-				var du = layer.getDisplayUnitById(id);
-				if (du) {
-					return du;
-				}
-			}
-			return null;
+			return this.space.getDisplayUnit(id);
 		},
 
 		getDisplayUnitUnderPointer: function() {
@@ -14853,16 +15107,12 @@
 		},
 
 		getDisplayUnitsAll: function() {
-			var ret = [];
-			var layers = this._layers;
-			for (var i = 0, len = layers.length; i < len; i++) {
-				var units = getAllDisplayUnits(layers[i]);
-				Array.prototype.push.apply(ret, units);
-			}
-			return ret;
+			return this.space.getDisplayUnitsAll();
 		},
 
 		_isIE: null,
+
+		space: null,
 
 		/**
 		 * @private
@@ -14870,8 +15120,6 @@
 		__construct: function() {
 			this._isIE = h5.env.ua.isIE;
 
-			this._units = new Map();
-			this._layers = [];
 			this.UIDragMode = DRAG_MODE_AUTO;
 
 			this._viewMasterClock = MasterClock.create();
@@ -14893,16 +15141,13 @@
 			};
 
 			var that = this;
-
 			this._duCascadeRemovingListener = function(event) {
 				that._onDUCascadeRemoving(event);
 			};
-			this._duAddListenerWrapper = function(event) {
-				that._onDUAdded(event);
-			};
-			this._duRemoveListenerWrapper = function(event) {
-				that._onDURemoved(event);
-			};
+
+			var space = DisplayUnitSpace.create();
+			this.space = space;
+			space.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
 
 			this._viewCollection = GridStageViewCollection.create(this);
 		},
@@ -15331,7 +15576,7 @@
 		 * @param globalY
 		 */
 		_getForemostDisplayUnitContainerAt: function(gX, gY) {
-			var layers = this._layers;
+			var layers = this.space.layers;
 
 			if (layers.length === 0) {
 				//レイヤーが一つもない場合はDUコンテナも一つもないので必ずnull
@@ -17030,11 +17275,11 @@
 		},
 
 		addDisplayUnit: function(displayUnit) {
-			this._defaultLayer.addDisplayUnit(displayUnit);
+			this.space.defaultLayer.addDisplayUnit(displayUnit);
 		},
 
 		removeDisplayUnit: function(displayUnit) {
-			this.removeDisplayUnitById(displayUnit.id);
+			displayUnit.remove();
 		},
 
 		removeDisplayUnitById: function(id) {
@@ -17049,16 +17294,7 @@
 		/**
 		 * @private
 		 */
-		_defaultLayer: null,
-
-		/**
-		 * @private
-		 */
 		_duCascadeRemovingListener: null,
-
-		_duAddListenerWrapper: null,
-
-		_duRemoveListenerWrapper: null,
 
 		/**
 		 * @private
@@ -17086,25 +17322,7 @@
 		},
 
 		addLayer: function(layer, index, isDefault) {
-			if (!layer) {
-				throw new Error('レイヤーインスタンスがnullです。');
-			}
-
-			this._validateAndAddToIdToDUMap(layer);
-
-			if (this._layers.length === 0 || isDefault === true) {
-				this._defaultLayer = layer;
-			}
-
-			layer.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
-			layer.addEventListener('displayUnitAdd', this._duAddListenerWrapper);
-			layer.addEventListener('displayUnitRemove', this._duRemoveListenerWrapper);
-
-			if (index != null) {
-				this._layers.splice(index, 0, layer);
-			} else {
-				this._layers.push(layer);
-			}
+			this.space.addLayer(layer, index, isDefault);
 			layer._onAddedToStage(this);
 		},
 
@@ -17112,89 +17330,19 @@
 		 * @private
 		 */
 		_removeLayer: function(layer) {
-			var idx = this._layers.indexOf(layer);
-
-			if (idx === -1) {
-				return;
-			}
-
-			//TODO レイヤーを外したときにStageViewのリスナーを削除する
-
-			this._removeFromIdToDUMap(layer);
-
-			this._layers.splice(idx, 1);
-			layer
-					.removeEventListener('displayUnitCascadeRemoving',
-							this._duCascadeRemovingListener);
-			layer.removeEventListener('displayUnitAdd', this._duAddListenerWrapper);
-			layer.removeEventListener('displayUnitRemove', this._duRemoveListenerWrapper);
-
+			this.space.removeLayer(layer);
 			layer._onRemovedFromStage();
-		},
-
-		/**
-		 * @private
-		 * @param event
-		 */
-		_onDUAdded: function(event) {
-			var du = event.displayUnit;
-			this._validateAndAddToIdToDUMap(du);
-		},
-
-		/**
-		 * @private
-		 * @param du
-		 */
-		_validateAndAddToIdToDUMap: function(du) {
-			var duId = du.id;
-
-			if (duId == null) {
-				throw new Error('DUのidがnullです。');
-			}
-
-			if (this._units.has(duId)) {
-				throw new Error('同じIDを持つDisplayUnitを同じStageインスタンスに追加することはできません。');
-			}
-
-			this._units.set(duId, du);
-		},
-
-		/**
-		 * @private
-		 * @param du
-		 */
-		_removeFromIdToDUMap: function(du) {
-			this._units['delete'](du.id);
-		},
-
-		/**
-		 * @private
-		 * @param event
-		 */
-		_onDURemoved: function(event) {
-			var du = event.displayUnit;
-			this._removeFromIdToDUMap(du);
 		},
 
 		/**
 		 * @private
 		 */
 		_clearLayers: function() {
-			var layers = this._layers.slice(0);
-			var that = this;
-			layers.forEach(function(layer) {
-				that._removeLayer(layer);
-			});
+			this.space.clearLayers();
 		},
 
 		getLayer: function(id) {
-			for (var i = 0, len = this._layers.length; i < len; i++) {
-				var layer = this._layers[i];
-				if (layer.id === id) {
-					return layer;
-				}
-			}
-			return null;
+			return this.space.getLayer(id);
 		},
 
 		scrollTo: function(dispX, dispY) {
