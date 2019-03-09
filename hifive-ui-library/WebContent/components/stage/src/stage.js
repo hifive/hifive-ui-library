@@ -238,8 +238,8 @@
 
 	var RenderPriority = {
 		NORMAL: 0,
-		ALWAYS: 1
-	//ON_DEMAND: 2
+		ALWAYS: 1,
+		IMMEDIATE: 2
 	};
 
 	var DragMode = {
@@ -4028,6 +4028,8 @@
 			isAbstract: true,
 
 			field: {
+				isGlobalPositionChangeAware: null,
+
 				_displayUnits: null
 			},
 
@@ -4046,6 +4048,7 @@
 				constructor: function LayoutHookBase() {
 					super_.constructor.call(this);
 					this._displayUnits = [];
+					this.isGlobalPositionChangeAware = false;
 				},
 
 				__setLayoutValue: function(targetDisplayUnit, x, y, width, height) {
@@ -4283,7 +4286,7 @@
 
 				/**
 				 * このLayoutHookをDisplayUnitに取り付けます。引数には高々1つのDisplayUnitのみ指定できます。
-				 * ソースを未指定にしたい場合は、引数にnullをセットします。
+				 * ソースからこのフックを外したい場合は、引数にnullをセットします。
 				 */
 				setSource: function(displayUnit) {
 					if (Array.isArray(displayUnit)) {
@@ -4366,7 +4369,7 @@
 		return desc;
 	});
 
-	OneToManyLayoutHook.extend(function(super_) {
+	var SynchronizeLayoutHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.SynchronizeLayoutHook',
 
@@ -4431,7 +4434,7 @@
 		return desc;
 	});
 
-	OneToManyLayoutHook.extend(function(super_) {
+	var FollowPositionLayoutHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.FollowPositionLayoutHook',
 
@@ -4441,12 +4444,17 @@
 			},
 
 			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.FollowPositionLayoutHook
+				 */
 				constructor: function FollowPositionLayoutHook(offsetX, offsetY) {
 					super_.constructor.call(this);
 
-					//コンストラクタでX, Yそれぞれのオフセット値が与えられていればセット。デフォルトは0
+					//コンストラクタでX, Yそれぞれのオフセット値が与えられていればセット。デフォルトは0（同じ位置）
 					this.offsetX = typeof offsetX === 'number' ? offsetX : 0;
 					this.offsetY = typeof offsetY === 'number' ? offsetY : 0;
+
+					this.isGlobalPositionChangeAware = true;
 				},
 
 				__onTargetsAdd: function(targets) {
@@ -4469,15 +4477,51 @@
 					this._follow(assigning);
 				},
 
-				_follow: function(layout, targets) {
-					var x = layout.x != null ? layout.x + this.offsetX : null;
-					var y = layout.y != null ? layout.y + this.offsetY : null;
+				__onGlobalPositionChange: function(displayUnit) {
+					var layout = LayoutValue.create(displayUnit.x, displayUnit.y,
+							displayUnit.width, displayUnit.height);
+					this._follow(layout);
+				},
+
+				_follow: function(layoutValue, targets) {
+					var x = layoutValue.x != null ? layoutValue.x + this.offsetX : null;
+					var y = layoutValue.y != null ? layoutValue.y + this.offsetY : null;
+
+					if (x == null && y == null) {
+						//今回の変更ではソースのx、yどちらも変更されないので、このフックでは何もしない
+						return;
+					}
+
+					//localToGlobalPosition()は引数にnullを渡せないので、
+					//もし更新値がnullの場合は代わりに0を入れておく。
+					//実際にセットするときにはnullの方の値は使わない。
+					var nx = x == null ? 0 : x;
+					var ny = y == null ? 0 : y;
+					var gPos = this.source.parentDisplayUnit.localToGlobalPosition(nx, ny);
 
 					targets = targets == null ? this.targets : targets;
 
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
-						this.__setLayoutValue(du, x, y, null, null);
+
+						var x0, y0;
+
+						if (du.parentDisplayUnit
+								&& (this.source.parentDisplayUnit !== du.parentDisplayUnit)) {
+							//グローバル座標で同期する設定、かつ親コンテナが異なる場合は、ターゲットDUの
+							//ローカル座標に変換してセットする。
+							//なお、元のレイアウト予定座標がnullの場合はnullを入れるようにして計算量を最小にする。
+							var localPos = du.parentDisplayUnit.globalToLocalPosition(gPos.x,
+									gPos.y);
+							x0 = x != null ? localPos.x : null;
+							y0 = y != null ? localPos.y : null;
+						} else {
+							//ソースとターゲットの親コンテナが同じ場合はオフセット値を足した値をそのまま使えばよい
+							x0 = x;
+							y0 = y;
+						}
+
+						this.__setLayoutValue(du, x0, y0, null, null);
 					}
 				}
 			}
@@ -4485,157 +4529,159 @@
 		return desc;
 	});
 
-	SingleLayoutHook.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.VisiblePositionLayoutHook',
+	SingleLayoutHook
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.VisiblePositionLayoutHook',
 
-			field: {
-				_view: null,
-				_left: null,
-				_top: null,
-				_right: null,
-				_bottom: null,
-				_isFirstAttach: null
-			},
-
-			accessor: {
-				left: {
-					get: function() {
-						return this._left;
+					field: {
+						_view: null,
+						_left: null,
+						_top: null,
+						_right: null,
+						_bottom: null,
+						_isFirstAttach: null
 					},
-					set: function(value) {
-						if (this._left !== value) {
-							this._left = value;
-							this._update();
+
+					accessor: {
+						left: {
+							get: function() {
+								return this._left;
+							},
+							set: function(value) {
+								if (this._left !== value) {
+									this._left = value;
+									this._update();
+								}
+							}
+						},
+						top: {
+							get: function() {
+								return this._top;
+							},
+							set: function(value) {
+								if (this._top !== value) {
+									this._top = value;
+									this._update();
+								}
+							}
+						},
+						right: {
+							get: function() {
+								return this._right;
+							},
+							set: function(value) {
+								if (this._right !== value) {
+									this._right = value;
+									this._update();
+								}
+							}
+						},
+						bottom: {
+							get: function() {
+								return this._bottom;
+							},
+							set: function(value) {
+								if (this._bottom !== value) {
+									this._bottom = value;
+									this._update();
+								}
+							}
 						}
-					}
-				},
-				top: {
-					get: function() {
-						return this._top;
 					},
-					set: function(value) {
-						if (this._top !== value) {
-							this._top = value;
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.VisiblePositionLayoutHook
+						 */
+						constructor: function VisiblePositionLayoutHook(displayLeft, displayTop,
+								displayRight, displayBottom) {
+							super_.constructor.call(this);
+
+							this._view = null;
+
+							this._isFirstAttach = true;
+
+							this._left = displayLeft;
+							this._top = displayTop;
+							this._right = displayRight;
+							this._bottom = displayBottom;
+						},
+
+						__onAttach: function(displayUnit) {
+							//TODO Viewの与え方
+							this._view = displayUnit._rootStage._getActiveView();
 							this._update();
+
+							if (this._isFirstAttach) {
+								this._isFirstAttach = false;
+								var that = this;
+								$(displayUnit._rootStage.rootElement)
+										.on(
+												'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange',
+												function(event, evArg) {
+													that._update();
+												});
+							}
+						},
+
+						__onLayoutChanging: function(displayUnit, assigning, overwrite) {
+							var view = this._view;
+							if (!view) {
+								return;
+							}
+
+							var viewBottomRightWorldPos = view._viewport
+									.getWorldPositionFromDisplayOffset(view.width, view.height);
+
+							if (this._left != null) {
+								if (this._right == null) {
+									//leftだけが指定された場合⇒左端基準で位置のみ変更する
+								} else {
+									//left, rightが両方指定された場合⇒位置とサイズを両方変更する
+								}
+							} else if (this._right != null) {
+								//rightのみ指定された場合⇒右端基準で位置のみ変更する
+								var gx = viewBottomRightWorldPos.x - this.source.width
+										- view._viewport.toWorldX(this._right);
+
+								var localPos = this.source.parentDisplayUnit.globalToLocalPosition(
+										gx, 0);
+
+								overwrite.x = localPos.x;
+							}
+						},
+
+						_update: function() {
+							var view = this._view;
+							if (!view) {
+								return;
+							}
+
+							var viewBottomRightWorldPos = view._viewport
+									.getWorldPositionFromDisplayOffset(view.width, view.height);
+
+							if (this._left != null) {
+								if (this._right == null) {
+									//leftだけが指定された場合⇒左端基準で位置のみ変更する
+								} else {
+									//left, rightが両方指定された場合⇒位置とサイズを両方変更する
+								}
+							} else if (this._right != null) {
+								//rightのみ指定された場合⇒右端基準で位置のみ変更する
+								var gx = viewBottomRightWorldPos.x - this.source.width
+										- view._viewport.toWorldX(this._right);
+
+								var localPos = this.source.parentDisplayUnit.globalToLocalPosition(
+										gx, 0);
+
+								this.__setLayoutValue(this.source, localPos.x, null, null, null);
+							}
 						}
 					}
-				},
-				right: {
-					get: function() {
-						return this._right;
-					},
-					set: function(value) {
-						if (this._right !== value) {
-							this._right = value;
-							this._update();
-						}
-					}
-				},
-				bottom: {
-					get: function() {
-						return this._bottom;
-					},
-					set: function(value) {
-						if (this._bottom !== value) {
-							this._bottom = value;
-							this._update();
-						}
-					}
-				}
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.VisiblePositionLayoutHook
-				 */
-				constructor: function VisiblePositionLayoutHook(displayLeft, displayTop,
-						displayRight, displayBottom) {
-					super_.constructor.call(this);
-
-					this._view = null;
-
-					this._isFirstAttach = true;
-
-					this._left = displayLeft;
-					this._top = displayTop;
-					this._right = displayRight;
-					this._bottom = displayBottom;
-				},
-
-				__onAttach: function(displayUnit) {
-					//TODO Viewの与え方
-					this._view = displayUnit._rootStage._getActiveView();
-					this._update();
-
-					if (this._isFirstAttach) {
-						this._isFirstAttach = false;
-						var that = this;
-						$(displayUnit._rootStage.rootElement).on('stageViewUnifiedSightChange',
-								function(event, evArg) {
-									//if (evArg.changes[0].scale.isChanged) {
-									//var newValue = evArg.changes[0].scale.newValue;
-									that._update();
-									//}
-								});
-					}
-				},
-
-				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
-					var view = this._view;
-					if (!view) {
-						return;
-					}
-
-					var viewBottomRightWorldPos = view._viewport.getWorldPositionFromDisplayOffset(
-							view.width, view.height);
-
-					if (this._left != null) {
-						if (this._right == null) {
-							//leftだけが指定された場合⇒左端基準で位置のみ変更する
-						} else {
-							//left, rightが両方指定された場合⇒位置とサイズを両方変更する
-						}
-					} else if (this._right != null) {
-						//rightのみ指定された場合⇒右端基準で位置のみ変更する
-						var gx = viewBottomRightWorldPos.x - this.source.width
-								- view._viewport.toWorldX(this._right);
-
-						var localPos = this.source.parentDisplayUnit.globalToLocalPosition(gx, 0);
-
-						overwrite.x = localPos.x;
-					}
-				},
-
-				_update: function() {
-					var view = this._view;
-					if (!view) {
-						return;
-					}
-
-					var viewBottomRightWorldPos = view._viewport.getWorldPositionFromDisplayOffset(
-							view.width, view.height);
-
-					if (this._left != null) {
-						if (this._right == null) {
-							//leftだけが指定された場合⇒左端基準で位置のみ変更する
-						} else {
-							//left, rightが両方指定された場合⇒位置とサイズを両方変更する
-						}
-					} else if (this._right != null) {
-						//rightのみ指定された場合⇒右端基準で位置のみ変更する
-						var gx = viewBottomRightWorldPos.x - this.source.width
-								- view._viewport.toWorldX(this._right);
-
-						var localPos = this.source.parentDisplayUnit.globalToLocalPosition(gx, 0);
-
-						this.__setLayoutValue(this.source, localPos.x, null, null, null);
-					}
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	GenericLayoutHook.extend(function(super_) {
 		var desc = {
@@ -5626,6 +5672,8 @@
 						 * 直接の親要素がdirtyになった場合に親→子に向かって呼び出されるコールバック
 						 *
 						 * @private
+						 * @param du dirtyになったDisplayUnit
+						 * @param reasons dirtyの理由（配列）
 						 */
 						__onParentDirtyNotify: function(du, reasons) {
 							if (this._belongingLayer && this._belongingLayer.isUnscaledRendering) {
@@ -5646,6 +5694,9 @@
 								return;
 							}
 							this._worldGlobalPositionCache = null;
+
+							this._executeGlobalPositionChangeLayoutHook();
+
 							this._setDirty(REASON_GLOBAL_POSITION_CHANGE);
 						},
 
@@ -5668,6 +5719,24 @@
 								return true;
 							}
 							return false;
+						},
+
+						/**
+						 * @private
+						 */
+						_executeGlobalPositionChangeLayoutHook: function() {
+							var hooks = this._layoutHooks;
+							if (!hooks) {
+								return;
+							}
+
+							//フックを実行
+							for (var i = 0, len = hooks.length; i < len; i++) {
+								var hook = hooks[i];
+								if (hook.isGlobalPositionChangeAware) {
+									hook.__onGlobalPositionChange(this);
+								}
+							}
 						},
 
 						__onSpace: function(space) {
@@ -5749,7 +5818,7 @@
 
 							var reasons = [];
 							if (isPositionChanged) {
-								reasons.push(REASON_POSITION_CHANGE);
+								reasons.push(REASON_POSITION_CHANGE, REASON_GLOBAL_POSITION_CHANGE);
 								this._worldGlobalPositionCache = null;
 							}
 							if (isSizeChanged) {
@@ -5763,6 +5832,7 @@
 						 * レイアウトフックを実行し、フック後の値を返します。 複数のレイアウトフックがセットされていて、異なるフックで同じプロパティの値を変更した場合、
 						 * 値の変更は後勝ちです。
 						 *
+						 * @private
 						 * @param x X座標（ワールド座標）
 						 * @param y Y座標（ワールド座標）
 						 * @param width 幅（ワールド座標）
@@ -5820,6 +5890,190 @@
 
 				return classDesc;
 			});
+
+	var OverlayDisplayUnit = DisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.internal.OverlayDisplayUnit',
+
+			field: {
+				_source: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.OverlayDisplayUnit
+				 */
+				constructor: function OverlayDisplayUnit(id, sourceDisplayUnit) {
+					super_.constructor.call(this, id);
+
+					if (!sourceDisplayUnit) {
+						throw new Error('ソースDisplayUnitが指定されていません。');
+					}
+
+					this._source = sourceDisplayUnit;
+				},
+
+				__renderDOM: function(view) {
+					var rootElement = this._source.__renderDOM(view);
+
+					//ID情報はこのDUのものに上書き
+					rootElement.setAttribute('data-h5-dyn-du-id', this.id);
+
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					this.__updateDOM(view, rootElement, reason);
+
+					//isVisible=falseをすることでDOMにdisplay:noneがつくので強制的に解除
+					$(rootElement).css({
+						display: ''
+					});
+
+					return rootElement;
+				},
+
+				__updateDOM: function(view, element, reason) {
+					this._source.__updateDOM(view, element, reason);
+
+					//位置だけはこのOverlayDUの情報に基づいて上書きする
+					this._updatePosition.call(this, element, view);
+				}
+			}
+		};
+		return desc;
+	});
+
+	DisplayUnit.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.internal.SVGRectDisplayUnit',
+
+			field: {
+				_className: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.SVGRectDisplayUnit
+				 */
+				constructor: function SVGRectDisplayUnit(id, className) {
+					super_.constructor.call(this, id);
+					this._className = className;
+				},
+
+				__renderDOM: function(view) {
+					var rect = SvgUtil.createElement('rect');
+
+					rect.className.baseVal = this._className;
+
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					this.__updateDOM(view, rect, reason);
+
+					return rect;
+				},
+
+				__updateDOM: function(view, element, reason) {
+					SvgUtil.setAttributes(element, {
+						x: this.x,
+						y: this.y,
+						width: this.width,
+						height: this.height
+					});
+				}
+			}
+		};
+		return desc;
+	});
+
+	var OverlayMapper = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.internal.OverlayMapper',
+
+			field: {
+				_srcTargetMap: null,
+				_target: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.OverlayMapper
+				 */
+				constructor: function OverlayMapper(targetSpace) {
+					super_.constructor.call(this);
+
+					this._srcTargetMap = new Map();
+
+					if (!targetSpace) {
+						throw new Error('ターゲットとなるオーバーレイDU空間は必須です。');
+					}
+
+					this._target = targetSpace;
+				},
+
+				add: function(sourceDisplayUnit) {
+					if (!sourceDisplayUnit) {
+						throw new Error('ソースDislayUnitが指定されていません。');
+					}
+
+					var srcLayer = sourceDisplayUnit._belongingLayer;
+
+					if (!sourceDisplayUnit || !sourceDisplayUnit._belongingLayer) {
+						throw new Error('ソースDislayUnitが指定されていない、またはレイヤーの子孫でないDisplayUnitです。');
+					}
+
+					var ovDU = OverlayDisplayUnit.create(null, sourceDisplayUnit);
+
+					if (srcLayer.type === 'svg') {
+						if (srcLayer.isUnscaledRendering) {
+							this._target.ovSvgUnscaledLayer.addDisplayUnit(ovDU);
+						} else {
+							this._target.ovSvgLayer.addDisplayUnit(ovDU);
+						}
+					} else {
+						//現時点では、レイヤーはSVGかDIVの2種類のみなのでsvgでなければ必ずdiv
+						if (srcLayer.isUnscaledRendering) {
+							this._target.ovDivUnscaledLayer.addDisplayUnit(ovDU);
+						} else {
+							this._target.ovDivLayer.addDisplayUnit(ovDU);
+						}
+					}
+
+					//幅と高さはSyncフックで同期
+					var syncHook = SynchronizeLayoutHook.create(false, false, true, true);
+					syncHook.setSource(sourceDisplayUnit);
+					syncHook.addTargets(ovDU);
+
+					//位置はFollowHookでグローバル座標で同期（オフセットをゼロにすることで同じ位置に重ねる）
+					var followHook = FollowPositionLayoutHook.create(0, 0);
+					followHook.setSource(sourceDisplayUnit);
+					followHook.addTargets(ovDU);
+
+					//remove時にフックも外す必要があるので、マップにまとめて保持
+					var targetInfo = {
+						du: ovDU,
+						syncHook: syncHook,
+						followHook: followHook
+					};
+
+					this._srcTargetMap.set(sourceDisplayUnit, targetInfo);
+				},
+
+				remove: function(sourceDisplayUnit) {
+					var info = this._srcTargetMap.get(sourceDisplayUnit);
+					if (!info) {
+						return;
+					}
+					this._srcTargetMap['delete'](sourceDisplayUnit);
+
+					info.syncHook.setSource(null);
+					info.followHook.setSource(null);
+					info.du.remove();
+				},
+
+				hasMapping: function(sourceDisplayUnit) {
+					return this._srcTargetMap.has(sourceDisplayUnit);
+				}
+			}
+		};
+		return desc;
+	});
 
 	var UpdateReasonSet = RootClass.extend(function(super_) {
 		var desc = {
@@ -6757,7 +7011,7 @@
 					super_.constructor.call(this, id);
 
 					if (id == null || sourceDisplayUnit == null || viewportContainer == null) {
-						throw new Error('シャドウを生成するためのパラメータが足りません。');
+						throw new Error('プロキシDisplayUnitを生成するためのパラメータが足りません。');
 					}
 
 					this._logicalId = sourceDisplayUnit.id;
@@ -6836,20 +7090,23 @@
 
 					var src = this._sourceDU;
 
-					var myX = src.x - this._viewportContainer.viewportX;
-					var myY = src.y - this._viewportContainer.viewportY;
+					//TODO 正しくグローバル⇒ローカル変換する
+					var localX = src.x - this._viewportContainer.viewportX;
+					var localY = src.y - this._viewportContainer.viewportY;
 
 					var isPositionChanged = false;
 
-					var hookedX = this._getHookedSyncValue('x', myX);
+					var hookedX = this._getHookedSyncValue('x', localX);
+					var actualX = null;
 					if (this._x !== hookedX) {
-						this._x = hookedX;
+						actualX = hookedX;
 						isPositionChanged = true;
 					}
 
-					var hookedY = this._getHookedSyncValue('y', myY);
+					var hookedY = this._getHookedSyncValue('y', localY);
+					var actualY = null;
 					if (this._y !== hookedY) {
-						this._y = hookedY;
+						actualY = hookedY;
 						isPositionChanged = true;
 					}
 
@@ -6860,21 +7117,23 @@
 							reasons = [reasons];
 						}
 
-						reasons.push(REASON_POSITION_CHANGE);
+						reasons.push(REASON_POSITION_CHANGE, REASON_GLOBAL_POSITION_CHANGE);
 						this._worldGlobalPositionCache = null;
 					}
 
 					var isSizeChanged = false;
 
 					var hookedWidth = this._getHookedSyncValue('width', src.width);
+					var actualW = null;
 					if (this._width !== hookedWidth) {
-						this._width = hookedWidth;
+						actualW = hookedWidth;
 						isSizeChanged = true;
 					}
 
 					var hookedHeight = this._getHookedSyncValue('height', src.height);
+					var actualH = null;
 					if (this._height !== hookedHeight) {
-						this._height = hookedHeight;
+						actualH = hookedHeight;
 						isSizeChanged = true;
 					}
 
@@ -6885,6 +7144,12 @@
 							reasons = [reasons];
 						}
 						reasons.push(REASON_SIZE_CHANGE);
+					}
+
+					if (isPositionChanged || isSizeChanged) {
+						//位置またはサイズのどちらかが変更されていたらレイアウトを変更。
+						//レイアウトフックを呼び出すため、setLayoutValue()を使う必要がある。
+						this._setLayoutValue(actualX, actualY, actualW, actualH);
 					}
 
 					//Position,Size以外の理由もあるので、setDirty自体は呼ぶ必要がある
@@ -8080,7 +8345,6 @@
 				_minScaleY: null,
 				_maxScaleX: null,
 				_maxScaleY: null,
-				_isUpdateTransformReserved: null,
 				_overflow: null
 			},
 
@@ -8143,7 +8407,7 @@
 				constructor: function DisplayUnitContainer(id) {
 					super_.constructor.call(this, id);
 
-					this._renderPriority = RenderPriority.ALWAYS;
+					this._renderPriority = RenderPriority.IMMEDIATE;
 
 					this._scaleX = 1;
 					this._scaleY = 1;
@@ -8160,8 +8424,6 @@
 					//DUContainerのルート要素のoverflowはデフォルトで明示的にvisibleに設定する
 					//例えばBootstrapは、not(:root)なSVG要素のoverflowをhiddenに設定するため。
 					this._overflow = 'visible';
-
-					this._isUpdateTransformReserved = false;
 
 					this._belongingLayer = null;
 
@@ -8274,31 +8536,56 @@
 					super_._onRemovedFromStage.call(this);
 				},
 
-				setMinScale: function(minScaleX, minScaleY) {
+				/**
+				 * @private
+				 * @param minScaleX
+				 * @param minScaleY
+				 */
+				_setMinScale: function(minScaleX, minScaleY) {
 					this._minScaleX = minScaleX;
 					this._minScaleY = minScaleY;
 					this._clampScale();
 				},
 
-				setMaxScale: function(maxScaleX, maxScaleY) {
+				/**
+				 * @private
+				 * @param maxScaleX
+				 * @param maxScaleY
+				 */
+				_setMaxScale: function(maxScaleX, maxScaleY) {
 					this._maxScaleX = maxScaleX;
 					this._maxScaleY = maxScaleY;
 					this._clampScale();
 				},
 
-				setScale: function(scaleX, scaleY) {
+				/**
+				 * @private
+				 * @param scaleX
+				 * @param scaleY
+				 */
+				_setScale: function(scaleX, scaleY) {
 					var x = scaleX == null ? this._scaleX : scaleX;
 					var y = scaleY == null ? this._scaleY : scaleY;
 					this._clampScale(x, y);
 				},
 
 				scrollTo: function(worldX, worldY) {
+					if (this._scrollX === worldX && this._scrollY === worldY) {
+						//X,Yどちらも現在のスクロール位置と同じ場合は何もしない
+						return;
+					}
+
 					this._scrollX = worldX;
 					this._scrollY = worldY;
 					this._setDirty(REASON_SCROLL_POSITION_CHANGE);
 				},
 
 				scrollBy: function(worldX, worldY) {
+					if (worldX === 0 && worldY === 0) {
+						//X,Yどちらも移動差分が0の場合はスクロールしない＝何もしない
+						return;
+					}
+
 					var x = this._scrollX + worldX;
 					var y = this._scrollY + worldY;
 					this.scrollTo(x, y);
@@ -8306,13 +8593,17 @@
 
 				globalToLocalPosition: function(worldGlobalX, worldGlobalY) {
 					var gpos = this.getWorldGlobalPosition();
-					var localPos = WorldPoint.create(worldGlobalX - gpos.x, worldGlobalY - gpos.y);
+					//Layerが親だった場合にスクロール位置を正しく取得するため、scrollX/Yはアクセサ経由で取得する必要がある
+					var localPos = WorldPoint.create(worldGlobalX - gpos.x + this.scrollX,
+							worldGlobalY - gpos.y + this.scrollY);
 					return localPos;
 				},
 
 				localToGlobalPosition: function(worldLocalX, worldLocalY) {
 					var gpos = this.getWorldGlobalPosition();
-					var globalPos = WorldPoint.create(worldLocalX + gpos.x, worldLocalY + gpos.y);
+					//Layerが親だった場合にスクロール位置を正しく取得するため、scrollX/Yはアクセサ経由で取得する必要がある
+					var globalPos = WorldPoint.create(worldLocalX + gpos.x - this.scrollX,
+							worldLocalY + gpos.y - this.scrollY);
 					return globalPos;
 				},
 
@@ -8363,19 +8654,27 @@
 					//こうすることで、自コンテナの位置が移動した場合に
 					//外から自分の子供のコンテナのglobalPositionを取得した時
 					//正しい値が取得できる。
-					this.__onParentDirtyNotify(this, reasons);
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						children[i].__onParentDirtyNotify(this, reasons);
+					}
+
 					super_._setDirty.call(this, reasons);
 				},
 
 				/**
 				 * @private
+				 * @param du dirtyになったDisplayUnit
+				 * @param reasons dirtyの理由（配列）
 				 */
 				__onParentDirtyNotify: function(du, reasons) {
 					super_.__onParentDirtyNotify.call(this, du, reasons);
-					var that = this;
-					this._children.forEach(function(childDU) {
-						childDU.__onParentDirtyNotify(that, reasons);
-					});
+
+					//再帰的に子要素に伝搬させる
+					var children = this._children;
+					for (var i = 0, len = children.length; i < len; i++) {
+						children[i].__onParentDirtyNotify(du, reasons);
+					}
 				},
 
 				/**
@@ -8426,6 +8725,11 @@
 					return root;
 				},
 
+				/**
+				 * @private
+				 * @param view
+				 * @returns
+				 */
 				_renderDOMSvg: function(view) {
 					var rootSvg = createSvgElement('svg');
 
@@ -8437,6 +8741,10 @@
 					return rootSvg;
 				},
 
+				/**
+				 * @private
+				 * @param view
+				 */
 				_renderDOMDiv: function(view) {
 					var root = document.createElement('div');
 
@@ -9229,6 +9537,33 @@
 
 	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
 	var Layer = DisplayUnitContainer.extend(function(super_) {
+
+		var MSG_CANNOT_MOVE = 'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。';
+		var MSG_CANNOT_SCROLL = 'Layerはスクロールできません。ビューのスクロールはStageView.scrollTo()等を使用してください。';
+
+		var FRACTION_PRECISION = 10;
+
+		var formatString = h5.u.str.format;
+
+		//小数表現を正規化して小数文字列を返す
+		function getNormalizedValueString(value) {
+			var intPart = Math.floor(value);
+			if (value === intPart) {
+				//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
+				return '' + intPart;
+			}
+			var str = value.toString();
+			var dotIdx = str.indexOf('.');
+			if (dotIdx === -1) {
+				return '' + intPart;
+			}
+			var decstr = str.slice(dotIdx + 1);
+			var len = decstr.length > FRACTION_PRECISION ? FRACTION_PRECISION : decstr.length;
+			var ret = '' + intPart + '.' + decstr.slice(0, len);
+			return ret;
+		}
+
+
 		var desc = {
 			name: 'h5.ui.components.stage.Layer',
 			field: {
@@ -9238,6 +9573,63 @@
 			},
 
 			accessor: {
+				/**
+				 * @override
+				 */
+				overflow: {
+					get: function() {
+						return super_.overflow.get.call(this);
+					},
+					set: function(value) {
+						throw new Error('Layerのoverflowは変更できません。');
+					}
+				},
+
+				/**
+				 * @override
+				 */
+				renderPriority: {
+					get: function() {
+						return super_.renderPriority.get.call(this);
+					},
+					set: function(value) {
+						throw new Error('LayerのrenderPriorityは変更できません。');
+					}
+				},
+
+				/**
+				 * レイヤーについては、「レイヤーをスクロールした」のではなく、「ビューポートを動かした」という扱いで考える。
+				 * これは、「レイヤーがスクロールする」と、レイヤーのスクロールのたびに全DUのワールドグローバル座標値が変わってしまうことになり
+				 * 通常の画面スクロール実現において都合が悪いため。
+				 * そこで、「ビューポートが動いた」と考えることで、DU自体は「何も変わっていない」という考えに整理することができる。
+				 * そのため、レイヤーのscrollX/Yは常に0を返す。
+				 * （ビューポートのスクロール量を知りたい場合は、StageView.getScrollPosition()を呼び出すこと。）
+				 *
+				 * @override
+				 */
+				scrollX: {
+					get: function() {
+						return 0;
+					},
+					set: function(value) {
+						throw new Error('LayerのscrollXは変更できません。');
+					}
+				},
+
+				/**
+				 * レイヤーのscrollYは常に0を返す。また、設定は不能。詳細はscrollXアクセサの説明を参照。
+				 *
+				 * @override
+				 */
+				scrollY: {
+					get: function() {
+						return 0;
+					},
+					set: function(value) {
+						throw new Error('LayerのscrollYは変更できません。');
+					}
+				},
+
 				type: {
 					get: function() {
 						return this._type;
@@ -9274,6 +9666,8 @@
 					this.UIDragScreenScrollDirection = ScrollDirection.XY;
 					this._rootStage = stage;
 					this._belongingLayer = this;
+
+					this._renderPriority = RenderPriority.IMMEDIATE;
 				},
 
 				/**
@@ -9293,7 +9687,7 @@
 				 * @param worldY
 				 */
 				moveTo: function(worldX, worldY) {
-					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
+					throw new Error(MSG_CANNOT_MOVE);
 				},
 
 				/**
@@ -9303,7 +9697,27 @@
 				 * @param worldY
 				 */
 				moveBy: function(worldX, worldY) {
-					throw new Error('Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。');
+					throw new Error(MSG_CANNOT_MOVE);
+				},
+
+				/**
+				 * オーバーライド。Layerのスクロールは禁止。
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				scrollTo: function(worldX, worldY) {
+					throw new Error(MSG_CANNOT_SCROLL);
+				},
+
+				/**
+				 * オーバーライド。Layerのスクロールは禁止。
+				 *
+				 * @param worldX
+				 * @param worldY
+				 */
+				scrollBy: function(worldX, worldY) {
+					throw new Error(MSG_CANNOT_SCROLL);
 				},
 
 				/**
@@ -9318,10 +9732,7 @@
 					return graphics;
 				},
 
-				/**
-				 * @private
-				 */
-				__createRootElement: function(view) {
+				__renderDOM: function(view) {
 					var rootElement = null;
 
 					if (this.type === 'svg') {
@@ -9362,7 +9773,80 @@
 					rootElement.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
 					rootElement.setAttribute('data-h5-dyn-du-id', this.id);
 
+					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					this.__updateDOM(view, rootElement, reason);
+
 					return rootElement;
+				},
+
+				__updateDOM: function(view, element, reason) {
+					if (!reason.isInitialRender && !reason.isScrollPositionChanged
+							&& !reason.isScaleChanged) {
+						return;
+					}
+
+					//ビューポートの位置はVisibleRangeの制約を満たした状態になっているので
+					//改めてVisibleRangeに収まるような計算をする必要はない。
+					//また、Viewの（ビューポートの）移動はLayerのスクロールとして実装しているが
+					//ビューは複数存在する可能性があり、かつインスタンスごとにビューポートの位置は異なることがあるので
+					//レイヤー自体のscrollX/Yは使用せず、viewportの値を使用する。スケールについても同様。
+					var scrollX = view._viewport.worldX;
+					var scrollY = view._viewport.worldY;
+
+					switch (this.UIDragScreenScrollDirection) {
+					case ScrollDirection.XY:
+						break;
+					case ScrollDirection.X:
+						scrollY = 0;
+						break;
+					case ScrollDirection.Y:
+						scrollX = 0;
+						break;
+					case ScrollDirection.NONE:
+					default:
+						scrollX = 0;
+						scrollY = 0;
+						break;
+					}
+
+					//ビューごとにスケールが異なる可能性があるので、レイヤーの設定値ではなく
+					//ビューのスケール値を使用する
+					//注：現在の実装では、スケールはすべてのビューで必ず同一。将来的な拡張に備えている。
+					var viewScale = view.getScale();
+
+					var scaleXStr = this.isUnscaledRendering ? '1'
+							: getNormalizedValueString(viewScale.x);
+					var scaleYStr = this.isUnscaledRendering ? '1'
+							: getNormalizedValueString(viewScale.y);
+
+					//スクロール量
+					var sx, sy;
+
+					//translate()をする方向はスクロール量の方向と逆なので、マイナス符号をつける
+					if (this.isUnscaledRendering) {
+						//Unscaled描画レイヤーの場合、scale()はかけないので
+						//他のレイヤーと原点が一致するようにtranslate量に対してのみscaleをかける
+						sx = -scrollX * viewScale.x;
+						sy = -scrollY * viewScale.y;
+					} else {
+						sx = -scrollX;
+						sy = -scrollY;
+					}
+
+					var tx = getNormalizedValueString(sx);
+					var ty = getNormalizedValueString(sy);
+
+					if (this._isOnSvgLayer) {
+						//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
+						//その<g>にtransformを設定する。
+						var transformStr = formatString('scale({0},{1}) translate({2},{3})',
+								scaleXStr, scaleYStr, tx, ty);
+						element.firstChild.setAttribute('transform', transformStr);
+					} else {
+						element.style.transform = formatString(
+								'scale({0},{1}) translate({2}px,{3}px)', scaleXStr, scaleYStr, tx,
+								ty);
+					}
 				},
 
 				/**
@@ -9421,12 +9905,58 @@
 						var du = children[i];
 						du._onAddedToStage(this._rootStage, this._belongingLayer);
 					}
-				}
+				},
+
+				/**
+				 * レイヤーでは、DUContainerのsetDirty()を再びオーバーライドし、子供へのDirtyの通知を行わないようにする。
+				 * ただし、スクロール位置の更新のため、親（Space）への通知は行う。
+				 *
+				 * @override
+				 * @param reasons
+				 */
+				_setDirty: function(reasons) {
+					super_._setDirty.call(this, reasons);
+				},
 			}
 		};
 		return desc;
 	});
 
+	var OverlayLayer = Layer.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.internal.OverlayLayer',
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.OverlayLayer
+				 */
+				constructor: function OverlayLayer(id, stage, type, isUnscaledRendering) {
+					super_.constructor.call(this, id, stage, type, isUnscaledRendering);
+				},
+
+				__renderDOM: function(view) {
+					var rootElement = super_.__renderDOM.call(this, view);
+
+					if (this.type === 'svg') {
+						SvgUtil.setAttributes(rootElement, {
+							overflow: 'visible',
+							'pointer-events': 'none'
+						});
+					} else {
+						//divレイヤー
+						$(rootElement).css({
+							'pointer-events': 'none'
+						});
+					}
+
+					rootElement.setAttribute('data-h5-dyn-stage-role', 'overlayLayer'); //for debugging
+
+					return rootElement;
+				}
+			}
+		};
+		return desc;
+	});
 
 	var SingleLayerPlane = EventDispatcher.extend(function(super_) {
 		var desc = {
@@ -9666,7 +10196,6 @@
 			return ret;
 		}
 
-
 		/**
 		 * 選択可能な(isSelectableがtrueな)全てのBasicDUを返す
 		 *
@@ -9783,9 +10312,6 @@
 					if (idx === -1) {
 						throw new Error('指定されたレイヤーを削除できませんでした。このレイヤーはこの空間に属していません。');
 					}
-
-					//TODO レイヤーを外したときにStageViewのリスナーを削除する
-					//TODO defaultLayerが外されたときの対応
 
 					//TODO Layer配下のDUをMapから削除
 					this._idDUMap['delete'](layer);
@@ -9937,6 +10463,83 @@
 		return desc;
 	});
 
+	var OverlayDisplayUnitSpace = DisplayUnitSpace.extend(function(super_) {
+		//内部オーバーレイレイヤーのID。
+		var OVERLAY_DIV_LAYER_ID = '__view_ov_d__';
+		var OVERLAY_SVG_LAYER_ID = '__view_ov_s__';
+		var OVERLAY_DIV_UNSCALED_LAYER_ID = '__view_ov_d_us__';
+		var OVERLAY_SVG_UNSCALED_LAYER_ID = '__view_ov_s_us__';
+
+		var desc = {
+			name: 'h5.ui.components.stage.internal.OverlayDisplayUnitSpace',
+
+			field: {
+				_ovDivLayer: null,
+				_ovSvgLayer: null,
+				_ovDivUnscaledLayer: null,
+				_ovSvgUnscaledLayer: null,
+				_mapper: null
+			},
+
+			accessor: {
+				ovDivLayer: {
+					get: function() {
+						return this._ovDivLayer;
+					}
+				},
+				ovSvgLayer: {
+					get: function() {
+						return this._ovSvgLayer;
+					}
+				},
+				ovDivUnscaledLayer: {
+					get: function() {
+						return this._ovDivUnscaledLayer;
+					}
+				},
+				ovSvgUnscaledLayer: {
+					get: function() {
+						return this._ovSvgUnscaledLayer;
+					}
+				},
+				mapper: {
+					get: function() {
+						return this._mapper;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.OverlayDisplayUnitSpace
+				 */
+				constructor: function OverlayDisplayUnitSpace(stage) {
+					super_.constructor.call(this);
+
+					var divLayer = OverlayLayer.create(OVERLAY_DIV_LAYER_ID, stage, 'div', false);
+					var svgLayer = OverlayLayer.create(OVERLAY_SVG_LAYER_ID, stage, 'svg', false);
+					var unscaledDivLayer = OverlayLayer.create(OVERLAY_DIV_UNSCALED_LAYER_ID,
+							stage, 'div', true);
+					var unscaledSvgLayer = OverlayLayer.create(OVERLAY_SVG_UNSCALED_LAYER_ID,
+							stage, 'svg', true);
+
+					this.addLayer(divLayer);
+					this.addLayer(svgLayer);
+					this.addLayer(unscaledDivLayer);
+					this.addLayer(unscaledSvgLayer);
+
+					this._ovDivLayer = divLayer;
+					this._ovSvgLayer = svgLayer;
+					this._ovDivUnscaledLayer = unscaledDivLayer;
+					this._ovSvgUnscaledLayer = unscaledSvgLayer;
+
+					this._mapper = OverlayMapper.create(this);
+				}
+			}
+		};
+		return desc;
+	});
+
 })(jQuery);
 
 (function($) {
@@ -9975,6 +10578,12 @@
 	var NineSlicePosition = classManager.getClass('h5.ui.components.stage.NineSlicePosition');
 	var BorderedNineSlicePosition = classManager
 			.getClass('h5.ui.components.stage.BorderedNineSlicePosition');
+
+	var OverlayDisplayUnitSpace = classManager
+			.getClass('h5.ui.components.stage.internal.OverlayDisplayUnitSpace');
+
+	var SVGRectDisplayUnit = classManager
+			.getClass('h5.ui.components.stage.internal.SVGRectDisplayUnit');
 
 	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
@@ -10973,28 +11582,7 @@
 				var DU_POSITION_BEYOND_RIGHT = 3;
 				var DU_POSITION_BEYOND_BOTTOM = 4;
 
-				var formatString = h5.u.str.format;
-
-				var FRACTION_PRECISION = 10;
-
-				//小数表現を正規化して小数文字列を返す
-				function getNormalizedValueString(value) {
-					var intPart = Math.floor(value);
-					if (value === intPart) {
-						//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
-						return '' + intPart;
-					}
-					var str = value.toString();
-					var dotIdx = str.indexOf('.');
-					if (dotIdx === -1) {
-						return '' + intPart;
-					}
-					var decstr = str.slice(dotIdx + 1);
-					var len = decstr.length > FRACTION_PRECISION ? FRACTION_PRECISION
-							: decstr.length;
-					var ret = '' + intPart + '.' + decstr.slice(0, len);
-					return ret;
-				}
+				var arrayPush = Array.prototype.push;
 
 				var desc = {
 					name: 'h5.ui.components.stage.StageView',
@@ -11009,11 +11597,6 @@
 
 						_rootElement: null,
 
-						_foremostSvg: null,
-						_foremostSvgGroup: null,
-
-						_foremostDiv: null,
-
 						_viewport: null,
 
 						_viewportReadOnly: null,
@@ -11022,8 +11605,6 @@
 						 * 実際にDOMを描画する範囲
 						 */
 						_renderRect: null,
-
-						_isUpdateTransformReserved: null,
 
 						_scaleRangeX: null,
 						_scaleRangeY: null,
@@ -11037,8 +11618,6 @@
 						_duRemoveListener: null,
 						_duDirtyListener: null,
 
-						_dragTargetDUInfoMap: null,
-
 						_dragSelectOverlayRect: null,
 
 						_domManager: null,
@@ -11047,9 +11626,12 @@
 
 						_duDirtyReasonMap: null,
 
-						_isUpdateLayerScrollPositionRequired: null,
+						_isInitialized: null,
 
-						_inInitialized: null
+						_overlaySpace: null,
+
+						_isUpdateLayerTransformRequested: null,
+						_isUpdateLayerScaleRequested: null
 					},
 
 					accessor: {
@@ -11156,9 +11738,10 @@
 							this._x = 0;
 							this._y = 0;
 
-							this._inInitialized = false;
+							this._isInitialized = false;
 
-							this._isUpdateLayerScrollPositionRequired = true;
+							this._isUpdateLayerTransformRequested = false;
+							this._isUpdateLayerScaleRequested = false;
 
 							this._domManager = DOMManager.create(this);
 
@@ -11167,8 +11750,6 @@
 							this._duRenderStandbyMap = new Map();
 
 							this._layerDefsMap = new Map();
-
-							this._isUpdateTransformReserved = false;
 
 							this._scaleRangeX = {
 								min: ABSOLUTE_SCALE_MIN,
@@ -11184,6 +11765,28 @@
 							this._viewport = viewport;
 
 							this._coordinateConverter = CoordinateConverter.create(this._viewport);
+
+							var overlaySpace = OverlayDisplayUnitSpace.create(stage);
+							this._overlaySpace = overlaySpace;
+
+							//init()の中で、stageのspaceにもこれらのリスナーを登録する
+							var that = this;
+							this._duAddListener = function(event) {
+								that._onDUAdd(event);
+							};
+							this._duRemoveListener = function(event) {
+								that._onDURemove(event);
+							};
+							this._duDirtyListener = function(event) {
+								that._onDUDirty(event);
+							};
+
+							//オーバーレイレイヤー用のDU空間の変更検知を開始
+							overlaySpace.addEventListener('displayUnitAdd', this._duAddListener);
+							overlaySpace.addEventListener('displayUnitRemove',
+									this._duRemoveListener);
+							overlaySpace
+									.addEventListener('displayUnitDirty', this._duDirtyListener);
 
 							this._addToStage();
 						},
@@ -11204,105 +11807,35 @@
 								left: this._x
 							});
 							this._rootElement = $root[0];
+
 							this._stage.rootElement.appendChild(this._rootElement);
 						},
 
-						_initHiddenForemostRootElement: function() {
-							this._initForemostSvg();
-							this._initForemostDiv();
-						},
-
-						/**
-						 * @private
-						 */
-						_initForemostSvg: function() {
-							var foremostSvg = SvgUtil.createElement('svg');
-							foremostSvg.setAttribute('data-h5-dyn-stage-role', 'foremostSvg'); //TODO for debugging
-
-							//レイヤーはgをtransformしてスクロールを実現するので
-							//overflowはvisibleである必要がある
-							foremostSvg.style.overflow = "visible";
-
-							//rootGは<g>要素。transformを一括してかけるため、
-							//子要素は全てこの<g>の下に追加する。
-							var foremostG = SvgUtil.createElement('g');
-							foremostSvg.appendChild(foremostG);
-
-							//SVGのwidth, heightはSVGAttirubute
-							//Chromeの場合overflow:visibleにしてもサイズを0x0にすると
-							//描画されなくなるため1x1とする。
-							$(foremostSvg).css({
-								position: 'absolute',
-								margin: 0,
-								padding: 0,
-								width: 1,
-								height: 1
-							});
-
-							SvgUtil.setAttributes(foremostSvg, {
-								overflow: 'visible',
-								'pointer-events': 'none'
-							});
-
-							this._foremostSvg = foremostSvg;
-							this._foremostSvgGroup = foremostG;
-							this._rootElement.appendChild(foremostSvg);
-						},
-
-						_initForemostDiv: function() {
-							var foremostDiv = document.createElement('div');
-							foremostDiv.setAttribute('data-h5-dyn-stage-role', 'foremostDiv'); //TODO for debugging
-
-							//SVGのwidth, heightはSVGAttirubute
-							//Chromeの場合overflow:visibleにしてもサイズを0x0にすると
-							//描画されなくなるため1x1とする。
-							$(foremostDiv).css({
-								overflow: 'visible',
-								position: 'absolute',
-								margin: 0,
-								padding: 0
-							//								width: 1,
-							//								height: 1
-							});
-
-							this._foremostDiv = foremostDiv;
-							this._rootElement.appendChild(foremostDiv);
-						},
-
 						init: function() {
-							if (this._inInitialized) {
+							if (this._isInitialized) {
 								return;
 							}
-							this._inInitialized = true;
+							this._isInitialized = true;
 
-							$(this._rootElement).css({
-								left: this._x,
-								top: this._y,
-								width: this._width,
-								height: this._height
-							});
-
-							var that = this;
-							this._duAddListener = function(event) {
-								that._onDUAdd(event);
-							};
-							this._duRemoveListener = function(event) {
-								that._onDURemove(event);
-							};
-							this._duDirtyListener = function(event) {
-								that._onDUDirty(event);
-							};
-
+							//ユーザーDU空間の変更検知を開始
 							var space = this._stage.space;
 							space.addEventListener('displayUnitAdd', this._duAddListener);
 							space.addEventListener('displayUnitRemove', this._duRemoveListener);
 							space.addEventListener('displayUnitDirty', this._duDirtyListener);
 
-							var layers = space.layers;
+							//space.layersを直接変更しないようにレイヤー配列をクローンする
+							var layers = space.layers.slice(0);
+
+							//オーバーレイレイヤーはユーザーレイヤーの後ろにつける
+							//これにより、オーバーレイレイヤーがDOMの重ね順的に「手前」になる
+							arrayPush.apply(layers, this._overlaySpace.layers);
+
+							var that = this;
+
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 
-								var layerRootElement = layer.__createRootElement(this);
+								var layerRootElement = layer.__renderDOM(this);
 
 								//レイヤーと対応する要素をDOMマネージャに登録
 								this._domManager.add(layer, layerRootElement, true);
@@ -11315,64 +11848,55 @@
 								layer.getDisplayUnitAll().forEach(function(du) {
 									that._duRenderStandbyMap.set(du, du);
 								});
-								this.update();
 
 								//先にaddしたレイヤーの方が手前に来るようにする
-								//layers配列的にはindexが若い＝手前、DOM的には後の子になるようにする
+								//layers配列的にはindexが若い＝手前、DOM的には後の子になる
 								this._rootElement.appendChild(layerRootElement);
 							}
 
-							this._initHiddenForemostRootElement();
-
-							//ビューポートが既に移動している状態でinitされた場合に備え
-							//ここでレイヤーの位置をアップデート予約しておく（実際の更新はdoUpdate()のタイミングで行われる）
+							//ビューポートが既に移動している状態でinitされる場合もあるので、レイヤーのスクロール位置をアップデート
 							this._updateLayerScrollPosition();
+
+							//描画更新を予約
+							this.update();
 						},
 
 						/**
 						 * @private
 						 */
 						__onSelectDUStart: function(dragSelectStartPos, overlayClassName) {
-							var rect = SvgUtil.createElement('rect');
-							this._dragSelectOverlayRect = rect;
+							var regionRectDU = SVGRectDisplayUnit.create(null, overlayClassName);
+							regionRectDU.x = dragSelectStartPos.x;
+							regionRectDU.y = dragSelectStartPos.y;
+							regionRectDU.width = 0;
+							regionRectDU.height = 0;
+							regionRectDU.renderPriority = RenderPriority.IMMEDIATE;
 
-							rect.className.baseVal = overlayClassName;
-							SvgUtil.setAttributes(rect, {
-								x: dragSelectStartPos.x,
-								y: dragSelectStartPos.y,
-								width: 0,
-								height: 0,
-								'pointer-events': 'none'
-							});
+							this._overlaySpace.ovSvgLayer.addDisplayUnit(regionRectDU);
 
-							this._foremostSvgGroup.appendChild(rect);
+							this._dragSelectOverlayRect = regionRectDU;
 						},
 
 						/**
 						 * @private
 						 */
 						__onSelectDUMove: function(worldPos, worldWidth, worldHeight) {
-							SvgUtil.setAttributes(this._dragSelectOverlayRect, {
-								x: worldPos.x,
-								y: worldPos.y,
-								width: worldWidth,
-								height: worldHeight
-							});
+							this._dragSelectOverlayRect.setLayout(worldPos.x, worldPos.y,
+									worldWidth, worldHeight);
 						},
 
 						/**
 						 * @private
 						 */
 						__onSelectDUEnd: function() {
-							$(this._dragSelectOverlayRect).remove();
+							this._dragSelectOverlayRect.remove();
+							this._dragSelectOverlayRect = null;
 						},
 
 						/**
 						 * @private
 						 */
 						__onDragDUStart: function(dragSession) {
-							this._dragTargetDUInfoMap = new Map();
-
 							var that = this;
 
 							dragSession._onStageTargets
@@ -11384,15 +11908,16 @@
 											du._updateActualDisplayStyle(originalDOM);
 										}
 
+										//ドラッグの場合は、代表DU以外は非表示にする。リサイズ時は代表でないDUも表示(foreレイヤーにコピー)する
+										//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
 										if (DragSession.isClassOf(dragSession)
 												&& ProxyDisplayUnit.isClassOf(du)
 												&& !du._isRepresentative) {
-											//ドラッグの場合は、代表DU以外は非表示にする。リサイズ時は代表でないDUも表示(foreレイヤーにコピー)する
-											//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
 											return;
 										}
 
-										that._addTemporaryForemostClone(du);
+										//ソースDUと位置・サイズが同期したオーバーレイDUを作成
+										that._overlaySpace.mapper.add(du);
 									});
 						},
 
@@ -11409,20 +11934,21 @@
 						__onDragDUDrop: function(dragSession) {
 							var that = this;
 
-							//							this._dragTargetDUInfoMap.forEach(function(element, du) {
-
 							dragSession._onStageTargets.forEach(function(du) {
 								var originalDOM = that._domManager.getElement(du);
 								if (originalDOM) {
 									du._updateActualDisplayStyle(originalDOM);
 								}
+
+								//ProxyDUのDnDの場合、1つのソースDUに対して複数のProxyDUが存在する場合があり、
+								//onStageTargetsにはすべてのProxyDUが含まれる。
+								//一方、onDragDUStartにおいて、DUドラッグ時はrepresentativeなDU以外は
+								//オーバーレイを置かないようにしているので、
+								//代表DU以外のProxyDUに対してはマッピングが存在しない。
+								//そのため、remove()は空振りする可能性がある。
+								//mapper.remove()は、マッピングが存在しない場合はエラーを起こさず、何もせずに終了する。
+								that._overlaySpace.mapper.remove(du);
 							});
-
-							this._dragTargetDUInfoMap = null;
-
-							//隠しフォアレイヤーのDOMを削除する
-							$(this._foremostSvgGroup).empty();
-							$(this._foremostDiv).empty();
 
 							this.update();
 						},
@@ -11442,66 +11968,18 @@
 						//__onDragDUReleaseに移譲しているのでここでは何もしない
 						},
 
-						/**
-						 * @private
-						 * @param du クローン元のDisplayUnit。OnStageである必要がある
-						 */
-						_addTemporaryForemostClone: function(du) {
-							var element = du.__renderDOM(this);
-							var $element = $(element);
-							//isVisible=falseをすることでDOMにdisplay:noneがつくので
-							//強制的に解除
-							$element.css({
-								display: ''
-							});
-
-							//DUに対応する、ドラッグ中のみ表示する表層コピーエレメントをマップに保存
-							this._dragTargetDUInfoMap.set(du, element);
-
-							var gpos = du.getWorldGlobalPosition();
-
-							if (du._isOnSvgLayer) {
-								//SVGレイヤーの場合はforemostSvgに追加
-								SvgUtil.setAttributes(element, {
-									x: gpos.x,
-									y: gpos.y,
-									width: du.width,
-									height: du.height,
-									'pointer-events': 'none'
-								});
-								this._foremostSvgGroup.appendChild(element);
-							} else {
-								//DIVレイヤーの場合はforemostDivに追加
-								$element.css({
-									left: gpos.x,
-									top: gpos.y,
-									width: du.width,
-									height: du.height,
-									'pointer-events': 'none'
-								});
-
-								this._foremostDiv.appendChild(element);
-							}
-						},
-
-						_removeTemporaryForemostClone: function(du) {
-							if (!this._dragTargetDUInfoMap) {
-								//ドラッグorリサイズ中でない場合は何もしない
-								return;
-							}
-
-							var clonedElement = this._dragTargetDUInfoMap.get(du);
-							if (clonedElement) {
-								$(clonedElement).remove();
-								this._dragTargetDUInfoMap['delete'](du);
-							}
-						},
-
 						dispose: function() {
 							var space = this._stage.space;
 							space.removeEventListener('displayUnitAdd', this._duAddListener);
 							space.removeEventListener('displayUnitRemove', this._duRemoveListener);
 							space.removeEventListener('displayUnitDirty', this._duDirtyListener);
+
+							this._overlaySpace.removeEventListener('displayUnitAdd',
+									this._duAddListener);
+							this._overlaySpace.removeEventListener('displayUnitRemove',
+									this._duRemoveListener);
+							this._overlaySpace.removeEventListener('displayUnitDirty',
+									this._duDirtyListener);
 
 							this._layerDefsMap.clear();
 
@@ -11605,13 +12083,6 @@
 
 							this._viewport.scrollTo(actualDispX, actualDispY);
 
-							if (this._inInitialized) {
-								//初期化されていない状態では
-								//実際のレイヤーは生成されていないので
-								//移動処理をしない
-								this._updateLayerScrollPosition();
-							}
-
 							var newPos = DisplayPoint.create(actualDispX, actualDispY);
 
 							var scrPosChange = {
@@ -11635,6 +12106,9 @@
 							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
 							this.dispatchEvent(event);
 
+							//レイヤーのスクロール位置をアップデート予約する
+							this._updateLayerScrollPosition();
+
 							return actualDiff;
 						},
 
@@ -11655,6 +12129,7 @@
 
 							var dx = this._viewport.displayX + displayDx;
 							var dy = this._viewport.displayY + displayDy;
+
 							var actualDiff = this._scrollTo(dx, dy);
 							return actualDiff;
 						},
@@ -11749,6 +12224,9 @@
 							this._viewport.setScale(actualScaleX, actualScaleY, scaleCenter.x,
 									scaleCenter.y);
 
+							//レイヤーの拡縮をアップデート予約する（実際に変更されるのは_updateExec()のタイミング）
+							this._updateLayerScale();
+
 							var cconv = this.coordinateConverter;
 
 							var visibleRangeX = this.getVisibleRangeX();
@@ -11778,9 +12256,10 @@
 							if (oldScrollPos.x === newScrollPos.x
 									&& oldScrollPos.y === newScrollPos.y) {
 								isScrollPoisitionChanged = false;
+							} else {
+								//X,Y少なくともどちらかのスクロール位置が変わったので更新する
+								this._updateLayerScrollPosition();
 							}
-
-							this._updateLayerScrollPosition();
 
 							var scrPosChange = {
 								oldValue: oldScrollPos,
@@ -11802,6 +12281,47 @@
 
 							var event = SightChangeEvent.create(this, scrPosChange, scaleChange);
 							this.dispatchEvent(event);
+						},
+
+						/**
+						 * Viewのスケール変更に伴うDOM更新を予約する。また、UnscaledRenderingが有効なレイヤーについては、
+						 * 子孫要素に対して内部用スケール変更Dirty通知を行う。一回の描画フレーム内で一度だけ行えばよいので、
+						 * (同じ描画フレーム内で)二度以上呼ばれた場合は何もしない。
+						 *
+						 * @private
+						 * @param scaleX
+						 * @param scaleY
+						 */
+						_updateLayerScale: function() {
+							if (this._isUpdateLayerScaleRequested) {
+								return;
+							}
+							//_updateLayerTransform()の中でfalseにリセットされる
+							this._isUpdateLayerScaleRequested = true;
+
+							//space.layersを直接変更してはいけないのでクローンする
+							var layers = this._stage.space.layers.slice(0);
+
+							//オーバーレイレイヤーも対象にする
+							arrayPush.apply(layers, this._overlaySpace.layers);
+
+							for (var i = 0, len = layers.length; i < len; i++) {
+								var layer = layers[i];
+
+								if (layer.isUnscaledRendering) {
+									//unscaledレイヤーについては、子供に対してスケール変更（内部イベント）を通知する
+									//unscaledレイヤーに限定しているのは、dirtyにするDUを最小限にするため（パフォーマンスのため）
+									var children = layer.getDisplayUnitAll();
+									for (var j = 0, len = children.length; j < len; j++) {
+										children[j].__onParentDirtyNotify(layer,
+												REASON_INTERNAL_LAYER_SCALE_CHANGE);
+									}
+								}
+							}
+
+							//レイヤーのDOM更新を予約
+							this._isUpdateLayerTransformRequested = true;
+							this.update();
 						},
 
 						getScaleRangeX: function() {
@@ -11945,16 +12465,13 @@
 						 * @private
 						 */
 						_updateLayerScrollPosition: function() {
-							this._isUpdateLayerScrollPositionRequired = true;
-
-							var layers = this._stage.space.layers;
-							for (var i = 0, len = layers.length; i < len; i++) {
-								var layer = layers[i];
-								if (layer.isUnscaledRendering) {
-									//unscaledレイヤーの場合のみsetDirtyにする(子へのdirtyの伝搬を最小限にするため)
-									layer._setDirty(REASON_INTERNAL_LAYER_SCALE_CHANGE);
-								}
+							if (this._isUpdateLayerTransformRequested) {
+								return;
 							}
+
+							//実際のレイヤーDOMのアップデートはupdateExecのタイミングで行う。
+							//ここでは、アップデート予約フラグをセットしておく。
+							this._isUpdateLayerTransformRequested = true;
 
 							this.update();
 						},
@@ -11962,46 +12479,27 @@
 						/**
 						 * @private
 						 */
-						_doUpdateLayerScrollPosition: function() {
-							var layers = this._stage.space.layers;
+						_updateLayerTransform: function() {
+							if (!this._isUpdateLayerTransformRequested) {
+								return;
+							}
+							this._isUpdateLayerTransformRequested = false;
+							this._isUpdateLayerScaleRequested = false;
+
+							//space.layersを直接変更してはいけないのでクローンする
+							var layers = this._stage.space.layers.slice(0);
+							//オーバーレイレイヤーも同様に動かす
+							arrayPush.apply(layers, this._overlaySpace.layers);
+
+							var reason = UpdateReasonSet.create([
+									UpdateReasons.SCROLL_POSITION_CHANGE,
+									UpdateReasons.SCALE_CHANGE]);
 
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
-
-								//ビューポートの位置はVisibleRangeの制約を満たした状態になっているので
-								//改めてVisibleRangeに収まるような計算をする必要はない。
-								var scrollX = this._viewport.worldX;
-								var scrollY = this._viewport.worldY;
-
-								switch (layer.UIDragScreenScrollDirection) {
-								case SCROLL_DIRECTION_XY:
-									break;
-								case SCROLL_DIRECTION_X:
-									scrollY = 0;
-									break;
-								case SCROLL_DIRECTION_Y:
-									scrollX = 0;
-									break;
-								case SCROLL_DIRECTION_NONE:
-								default:
-									scrollX = 0;
-									scrollY = 0;
-									break;
-								}
-
-								var dom = this._domManager.getElement(layer);
-
-								//scrollXYはビューポートの位置なので、
-								//レイヤーのtranslateにセットする値としては符号を逆にする
-								this._updateTransform(dom, -scrollX, -scrollY, layer._isOnSvgLayer,
-										layer.isUnscaledRendering);
+								var layerRootElement = this._domManager.getElement(layer);
+								layer.__updateDOM(this, layerRootElement, reason);
 							}
-
-							//フォアレイヤーのスクロール位置も移動させる
-							this._updateTransform(this._foremostSvg, -this._viewport.worldX,
-									-this._viewport.worldY, true, false);
-							this._updateTransform(this._foremostDiv, -this._viewport.worldX,
-									-this._viewport.worldY, false, false);
 						},
 
 						/*
@@ -12170,10 +12668,9 @@
 						_doUpdate: function(renderRect) {
 							var that = this;
 
-							if (this._isUpdateLayerScrollPositionRequired) {
-								this._isUpdateLayerScrollPositionRequired = false;
-								this._doUpdateLayerScrollPosition();
-							}
+							//レイヤーのスケール・スクロール位置はビューごとに異なるため
+							//ビューインスタンスごとに（必要に応じて）独自にupdateDOMを行う
+							this._updateLayerTransform();
 
 							var dirtyMap = this._duDirtyReasonMap;
 
@@ -12195,9 +12692,6 @@
 								if (!that._shouldExit(du)) {
 									return;
 								}
-
-								//console.log('exit! id=' + du.id + ', class='
-								//		+ du.getClass().getFullName());
 
 								//DOMが不要と判断されたので、削除して待機マップにDUを再び入れる
 								that._removeDOMForDU(du, du.parentDisplayUnit);
@@ -12269,53 +12763,6 @@
 						},
 
 						/**
-						 * レイヤーではtranslate量にDUのx,yの値を用いる。
-						 *
-						 * @private
-						 * @param element transformをかけるDOM要素
-						 * @param scrollX スクロール量X
-						 * @param scrollY スクロール量Y
-						 * @param isSVG elementがSVG要素の場合true, DIV要素の場合false
-						 * @param isUnscaled
-						 *            このレイヤーがtransformによるスケーリングを行うかどうか。falseの場合はscaleは(1,1)にする
-						 */
-						_updateTransform: function(element, scrollX, scrollY, isSVG, isUnscaled) {
-							var scaleXStr = isUnscaled ? '1'
-									: getNormalizedValueString(this._viewport.scaleX);
-							var scaleYStr = isUnscaled ? '1'
-									: getNormalizedValueString(this._viewport.scaleY);
-
-							//スクロール量
-							var sx, sy;
-
-							if (isUnscaled) {
-								//Unscaled描画レイヤーの場合、scale()はかけないので
-								//他のレイヤーと原点が一致するようにtranslate量に対してのみscaleをかける
-								sx = scrollX * this._viewport.scaleX;
-								sy = scrollY * this._viewport.scaleY;
-							} else {
-								sx = scrollX;
-								sy = scrollY;
-							}
-
-							var tx = getNormalizedValueString(sx);
-							var ty = getNormalizedValueString(sy);
-
-							if (isSVG) {
-								//SVGレイヤーの場合はルート要素の下に<g>を一つ持ち、
-								//その<g>にtransformを設定する。
-								var transformStr = formatString(
-										'scale({0},{1}) translate({2},{3})', scaleXStr, scaleYStr,
-										tx, ty);
-								element.firstChild.setAttribute('transform', transformStr);
-							} else {
-								element.style.transform = formatString(
-										'scale({0},{1}) translate({2}px,{3}px)', scaleXStr,
-										scaleYStr, tx, ty);
-							}
-						},
-
-						/**
 						 * @private
 						 * @param du
 						 */
@@ -12374,16 +12821,22 @@
 							if (du.isResizing) {
 								//リサイズ中は、ソースDUの大きさに応じて動的にProxyDUが追加・削除される場合がある。
 								//従い、DUがリサイズ中の時はそのProxyDUに対してもフォアレイヤーのクローンを追加する。
-								this._addTemporaryForemostClone(du);
+								this._overlaySpace.mapper.add(du);
 							}
 
 							//待機リストに入っていたら削除
 							this._duRenderStandbyMap['delete'](du);
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @returns {Boolean}
+						 */
 						_shouldExit: function(du) {
-							if (du.renderPriority === RenderPriority.ALWAYS) {
-								//du.renderPriority = ALWAYSなら自動Exitしない
+							if (du.renderPriority === RenderPriority.ALWAYS
+									|| du.renderPriority === RenderPriority.IMMEDIATE) {
+								//priorityがALWAYSかIMMEDIATEなら自動Exitしない
 								return false;
 							}
 
@@ -12465,6 +12918,14 @@
 							if (du.isVisible === false) {
 								//ユーザーが明示的にfalseにしているなら描画しない
 								return false;
+							}
+
+							if (du.renderPriority === RenderPriority.IMMEDIATE) {
+								//IMMEDIATEの場合は即時に必ず描画対象にする。
+								//なお、ALWAYSの場合は、初めて描画範囲に入ったときに描画し、
+								//その後shouldExit()で常にfalseを返すことでDOMが削除されないようにしている。
+								//従って、ALWAYSの場合は初回描画判定に関しては通常プライオリティのときと同じ判定を行う。
+								return true;
 							}
 
 							//TODO このコメントは古いと思われる。確認後削除
@@ -12596,16 +13057,24 @@
 						 * @param event
 						 */
 						_onDURemove: function(event) {
-							this._removeDOMForDU(event.displayUnit, event.parentDisplayUnit);
+							var removedDU = event.displayUnit;
 
-							this._removeTemporaryForemostClone(event.displayUnit);
+							this._removeDOMForDU(removedDU, event.parentDisplayUnit);
+
+							//削除されたDUに対応するオーバーレイDUがある場合は削除
+							this._overlaySpace.mapper.remove(removedDU);
 
 							//DU自体が削除された場合、待機リストからも削除
 							//(shouldExit()によりDOMのみ削除する場合は再び待機リストに入るので
 							//待機リストからの削除は_removeDOMForDU()ではなくここで行う)
-							this._duRenderStandbyMap['delete'](event.displayUnit);
+							this._duRenderStandbyMap['delete'](removedDU);
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @param parentDU
+						 */
 						_removeDOMForDU: function(du, parentDU) {
 							this._domManager.remove(du, parentDU);
 
@@ -12661,10 +13130,20 @@
 							this.update();
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @returns
+						 */
 						_getDOMContext: function(du) {
 							return this._domManager.getContext(du);
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @param context
+						 */
 						_setDOMContext: function(du, context) {
 							this._domManager.setContext(du, context);
 						}
