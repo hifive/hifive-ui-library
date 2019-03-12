@@ -18004,18 +18004,17 @@
 
 			if (!this._isDraggingStarted) {
 				this._beginDrag(context);
+
+				//このフラグは、clickイベントハンドラ(_processClick())の中で
+				//「ドラッグ操作直後のclickイベントかどうか」（＝そのclickイベントは無視すべきかどうか）を
+				//判断するためのフラグである。
+				//ただし、h5trackendは一度もマウスが動かなかった場合でも発火するため、
+				//trackendのタイミングでtrueにしてしまうと、常にフラグがtrueになってしまう。
+				//そのため、一度以上実際にmoveが起きたこのタイミングでフラグをtrueにすることで
+				//実際ドラッグが行われた場合のみフラグがONになる。
 				this._isDraggingStarted = true;
 				return;
 			}
-
-			//このフラグは、clickイベントハンドラ(_processClick())の中で
-			//「ドラッグ操作直後のclickイベントかどうか」（＝そのclickイベントは無視すべきかどうか）を
-			//判断するためのフラグである。
-			//ただし、h5trackendは一度もマウスが動かなかった場合でも発火するため、
-			//trackendのタイミングでtrueにしてしまうと、常にフラグがtrueになってしまう。
-			//そのため、一度以上実際にmoveが起きたこのタイミングでフラグをtrueにすることで
-			//実際ドラッグが行われた場合のみフラグがONになる。
-			this._isDraggingStarted = true;
 
 			if (this._currentDragMode === DRAG_MODE_NONE) {
 				//_beginDrag()の結果ドラッグモードが決定するので、
