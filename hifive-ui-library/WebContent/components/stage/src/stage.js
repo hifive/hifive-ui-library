@@ -1464,8 +1464,6 @@
 									du.moveDisplayBy(dx, dy);
 								}
 							}
-
-							//this.stage._viewCollection.__onDragDUMove(this);
 						},
 
 						__onBegin: function(event) {
@@ -1490,7 +1488,7 @@
 							//ProxyDUがユーザーによって追加された場合に備えて正規化する
 							var normalizedTargets = this.stage
 									._getSourceNormalizedDisplayUnits(this.getTargets());
-							this._targets = normalizedTargets;
+							this.setTargets(normalizedTargets);
 
 							this.setCursor('default');
 
@@ -1503,14 +1501,16 @@
 
 							this._setDUDraggingFlag(true);
 
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
 							//強制的に元のDUを非表示にする
 							//ドラッグ時のライブモードがOVERLAYの場合は、元のDUは非表示にする。
 							//OVERLAY_AND_STAYなど他のモードの場合は強制非表示にはしない(DUのもともとのisVisibleに依存)
 							//TODO 他のライブモードへの対応、オーバーレイ時にソースDOMを使うよう改修した際はそれとの整合性
-							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY ? true
-									: false;
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
 
-							for (var i = 0, len = onStageTargets; i < len; i++) {
+							for (var i = 0, len = onStageTargets.length; i < len; i++) {
 								var du = onStageTargets[i];
 
 								if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
@@ -1534,13 +1534,11 @@
 											du.sourceDisplayUnit, forceRepresentativeDU);
 								}
 
-								//TODO DOMを触らなくて済むようにする /
-								//レイヤーに存在する元々のDUは非表示にする
-								//var originalDOM = this.stage._domManager.getElement(du);
-								//if (originalDOM) {
-								//	du._updateActualDisplayStyle(originalDOM);
-								//}
-								du._isForceHidden = isForceHidden;
+								//liveModeがOVERLAYの場合はレイヤーに存在する元々のDUは非表示にする
+								if (isForceHidden) {
+									du._isForceHidden = true;
+									du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+								}
 
 								//ドラッグの場合は、代表DU以外は非表示にする。リサイズ時は代表でないDUも表示(foreレイヤーにコピー)する
 								//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
@@ -1551,7 +1549,9 @@
 								//ソースDUと位置・サイズが同期したオーバーレイDUを作成
 								if (this.liveMode === DragLiveMode.OVERLAY
 										|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
-									this.stage._overlaySpace.mapper.add(du);
+									contentsViews.forEach(function(view) {
+										view._overlaySpace.mapper.add(du);
+									});
 								}
 							}
 
@@ -1687,13 +1687,34 @@
 								this._duDragBoundaryScrollTimerId = null;
 							}
 
-							if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
-									|| this.liveMode === DragLiveMode.STAY) {
-								//ドラッグ時のライブモードがSTAYの場合に設定していたソースDUの表示位置のオーバーライドを解除する
-								this._onStageTargets.forEach(function(du) {
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
+
+							var onStageTargets = this._onStageTargets;
+							for (var i = 0, len = onStageTargets.length; i < len; i++) {
+								var du = onStageTargets[i];
+
+								if (isForceHidden) {
+									du._isForceHidden = false;
+									du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+								}
+
+								if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+										|| this.liveMode === DragLiveMode.STAY) {
+									//ドラッグ時のライブモードがSTAYの場合に設定していたソースDUの表示位置のオーバーライドを解除する
 									du._viewPositionOverride = null;
-									du._setDirty(REASON_POSITION_CHANGE);
-								});
+									du._setDirtyInternal(REASON_POSITION_CHANGE);
+								}
+
+								if (this.liveMode === DragLiveMode.OVERLAY
+										|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
+									//オーバーレイDUを削除
+									contentsViews.forEach(function(view) {
+										view._overlaySpace.mapper.remove(du);
+									});
+								}
 							}
 
 							this._onStageTargets = null;
@@ -1924,6 +1945,11 @@
 
 							this._setResizingFlag(true);
 
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
+
 							var onStageTargets = this.stage._getOnStageNormalizedDisplayUnits(this
 									.getTargets());
 							this._onStageTargets = onStageTargets;
@@ -1945,6 +1971,27 @@
 									var plane = du.viewportContainer._plane;
 									plane._viewports[0].updateProxyRepresentative(
 											du.sourceDisplayUnit, forceRepresentativeDU);
+								}
+
+								if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+										|| this.liveMode === DragLiveMode.STAY) {
+									//ドラッグモードでSTAYの場合、ソースDUの描画位置をドラッグ開始時点の位置でオーバーライドする
+									//＝ドラッグ中、DUの描画位置は移動しない。
+									du._viewPositionOverride = WorldPoint.create(du.x, du.y);
+								}
+
+								//liveModeがOVERLAYの場合はレイヤーに存在する元々のDUは非表示にする
+								if (isForceHidden) {
+									du._isForceHidden = true;
+									du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+								}
+
+								//ソースDUと位置・サイズが同期したオーバーレイDUを作成
+								if (this.liveMode === DragLiveMode.OVERLAY
+										|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
+									contentsViews.forEach(function(view) {
+										view._overlaySpace.mapper.add(du);
+									});
 								}
 							}
 						},
@@ -2047,8 +2094,6 @@
 								var newRect = this._getCorrectedRect(du);
 								du.setLayoutRect(newRect);
 							}
-
-							//this._stage._viewCollection.__onResizeDUChange(this);
 						},
 
 						_getCorrectedRect: function(du) {
@@ -2277,6 +2322,37 @@
 									plane.updateAllViewports(targetDUs);
 								});
 							}
+
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
+
+							var onStageTargets = this._onStageTargets;
+							for (var i = 0, len = onStageTargets.length; i < len; i++) {
+								var du = onStageTargets[i];
+
+								if (isForceHidden) {
+									du._isForceHidden = false;
+									du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+								}
+
+								if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+										|| this.liveMode === DragLiveMode.STAY) {
+									//ドラッグ時のライブモードがSTAYの場合に設定していたソースDUの表示位置のオーバーライドを解除する
+									du._viewPositionOverride = null;
+									du._setDirtyInternal(REASON_POSITION_CHANGE);
+								}
+
+								if (this.liveMode === DragLiveMode.OVERLAY
+										|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
+									//オーバーレイDUを削除
+									contentsViews.forEach(function(view) {
+										view._overlaySpace.mapper.remove(du);
+									});
+								}
+							}
+
 
 							this._onStageTargets = null;
 
@@ -5579,8 +5655,6 @@
 
 						_isVisible: null,
 
-						_isSystemVisible: null,
-
 						_isForceHidden: null,
 
 						_belongingLayer: null,
@@ -5818,8 +5892,6 @@
 							this._worldGlobalPositionCache = null;
 
 							this._isVisible = true;
-
-							this._isSystemVisible = true;
 
 							this._isForceHidden = false;
 
@@ -6102,6 +6174,8 @@
 						},
 
 						/**
+						 * このDisplayUnitの状態が変更されたことを設定・通知します。
+						 *
 						 * @private
 						 */
 						_setDirty: function(reasons) {
@@ -6126,6 +6200,22 @@
 								reason._add(REASON_GLOBAL_POSITION_CHANGE);
 							}
 							this.dispatchEvent(event);
+						},
+
+						/**
+						 * このDisplayUnitの状態が変更されたことを設定・通知します。このメソッドはStage内部でのみ使用することを意図しています。
+						 *
+						 * @private
+						 * @param reasons
+						 */
+						_setDirtyInternal: function(reasons) {
+							this.__onDirtyInternal(this, reasons);
+						},
+
+						__onDirtyInternal: function(displayUnit, reasons) {
+							if (this._parentDU) {
+								this._parentDU.__onDirtyInternal(displayUnit, reasons);
+							}
 						},
 
 						/**
@@ -6161,8 +6251,8 @@
 						/**
 						 * @private
 						 */
-						_updateActualDisplayStyle: function(element) {
-							//MEMO: 個別要素にdisplay:noneを設定するよりも、
+						_updateActualDisplayStyle: function(element, view) {
+							//MEMO: 可視範囲外のDUについて、対応する要素にdisplay:noneを設定するよりも、
 							//表示非表示の制御を完全にブラウザに任せる（＝displayの制御をまったくしない）方が高速だった。
 							//（制御をしないようにすることで、displayの制御によるブラウザ自体のツリー計算や
 							//レンダリングが最適化されるのに加え、
@@ -6174,31 +6264,15 @@
 
 							var isElementDisplayVisible = window.getComputedStyle(element, '').display !== 'none';
 
-							//ドラッグ中など、元のDUを強制的にすることがある。
-							//（ドラッグ中の場合はViewCollectionがドラッグ対象とされたDUにたいしてこのisForceHiddenを設定する）
-							//ユーザーが設定したisVisibleを変更しないようにしている。
+							//ドラッグ中などisForceHiddenがtrueの場合は、DU.isVisibleの値に関わらず
+							//DUを強制的に非表示にする。
+							//ユーザーが設定したisVisibleを変更しないように、このような実装にしている。
 							var desiredVisible = this._isForceHidden ? false : this._isVisible;
 
 							if (isElementDisplayVisible !== desiredVisible) {
-								//現時点では、単純にユーザーによる表示制御だけを行う
+								//現在の表示状態と設定したい状態が異なる場合のみdisplayスタイルをセット
 								element.style.display = desiredVisible ? '' : 'none';
 							}
-
-							//forceHiddenがtrueの場合は必ずdipslay:noneにする
-							//							var desiredVisible = this._isForceHidden ? false : this._isVisible
-							//									&& this._isSystemVisible;
-
-							//							var isElementDisplayVisible = element.classList.contains('h5-stage-invisible-du');
-
-							//							if (desiredVisible !== isElementDisplayVisible) {
-							//								if(desiredVisible) {
-							//									element.classList.remove('h5-stage-invisible-du');
-							//}
-							//								else {
-							//									element.classList.add('h5-stage-invisible-du');
-							//}
-							//element.style.display = desiredVisible ? '' : 'none';
-							//							}
 						},
 
 						/**
@@ -6206,7 +6280,7 @@
 						 */
 						__updateDOM: function(stageView, element, reason) {
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
-								this._updateActualDisplayStyle(element);
+								this._updateActualDisplayStyle(element, stageView);
 							}
 
 							if (reason.isInitialRender || reason.isPositionChanged
@@ -6298,9 +6372,9 @@
 						 * @private
 						 * @param du
 						 */
-						__onDirtyNotify: function(du, reasons) {
+						__onDirtyNotify: function(displayUnit, reasons) {
 							if (this._parentDU) {
-								this._parentDU.__onDirtyNotify(du, reasons);
+								this._parentDU.__onDirtyNotify(displayUnit, reasons);
 							}
 						},
 
@@ -6377,17 +6451,6 @@
 
 						__onSpace: function(space) {
 							this._space = space;
-						},
-
-						/**
-						 * @private
-						 */
-						_setSystemVisible: function(value, element) {
-							this._isSystemVisible = value;
-
-							if (element) {
-								this._updateActualDisplayStyle(element);
-							}
 						},
 
 						__addLayoutHook: function(layoutHook) {
@@ -8432,7 +8495,7 @@
 						 * @param reason
 						 */
 						__updateDOM: function(view, line, reason) {
-							var isLogicallyVisible = this._isVisible && this._isSystemVisible;
+							var isLogicallyVisible = this._isVisible;
 
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
 								line.style.display = isLogicallyVisible ? '' : 'none';
@@ -8837,8 +8900,11 @@
 				/**
 				 * @memberOf h5.ui.components.stage.DisplayUnitDirtyEvent
 				 */
-				constructor: function DisplayUnitDirtyEvent() {
-					super_.constructor.call(this, 'displayUnitDirty');
+				constructor: function DisplayUnitDirtyEvent(_type) {
+					//内部通知用のdisplayUnitDirtyInternalイベントでも
+					//このクラスを使うため、typeを指定できるようにしている。通常はtype引数は不要。
+					var eventName = _type == null ? 'displayUnitDirty' : _type;
+					super_.constructor.call(this, eventName);
 				},
 
 				clone: function() {
@@ -10490,9 +10556,15 @@
 				 * @overrides
 				 * @param du
 				 */
-				__onDirtyNotify: function(du, reasons) {
+				__onDirtyNotify: function(displayUnit, reasons) {
 					if (this.space) {
-						this.space.__onDisplayUnitDirty(du, reasons);
+						this.space.__onDisplayUnitDirty(displayUnit, reasons);
+					}
+				},
+
+				__onDirtyInternal: function(displayUnit, reasons) {
+					if (this.space) {
+						this.space.__onDisplayUnitDirtyInternal(displayUnit, reasons);
 					}
 				},
 
@@ -10807,6 +10879,7 @@
 		var EVENT_DISPLAY_UNIT_ADD = 'displayUnitAdd';
 		var EVENT_DISPLAY_UNIT_REMOVE = 'displayUnitRemove';
 
+		var EVENT_DISPLAY_UNIT_DIRTY_INTERNAL = 'displayUnitDirtyInternal';
 
 		/**
 		 * コンテナを含む、全てのDUを返す
@@ -11093,6 +11166,16 @@
 					var ev = DisplayUnitCascadeRemovingEvent.create(srcDU, relatedDU);
 					var ret = this.dispatchEvent(ev);
 					return ret;
+				},
+
+				__onDisplayUnitDirtyInternal: function(displayUnit, reasons) {
+					var event = DisplayUnitDirtyEvent.create(EVENT_DISPLAY_UNIT_DIRTY_INTERNAL);
+					event.displayUnit = displayUnit;
+
+					var reason = UpdateReasonSet.create(reasons);
+					event.reason = reason;
+
+					this.dispatchEvent(event);
 				}
 			}
 		};
@@ -12551,6 +12634,7 @@
 						_duAddListener: null,
 						_duRemoveListener: null,
 						_duDirtyListener: null,
+						_duDirtyInternalListener: null,
 
 						_domManager: null,
 
@@ -12712,6 +12796,9 @@
 							this._duDirtyListener = function(event) {
 								that._onDUDirty(event);
 							};
+							this._duDirtyInternalListener = function(event) {
+								that._onDUDirtyInternal(event);
+							};
 
 							//オーバーレイレイヤー用のDU空間の変更検知を開始
 							overlaySpace.addEventListener('displayUnitAdd', this._duAddListener);
@@ -12754,6 +12841,8 @@
 							space.addEventListener('displayUnitAdd', this._duAddListener);
 							space.addEventListener('displayUnitRemove', this._duRemoveListener);
 							space.addEventListener('displayUnitDirty', this._duDirtyListener);
+							space.addEventListener('displayUnitDirtyInternal',
+									this._duDirtyInternalListener);
 
 							//space.layersを直接変更しないようにレイヤー配列をクローンする
 							var layers = space.layers.slice(0);
@@ -12793,71 +12882,13 @@
 							this.update();
 						},
 
-						/**
-						 * @private
-						 */
-						__onDragDUStart: function(dragSession) {
-							var that = this;
-
-							dragSession._onStageTargets
-									.forEach(function(du) {
-
-										//レイヤーに存在する元々のDUは非表示にする
-										var originalDOM = that._domManager.getElement(du);
-										if (originalDOM) {
-											du._updateActualDisplayStyle(originalDOM);
-										}
-
-										//ドラッグの場合は、代表DU以外は非表示にする。リサイズ時は代表でないDUも表示(foreレイヤーにコピー)する
-										//ProxyDUかつ代表DUでないDUは、ドラッグ中は表示しない
-										if (DUDragDropSession.isClassOf(dragSession)
-												&& ProxyDisplayUnit.isClassOf(du)
-												&& !du._isRepresentative) {
-											return;
-										}
-
-										//ソースDUと位置・サイズが同期したオーバーレイDUを作成
-										that._overlaySpace.mapper.add(du);
-									});
-						},
-
-						/**
-						 * @private
-						 */
-						__onDragDUMove: function(dragSession) {
-						//Moveの処理はdoUpdateの中で汎用に行うようになったため、ここでの移動処理は不要
-						},
-
-						/**
-						 * @private
-						 */
-						__onDragDUDrop: function(dragSession) {
-							var that = this;
-
-							dragSession._onStageTargets.forEach(function(du) {
-								var originalDOM = that._domManager.getElement(du);
-								if (originalDOM) {
-									du._updateActualDisplayStyle(originalDOM);
-								}
-
-								//ProxyDUのDnDの場合、1つのソースDUに対して複数のProxyDUが存在する場合があり、
-								//onStageTargetsにはすべてのProxyDUが含まれる。
-								//一方、onDragDUStartにおいて、DUドラッグ時はrepresentativeなDU以外は
-								//オーバーレイを置かないようにしているので、
-								//代表DU以外のProxyDUに対してはマッピングが存在しない。
-								//そのため、remove()は空振りする可能性がある。
-								//mapper.remove()は、マッピングが存在しない場合はエラーを起こさず、何もせずに終了する。
-								that._overlaySpace.mapper.remove(du);
-							});
-
-							this.update();
-						},
-
 						dispose: function() {
 							var space = this._stage.space;
 							space.removeEventListener('displayUnitAdd', this._duAddListener);
 							space.removeEventListener('displayUnitRemove', this._duRemoveListener);
 							space.removeEventListener('displayUnitDirty', this._duDirtyListener);
+							space.removeEventListener('displayUnitDirtyInternal',
+									this._duDirtyInternalListener);
 
 							this._overlaySpace.removeEventListener('displayUnitAdd',
 									this._duAddListener);
@@ -13923,6 +13954,33 @@
 							}
 
 							this.update();
+						},
+
+						/**
+						 * @private
+						 * @param event
+						 */
+						_onDUDirtyInternal: function(event) {
+							var du = event.displayUnit;
+							var dom = this._domManager.getElement(du);
+
+							if (!dom) {
+								//対応するDOMが存在しない場合は何もしない
+								return;
+							}
+
+							var reason = event.reason;
+
+							if (reason.isVisibilityChanged) {
+								//内部通知でVisibilityChangedになったので、
+								//DU側の__updateDOMは呼ばずに直接displayスタイルを変更する
+								//この処理はドラッグドロップ開始・終了時に典型的に行われる
+								du._updateActualDisplayStyle(dom);
+							}
+
+							if (reason.isPositionChanged) {
+								du._updatePosition(dom, this);
+							}
 						},
 
 						/**
@@ -16002,75 +16060,6 @@
 								var column = columns[i];
 								column._updateScrollBarLogicalValues();
 							}
-						},
-
-						/**
-						 * @private
-						 */
-						__onDragDUStart: function(dragSession) {
-							dragSession._onStageTargets
-									.forEach(function(du) {
-										//強制的に元のDUを非表示にする
-										//ドラッグ時のライブモードがOVERLAYの場合は、元のDUは非表示にする。
-										//OVERLAY_AND_STAYなど他のモードの場合は強制非表示にはしない(DUのもともとのisVisibleに依存)
-										//TODO 他のライブモードへの対応、オーバーレイ時にソースDOMを使うよう改修した際はそれとの整合性
-										var isForceHidden = dragSession.liveMode === DragLiveMode.OVERLAY ? true
-												: false;
-										du._isForceHidden = isForceHidden;
-									});
-
-							//各ビューのドラッグスタート処理を呼ぶ
-							this.getViewAll().forEach(function(v) {
-								v.__onDragDUStart(dragSession);
-							});
-						},
-
-						/**
-						 * @private
-						 */
-						__onDragDUMove: function(dragSession) {
-							this.getViewAll().forEach(function(v) {
-								v.__onDragDUMove(dragSession);
-							});
-						},
-
-						/**
-						 * @private
-						 */
-						__onDragDUDrop: function(dragSession) {
-							dragSession._onStageTargets.forEach(function(du) {
-								//レイヤーに元々属するDUを強制的に非表示にしていたのを解除
-								du._isForceHidden = false;
-							});
-
-							this.getViewAll().forEach(function(v) {
-								v.__onDragDUDrop(dragSession);
-							});
-						},
-
-						/**
-						 * DUリサイズ時は、DUドラッグ時と同様に 本来DUに対応するDOMは非表示にして リサイズ表示用にフォアレイヤーにDOMをコピーして表示する。
-						 * 理由は、リサイズ時もその要素を最前面に表示するため。 処理内容はドラッグの場合と同じなので、DragDUに処理を委譲している。 Change ->
-						 * Move, Release -> Dropと同様に委譲している。
-						 *
-						 * @private
-						 */
-						__onResizeDUStart: function(resizeSession) {
-							this.__onDragDUStart(resizeSession);
-						},
-
-						/**
-						 * @private
-						 */
-						__onResizeDUChange: function(resizeSession) {
-							this.__onDragDUMove(resizeSession);
-						},
-
-						/**
-						 * @private
-						 */
-						__onResizeDURelease: function(resizeSession) {
-							this.__onDragDUDrop(resizeSession);
 						},
 
 						/**
