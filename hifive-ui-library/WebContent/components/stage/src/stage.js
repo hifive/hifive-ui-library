@@ -1016,31 +1016,6 @@
 					this._hasBegun = true;
 
 					return true;
-
-					//TODO 一旦、CustomDragSessionではProxyDUの代表DUに関する処理は省く。
-					//なお、この関連処理はDragSession側でなくStage内部で処理するようにすべき。
-					/*
-					this._onStageTargets = this._stage
-							._getOnStageNormalizedDisplayUnits(this._targets);
-
-					var rawFocusedDU = this._stage._dragInitialState.displayUnit;
-
-					this._onStageTargets.forEach(function(du) {
-						if (ProxyDisplayUnit.isClassOf(du)) {
-							var forceRepresentativeDU = null;
-							if (ProxyDisplayUnit.isClassOf(rawFocusedDU)
-									&& du.sourceDisplayUnit === rawFocusedDU.sourceDisplayUnit) {
-								forceRepresentativeDU = rawFocusedDU;
-							}
-
-							//TODO viewportsが複数の場合への対応
-							//OnStageなProxyDUについて、どれが代表DUかを変更する
-							var plane = du.viewportContainer._plane;
-							plane._viewports[0].updateProxyRepresentative(du.sourceDisplayUnit,
-									forceRepresentativeDU);
-						}
-					});
-					*/
 				},
 
 				/**
@@ -1051,15 +1026,6 @@
 						return;
 					}
 					this._isCompleted = true;
-
-					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
-					//依存しているDUのアップデートを要求する
-					/*
-					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
-					allTargets.forEach(function(du) {
-						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
-					});
-					*/
 
 					this.__onEnd();
 
