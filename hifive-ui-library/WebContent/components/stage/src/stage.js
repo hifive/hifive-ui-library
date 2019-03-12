@@ -17515,7 +17515,7 @@
 			});
 
 			if (stageDragStartingEvent.isDefaultPrevented()) {
-				//ドラッグ開始全体をキャンセル
+				//ドラッグ開始全体をキャンセルされたので何もしない
 				return;
 			}
 
@@ -17939,15 +17939,10 @@
 			//せめてマウスダウン時にはカーソルとリサイズの挙動が一致するように、下記の処理を
 			//mousemoveイベントハンドラに加えてここでも行う。
 
-			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
-				//対象のDUが存在し、かつそれが編集中の場合は何もしない
-				this._setRootCursor('auto');
-				return;
-			}
-
-			//リサイズ可能なDUの境界部分にカーソルが載ったら
+			//編集中でない、かつリサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
-			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
+			if (currentMouseOverDU && !currentMouseOverDU.isEditing
+					&& currentMouseOverDU.isResizable) {
 				this._updateResizeCursor(currentMouseOverDU, event);
 			} else {
 				this._setRootCursor('auto');
@@ -18573,15 +18568,10 @@
 
 			var currentMouseOverDU = this._getIncludingDisplayUnit(event.target);
 
-			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
-				//対象のDUが存在し、かつそれが編集中の場合は何もしない
-				this._setRootCursor('auto');
-				return;
-			}
-
-			//リサイズ可能なDUの境界部分にカーソルが載ったら
+			//編集中でない、かつリサイズ可能なDUの境界部分にカーソルが載ったら
 			//カーソルをリサイズ用のアイコンに変更する
-			if (currentMouseOverDU && currentMouseOverDU.isResizable) {
+			if (currentMouseOverDU && !currentMouseOverDU.isEditing
+					&& currentMouseOverDU.isResizable) {
 				this._updateResizeCursor(currentMouseOverDU, event);
 			} else {
 				this._setRootCursor('auto');
@@ -18597,6 +18587,12 @@
 				this.trigger(EVENT_DU_MOUSE_LEAVE, {
 					displayUnit: this._lastEnteredDU
 				});
+			}
+
+			if (currentMouseOverDU && currentMouseOverDU.isEditing) {
+				//前回EnterしたDUと今回EnterしたDUが異なり、かつ
+				//今回EnterしたDUが編集中の場合は新しいDUにはEnterした扱いにはしない
+				return;
 			}
 
 			this._lastEnteredDU = currentMouseOverDU;
