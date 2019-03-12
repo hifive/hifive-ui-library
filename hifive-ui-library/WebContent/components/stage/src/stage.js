@@ -1477,27 +1477,27 @@
 							this.setTargets(targetDU);
 
 							var evArg = {
-								dragSession: this
+								session: this
 							};
 							//イベントをあげ終わったタイミングでドラッグ対象が決定する
-							var dragBeginEventResult = this.__triggerStageEvent(
-									EVENT_DRAG_DU_BEGIN, event.originalEvent, evArg);
+							var dragBeginEvent = this.__triggerStageEvent(EVENT_DRAG_DU_BEGIN,
+									event.originalEvent, evArg);
 
-							if (dragBeginEventResult.isDefaultPrevented()) {
+							if (dragBeginEvent.isDefaultPrevented()) {
 								return false;
 							}
 
 							//ProxyDUがユーザーによって追加された場合に備えて正規化する
 							var normalizedTargets = this.stage
 									._getSourceNormalizedDisplayUnits(this.getTargets());
-							this.setTargets(normalizedTargets);
+							this._targets = normalizedTargets;
 
 							this.setCursor('default');
 
 							var rawFocusedDU = this.initialState.displayUnit;
 
-							var onStageTargets = this.stage._getOnStageNormalizedDisplayUnits(this
-									.getTargets());
+							var onStageTargets = this.stage
+									._getOnStageNormalizedDisplayUnits(normalizedTargets);
 
 							this._onStageTargets = onStageTargets;
 
@@ -1570,18 +1570,15 @@
 						__onMove: function(event, delta) {
 							this._deltaMove(event, delta);
 
-							var delegatedJQueryEvent = $.event.fix(event.originalEvent);
-
 							var dragOverDU = this.stage._getDragOverDisplayUnit(event);
 
-							delegatedJQueryEvent.type = EVENT_DRAG_DU_MOVE;
-							delegatedJQueryEvent.target = this.stage.rootElement;
-							delegatedJQueryEvent.currentTarget = this.stage.rootElement;
-
-							this.stage.trigger(delegatedJQueryEvent, {
-								dragSession: this,
+							var evArg = {
+								session: this,
 								dragOverDisplayUnit: dragOverDU
-							});
+							};
+							this
+									.__triggerStageEvent(EVENT_DRAG_DU_MOVE, event.originalEvent,
+											evArg);
 						},
 
 						__onRelease: function(event) {
@@ -1593,17 +1590,13 @@
 
 							var dragOverDU = this.stage._getDragOverDisplayUnit(event);
 
-							var delegatedJQueryEvent = $.event.fix(event.originalEvent);
-							delegatedJQueryEvent.type = EVENT_DRAG_DU_DROP;
-							delegatedJQueryEvent.target = this.stage.rootElement;
-							delegatedJQueryEvent.currentTarget = this.stage.rootElement;
-
-							//this._viewCollection.__onDragDUDrop(this._dragSession);
-
-							this.stage.trigger(delegatedJQueryEvent, {
-								dragSession: this,
+							var evArg = {
+								session: this,
 								dragOverDisplayUnit: dragOverDU
-							});
+							};
+							this
+									.__triggerStageEvent(EVENT_DRAG_DU_DROP, event.originalEvent,
+											evArg);
 
 							if (this._duDragBoundaryScrollTimerId) {
 								//タイマーがセットされていたら解除する
@@ -1645,7 +1638,10 @@
 								du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
 							});
 
-							this.stage.trigger(EVENT_DRAG_DU_END);
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_DRAG_DU_END, evArg);
 						},
 
 						/**
@@ -1667,7 +1663,10 @@
 								du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
 							});
 
-							this.stage.trigger(EVENT_DRAG_DU_CANCEL);
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_DRAG_DU_CANCEL, evArg);
 						},
 
 						__onDispose: function() {
@@ -1914,7 +1913,7 @@
 							this.setTargets(targetDU);
 
 							var evArg = {
-								resizeSession: this
+								session: this
 							};
 							var resizeBeginEvent = this.__triggerStageEvent(EVENT_RESIZE_DU_BEGIN,
 									event.originalEvent, evArg);
@@ -1961,7 +1960,10 @@
 						 * @returns {DragSession}
 						 */
 						__onEnd: function() {
-							this.stage.trigger(EVENT_RESIZE_DU_END);
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_RESIZE_DU_END, evArg);
 						},
 
 						/**
@@ -1980,7 +1982,10 @@
 								this.rollbackLayout();
 							}
 
-							this.stage.trigger(EVENT_RESIZE_DU_CANCEL);
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_RESIZE_DU_CANCEL, evArg);
 						},
 
 						//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
@@ -2003,16 +2008,18 @@
 							//							});
 
 							var evArg = {
-								resizeSession: this
+								session: this
 							};
-							this.__triggerStageEvent(EVENT_RESIZE_DU_CHANGE, event, evArg);
+							this.__triggerStageEvent(EVENT_RESIZE_DU_CHANGE, event.originalEvent,
+									evArg);
 						},
 
 						__onRelease: function(event) {
 							var evArg = {
-								resizeSession: this
+								session: this
 							};
-							this.__triggerStageEvent(EVENT_RESIZE_DU_RELEASE, event, evArg);
+							this.__triggerStageEvent(EVENT_RESIZE_DU_RELEASE, event.originalEvent,
+									evArg);
 						},
 
 						/**
@@ -2499,10 +2506,10 @@
 
 				__onBegin: function(event) {
 					var evArg = {
-						selectSession: this
+						session: this
 					};
 					var dragSelectBeginEvent = this.__triggerStageEvent(EVENT_DRAG_SELECT_BEGIN,
-							evArg);
+							event.originalEvent, evArg);
 
 					if (dragSelectBeginEvent.isDefaultPrevented()) {
 						return false;
@@ -2537,7 +2544,7 @@
 
 				__onEnd: function() {
 					var evArg = {
-						selectSession: this
+						session: this
 					};
 					this.stage.trigger(EVENT_DRAG_SELECT_END, evArg);
 				},
@@ -2587,10 +2594,10 @@
 
 				__onBegin: function(event) {
 					var evArg = {
-						regionSession: this
+						session: this
 					};
 					var dragRegionBeginEvent = this.__triggerStageEvent(EVENT_DRAG_REGION_BEGIN,
-							event, evArg);
+							event.originalEvent, evArg);
 
 					if (dragRegionBeginEvent.isDefaultPrevented()) {
 						return false;
@@ -2610,7 +2617,7 @@
 					var regionDisplay = this.__getNormalizedRectDisplay();
 
 					var evArg = {
-						regionSession: this,
+						session: this,
 						region: region,
 						regionDisplay: regionDisplay
 					};
@@ -2677,7 +2684,7 @@
 					}
 
 					var evArg = {
-						dragSession: this
+						session: this
 					};
 					var stageScrollBeginEvent = this.__triggerStageEvent(
 							EVENT_STAGE_DRAG_SCROLL_BEGIN, event.originalEvent, evArg);
@@ -2716,7 +2723,7 @@
 					}
 
 					var evArg = {
-						dragSession: this
+						session: this
 					};
 					this.__triggerStageEvent(EVENT_STAGE_DRAG_SCROLL_MOVE, event.originalEvent,
 							evArg);
@@ -2724,7 +2731,7 @@
 
 				__onEnd: function() {
 					var evArg = {
-						dragSession: this
+						session: this
 					};
 					this.stage.trigger(EVENT_STAGE_DRAG_SCROLL_END, evArg);
 				},
@@ -2743,121 +2750,124 @@
 	 * @param super_ 親クラス
 	 * @returns クラス定義
 	 */
-	UIDragSession.extend(function(super_) {
+	UIDragSession
+			.extend(function(super_) {
 
-		var EVENT_DRAG_CUSTOM_BEGIN = 'stageCustomDragBegin';
-		var EVENT_DRAG_CUSTOM_RELEASE = 'stageCustomDragRelease';
-		var EVENT_DRAG_CUSTOM_END = 'stageCustomDragEnd';
-		var EVENT_DRAG_CUSTOM_CANCEL = 'stageCustomDragCancel';
+				var EVENT_DRAG_CUSTOM_BEGIN = 'stageCustomDragBegin';
+				var EVENT_DRAG_CUSTOM_RELEASE = 'stageCustomDragRelease';
+				var EVENT_DRAG_CUSTOM_END = 'stageCustomDragEnd';
+				var EVENT_DRAG_CUSTOM_CANCEL = 'stageCustomDragCancel';
 
-		var desc = {
-			name: 'h5.ui.components.stage.CustomDragSession',
-			field: {
-				//ドラッグ時に呼び出すコールバック関数とthisObject
-				moveCallbackFunction: null,
-				thisObject: null
-			},
+				var desc = {
+					name: 'h5.ui.components.stage.CustomDragSession',
+					field: {
+						//ドラッグ時に呼び出すコールバック関数とthisObject
+						moveCallbackFunction: null,
+						thisObject: null
+					},
 
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.CustomDragSession
-				 * @param target
-				 * @param dragMode
-				 */
-				constructor: function CustomDragSession(stage, initialState, callback, thisObject) {
-					super_.constructor.call(this, stage, initialState);
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.CustomDragSession
+						 * @param target
+						 * @param dragMode
+						 */
+						constructor: function CustomDragSession(stage, initialState, callback,
+								thisObject) {
+							super_.constructor.call(this, stage, initialState);
 
-					this.moveCallbackFunction = callback;
-					this.thisObject = thisObject === undefined ? null : thisObject; //undefinedの場合は明示的にnullにする
-				},
+							this.moveCallbackFunction = callback;
+							this.thisObject = thisObject === undefined ? null : thisObject; //undefinedの場合は明示的にnullにする
+						},
 
-				/**
-				 * @private
-				 */
-				__onBegin: function(event) {
-					//デフォルトでは、選択中のDUをドラッグ対象とする。
-					//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
-					var targetDU = this.stage.getSelectedDisplayUnits();
-					this.setTargets(targetDU);
+						/**
+						 * @private
+						 */
+						__onBegin: function(event) {
+							//デフォルトでは、選択中のDUをドラッグ対象とする。
+							//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
+							var targetDU = this.stage.getSelectedDisplayUnits();
+							this.setTargets(targetDU);
 
-					var evArg = {
-						session: this
-					};
-					var customDragEvent = this.__triggerStageEvent(EVENT_DRAG_CUSTOM_BEGIN, event,
-							evArg);
+							var evArg = {
+								session: this
+							};
+							var customDragEvent = this.__triggerStageEvent(EVENT_DRAG_CUSTOM_BEGIN,
+									event.originalEvent, evArg);
 
-					if (customDragEvent.isDefaultPrevented()) {
-						return false;
+							if (customDragEvent.isDefaultPrevented()) {
+								return false;
+							}
+						},
+
+						__onMove: function(event, delta) {
+							//コールバックを呼び出す
+							if (this.moveCallbackFunction != null) {
+								this.moveCallbackFunction.call(this._thisObject, this, delta);
+							}
+						},
+
+						__onRelease: function(event) {
+							var evArg = {
+								session: this
+							};
+							this.__triggerStageEvent(EVENT_DRAG_CUSTOM_RELEASE,
+									event.originalEvent, evArg);
+						},
+
+						/**
+						 * ドラッグセッションを終了して位置を確定させる
+						 * <p>
+						 * moveメソッドを使って移動させた位置で、図形の位置を確定します。ただし、canDropがfalseの場合には代わりにキャンセルが行われます。
+						 * </p>
+						 *
+						 * @memberOf DragSession
+						 * @instance
+						 * @returns {DragSession}
+						 */
+						__onEnd: function() {
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_DRAG_CUSTOM_END, evArg);
+						},
+
+						/**
+						 * ドラッグセッションを終了して位置を元に戻す
+						 * <p>
+						 * moveメソッドで移動させた処理を元に戻します。
+						 * </p>
+						 *
+						 * @memberOf DragSession
+						 * @returns {DragSession}
+						 */
+						__onCancel: function() {
+							var evArg = {
+								session: this
+							};
+							this.stage.trigger(EVENT_DRAG_CUSTOM_CANCEL, evArg);
+
+							//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
+							//依存しているDUのアップデートを要求する
+							/*
+							var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
+							allTargets.forEach(function(du) {
+								du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
+							});
+							*/
+						},
+
+						/**
+						 * @private
+						 */
+						__onDispose: function() {
+							this.moveCallbackFunction = null;
+							this.thisObject = null;
+						}
 					}
-				},
-
-				__onMove: function(event, delta) {
-					//コールバックを呼び出す
-					if (this.moveCallbackFunction != null) {
-						this.moveCallbackFunction.call(this._thisObject, this, delta);
-					}
-				},
-
-				__onRelease: function(event) {
-					var evArg = {
-						session: this
-					};
-					this.__triggerStageEvent(EVENT_DRAG_CUSTOM_RELEASE, event, evArg);
-				},
-
-				/**
-				 * ドラッグセッションを終了して位置を確定させる
-				 * <p>
-				 * moveメソッドを使って移動させた位置で、図形の位置を確定します。ただし、canDropがfalseの場合には代わりにキャンセルが行われます。
-				 * </p>
-				 *
-				 * @memberOf DragSession
-				 * @instance
-				 * @returns {DragSession}
-				 */
-				__onEnd: function() {
-					var evArg = {
-						session: this
-					};
-					this.stage.trigger(EVENT_DRAG_CUSTOM_END, evArg);
-				},
-
-				/**
-				 * ドラッグセッションを終了して位置を元に戻す
-				 * <p>
-				 * moveメソッドで移動させた処理を元に戻します。
-				 * </p>
-				 *
-				 * @memberOf DragSession
-				 * @returns {DragSession}
-				 */
-				__onCancel: function() {
-					var evArg = {
-						session: this
-					};
-					this.stage.trigger(EVENT_DRAG_CUSTOM_CANCEL, evArg);
-
-					//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
-					//依存しているDUのアップデートを要求する
-					/*
-					var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
-					allTargets.forEach(function(du) {
-						du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
-					});
-					*/
-				},
-
-				/**
-				 * @private
-				 */
-				__onDispose: function() {
-					this.moveCallbackFunction = null;
-					this.thisObject = null;
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	/**
 	 * EditSession
@@ -11427,8 +11437,6 @@
 							- (stageRect.left + window.pageXOffset);
 					var y = this._lastCursorPageY + this._offsetY
 							- (stageRect.top + window.pageYOffset);
-					console.log('proxyPOS', stageRect.left, window.pageXOffset,
-							this._lastCursorPageX);
 					this.setPosition(x, y);
 				}
 			}

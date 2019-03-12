@@ -60,6 +60,20 @@
 			+ '<div class="editorControls"><button class="commitButton">OK</button><span class="controlSpacer"></span>'
 			+ '<button class="cancelButton">キャンセル</button></div></div></div>';
 
+
+	RootClass.extend(function(super_) {
+		var desc = {
+			name: 'MyClass',
+
+			method: {
+				constructor: function() {
+					super_.constructor.call(this);
+				}
+			}
+		};
+		return desc;
+	});
+
 	var SimpleTextEditor = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'sample.SimpleTextEditor',
@@ -333,7 +347,7 @@
 			var unit = du;
 			unit.setRect(rect);
 			unit.extraData = {
-				userText: 'User-defined text'
+				text: 'User-defined text'
 			};
 
 			unit.isEditable = false;
@@ -630,7 +644,7 @@
 			du1.isEditable = false;
 			du1.setRect(Rect.create(0, 0, 100, 50));
 			du1.extraData = {
-				userText: 'テキスト文字列'
+				text: 'テキスト文字列'
 			};
 			du1.setRenderer(renderer);
 			container.addDisplayUnit(du1);
@@ -643,7 +657,7 @@
 			var du2 = BasicDisplayUnit.create();
 			du2.setRect(Rect.create(0, 0, 50, 50));
 			du2.extraData = {
-				userText: 'テキスト文字列'
+				text: 'テキスト文字列'
 			};
 			du2.setRenderer(renderer);
 			du2.isEditable = false;
@@ -802,18 +816,22 @@
 		'{rootElement} duDragBegin': function(context) {
 			this.log.debug('duDragBegin');
 
+			var dragSession = context.evArg.session;
+
 			//			setTimeout(function(){
 			//				context.evArg.dragSession.cancel();
 			//			}, 2000);
 
-			if (typeof context.evArg.dragSession.getTargets()[0].extraData.text === 'string') {
-				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY;
+			if (typeof dragSession.getTargets()[0].extraData.text === 'string') {
+				dragSession.liveMode = DragLiveMode.OVERLAY;
 			} else {
-				context.evArg.dragSession.liveMode = DragLiveMode.OVERLAY_AND_STAY;
+				dragSession.liveMode = DragLiveMode.OVERLAY_AND_STAY;
 			}
 
 			var elem = $.parseHTML('<div class="dragProxy">ドラッグプロキシ<br>ドラッグ数：'
-					+ context.evArg.dragSession.getTargets().length + '</div>')[0];
+					+ dragSession.getTargets().length + '</div>')[0];
+
+			dragSession.tooltip.setContent(elem);
 
 			//context.event.preventDefault();
 			//			context.evArg.dragSession.setProxyElement(elem);
@@ -823,8 +841,9 @@
 
 		'{rootElement} duDragMove': function(context) {
 			var dragOverDU = context.evArg.dragOverDisplayUnit;
-			this.log.debug('duDragMove: dragOverDUID={0}', dragOverDU == null ? 'null'
-					: dragOverDU.id);
+			var text = dragOverDU && dragOverDU.extraData ? dragOverDU.extraData.text : '(null)';
+			this.log.debug('duDragMove: dragOverDUID={0}, text={1}', dragOverDU == null ? 'null'
+					: dragOverDU.id, text);
 			//context.evArg.dragSession.setCursor('not-allowed');
 		},
 
@@ -861,8 +880,8 @@
 		},
 
 		'{rootElement} stageDragBeginning': function(context) {
-			console.log('stageDragBeginning', context.evArg);
-			//context.event.preventDefault();
+		//console.log('stageDragBeginning', context.evArg);
+		//context.event.preventDefault();
 		},
 
 		'[name="dragRegion"] click': function() {
@@ -876,11 +895,16 @@
 		'{rootElement} duResizeBegin': function(context) {
 			console.log(context.event.type);
 
+			var resizeSession = context.evArg.session;
+
 			var elem = $.parseHTML('<div class="dragProxy">リサイズプロキシ<br>ドラッグ数：'
-					+ context.evArg.resizeSession.getTargets().length + '</div>')[0];
+					+ resizeSession.getTargets().length + '</div>')[0];
+
+			resizeSession.tooltip.setContent(elem);
+
+			console.log(resizeSession.tooltip.getContent());
 
 			//context.event.preventDefault();
-			context.evArg.resizeSession.setProxyElement(elem);
 
 			//			setTimeout(function(){
 			//				console.log('resizeSession.cancel()');
@@ -896,7 +920,7 @@
 			console.log(context.event.type);
 		},
 
-		'{rootElement} duResizeCommit': function(context) {
+		'{rootElement} duResizeRelease': function(context) {
 			console.log(context.event.type);
 			//			context.evArg.resizeSession.async = true;
 			//			setTimeout(function(){
@@ -1101,11 +1125,11 @@
 			console.log('stageViewStructureChange');
 		},
 
-		'{rootElement} stageViewUnifiedSightChange': function() {
-			console.log('stageViewUnifiedSightChange');
+		'{rootElement} stageViewUnifiedSightChange': function(context) {
+			console.log('stageViewUnifiedSightChange', context.evArg);
 		},
 
-		'{rootElement} stageSightChange': function() {
+		'{rootElement} stageSightChange': function(context) {
 			console.log('sightChange');
 		},
 
