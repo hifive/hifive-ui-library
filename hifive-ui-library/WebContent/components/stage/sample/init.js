@@ -661,7 +661,7 @@
 			};
 			du2.setRenderer(renderer);
 			du2.isEditable = false;
-			c2.addDisplayUnit(du2);
+			container.addDisplayUnit(du2);
 			c2.overflow = 'hidden';
 
 			var e1 = this._createEdge(du1, du2);
@@ -821,6 +821,8 @@
 			//			setTimeout(function(){
 			//				context.evArg.dragSession.cancel();
 			//			}, 2000);
+
+			dragSession.isContainerBoundaryScrollEnabled = true;
 
 			if (typeof dragSession.getTargets()[0].extraData.text === 'string') {
 				dragSession.liveMode = DragLiveMode.OVERLAY;
