@@ -849,7 +849,9 @@
 
 				_liveMode: null,
 
-				_tooltip: null
+				_tooltip: null,
+
+				_isViewBoundaryScrollEnabled: null
 			},
 
 			accessor: {
@@ -936,6 +938,15 @@
 						return this._tooltip;
 					}
 				},
+
+				isViewBoundaryScrollEnabled: {
+					get: function() {
+						return this._isViewBoundaryScrollEnabled;
+					},
+					set: function(value) {
+						this._isViewBoundaryScrollEnabled = value;
+					}
+				}
 			},
 
 			method: {
@@ -957,6 +968,9 @@
 
 					this.data = null;
 					this._isAsync = false;
+
+					//ビュー境界スクロールはデフォルト：true
+					this._isViewBoundaryScrollEnabled = true;
 
 					//ライブモードはデフォルトでは「オーバーレイ」
 					this._liveMode = DragLiveMode.OVERLAY;
@@ -1001,7 +1015,9 @@
 				},
 
 				/**
-				 * このドラッグセッションのドラッグ処理を開始します。
+				 * このドラッグセッションのドラッグ処理を開始します。開始がキャンセルされた場合、破棄処理(dispose)が呼ばれ、falseが返ります。
+				 *
+				 * @returns {Boolean} このセッションを開始したかどうか。開始した場合はtrue、キャンセルされた場合はfalse
 				 */
 				begin: function(event) {
 					if (this._hasBegun) {
@@ -1012,15 +1028,16 @@
 
 					//onBegin()が何も返さなかった場合はtrueとみなす
 					if (isProceeded === false) {
-						//onBegin()の中でイベントを出すなどした結果、キャンセルされた場合はただちにキャンセル扱いにする
-						this.cancel();
+						//onBegin()がfalseを返した場合、そのセッションはキャンセルされたとみなし、破棄処理を行う
+						//(end()やcancel()を呼ぶと子クラスでイベントが送出される可能性があるので、直接_dispose()に遷移する)
+						this._dispose();
 						return false;
 					}
 
 					this._saveInitialLayout();
 
 					//子クラスの__onBeginの中でイベント送出⇒liveMode変更など
-					//初期化処理が行われる可能性があるので、このフラグのセットはonBegin呼び出し後にする必要がある。
+					//追加の初期化処理が行われる可能性があるので、このフラグのセットはonBegin呼び出し後にする必要がある。
 					this._hasBegun = true;
 
 					return true;
@@ -1037,7 +1054,7 @@
 
 					this.__onEnd();
 
-					this.dispose();
+					this._dispose();
 				},
 
 				/**
@@ -1051,7 +1068,7 @@
 
 					this.__onCancel(andRollbackStates);
 
-					this.dispose();
+					this._dispose();
 				},
 
 				setCursor: function(cursorStyle) {
@@ -1248,6 +1265,27 @@
 				},
 
 				/**
+				 * @private
+				 * @param callback
+				 */
+				_toggleBoundaryScroll: function(callback) {
+					var activeView = this._getActiveView();
+
+					var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left
+							- activeView.x;
+					var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top
+							- activeView.y;
+
+					var nineSlicePosition = activeView._viewport.getNineSlicePosition(pointerX,
+							pointerY);
+					if (!nineSlicePosition.isMiddleCenter) {
+						this._beginBoundaryScroll(nineSlicePosition, callback);
+					} else {
+						this._endBoundaryScroll();
+					}
+				},
+
+				/**
 				 * セットされた各ターゲットのドラッグ開始時点の位置を覚えておく
 				 *
 				 * @private
@@ -1284,10 +1322,20 @@
 					return this._targetInitialStates[idx];
 				},
 
-				dispose: function() {
+				/**
+				 * @private
+				 */
+				_dispose: function() {
+					if (this.isCompleted) {
+						//二度目以降は呼ばれても何もしない
+						return;
+					}
+					this._isCompleted = true;
+
 					//Stage側でDragSessionの値を参照したりする可能性を考え、先にStage側のクリーンアップ処理を呼ぶ
 					this.stage._disposeDragSession();
 
+					//子クラスがターゲットなどの状態を使用する可能性があるので、先にonDispose()を呼ぶ
 					this.__onDispose();
 
 					if (this._tooltip) {
@@ -17634,7 +17682,6 @@
 
 			var isProceeded = customDragSession.begin(event);
 			if (!isProceeded) {
-				customDragSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -17680,7 +17727,6 @@
 
 			var isProceeded = resizeSession.begin(event);
 			if (!isProceeded) {
-				resizeSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -17698,7 +17744,6 @@
 
 			var isProceeded = dragSession.begin(event);
 			if (!isProceeded) {
-				dragSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -17715,7 +17760,6 @@
 
 			var isProceeded = selectSession.begin(event);
 			if (!isProceeded) {
-				selectSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -17732,7 +17776,6 @@
 
 			var isProceeded = screenDragSession.begin(event);
 			if (!isProceeded) {
-				screenDragSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -17750,7 +17793,6 @@
 
 			var isProceeded = regionSession.begin(event);
 			if (!isProceeded) {
-				regionSession.dispose();
 				this._currentDragMode = DRAG_MODE_NONE;
 				return;
 			}
@@ -18055,21 +18097,6 @@
 			//各ドラッグセッションのmove処理を行う
 			this._dragSession.__processEvent(event);
 		},
-
-		toggleBoundaryScroll: function(callback) {
-			var activeView = this._getActiveView();
-
-			var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left - activeView.x;
-			var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top - activeView.y;
-
-			var nineSlicePosition = activeView._viewport.getNineSlicePosition(pointerX, pointerY);
-			if (!nineSlicePosition.isMiddleCenter) {
-				this._beginBoundaryScroll(nineSlicePosition, callback);
-			} else {
-				this._endBoundaryScroll();
-			}
-		},
-
 
 		/**
 		 * @private
