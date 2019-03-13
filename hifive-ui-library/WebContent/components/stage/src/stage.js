@@ -2071,17 +2071,6 @@
 				var EVENT_RESIZE_DU_END = 'duResizeEnd';
 				var EVENT_RESIZE_DU_CANCEL = 'duResizeCancel';
 
-				//eventはnullの場合がある（ビュー境界スクロールの場合）
-				//				function defaultResizeFunction(du, data, event, delta, resizeSession) {
-				//					var ret = {
-				//						dx: delta.x,
-				//						dy: delta.y,
-				//						dw: 0,
-				//						dh: 0
-				//					};
-				//					return ret;
-				//				}
-
 				var desc = {
 					name: 'h5.ui.components.stage.DUResizeSession',
 					field: {
@@ -2093,12 +2082,6 @@
 						_handlingPosition: null,
 
 						_onStageTargets: null,
-
-						//移動関数。移動対象のDUごとに呼ばれる
-						resizeFunction: null,
-
-						//du -> 当該DU用のdataオブジェクト へのマップ
-						//_resizeFunctionDataMap: null,
 
 						//du.id -> 当該DUの、このセッションに限ったリサイズ制約 のマップ
 						_constraintOverrideMap: null
@@ -2122,10 +2105,6 @@
 							this.direction = ResizeDirection.NONE;
 
 							this._handlingPosition = handlingPosition;
-
-							//this._resizeFunctionDataMap = new Map();
-
-							this.resizeFunction = null;
 
 							this._constraintOverrideMap = null;
 						},
@@ -2284,12 +2263,6 @@
 
 							for (var i = 0, len = targets.length; i < len; i++) {
 								var du = targets[i];
-
-								//								var data = this._resizeFunctionDataMap.get(du);
-								//								if (!data) {
-								//									data = {};
-								//									this._resizeFunctionDataMap.set(du.id, data);
-								//								}
 
 								var newRect = this._getCorrectedRect(du);
 								du.setLayoutRect(newRect);
@@ -2551,11 +2524,8 @@
 								}
 							}
 
-
 							this._onStageTargets = null;
 
-							this.resizeFunction = null;
-							//this._resizeFunctionDataMap = null;
 							this._constraintOverrideMap = null;
 						},
 
