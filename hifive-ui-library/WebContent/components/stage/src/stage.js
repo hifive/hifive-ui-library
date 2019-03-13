@@ -2057,6 +2057,9 @@
 							this._moveFunctionDataMap = null;
 						},
 
+						/**
+						 * @private
+						 */
 						_startContainerBoundaryScrollTimer: function() {
 							if (!this._containerBoundaryScrollTimerId) {
 								this._containerBoundaryScrollTimerId = setTimeout(
@@ -2067,6 +2070,8 @@
 
 						/**
 						 * 現在のタイマーをいったん解除し、改めてタイマーをセットする。
+						 *
+						 * @private
 						 */
 						_restartContainerBoundaryScrollTimer: function() {
 							if (this._containerBoundaryScrollTimerId) {
@@ -2077,6 +2082,9 @@
 									CONTAINER_BOUNDARY_SCROLL_INTERVAL);
 						},
 
+						/**
+						 * @private
+						 */
 						_stopContainerBoundaryScrollTimer: function() {
 							if (this._containerBoundaryScrollTimerId) {
 								clearTimeout(this._containerBoundaryScrollTimerId);
@@ -10035,11 +10043,12 @@
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
 
-					if (reason.isOverflowChanged) {
+					if (reason.isOverflowChanged || reason.isInitialRender) {
 						element.style.overflow = this.overflow;
 					}
 
-					if (reason.isScaleChanged || reason.isScrollPositionChanged) {
+					if (reason.isScaleChanged || reason.isScrollPositionChanged
+							|| reason.isInitialRender) {
 						this._updateTransform(element);
 					}
 				},
