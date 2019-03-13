@@ -1627,7 +1627,7 @@
 
 						_foremostDUContainerCache: null,
 
-						_foremoustContainerCacheClearListener: null
+						_foremostContainerCacheClearListener: null
 					},
 
 					accessor: {
@@ -1783,18 +1783,18 @@
 							//dispose時にこのリスナーがプロパティに入っているかどうかをチェックしているので
 							//セッションがキャンセルされないことが確定した以降でセットする必要がある
 							var that = this;
-							this._foremoustContainerCacheClearListener = function() {
+							this._foremostContainerCacheClearListener = function() {
 								that._foremostDUContainerCache = null;
 							};
 
 							//foremostなDUコンテナが変わる可能性のあるイベントに対して
 							//リスナーをセットし、発火したらキャッシュをクリアする
 							$(this.stage.rootElement).on(FORE_CONTAINER_CACHE_CLEAR_EVENTS,
-									this._foremoustContainerCacheClearListener);
+									this._foremostContainerCacheClearListener);
 							this.stage.space.addEventListener('displayUnitAdd',
-									this._foremoustContainerCacheClearListener);
+									this._foremostContainerCacheClearListener);
 							this.stage.space.addEventListener('displayUnitRemove',
-									this._foremoustContainerCacheClearListener);
+									this._foremostContainerCacheClearListener);
 
 							//ProxyDUがユーザーによって追加された場合に備えて正規化する
 							var normalizedTargets = this.stage
@@ -2007,15 +2007,15 @@
 								});
 							}
 
-							if (this._foremoustContainerCacheClearListener) {
+							if (this._foremostContainerCacheClearListener) {
 								//リスナーがセットされていた＝セッションがキャンセルされなかった場合は
 								//リスナーを解除する
 								$(this.stage.rootElement).off(FORE_CONTAINER_CACHE_CLEAR_EVENTS,
-										this._foremoustContainerCacheClearListener);
+										this._foremostContainerCacheClearListener);
 								this.stage.space.removeEventListener('displayUnitAdd',
-										this._foremoustContainerCacheClearListener);
+										this._foremostContainerCacheClearListener);
 								this.stage.space.removeEventListener('displayUnitRemove',
-										this._foremoustContainerCacheClearListener);
+										this._foremostContainerCacheClearListener);
 							}
 
 							this._stopContainerBoundaryScrollTimer();
