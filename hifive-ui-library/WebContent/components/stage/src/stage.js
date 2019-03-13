@@ -887,6 +887,12 @@
 					}
 				},
 
+				hasBegun: {
+					get: function() {
+						return this._hasBegun;
+					}
+				},
+
 				isCompleted: {
 					get: function() {
 						return this._isCompleted;
@@ -1072,7 +1078,7 @@
 						throw new Error('このセッションは既に開始しています。');
 					}
 
-					var isProceeded = this.__onBegin(event);
+					var isProceeded = this.__onBeginning(event);
 
 					//onBegin()が何も返さなかった場合はtrueとみなす
 					if (isProceeded === false) {
@@ -1084,7 +1090,7 @@
 
 					this._saveInitialLayout();
 
-					//子クラスの__onBeginの中で開始がキャンセルされたり、イベント送出⇒liveMode変更など
+					//子クラスの__onBeginningの中で開始がキャンセルされたり、イベント送出⇒liveMode変更など
 					//追加の初期化処理が行われる可能性があるので、このフラグのセットはonBegin呼び出し後にする必要がある。
 					this._hasBegun = true;
 
@@ -1253,11 +1259,19 @@
 					return this.stage.trigger(delegatedJQueryEvent, evArg);
 				},
 
-				__onBegin: function(event) {
+				__onBeginning: function(event) {
 				//子クラスでオーバーライド
 				},
 
 				__onMove: function(event, delta) {
+				//子クラスでオーバーライド
+				},
+
+				/**
+				 * ビューの境界スクロールが行われる直前に呼ばれます。このコールバックでfalseを返すと、その回の境界スクロールはキャンセルされます。
+				 * ビューの境界スクロールを恒久的に停止したい場合は、isViewBoundaryScrollEnabledをfalseにセットしてください。
+				 */
+				__onViewBoundaryScrolling: function() {
 				//子クラスでオーバーライド
 				},
 
@@ -1415,6 +1429,12 @@
 				},
 
 				_viewBoundaryScrollTimerCallback: function() {
+					if (this.__onViewBoundaryScrolling() === false) {
+						//この回の境界スクロールがキャンセルされたら、タイマーをセットして実際のスクロール処理を行わずに終了
+						this._setNextViewBoundaryScrollTimer();
+						return;
+					}
+
 					var dirx = 0;
 					if (this._nineSlice.isLeft) {
 						dirx = -1;
@@ -1449,7 +1469,12 @@
 						this.__onViewBoundaryScroll(scrollDelta);
 					}
 
-					//次回のタイマーをセットする
+					//次回のタイマーをセットする。スクロール処理に時間がかかっている場合が考えられるので、
+					//タイマーセットはスクロール処理が終わった後のこのタイミングで行う。
+					this._setNextViewBoundaryScrollTimer();
+				},
+
+				_setNextViewBoundaryScrollTimer: function() {
 					this._viewBoundaryScrollTimerId = setTimeout(
 							this._viewBoundaryScrollTimerCallbackWrapper,
 							this.viewBoundaryScrollInterval);
@@ -1548,10 +1573,10 @@
 
 	UIDragSession
 			.extend(function(super_) {
-				var DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH = 8;
+				var CONTAINER_BOUNDARY_WIDTH = 10;
 
-				var BOUNDARY_SCROLL_INTERVAL = 20;
-				var BOUNDARY_SCROLL_INCREMENT = 10;
+				var CONTAINER_BOUNDARY_SCROLL_INTERVAL = 12;
+				var CONTAINER_BOUNDARY_SCROLL_INCREMENT = 10;
 
 				var EVENT_DRAG_DU_BEGIN = 'duDragBegin';
 				var EVENT_DRAG_DU_MOVE = 'duDragMove';
@@ -1559,8 +1584,19 @@
 				var EVENT_DRAG_DU_DROP = 'duDragDrop';
 				var EVENT_DRAG_DU_CANCEL = 'duDragCancel';
 
-				//eventはnullの場合がある（ビューやDUコンテナの境界スクロールの場合）
+				var FORE_CONTAINER_CACHE_CLEAR_EVENTS = 'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange';
+
+				//eventはnullの場合がある（ビュー境界スクロールの場合）
 				function defaultMoveFunction(du, data, event, delta, dragSession) {
+					var ret = {
+						dx: delta.x,
+						dy: delta.y
+					};
+					return ret;
+				}
+
+				function defaultContainerScrollFunction(du, displayUnitContainer, delta, data,
+						dragSession) {
 					var ret = {
 						dx: delta.x,
 						dy: delta.y
@@ -1577,13 +1613,45 @@
 						//移動関数。移動対象のDUごとに呼ばれる
 						moveFunction: null,
 
+						containerScrollCallbackFunction: null,
+
 						//ドラッグ時に選択されなかった（非代表の）ProxyDUを含めた、ステージ上の全てのDU
 						_onStageTargets: null,
 
 						//du -> 当該DU用のdataオブジェクト へのマップ
 						_moveFunctionDataMap: null,
 
-						_duDragBoundaryScrollTimerId: null
+						_isContainerBoundaryScrollEnabled: null,
+
+						_containerBoundaryScrollTimerId: null,
+
+						_foremostDUContainerCache: null,
+
+						_foremoustContainerCacheClearListener: null
+					},
+
+					accessor: {
+						isContainerBoundaryScrollEnabled: {
+							get: function() {
+								return this._isContainerBoundaryScrollEnabled;
+							},
+							set: function(value) {
+								if (this._isContainerBoundaryScrollEnabled === value) {
+									return;
+								}
+								this._isContainerBoundaryScrollEnabled = value;
+
+								if (!this.hasBegun || this.isReleased) {
+									return;
+								}
+
+								if (value === true) {
+									this._startContainerBoundaryScrollTimer();
+								} else {
+									this._stopContainerBoundaryScrollTimer();
+								}
+							}
+						}
 					},
 
 					method: {
@@ -1593,30 +1661,36 @@
 						constructor: function(stage, initialState) {
 							super_.constructor.call(this, stage, initialState);
 
-							this._duDragBoundaryScrollTimerId = null;
+							this._containerBoundaryScrollTimerId = null;
+							this._foremostDUContainerCache = null;
 
+							this._moveFunctionDataMap = new Map();
 							this.moveFunction = null;
+							this.containerScrollCallbackFunction = null;
 
 							this.canDrop = true;
 
-							this._moveFunctionDataMap = new Map();
-
 							//デフォルトでは「オーバーレイモード」にする
 							this._liveMode = DragLiveMode.OVERLAY;
-						},
 
-						//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
-						//（境界スクロールなどのときに使用）
-						//引数にはディスプレイ座標系での移動差分量を渡す。
-						//duContainerが指定された場合、そのコンテナの子孫要素のDUに対してのみdeltaMoveを行う
-						//（DUContainerの境界スクロール対応）
-						doPseudoMoveBy: function(dx, dy, duContainer) {
-							var delta = {
-								x: dx,
-								y: dy
+							//DUコンテナ境界スクロールはデフォルトはfalseにする。
+							//なお、このフラグを有効にした場合でも、DUContainer.isBoundaryScrollEnabledがfalseの場合は
+							//そのDUコンテナでは境界スクロールは発生しない。
+							//また、DUコンテナ境界スクロールとビュー境界スクロールは独立して発生するが、
+							//ビュー境界スクロールのタイミングでDUコンテナ境界スクロールが動作した場合は
+							//その回のビュー境界スクロールはキャンセルする。
+							this._isContainerBoundaryScrollEnabled = false;
+
+							var that = this;
+							this._attemptContainerBoundaryScrollWrapper = function() {
+								//このラッパーはタイマーからのみ呼ばれる。setTimeout()で呼ばれるので、
+								//呼ばれたタイミングでこのタイマーは終了している。
+								//attemptの中でタイマーのリセットが行われるので、その際に
+								//余計なclearTimeout()が呼ばれないよう、ここでnullにしておく。
+								that._containerBoundaryScrollTimerId = null;
+
+								that._attemptContainerBoundaryScroll();
 							};
-
-							this._deltaMove(null, delta, duContainer);
 						},
 
 						/**
@@ -1625,6 +1699,17 @@
 						_deltaMove: function(event, delta, duContainer) {
 							if (!this._onStageTargets) {
 								return;
+							}
+
+							var moveFunc;
+							if (duContainer) {
+								//DUコンテナが指定された場合は、DUコンテナ境界スクロールによる移動
+								moveFunc = this.containerScrollCallbackFunction ? this.containerScrollCallbackFunction
+										: defaultContainerScrollFunction;
+							} else {
+								//指定されていない場合は、マウス移動またはビュー境界スクロールによる移動
+								moveFunc = this.moveFunction ? this.moveFunction
+										: defaultMoveFunction;
 							}
 
 							var targets = this._onStageTargets;
@@ -1644,10 +1729,13 @@
 									this._moveFunctionDataMap.set(du, data);
 								}
 
-								var moveFunc = this.moveFunction ? this.moveFunction
-										: defaultMoveFunction;
+								var move;
+								if (duContainer) {
+									move = moveFunc(du, duContainer, delta, data, this);
+								} else {
+									move = moveFunc(du, data, event, delta, this);
+								}
 
-								var move = moveFunc(du, data, event, delta, this);
 								if (!move) {
 									continue;
 								}
@@ -1658,20 +1746,22 @@
 								if (dx === 0 && dy === 0) {
 									continue;
 								}
-								if (move.isWorld === true) {
-									du.moveBy(dx, dy);
-								} else {
-									//							var view = this._stage._getActiveView();
-									//							var wdx = view._viewport.toWorldX(dx);
-									//							var wdy = view._viewport.toWorldY(dy);
-									//							du.moveBy(wdx, wdy);
 
-									du.moveDisplayBy(dx, dy);
-								}
+								//								if (move.isWorld === true) {
+								//									du.moveBy(dx, dy);
+								//								} else {
+								//							var view = this._stage._getActiveView();
+								//							var wdx = view._viewport.toWorldX(dx);
+								//							var wdy = view._viewport.toWorldY(dy);
+								//							du.moveBy(wdx, wdy);
+
+								du.moveDisplayBy(dx, dy);
+
+								//								}
 							}
 						},
 
-						__onBegin: function(event) {
+						__onBeginning: function(event) {
 							//デフォルトでは、選択中のDUがドラッグ対象となる。ただしisDraggable=falseのものは除く。
 							var targetDU = this.stage.getSelectedDisplayUnits();
 							targetDU = targetDU.filter(function(dragTargetDU) {
@@ -1689,6 +1779,22 @@
 							if (dragBeginEvent.isDefaultPrevented()) {
 								return false;
 							}
+
+							//dispose時にこのリスナーがプロパティに入っているかどうかをチェックしているので
+							//セッションがキャンセルされないことが確定した以降でセットする必要がある
+							var that = this;
+							this._foremoustContainerCacheClearListener = function() {
+								that._foremostDUContainerCache = null;
+							};
+
+							//foremostなDUコンテナが変わる可能性のあるイベントに対して
+							//リスナーをセットし、発火したらキャッシュをクリアする
+							$(this.stage.rootElement).on(FORE_CONTAINER_CACHE_CLEAR_EVENTS,
+									this._foremoustContainerCacheClearListener);
+							this.stage.space.addEventListener('displayUnitAdd',
+									this._foremoustContainerCacheClearListener);
+							this.stage.space.addEventListener('displayUnitRemove',
+									this._foremoustContainerCacheClearListener);
 
 							//ProxyDUがユーザーによって追加された場合に備えて正規化する
 							var normalizedTargets = this.stage
@@ -1760,20 +1866,16 @@
 								}
 							}
 
-
-							var that = this;
-							function timerCallback() {
-								that._doBoundaryScrollDUDrag();
+							if (this.isContainerBoundaryScrollEnabled) {
+								this._startContainerBoundaryScrollTimer();
 							}
-
-							//FIXME 後で改めて実装
-							//DUコンテナを含めた境界スクロール用タイマーを起動
-							//							this._duDragBoundaryScrollTimerId = setInterval(timerCallback,
-							//									BOUNDARY_SCROLL_INTERVAL);
 						},
 
 						__onMove: function(event, delta) {
-							this._deltaMove(event, delta);
+							//カーソルが移動した場合、カーソル直下のDUコンテナが変わる可能性があるのでキャッシュをクリア
+							this._foremostDUContainerCache = null;
+
+							this._deltaMove(event, delta, null);
 
 							var dragOverDU = this.stage._getDragOverDisplayUnit(event);
 
@@ -1786,8 +1888,22 @@
 											evArg);
 						},
 
+						__onViewBoundaryScrolling: function() {
+							if (this.isContainerBoundaryScrollEnabled
+									&& this._attemptContainerBoundaryScroll()) {
+								//本来ビューの境界スクロールが起こるタイミングで代わりにDUコンテナのスクロールを行ったので
+								//今回はビューの境界スクロールはキャンセルする。
+								//なお、DUコンテナの境界スクロールタイマーは
+								//attemptの中でリセットされているので、ここで改めてリセットする必要はない。
+								return false;
+							}
+						},
+
 						__onViewBoundaryScroll: function(scrollDelta) {
-							this._deltaMove(null, scrollDelta);
+							//ビューがスクロールした場合、カーソル直下のDUコンテナが変わる可能性があるのでキャッシュをクリア
+							this._foremostDUContainerCache = null;
+
+							this._deltaMove(null, scrollDelta, null);
 						},
 
 						__onRelease: function(event) {
@@ -1796,6 +1912,8 @@
 								clearInterval(this._duDragBoundaryScrollTimerId);
 								this._duDragBoundaryScrollTimerId = null;
 							}
+
+							this._stopContainerBoundaryScrollTimer();
 
 							var dragOverDU = this.stage._getDragOverDisplayUnit(event);
 
@@ -1889,12 +2007,19 @@
 								});
 							}
 
-							if (this._duDragBoundaryScrollTimerId) {
-								//タイマーがセットされていたら解除する
-								//マウスリリースのタイミングで既に解除されている場合もある
-								clearInterval(this._duDragBoundaryScrollTimerId);
-								this._duDragBoundaryScrollTimerId = null;
+							if (this._foremoustContainerCacheClearListener) {
+								//リスナーがセットされていた＝セッションがキャンセルされなかった場合は
+								//リスナーを解除する
+								$(this.stage.rootElement).off(FORE_CONTAINER_CACHE_CLEAR_EVENTS,
+										this._foremoustContainerCacheClearListener);
+								this.stage.space.removeEventListener('displayUnitAdd',
+										this._foremoustContainerCacheClearListener);
+								this.stage.space.removeEventListener('displayUnitRemove',
+										this._foremoustContainerCacheClearListener);
 							}
+
+							this._stopContainerBoundaryScrollTimer();
+							this._foremostDUContainerCache = null;
 
 							var contentsViews = this.stage.getViewCollection()
 									.getAllContentsViews();
@@ -1932,25 +2057,52 @@
 							this._moveFunctionDataMap = null;
 						},
 
+						_startContainerBoundaryScrollTimer: function() {
+							if (!this._containerBoundaryScrollTimerId) {
+								this._containerBoundaryScrollTimerId = setTimeout(
+										this._attemptContainerBoundaryScrollWrapper,
+										CONTAINER_BOUNDARY_SCROLL_INTERVAL);
+							}
+						},
+
+						/**
+						 * 現在のタイマーをいったん解除し、改めてタイマーをセットする。
+						 */
+						_restartContainerBoundaryScrollTimer: function() {
+							if (this._containerBoundaryScrollTimerId) {
+								clearTimeout(this._containerBoundaryScrollTimerId);
+							}
+							this._containerBoundaryScrollTimerId = setTimeout(
+									this._attemptContainerBoundaryScrollWrapper,
+									CONTAINER_BOUNDARY_SCROLL_INTERVAL);
+						},
+
+						_stopContainerBoundaryScrollTimer: function() {
+							if (this._containerBoundaryScrollTimerId) {
+								clearTimeout(this._containerBoundaryScrollTimerId);
+								this._containerBoundaryScrollTimerId = null;
+							}
+						},
+
 						/**
 						 * @private
-						 * @param callback
 						 */
-						_doBoundaryScrollDUDrag: function(callback) {
-							var activeView = this.stage._getActiveView();
+						_attemptContainerBoundaryScroll: function() {
+							var view = this.initialState.view;
+							if (!view) {
+								return false;
+							}
 
-							var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left
-									- activeView.x;
-							var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top
-									- activeView.y;
+							var viewport = view._viewport;
 
-							var viewport = activeView._viewport;
-
-							var globalPos = viewport.getWorldPositionFromDisplayOffset(pointerX,
-									pointerY);
-
-							var foremostDUContainer = this.stage
-									._getForemostDisplayUnitContainerAt(globalPos.x, globalPos.y);
+							var foremostDUContainer = this._foremostDUContainerCache;
+							if (!foremostDUContainer) {
+								foremostDUContainer = this.stage
+										._getForemostDisplayUnitContainerAt(
+												this.lastGlobalPosition.x,
+												this.lastGlobalPosition.y);
+								this._foremostDUContainerCache = foremostDUContainer;
+							}
 
 							var containerScrollResult = {
 								isScrolled: false,
@@ -1960,21 +2112,20 @@
 
 							if (foremostDUContainer) {
 								var scrollIncrementWorldX = viewport
-										.toWorldX(BOUNDARY_SCROLL_INCREMENT);
+										.toWorldX(CONTAINER_BOUNDARY_SCROLL_INCREMENT);
 								var scrollIncrementWorldY = viewport
-										.toWorldY(BOUNDARY_SCROLL_INCREMENT);
+										.toWorldY(CONTAINER_BOUNDARY_SCROLL_INCREMENT);
 
-								var boundaryX = viewport
-										.toWorldX(DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH);
-								var boundaryY = viewport
-										.toWorldY(DU_CONTAINER_DEFAULT_BOUNDARY_SCROLL_WIDTH);
+								var boundaryX = viewport.toWorldX(CONTAINER_BOUNDARY_WIDTH);
+								var boundaryY = viewport.toWorldY(CONTAINER_BOUNDARY_WIDTH);
 
 								var targetContainer = foremostDUContainer;
 								var shouldRetry = true;
 								do {
 									containerScrollResult = targetContainer._attemptBoundaryScroll(
-											globalPos.x, globalPos.y, boundaryX, boundaryY,
-											scrollIncrementWorldX, scrollIncrementWorldY);
+											this.lastGlobalPosition.x, this.lastGlobalPosition.y,
+											boundaryX, boundaryY, scrollIncrementWorldX,
+											scrollIncrementWorldY);
 
 									if (containerScrollResult.isScrolled) {
 										break;
@@ -1989,46 +2140,33 @@
 								} while (shouldRetry && !containerScrollResult.isScrolled);
 							}
 
+							if (this.isContainerBoundaryScrollEnabled) {
+								//DUコンテナの境界スクロールの実行結果に関わらず、
+								//次回のDUコンテナスクロールタイマーを予約
+								this._restartContainerBoundaryScrollTimer();
+							}
+
 							if (containerScrollResult.isScrolled) {
 								//DUコンテナのスクロールを行った（ので、レイヤーの境界スクロールは行わない）
 								//スクロールしたDUコンテナの子孫のドラッグ対象DUはさらに位置を移動させる
 								var displayDx = viewport.toDisplayX(containerScrollResult.dx);
 								var displayDy = viewport.toDisplayY(containerScrollResult.dy);
 
-								this._dragSession.doPseudoMoveBy(displayDx, displayDy,
-										targetContainer);
-								return;
+								var delta = {
+									x: displayDx,
+									y: displayDy
+								};
+								this._deltaMove(null, delta, targetContainer);
+
+								//スクロールした場合、子孫要素が動いてカーソル位置のDUコンテナが
+								//変わっている可能性があるのでキャッシュをクリアする
+								this._foremostDUContainerCache = null;
+
+								return true;
 							}
 
-							var nineSlicePosition = viewport.getNineSlicePosition(pointerX,
-									pointerY);
-							if (nineSlicePosition.isMiddleCenter) {
-								//ActiveViewにおいて、カーソル位置が中央部の場合は境界スクロールしない
-								//ただし、StageViewの外側にカーソルがある場合は境界スクロールする
-								return;
-							}
-
-							//以下は、StageView全体の（スクリーン）スクロール
-
-							var dirx = 0;
-							if (nineSlicePosition.isLeft) {
-								dirx = -1;
-							} else if (nineSlicePosition.isRight) {
-								dirx = 1;
-							}
-
-							var diry = 0;
-							if (nineSlicePosition.isTop) {
-								diry = -1;
-							} else if (nineSlicePosition.isBottom) {
-								diry = 1;
-							}
-
-							var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * dirx;
-							var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * diry;
-
-							var actualDiff = this._scrollBy(boundaryScrX, boundaryScrY);
-							this._dragSession.doPseudoMoveBy(actualDiff.dx, actualDiff.dy);
+							//DUコンテナのスクロールは行われなかった
+							return false;
 						},
 
 						/**
@@ -2113,7 +2251,7 @@
 							this._constraintOverrideMap = constraintObject;
 						},
 
-						__onBegin: function(event) {
+						__onBeginning: function(event) {
 							//デフォルトでは、選択中かつリサイズ可能なDUがドラッグ対象となる。
 							var targetDU = this.stage.getSelectedDisplayUnits();
 							targetDU = targetDU.filter(function(resizeTargetDU) {
@@ -2678,7 +2816,7 @@
 					this.regionOverlayClassName = DEFAULT_REGION_OVERLAY_CLASSNAME;
 				},
 
-				__onBegin: function(event) {
+				__onBeginning: function(event) {
 					var evArg = {
 						session: this
 					};
@@ -2764,7 +2902,7 @@
 					this.regionOverlayClassName = DEFAULT_REGION_OVERLAY_CLASSNAME;
 				},
 
-				__onBegin: function(event) {
+				__onBeginning: function(event) {
 					var evArg = {
 						session: this
 					};
@@ -2856,7 +2994,7 @@
 					this._isViewBoundaryScrollEnabled = false;
 				},
 
-				__onBegin: function(event) {
+				__onBeginning: function(event) {
 					if (this.stage.UIDragScreenScrollDirection === ScrollDirection.NONE) {
 						//画面スクロールしない設定なので何もしない
 						return false;
@@ -2962,7 +3100,7 @@
 						/**
 						 * @private
 						 */
-						__onBegin: function(event) {
+						__onBeginning: function(event) {
 							//デフォルトでは、選択中のDUをドラッグ対象とする。
 							//ただし、カスタムドラッグの場合は、targetsに含めるだけでセッションキャンセル時に自動的に位置をロールバックしたりはしない。
 							var targetDU = this.stage.getSelectedDisplayUnits();
@@ -3086,7 +3224,7 @@
 					this._isViewBoundaryScrollEnabled = false;
 				},
 
-				__onBegin: function(event) {
+				__onBeginning: function(event) {
 					var $el = $(event.target);
 
 					var index = parseInt($el.data('stageDynSepIdx'));
@@ -16598,8 +16736,6 @@
 	var SCROLL_DIRECTION_X = ScrollDirection.X;
 	var SCROLL_DIRECTION_Y = ScrollDirection.Y;
 	var SCROLL_DIRECTION_XY = ScrollDirection.XY;
-
-	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var EVENT_VIEW_UNIFIED_SIGHT_CHANGE = 'stageViewUnifiedSightChange';
 
