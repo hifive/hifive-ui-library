@@ -791,6 +791,9 @@
 
 		var TOOLTIP_OFFSET = 10;
 
+		var BOUNDARY_SCROLL_INTERVAL = 12;
+		var BOUNDARY_SCROLL_AMOUNT = 10;
+
 		/**
 		 * 重複を排除した配列を返します。引数がnullの場合は空配列を返します。
 		 *
@@ -830,9 +833,23 @@
 				 */
 				data: null,
 
+				/**
+				 * ビュー境界スクロールのタイマー間隔[ms]
+				 */
+				viewBoundaryScrollInterval: null,
+
+				/**
+				 * 1回のビュー境界スクロールあたりの移動量(ディスプレイ座標の移動量)
+				 */
+				viewBoundaryScrollAmount: null,
+
 				_hasBegun: null,
 				_isReleased: null,
 				_isCompleted: null,
+
+				//isCompletedはonEnd, onCancelのコールバックを呼ぶ前にtrueにしてしまうため、
+				//「disposeしたかどうか」を判定するフラグは別に用意する
+				_isDisposed: null,
 
 				_targets: null,
 
@@ -851,7 +868,13 @@
 
 				_tooltip: null,
 
-				_isViewBoundaryScrollEnabled: null
+				_isViewBoundaryScrollEnabled: null,
+
+				_viewBoundaryScrollTimerId: null,
+
+				_viewBoundaryScrollTimerCallbackWrapper: null,
+
+				_nineSlice: null
 			},
 
 			accessor: {
@@ -944,7 +967,23 @@
 						return this._isViewBoundaryScrollEnabled;
 					},
 					set: function(value) {
-						this._isViewBoundaryScrollEnabled = value;
+						if (this._isViewBoundaryScrollEnabled !== value) {
+							this._isViewBoundaryScrollEnabled = value;
+
+							if (!this._hasBegun || this._isReleased) {
+								//開始前、またはマウスボタンリリース後はフラグとしては変更できるがスクロール処理はもはや　行わない
+								return;
+							}
+
+							if (value === true) {
+								//trueにされたら、境界スクロールを試行する
+								//(カーソル位置次第なので、必ずすぐに境界スクロールが起きるとは限らない。あくまで機能を有効化するのみ)
+								this._toggleBoundaryScroll();
+							} else {
+								//境界スクロールをオフにする
+								this._endBoundaryScroll();
+							}
+						}
 					}
 				}
 			},
@@ -965,9 +1004,18 @@
 					this._hasBegun = false;
 					this._isReleased = false;
 					this._isCompleted = false;
+					this._isDisposed = false;
 
 					this.data = null;
 					this._isAsync = false;
+
+					this.viewBoundaryScrollInterval = BOUNDARY_SCROLL_INTERVAL;
+					this.viewBoundaryScrollAmount = BOUNDARY_SCROLL_AMOUNT;
+
+					var that = this;
+					this._viewBoundaryScrollTimerCallbackWrapper = function() {
+						that._viewBoundaryScrollTimerCallback();
+					};
 
 					//ビュー境界スクロールはデフォルト：true
 					this._isViewBoundaryScrollEnabled = true;
@@ -1036,9 +1084,13 @@
 
 					this._saveInitialLayout();
 
-					//子クラスの__onBeginの中でイベント送出⇒liveMode変更など
+					//子クラスの__onBeginの中で開始がキャンセルされたり、イベント送出⇒liveMode変更など
 					//追加の初期化処理が行われる可能性があるので、このフラグのセットはonBegin呼び出し後にする必要がある。
 					this._hasBegun = true;
+
+					if (this.isViewBoundaryScrollEnabled) {
+						this._toggleBoundaryScroll();
+					}
 
 					return true;
 				},
@@ -1137,6 +1189,45 @@
 					}
 				},
 
+				/**
+				 * ドラッグ開始地点と現在のカーソル位置を対角として作られる領域のRectを返します。値はグローバル座標系の値です。
+				 *
+				 * @returns {Rect} 選択された領域（グローバル座標値）
+				 */
+				getGlobalRect: function() {
+					var view = this.initialState.view;
+
+					if (!view) {
+						throw new Error('このドラッグセッションはビューに紐づいていないため、リージョンは計算できません。');
+					}
+
+					//リサイズ開始位置を原点とした、現在のカーソル位置での移動量（ワールド座標）
+					//なお、ビューの境界スクロール等、カーソル位置が変わらないままビューがスクロールすることがあるので注意
+					var width = this.lastGlobalPosition.x - this.initialState.globalPosition.x;
+					var height = this.lastGlobalPosition.y - this.initialState.globalPosition.y;
+
+					var nx, ny;
+
+					//開始位置よりマイナス方向にカーソルがあったら、RectのXを現在のカーソル位置にし、
+					//幅は-1をかけて絶対値に直す。heightも同様。
+					if (width >= 0) {
+						nx = this.initialState.globalPosition.x;
+					} else {
+						nx = this.lastGlobalPosition.x;
+						width *= -1;
+					}
+
+					if (height >= 0) {
+						ny = this.initialState.globalPosition.y;
+					} else {
+						ny = this.lastGlobalPosition.y;
+						height *= -1;
+					}
+
+					var ret = Rect.create(nx, ny, width, height);
+					return ret;
+				},
+
 				__triggerStageEvent: function(eventType, originalEvent, evArg) {
 					//TODO fix()だとoriginalEventのoffset補正が効かないかも。h5track*の作り方を参考にした方がよい？？
 					var delegatedJQueryEvent = $.event.fix(originalEvent);
@@ -1170,6 +1261,16 @@
 				//子クラスでオーバーライド
 				},
 
+				/**
+				 * ビューが境界スクロールした場合に呼ばれます。マウスカーソルが移動した場合には呼ばれません（onMoveが呼ばれます）。
+				 * また、ビューをAPI経由でスクロールした場合も呼ばれません。
+				 *
+				 * @param scrollDelta {Point} ディスプレイ座標系での移動量（差分）
+				 */
+				__onViewBoundaryScroll: function(viewScrollDelta) {
+				//子クラスでオーバーライド
+				},
+
 				__onRelease: function(event) {
 				//子クラスでオーバーライド
 				},
@@ -1198,6 +1299,10 @@
 
 					var diff = this._updateMove(event);
 
+					if (this.isViewBoundaryScrollEnabled) {
+						this._toggleBoundaryScroll();
+					}
+
 					this.__onMove(event, diff);
 				},
 
@@ -1214,6 +1319,9 @@
 					this._updateMove(event);
 
 					this.__onRelease(event);
+
+					//マウスを離した時点で境界スクロールは完了
+					this._endBoundaryScroll();
 
 					if (!this.isAsync && !this.isCompleted) {
 						this.end();
@@ -1266,22 +1374,95 @@
 
 				/**
 				 * @private
-				 * @param callback
 				 */
-				_toggleBoundaryScroll: function(callback) {
-					var activeView = this._getActiveView();
+				_toggleBoundaryScroll: function() {
+					var view = this.initialState.view;
+					if (!view) {
+						//特定のビューに紐づかないドラッグセッションの場合は何もしない
+						return;
+					}
 
-					var pointerX = this._dragLastPagePos.x - this._dragStartRootOffset.left
-							- activeView.x;
-					var pointerY = this._dragLastPagePos.y - this._dragStartRootOffset.top
-							- activeView.y;
+					//ステージ左上のページ座標を求める
+					var viewPagePos = view.getPagePosition();
 
-					var nineSlicePosition = activeView._viewport.getNineSlicePosition(pointerX,
-							pointerY);
+					var viewX = this.lastPagePosition.x - viewPagePos.x;
+					var viewY = this.lastPagePosition.y - viewPagePos.y;
+
+					var nineSlicePosition = view._viewport.getNineSlicePosition(viewX, viewY);
+					this._nineSlice = nineSlicePosition;
+
 					if (!nineSlicePosition.isMiddleCenter) {
-						this._beginBoundaryScroll(nineSlicePosition, callback);
+						this._beginBoundaryScroll(nineSlicePosition);
 					} else {
 						this._endBoundaryScroll();
+					}
+				},
+
+				/**
+				 * @private
+				 */
+				_beginBoundaryScroll: function(nineSlice, callback) {
+					if (this._viewBoundaryScrollTimerId) {
+						//既に境界スクロールタイマーがセット済なので何もしなくてよい
+						return;
+					}
+
+					//境界スクロールには時間がかかることもあるので、
+					//setIntervalではなくsetTimeoutを使用する
+					this._viewBoundaryScrollTimerId = setTimeout(
+							this._viewBoundaryScrollTimerCallbackWrapper,
+							this.viewBoundaryScrollInterval);
+				},
+
+				_viewBoundaryScrollTimerCallback: function() {
+					var dirx = 0;
+					if (this._nineSlice.isLeft) {
+						dirx = -1;
+					} else if (this._nineSlice.isRight) {
+						dirx = 1;
+					}
+
+					var diry = 0;
+					if (this._nineSlice.isTop) {
+						diry = -1;
+					} else if (this._nineSlice.isBottom) {
+						diry = 1;
+					}
+
+					var boundaryScrX = this.viewBoundaryScrollAmount * dirx;
+					var boundaryScrY = this.viewBoundaryScrollAmount * diry;
+
+					//ディスプレイ座標系での実移動量
+					var scrollDelta = this.initialState.view.scrollBy(boundaryScrX, boundaryScrY);
+
+					if (scrollDelta.x !== 0 || scrollDelta.y !== 0) {
+						//どちらの方向に動いた場合、グローバル座標を更新してコールバックを呼ぶ
+
+						//ビュー境界スクロールは必ず特定のビューで開始したドラッグセッションでのみ起こる前提
+						var view = this.initialState.view;
+						var viewPagePos = view.getPagePosition();
+						var vdx = this.lastPagePosition.x - viewPagePos.x;
+						var vdy = this.lastPagePosition.y - viewPagePos.y;
+						this._lastGlobalPosition = view._viewport
+								.getWorldPositionFromDisplayOffset(vdx, vdy);
+
+						this.__onViewBoundaryScroll(scrollDelta);
+					}
+
+					//次回のタイマーをセットする
+					this._viewBoundaryScrollTimerId = setTimeout(
+							this._viewBoundaryScrollTimerCallbackWrapper,
+							this.viewBoundaryScrollInterval);
+				},
+
+				/**
+				 * @private
+				 */
+				_endBoundaryScroll: function() {
+					if (this._viewBoundaryScrollTimerId) {
+						clearTimeout(this._viewBoundaryScrollTimerId);
+						this._viewBoundaryScrollTimerId = null;
+						this._nineSlice = null;
 					}
 				},
 
@@ -1326,11 +1507,11 @@
 				 * @private
 				 */
 				_dispose: function() {
-					if (this.isCompleted) {
+					if (this._isDisposed) {
 						//二度目以降は呼ばれても何もしない
 						return;
 					}
-					this._isCompleted = true;
+					this._isDisposed = true;
 
 					//Stage側でDragSessionの値を参照したりする可能性を考え、先にStage側のクリーンアップ処理を呼ぶ
 					this.stage._disposeDragSession();
@@ -1342,6 +1523,8 @@
 						this._tooltip.__remove();
 						this._tooltip = null;
 					}
+
+					this._endBoundaryScroll();
 
 					this.data = null;
 
@@ -1376,7 +1559,7 @@
 				var EVENT_DRAG_DU_DROP = 'duDragDrop';
 				var EVENT_DRAG_DU_CANCEL = 'duDragCancel';
 
-				//eventはnullの場合がある（doPseudoMoveByの場合）
+				//eventはnullの場合がある（ビューやDUコンテナの境界スクロールの場合）
 				function defaultMoveFunction(du, data, event, delta, dragSession) {
 					var ret = {
 						dx: delta.x,
@@ -1601,6 +1784,10 @@
 							this
 									.__triggerStageEvent(EVENT_DRAG_DU_MOVE, event.originalEvent,
 											evArg);
+						},
+
+						__onViewBoundaryScroll: function(scrollDelta) {
+							this._deltaMove(null, scrollDelta);
 						},
 
 						__onRelease: function(event) {
@@ -1884,16 +2071,16 @@
 				var EVENT_RESIZE_DU_END = 'duResizeEnd';
 				var EVENT_RESIZE_DU_CANCEL = 'duResizeCancel';
 
-				//eventはnullの場合がある（doPseudoMoveByの場合）
-				function defaultResizeFunction(du, data, event, delta, resizeSession) {
-					var ret = {
-						dx: delta.x,
-						dy: delta.y,
-						dw: 0,
-						dh: 0
-					};
-					return ret;
-				}
+				//eventはnullの場合がある（ビュー境界スクロールの場合）
+				//				function defaultResizeFunction(du, data, event, delta, resizeSession) {
+				//					var ret = {
+				//						dx: delta.x,
+				//						dy: delta.y,
+				//						dw: 0,
+				//						dh: 0
+				//					};
+				//					return ret;
+				//				}
 
 				var desc = {
 					name: 'h5.ui.components.stage.DUResizeSession',
@@ -1911,7 +2098,7 @@
 						resizeFunction: null,
 
 						//du -> 当該DU用のdataオブジェクト へのマップ
-						_resizeFunctionDataMap: null,
+						//_resizeFunctionDataMap: null,
 
 						//du.id -> 当該DUの、このセッションに限ったリサイズ制約 のマップ
 						_constraintOverrideMap: null
@@ -1936,9 +2123,9 @@
 
 							this._handlingPosition = handlingPosition;
 
-							this._resizeFunctionDataMap = new Map();
+							//this._resizeFunctionDataMap = new Map();
 
-							this.resizeFunction = defaultResizeFunction;
+							this.resizeFunction = null;
 
 							this._constraintOverrideMap = null;
 						},
@@ -2057,30 +2244,24 @@
 							this.stage.trigger(EVENT_RESIZE_DU_CANCEL, evArg);
 						},
 
-						//カーソル位置は移動していないが対象を移動させたい場合に呼び出す。
-						//（境界スクロールなどのときに使用）
-						//引数にはディスプレイ座標系での移動差分量を渡す。
-						doPseudoMoveBy: function(dx, dy) {
-							var delta = {
-								x: dx,
-								y: dy
-							};
-
-							this._deltaResize(null, delta);
-						},
-
 						__onMove: function(event, delta) {
 							this._deltaResize(event, delta);
-
-							//							this.toggleBoundaryScroll(function(dispScrX, dispScrY) {
-							//								that._resizeSession.doPseudoMoveBy(dispScrX, dispScrY);
-							//							});
 
 							var evArg = {
 								session: this
 							};
 							this.__triggerStageEvent(EVENT_RESIZE_DU_CHANGE, event.originalEvent,
 									evArg);
+						},
+
+						/**
+						 * ビューが境界スクロールした場合に呼ばれます。マウスカーソルが移動した場合には呼ばれません（onMoveが呼ばれます）。
+						 * また、ビューをAPI経由でスクロールした場合も呼ばれません。
+						 *
+						 * @param scrollDelta {Point} ディスプレイ座標系での移動量（差分）
+						 */
+						__onViewBoundaryScroll: function(scrollDelta) {
+							this._deltaResize(null, scrollDelta);
 						},
 
 						__onRelease: function(event) {
@@ -2099,19 +2280,16 @@
 								return;
 							}
 
-							this._moveX += delta.x;
-							this._moveY += delta.y;
-
 							var targets = this._targets;
 
 							for (var i = 0, len = targets.length; i < len; i++) {
 								var du = targets[i];
 
-								var data = this._resizeFunctionDataMap.get(du);
-								if (!data) {
-									data = {};
-									this._resizeFunctionDataMap.set(du.id, data);
-								}
+								//								var data = this._resizeFunctionDataMap.get(du);
+								//								if (!data) {
+								//									data = {};
+								//									this._resizeFunctionDataMap.set(du.id, data);
+								//								}
 
 								var newRect = this._getCorrectedRect(du);
 								du.setLayoutRect(newRect);
@@ -2119,13 +2297,11 @@
 						},
 
 						_getCorrectedRect: function(du) {
-							var converter = this.initialState.view.coordinateConverter;
-
 							//リサイズ開始位置を原点とした、現在のカーソル位置での移動量（ワールド座標）
-							var wmx = converter.toWorldX(this.lastPagePosition.x
-									- this.initialState.pagePosition.x);
-							var wmy = converter.toWorldY(this.lastPagePosition.y
-									- this.initialState.pagePosition.y);
+							var wmx = this.lastGlobalPosition.x
+									- this.initialState.globalPosition.x;
+							var wmy = this.lastGlobalPosition.y
+									- this.initialState.globalPosition.y;
 
 							var initialState = this.getInitialLayout(du);
 
@@ -2379,7 +2555,7 @@
 							this._onStageTargets = null;
 
 							this.resizeFunction = null;
-							this._resizeFunctionDataMap = null;
+							//this._resizeFunctionDataMap = null;
 							this._constraintOverrideMap = null;
 						},
 
@@ -2447,76 +2623,6 @@
 							this.regionOverlayClassName = regionOverlayClassName;
 						},
 
-						/**
-						 * ドラッグ開始地点と現在のカーソル位置を対角として作られる領域のRectを返します。値はグローバル座標系の値です。
-						 *
-						 * @returns {Rect} 選択された領域（グローバル座標値）
-						 */
-						__getNormalizedRect: function() {
-							var converter = this.initialState.view.coordinateConverter;
-
-							//リサイズ開始位置を原点とした、現在のカーソル位置での移動量（ワールド座標）
-							var width = converter.toWorldX(this.lastPagePosition.x
-									- this.initialState.pagePosition.x);
-							var height = converter.toWorldY(this.lastPagePosition.y
-									- this.initialState.pagePosition.y);
-
-							var nx, ny;
-
-							//開始位置よりマイナス方向にカーソルがあったら、RectのXを現在のカーソル位置にし、
-							//幅は-1をかけて絶対値に直す。heightも同様。
-							if (width >= 0) {
-								nx = this.initialState.globalPosition.x;
-							} else {
-								nx = this.lastGlobalPosition.x;
-								width *= -1;
-							}
-
-							if (height >= 0) {
-								ny = this.initialState.globalPosition.y;
-							} else {
-								ny = this.lastGlobalPosition.y;
-								height *= -1;
-							}
-
-							var ret = Rect.create(nx, ny, width, height);
-							return ret;
-						},
-
-						/**
-						 * ドラッグ開始地点と現在のカーソル位置を対角として作られる領域のRectを返します。値はディスプレイ座標系の値です。
-						 *
-						 * @returns {Rect} 選択された領域（ディスプレイ座標値）
-						 */
-						__getNormalizedRectDisplay: function() {
-							//リサイズ開始位置を原点とした、現在のカーソル位置での移動量（Display座標）
-							var width = this.lastPagePosition.x - this.initialState.pagePosition.x;
-							var height = this.lastPagePosition.y - this.initialState.pagePosition.y;
-
-							var converter = this.initialState.view.coordinateConverter;
-
-							var nx, ny;
-
-							//開始位置よりマイナス方向にカーソルがあったら、RectのXを現在のカーソル位置にし、
-							//幅は-1をかけて絶対値に直す。heightも同様。
-							if (width >= 0) {
-								nx = converter.toDisplayX(this.initialState.globalPosition.x);
-							} else {
-								nx = converter.toDisplayX(this.lastGlobalPosition.x);
-								width *= -1;
-							}
-
-							if (height >= 0) {
-								ny = converter.toDisplayY(this.initialState.globalPosition.y);
-							} else {
-								ny = converter.toDisplayY(this.lastGlobalPosition.y);
-								height *= -1;
-							}
-
-							var ret = Rect.create(nx, ny, width, height);
-							return ret;
-						},
-
 						__showRegionOverlay: function() {
 							var views;
 							if (this.willShowOverlayInAllViews) {
@@ -2525,7 +2631,7 @@
 								views = [this.initialState.view];
 							}
 
-							var region = this.__getNormalizedRect();
+							var region = this.getGlobalRect();
 
 							for (var i = 0, len = views.length; i < len; i++) {
 								var view = views[i];
@@ -2620,7 +2726,7 @@
 				},
 
 				__onMove: function(event, delta) {
-					var region = this.__getNormalizedRect();
+					var region = this.getGlobalRect();
 
 					this.__updateRegionOverlayLayout(region);
 
@@ -2628,16 +2734,14 @@
 					var dragSelectedDU = this.stage.getDisplayUnitsInWorldRect(
 							this.initialState.view, region, true);
 
-
-					//							this.toggleBoundaryScroll(function() {
-					//								var dragSelectedDU = that.dragSelect();
-					//								var tempSelection = that._dragSelectStartSelectedDU.concat(dragSelectedDU);
-					//								that.select(tempSelection, true);
-					//							});
-
 					var newSelections = this._dragSelectStartSelectedDU.concat(dragSelectedDU);
 
 					this.stage.select(newSelections, true);
+				},
+
+				__onViewBoundaryScroll: function(scrollDelta) {
+					var region = this.getGlobalRect();
+					this.__updateRegionOverlayLayout(region);
 				},
 
 				__onEnd: function() {
@@ -2706,18 +2810,21 @@
 				},
 
 				__onMove: function(event, delta) {
-					var region = this.__getNormalizedRect();
+					var region = this.getGlobalRect();
+					this.__updateRegionOverlayLayout(region);
+				},
+
+				__onViewBoundaryScroll: function(scrollDelta) {
+					var region = this.getGlobalRect();
 					this.__updateRegionOverlayLayout(region);
 				},
 
 				__onEnd: function() {
-					var region = this.__getNormalizedRect();
-					var regionDisplay = this.__getNormalizedRectDisplay();
+					var region = this.getGlobalRect();
 
 					var evArg = {
 						session: this,
-						region: region,
-						regionDisplay: regionDisplay
+						region: region
 					};
 					this.stage.trigger(EVENT_DRAG_REGION_END, evArg);
 				},
@@ -2773,6 +2880,10 @@
 				constructor: function ScreenDragSession(stage, initialState) {
 					super_.constructor.call(this, stage, initialState);
 					this._isAsync = false;
+
+					//画面ドラッグは、デフォルトでは境界スクロールはオフ。ただし、
+					//ユーザーがONにすることは許可する
+					this._isViewBoundaryScrollEnabled = false;
 				},
 
 				__onBegin: function(event) {
@@ -2905,6 +3016,10 @@
 							}
 						},
 
+						__onViewBoundaryScroll: function(scrollDelta) {
+						//TODO スクロール対応
+						},
+
 						__onRelease: function(event) {
 							var evArg = {
 								session: this
@@ -2979,6 +3094,17 @@
 				_scrollBarThickness: null
 			},
 
+			accessor: {
+				isViewBoundaryScrollEnabled: {
+					get: function() {
+						return super_.isViewBoundaryScrollEnabled.get.call(this);
+					},
+					set: function(value) {
+						throw new Error('GridSeparatorDragSessionではビュー境界スクロールは有効化できません。');
+					}
+				}
+			},
+
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.internal.GridSeparatorDragSession
@@ -2987,6 +3113,7 @@
 					super_.constructor.call(this, stage, initialState);
 					this._gridSeparatorDragContext = null;
 					this._scrollBarThickness = scrollBarThickness;
+					this._isViewBoundaryScrollEnabled = false;
 				},
 
 				__onBegin: function(event) {
@@ -11892,6 +12019,8 @@
 	var EventDispatcher = classManager.getClass('h5.event.EventDispatcher');
 
 	var Rect = classManager.getClass('h5.ui.components.stage.Rect');
+
+	var Point = classManager.getClass('h5.ui.components.stage.Point');
 	var DisplayPoint = classManager.getClass('h5.ui.components.stage.DisplayPoint');
 	var WorldPoint = classManager.getClass('h5.ui.components.stage.WorldPoint');
 
@@ -12388,7 +12517,7 @@
 				},
 
 				/**
-				 * 指定されたディスプレイ座標（ただしStageルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
+				 * 指定されたディスプレイ座標（ただしこのビューのルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
 				 *
 				 * @param displayX ディスプレイX座標（ただしStageルート要素の左上を原点とする値）
 				 * @param displayY ディスプレイY座標（ただしStageルート要素の左上を原点とする値）
@@ -13316,8 +13445,8 @@
 									dispTop, dispBottom);
 
 							var actualDiff = {
-								dx: actualDispX - this._viewport.displayX,
-								dy: actualDispY - this._viewport.displayY
+								x: actualDispX - this._viewport.displayX,
+								y: actualDispY - this._viewport.displayY
 							};
 
 							if (this._viewport.displayX === actualDispX
@@ -13357,19 +13486,18 @@
 							return actualDiff;
 						},
 
-						scrollBy: function(displayDx, displayDy) {
-							this._scrollBy(displayDx, displayDy);
-						},
-
 						/**
-						 * @private
 						 * @param displayDx
 						 * @param displayDy
-						 * @returns
+						 * @returns {Object} { x: y: } で表現される実際の移動差分量
 						 */
-						_scrollBy: function(displayDx, displayDy) {
+						scrollBy: function(displayDx, displayDy) {
 							if (displayDx === 0 && displayDy === 0) {
-								return;
+								//移動量はX,Yどちらも0
+								return {
+									x: 0,
+									y: 0
+								};
 							}
 
 							var dx = this._viewport.displayX + displayDx;
@@ -13700,9 +13828,27 @@
 							return false;
 						},
 
-						getPagePosition: function() {
-							var offset = $(this._rootElement).offset();
-							var pos = DisplayPoint.create(offset.left, offset.top);
+						/**
+						 * このビューのルートDOM要素の左上端のページ座標を返します。引数にオフセットを指定すると、その値を加算した値を返します。
+						 *
+						 * @param {Number} offsetX 戻り値のX座標に加算するX軸のオフセット値。省略した場合は0
+						 * @param {Number} offsetY 戻り値のY座標に加算するY軸のオフセット値。省略した場合は0
+						 * @returns {Point} このビューのルートDOM要素の左上端のページ座標
+						 */
+						getPagePosition: function(offsetX, offsetY) {
+							var stageRect = this._rootElement.getBoundingClientRect();
+							var stagePageX = stageRect.left + window.pageXOffset;
+							var stagePageY = stageRect.top + window.pageYOffset;
+
+							if (offsetX != null) {
+								stagePageX += offsetX;
+							}
+
+							if (offsetY != null) {
+								stagePageY += offsetY;
+							}
+
+							var pos = Point.create(stagePageX, stagePageY);
 							return pos;
 						},
 
@@ -16483,9 +16629,6 @@
 	var SCROLL_DIRECTION_Y = ScrollDirection.Y;
 	var SCROLL_DIRECTION_XY = ScrollDirection.XY;
 
-	var BOUNDARY_SCROLL_INTERVAL = 20;
-	var BOUNDARY_SCROLL_INCREMENT = 10;
-
 	var EVENT_SIGHT_CHANGE = 'stageSightChange';
 
 	var EVENT_VIEW_UNIFIED_SIGHT_CHANGE = 'stageViewUnifiedSightChange';
@@ -18130,11 +18273,6 @@
 
 			this._viewMasterClock.unlisten(this._doDragMove, this);
 
-			//現在、DU_DRAGモードの場合はDUコンテナ境界スクロール対応のため
-			//これとは別のタイマーで境界スクロール処理を行っている。
-			//そのため、DU_DRAGの場合はその分岐の中で別途タイマーを解除している。
-			this._endBoundaryScroll();
-
 			if (this._isGridSeparatorDragging()) {
 				//グリッドセパレータのドラッグの場合
 				this._endGridSeparatorDrag(context.event);
@@ -18184,64 +18322,6 @@
 		 * @private
 		 */
 		_isDraggingStarted: false,
-
-		/**
-		 * @private
-		 */
-		_boundaryScrollTimerId: null,
-
-		/**
-		 * @private
-		 */
-		_nineSlice: null,
-
-		/**
-		 * @private
-		 */
-		_beginBoundaryScroll: function(nineSlice, callback) {
-			//途中で方向が変わった場合のため、9-Sliceだけは常に更新する
-			this._nineSlice = nineSlice;
-
-			if (this._boundaryScrollTimerId) {
-				return;
-			}
-
-			var that = this;
-			this._boundaryScrollTimerId = setInterval(function() {
-				//ディスプレイ座標系での移動量
-
-				var dirx = 0;
-				if (that._nineSlice.isLeft) {
-					dirx = -1;
-				} else if (that._nineSlice.isRight) {
-					dirx = 1;
-				}
-
-				var diry = 0;
-				if (that._nineSlice.isTop) {
-					diry = -1;
-				} else if (that._nineSlice.isBottom) {
-					diry = 1;
-				}
-
-				var boundaryScrX = BOUNDARY_SCROLL_INCREMENT * dirx;
-				var boundaryScrY = BOUNDARY_SCROLL_INCREMENT * diry;
-
-				var actualDiff = that._scrollBy(boundaryScrX, boundaryScrY);
-				callback(actualDiff.dx, actualDiff.dy);
-			}, BOUNDARY_SCROLL_INTERVAL);
-		},
-
-		/**
-		 * @private
-		 */
-		_endBoundaryScroll: function() {
-			if (this._boundaryScrollTimerId) {
-				clearInterval(this._boundaryScrollTimerId);
-				this._boundaryScrollTimerId = null;
-				this._nineSlice = null;
-			}
-		},
 
 		setup: function(initData) {
 			//TODO setup()が__readyより前などいつ呼ばれても正しく動作するようにする
@@ -18358,14 +18438,6 @@
 			return this._getActiveView().scrollBy(displayDx, displayDy);
 		},
 
-		//TODO StageView側に移動、ただしDragSession内部で使っている
-		/**
-		 * @private
-		 */
-		_scrollBy: function(displayDx, displayDy) {
-			return this._getActiveView()._scrollBy(displayDx, displayDy);
-		},
-
 		scrollWorldTo: function(worldX, worldY) {
 			return this._getActiveView().scrollWorldTo(worldX, worldY);
 		},
@@ -18460,6 +18532,30 @@
 
 		getScrollPosition: function() {
 			return this._getActiveView().getScrollPosition();
+		},
+
+		/**
+		 * このStageのルートDOM要素の左上端のページ座標を返します。引数にオフセットを指定すると、その値を加算した値を返します。
+		 *
+		 * @param {Number} offsetX 戻り値のX座標に加算するX軸のオフセット値。省略した場合は0
+		 * @param {Number} offsetY 戻り値のY座標に加算するY軸のオフセット値。省略した場合は0
+		 * @returns {Point} このビューのルートDOM要素の左上端のページ座標
+		 */
+		getPagePosition: function(offsetX, offsetY) {
+			var stageRect = this.rootElement.getBoundingClientRect();
+			var stagePageX = stageRect.left + window.pageXOffset;
+			var stagePageY = stageRect.top + window.pageYOffset;
+
+			if (offsetX != null) {
+				stagePageX += offsetX;
+			}
+
+			if (offsetY != null) {
+				stagePageY += offsetY;
+			}
+
+			var pos = Point.create(stagePageX, stagePageY);
+			return pos;
 		},
 
 		/**
