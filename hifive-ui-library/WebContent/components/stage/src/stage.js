@@ -1293,7 +1293,7 @@
 				//子クラスでオーバーライド
 				},
 
-				__onCancel: function() {
+				__onCancel: function(andRollbackStates) {
 				//子クラスでオーバーライド
 				},
 
@@ -3229,20 +3229,15 @@
 						 * @memberOf DragSession
 						 * @returns {DragSession}
 						 */
-						__onCancel: function() {
+						__onCancel: function(andRollbackStates) {
+							if (andRollbackStates !== false) {
+								this.rollbackLayout();
+							}
+
 							var evArg = {
 								session: this
 							};
 							this.stage.trigger(EVENT_DRAG_CUSTOM_CANCEL, evArg);
-
-							//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
-							//依存しているDUのアップデートを要求する
-							/*
-							var allTargets = getUniquelyMergedArray(this._targets, this._onStageTargets);
-							allTargets.forEach(function(du) {
-								du._setDirty(REASON_UPDATE_DEPENDENCY_REQUEST);
-							});
-							*/
 						},
 
 						/**
