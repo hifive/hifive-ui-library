@@ -6388,6 +6388,58 @@
 				//ID自動生成カウンタ
 				var DUIDCounter = 0;
 
+				function scrollIntoContainerView(du, container) {
+					if (container.overflow !== 'hidden') {
+						//指定されたコンテナはoverflowがhiddenではないので
+						//スクロールしなくても見えるので何もしなくてよい
+						return;
+					}
+
+					//glance相当の処理でスクロールする
+
+					//指定されたコンテナのコンテナローカル座標系で表したDUの座標を求める
+					//containerは必ずduの先祖である前提
+					var targetContainer = container;
+					var duCx = du.x - targetContainer.scrollX;
+					var duCy = du.y - targetContainer.scrollY;
+					while (targetContainer !== container) {
+						duCx += targetContainer.x - targetContainer.scrollX;
+						duCy += targetContainer.y - targetContainer.scrollY;
+						targetContainer = du.parentDisplayUnit;
+					}
+
+					var moveDx = 0;
+
+					if (duCx < 0) {
+						//DUがコンテナの左側にはみ出している場合
+						moveDx = duCx;
+					} else {
+						var duCRight = duCx + du.width;
+						//コンテナローカル座標系なので右端＝幅
+						var containerRight = container.width;
+						if (duCRight > containerRight) {
+							//DUの右側がコンテナの右側にはみ出している場合
+							moveDx = duCRight - containerRight;
+						}
+					}
+
+					var moveDy = 0;
+
+					if (duCy < 0) {
+						//DUがコンテナの左側にはみ出している場合
+						moveDy = duCy;
+					} else {
+						var duCBottom = duCy + du.height;
+						var containerBottom = container.height;
+						if (duCBottom > containerBottom) {
+							//DUの右側がコンテナの右側にはみ出している場合
+							moveDy = duCBottom - containerBottom;
+						}
+					}
+
+					container.scrollBy(moveDx, moveDy);
+				}
+
 				var classDesc = {
 					name: 'h5.ui.components.stage.DisplayUnit',
 					isAbstract: true,
@@ -6786,7 +6838,10 @@
 						 * このDUが可視範囲に入るように、ステージをスクロールします。<br>
 						 * "center"を指定した場合、このDisplayUnitが画面の中央に来るようにスクロールします。
 						 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
-						 * 引数なしの場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
+						 * "glance"を指定した場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
+						 *
+						 * @param mode {String} "center"または"glance"。
+						 * @param view {StageView} どのビューをスクロールするか。省略した場合はアクティブビューを対象とみなします。
 						 */
 						scrollIntoView: function(mode, view) {
 							//TODO 引数に位置を取れるようにする？
@@ -6804,6 +6859,15 @@
 							if (!view) {
 								view = this._rootStage._getActiveView();
 							}
+
+							//レイヤー直下のコンテナまで順に、そのコンテナの可視範囲内にこのDUが入るようにする
+							var parentContainer = this.parentDisplayUnit;
+							while (parentContainer && !Layer.isClassOf(parentContainer)) {
+								scrollIntoContainerView(this, parentContainer);
+								parentContainer = parentContainer.parentDisplayUnit;
+							}
+
+							//あとは、レイヤーをスクロールしてcenterまたはglance相当にビュー自体をスクロールする
 
 							var gpos = this.getWorldGlobalPosition();
 							var wr = view._viewport.getWorldRect();
