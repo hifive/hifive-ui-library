@@ -6840,12 +6840,12 @@
 						 * (ステージにスクロール制限がかけられている場合、中央に来ない場合があります。)<br>
 						 * "glance"を指定した場合、このDUが「ちょうど見える」ようにスクロールします。DUがすでに可視範囲にすべて入っている場合はスクロールしません。
 						 *
-						 * @param mode {String} "center"または"glance"。
+						 * @param mode {String} "center", "glance", または"left/center/right" + "-" +
+						 *            "top/middle/bottom"の組み合わせ。組み合わせの場合はハイフンでつなげる。（例："left-top"）
+						 *            "center"は"center-middle"と同じ意味になる。
 						 * @param view {StageView} どのビューをスクロールするか。省略した場合はアクティブビューを対象とみなします。
 						 */
 						scrollIntoView: function(mode, view) {
-							//TODO 引数に位置を取れるようにする？
-							//TODO BasicDUに持たせる？ContentsDU?
 							if (!this._rootStage) {
 								return;
 							}
@@ -6874,28 +6874,54 @@
 							var moveDx = 0;
 							var moveDy = 0;
 
-							if (mode == 'center') {
-								//centerモード
-								var cx = gpos.x + this.width / 2;
-								var cy = gpos.y + this.height / 2;
-								moveDx = cx - wr.x - wr.width / 2;
-								moveDy = cy - wr.y - wr.height / 2;
+							//modeがnullの他、空文字の場合も省略時の動きをさせるので、!modeの判定でよい
+							if (!mode || mode == 'glance') {
+								//glanceモード
+								if (gpos.x < wr.x) {
+									moveDx = gpos.x - wr.x;
+								} else if (gpos.x + this.width > wr.x + wr.width) {
+									moveDx = gpos.x + this.width - (wr.x + wr.width);
+								}
+
+								if (gpos.y < wr.y) {
+									moveDy = gpos.y - wr.y;
+								} else if (gpos.y + this.height > wr.y + wr.height) {
+									moveDy = gpos.y + this.height - (wr.y + wr.height);
+								}
 								view.scrollWorldBy(moveDx, moveDy);
 								return;
 							}
 
-							//glanceモード
-							if (gpos.x < wr.x) {
+							var aligns = mode.split('-');
+
+							//モード文字列が不正な場合はcenter扱い
+							switch (aligns[0]) {
+							case 'left':
 								moveDx = gpos.x - wr.x;
-							} else if (gpos.x + this.width > wr.x + wr.width) {
-								moveDx = gpos.x + this.width - (wr.x + wr.width);
+								break;
+							case 'center':
+							default:
+								moveDx = gpos.x + this.width / 2 - wr.x - wr.width / 2;
+								break;
+							case 'right':
+								moveDx = gpos.x + this.width - wr.x - wr.width;
+								break;
 							}
 
-							if (gpos.y < wr.y) {
+							//モード文字列が不正な場合はmiddle扱い
+							switch (aligns[1]) {
+							case 'top':
 								moveDy = gpos.y - wr.y;
-							} else if (gpos.y + this.height > wr.y + wr.height) {
-								moveDy = gpos.y + this.height - (wr.y + wr.height);
+								break;
+							case 'middle':
+							default:
+								moveDy = gpos.y + this.height / 2 - wr.y - wr.height / 2;
+								break;
+							case 'bottom':
+								moveDy = gpos.y + this.height - wr.y - wr.height;
+								break;
 							}
+
 							view.scrollWorldBy(moveDx, moveDy);
 						},
 
