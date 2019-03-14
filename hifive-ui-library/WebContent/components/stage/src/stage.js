@@ -14423,9 +14423,19 @@
 						 * 実際に描画を更新します。
 						 *
 						 * @private
-						 * @param renderRect 描画範囲
+						 * @param renderRect {Rect} ワールドグローバル座標系で表した描画範囲
 						 */
 						_doUpdate: function(renderRect) {
+							if (!renderRect) {
+								if (this._renderRect) {
+									renderRect = this._renderRect;
+								} else {
+									//Viewport.getWorldRect()は毎回インスタンスを生成する。
+									//(あまりしたくないが)高速化のため内部変数を直接見る。
+									renderRect = this._viewport._worldRect;
+								}
+							}
+
 							var that = this;
 
 							//レイヤーのスケール・スクロール位置はビューごとに異なるため
@@ -14449,7 +14459,7 @@
 
 							//可視範囲外になったDUに対応するDOMを削除する
 							this._domManager.doForEachRenderedDisplayUnit(function(element, du) {
-								if (!that._shouldExit(du)) {
+								if (!that._shouldExit(du, renderRect)) {
 									return;
 								}
 
@@ -14466,30 +14476,6 @@
 								var elem = that._domManager.getElement(du);
 								if (elem) {
 									du.__updateDOM(that, elem, updateReasonSet);
-								}
-
-								//ドラッグ中の場合、DU相当の表層コピーエレメントもアップデートする
-								if (that._dragTargetDUInfoMap) {
-									var foreElem = that._dragTargetDUInfoMap.get(du);
-									if (foreElem) {
-										//通常のDOMと同様に再描画してもらう。ここで、DUのサイズや位置も変更される
-										du.__updateDOM(that, foreElem, updateReasonSet);
-
-										//ただし、位置だけは必ずグローバルポジションに上書きする
-										var gpos = du.getWorldGlobalPosition();
-										//TODO SVGとDIVの違いはDU側に吸収させる
-										if (du._isOnSvgLayer) {
-											SvgUtil.setAttributes(foreElem, {
-												x: gpos.x,
-												y: gpos.y
-											});
-										} else {
-											$(foreElem).css({
-												left: gpos.x,
-												top: gpos.y
-											});
-										}
-									}
 								}
 							});
 							dirtyMap.clear();
@@ -14591,9 +14577,10 @@
 						/**
 						 * @private
 						 * @param du
+						 * @param renderRect {Rect} ワールドグローバル座標系で表される描画範囲
 						 * @returns {Boolean}
 						 */
-						_shouldExit: function(du) {
+						_shouldExit: function(du, renderRect) {
 							if (du.renderPriority === RenderPriority.ALWAYS
 									|| du.renderPriority === RenderPriority.IMMEDIATE) {
 								//priorityがALWAYSかIMMEDIATEなら自動Exitしない
@@ -14605,8 +14592,6 @@
 								//BasicDUで現在なんらかの変更処理中の場合はDOMは削除しない
 								return false;
 							}
-
-							var renderRect = this._viewport._worldRect;
 
 							var renderX = renderRect.x;
 							var renderY = renderRect.y;
@@ -14687,16 +14672,6 @@
 								//その後shouldExit()で常にfalseを返すことでDOMが削除されないようにしている。
 								//従って、ALWAYSの場合は初回描画判定に関しては通常プライオリティのときと同じ判定を行う。
 								return true;
-							}
-
-							if (!renderRect) {
-								if (this._renderRect) {
-									renderRect = this._renderRect;
-								} else {
-									//Viewport.getWorldRect()は毎回インスタンスを生成する。
-									//(あまりしたくないが)高速化のため内部変数を直接見る。
-									renderRect = this._viewport._worldRect;
-								}
 							}
 
 							var rLeft = renderRect.x;
