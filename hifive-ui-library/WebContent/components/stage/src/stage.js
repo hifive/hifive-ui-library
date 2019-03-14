@@ -3059,7 +3059,7 @@
 						session: this
 					};
 					this.stage.trigger(EVENT_STAGE_DRAG_SCROLL_END, evArg);
-				},
+				}
 			}
 		};
 		return desc;
@@ -3596,7 +3596,7 @@
 						oppositeLine._desiredWidth = availableSize - actualDesiredSize
 								- separatorLine.width;
 					}
-				},
+				}
 			}
 		};
 		return desc;
@@ -5392,7 +5392,7 @@
 		var arrayPush = Array.prototype.push;
 
 		var desc = {
-			name: 'h5.ui.components.stage.LayoutHookBase',
+			name: 'h5.ui.components.stage.layouthook.LayoutHookBase',
 
 			isAbstract: true,
 
@@ -5412,7 +5412,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.LayoutHookBase
+				 * @memberOf h5.ui.components.stage.layouthook.LayoutHookBase
 				 */
 				constructor: function LayoutHookBase() {
 					super_.constructor.call(this);
@@ -5433,6 +5433,16 @@
 						var du = targets[i];
 						du._setLayoutValue(x, y, width, height, this);
 					}
+				},
+
+				__setScrollPosition: function(targetDisplayUnit, scrollX, scrollY) {
+					if (!targetDisplayUnit) {
+						throw new Error('値を設定するDisplayUnitが指定されていません。');
+					}
+					if (!DisplayUnitContainer.isClassOf(targetDisplayUnit)) {
+						throw new Error('ターゲットがコンテナではありません。');
+					}
+					targetDisplayUnit._setScrollPosition(scrollX, scrollY, this);
 				},
 
 				__attachTo: function(displayUnits) {
@@ -5522,75 +5532,76 @@
 	/**
 	 * DUに対する自動レイアウトを行うクラスのベースクラスです。
 	 *
-	 * @class SingleLayoutHook
+	 * @class SingleTargetLayoutHook
 	 * @param super_ スーパークラスオブジェクト
 	 * @returns クラス定義
 	 */
-	var SingleLayoutHook = LayoutHookBase.extend(function(super_) {
-		var desc = {
-			name: 'h5.ui.components.stage.SingleLayoutHook',
+	var SingleTargetLayoutHook = LayoutHookBase
+			.extend(function(super_) {
+				var desc = {
+					name: 'h5.ui.components.stage.layouthook.SingleTargetLayoutHook',
 
-			isAbstract: true,
+					isAbstract: true,
 
-			accessor: {
-				source: {
-					get: function() {
-						if (this.attachedDisplayUnits.length === 0) {
-							return null;
+					accessor: {
+						source: {
+							get: function() {
+								if (this.attachedDisplayUnits.length === 0) {
+									return null;
+								}
+								return this.attachedDisplayUnits[0];
+							}
 						}
-						return this.attachedDisplayUnits[0];
+					},
+
+					method: {
+						/**
+						 * @memberOf h5.ui.components.stage.layouthook.SingleTargetLayoutHook
+						 */
+						constructor: function SingleTargetLayoutHook() {
+							super_.constructor.call(this);
+						},
+
+						/**
+						 * このLayoutHookをDisplayUnitに取り付けます。
+						 */
+						attachTo: function(displayUnit) {
+							if (Array.isArray(displayUnit)) {
+								//SingleTargetLayoutHookでは、DUは配列では渡せない
+								throw new Error(
+										'SingleTargetLayoutHookとその子クラスでは、アタッチ先のDisplayUnitは1つのみ、非配列の形で渡してください');
+							}
+
+							if (this._displayUnits.length > 0) {
+								//SingleTargetLayoutHookでは、2つ以上のDUに同時にアタッチできない
+								throw new Error('すでにDisplayUnitにアタッチされています。DisplayUnit.id = '
+										+ this._displayUnits[0].id);
+							}
+
+							this.__attachTo(displayUnit);
+						},
+
+						/**
+						 * このLayoutHookをDisplayUnitから取り外します。
+						 */
+						detachFrom: function() {
+							//SingleTargetLayoutHookの場合、アタッチ先は（アタッチされていれば）必ず1つに特定できるので引数はvoid
+							this.__detachFromAll();
+						}
 					}
-				}
-			},
-
-			method: {
-				/**
-				 * @memberOf h5.ui.components.stage.SingleLayoutHook
-				 */
-				constructor: function SingleLayoutHook() {
-					super_.constructor.call(this);
-				},
-
-				/**
-				 * このLayoutHookをDisplayUnitに取り付けます。
-				 */
-				attachTo: function(displayUnit) {
-					if (Array.isArray(displayUnit)) {
-						//SingleLayoutHookでは、DUは配列では渡せない
-						throw new Error(
-								'SingleLayoutHookとその子クラスでは、アタッチ先のDisplayUnitは1つのみ、非配列の形で渡してください');
-					}
-
-					if (this._displayUnits.length > 0) {
-						//SingleLayoutHookでは、2つ以上のDUに同時にアタッチできない
-						throw new Error('すでにDisplayUnitにアタッチされています。DisplayUnit.id = '
-								+ this._displayUnits[0].id);
-					}
-
-					this.__attachTo(displayUnit);
-				},
-
-				/**
-				 * このLayoutHookをDisplayUnitから取り外します。
-				 */
-				detachFrom: function() {
-					//SingleLayoutHookの場合、アタッチ先は（アタッチされていれば）必ず1つに特定できるので引数はvoid
-					this.__detachFromAll();
-				}
-			}
-		};
-		return desc;
-	});
+				};
+				return desc;
+			});
 
 	var GenericLayoutHook = LayoutHookBase.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.GenericLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.GenericLayoutHook',
 
 			isAbstract: true,
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.GenericLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.GenericLayoutHook
 				 */
 				constructor: function GenericLayoutHook() {
 					super_.constructor.call(this);
@@ -5625,7 +5636,7 @@
 		var arrayPush = Array.prototype.push;
 
 		var desc = {
-			name: 'h5.ui.components.stage.OneToManyLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.OneToManyLayoutHook',
 
 			isAbstract: true,
 
@@ -5650,7 +5661,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.OneToManyLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.OneToManyLayoutHook
 				 */
 				constructor: function OneToManyLayoutHook(source, targets) {
 					super_.constructor.call(this);
@@ -5748,7 +5759,7 @@
 
 	var SynchronizeLayoutHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.SynchronizeLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.SynchronizeHook',
 
 			field: {
 				isXEnabled: null,
@@ -5759,7 +5770,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.SynchronizeLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.SynchronizeHook
 				 */
 				constructor: function SynchronizeLayoutHook(isXEnabled, isYEnabled, isWidthEnabled,
 						isHeightEnabled) {
@@ -5813,7 +5824,7 @@
 
 	var FollowPositionLayoutHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.FollowPositionLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.FollowPositionHook',
 
 			field: {
 				offsetX: null,
@@ -5822,7 +5833,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.FollowPositionLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.FollowPositionHook
 				 */
 				constructor: function FollowPositionLayoutHook(offsetX, offsetY) {
 					super_.constructor.call(this);
@@ -5906,10 +5917,10 @@
 		return desc;
 	});
 
-	SingleLayoutHook
+	SingleTargetLayoutHook
 			.extend(function(super_) {
 				var desc = {
-					name: 'h5.ui.components.stage.VisiblePositionLayoutHook',
+					name: 'h5.ui.components.stage.layouthook.VisiblePositionHook',
 
 					field: {
 						_view: null,
@@ -5969,7 +5980,7 @@
 
 					method: {
 						/**
-						 * @memberOf h5.ui.components.stage.VisiblePositionLayoutHook
+						 * @memberOf h5.ui.components.stage.layouthook.VisiblePositionHook
 						 */
 						constructor: function VisiblePositionLayoutHook(displayLeft, displayTop,
 								displayRight, displayBottom) {
@@ -6062,7 +6073,7 @@
 
 	GenericLayoutHook.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.DisplaySizeLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.DisplaySizeHook',
 
 			field: {
 				_stage: null,
@@ -6072,7 +6083,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.DisplaySizeLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.DisplaySizeHook
 				 */
 				constructor: function DisplaySizeLayoutHook() {
 					super_.constructor.call(this);
@@ -6139,7 +6150,7 @@
 
 	GenericLayoutHook.extend(function(super_) {
 		var desc = {
-			name: 'h5.ui.components.stage.HorizontalLineLayoutHook',
+			name: 'h5.ui.components.stage.layouthook.HorizontalLineHook',
 
 			field: {
 				_verticalAlignment: null
@@ -6161,7 +6172,7 @@
 
 			method: {
 				/**
-				 * @memberOf h5.ui.components.stage.HorizontalLineLayoutHook
+				 * @memberOf h5.ui.components.stage.layouthook.HorizontalLineHook
 				 */
 				constructor: function HorizontalLineLayoutHook(alignment) {
 					super_.constructor.call(this);
@@ -6241,6 +6252,62 @@
 
 						this.__setLayoutValue(du, tx, ty, null, null);
 					}
+				}
+			}
+		};
+		return desc;
+	});
+
+	GenericLayoutHook.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.layouthook.ScrollRangeHook',
+
+			field: {
+				isEnabled: null,
+				minScrollX: null,
+				maxScrollX: null,
+				minScrollY: null,
+				maxScrollY: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.layouthook.ScrollRangeHook
+				 */
+				constructor: function ScrollRangeHook(minScrollX, maxScrollX, minScrollY,
+						maxScrollY) {
+					super_.constructor.call(this);
+
+					this.isEnabled = true;
+
+					this.minScrollX = minScrollX != null ? minScrollX : null;
+					this.maxScrollX = maxScrollX != null ? maxScrollX : null;
+					this.minScrollY = minScrollY != null ? minScrollY : null;
+					this.maxScrollY = maxScrollY != null ? maxScrollY : null;
+				},
+
+				__onAttach: function(displayUnit) {
+					var originalPos = WorldPoint.create(displayUnit.scrollX, displayUnit.scrollY);
+					var pos = this._getClampedValue(displayUnit, originalPos);
+					this.__setScrollPosition(displayUnit, pos.x, pos.y);
+				},
+
+				__onScrollPositionChanging: function(displayUnit, assigning, overwrite) {
+					var pos = this._getClampedValue(displayUnit, overwrite);
+					overwrite.x = pos.x;
+					overwrite.y = pos.y;
+				},
+
+				_getClampedValue: function(displayUnit, newScrollPosition) {
+					if (!this.isEnabled) {
+						return;
+					}
+
+					//制約適用後のスクロール位置
+					var cx = clamp(newScrollPosition.x, this.minScrollX, this.maxScrollX);
+					var cy = clamp(newScrollPosition.y, this.minScrollY, this.maxScrollY);
+
+					return WorldPoint.create(cx, cy);
 				}
 			}
 		};
@@ -9752,9 +9819,6 @@
 				//境界スクロールを有効にするかどうか。デフォルト：false
 				isBoundaryScrollEnabled: null,
 
-				//コンテンツのスクロール範囲制約（制約の形はコンストラクタ参照）
-				scrollConstraint: null,
-
 				_children: null,
 				_scaleX: null,
 				_scaleY: null,
@@ -9849,13 +9913,6 @@
 					this._children = [];
 
 					this.isBoundaryScrollEnabled = false;
-
-					this.scrollConstraint = {
-						minX: -Infinity,
-						maxX: Infinity,
-						minY: -Infinity,
-						maxY: Infinity
-					};
 				},
 
 				addDisplayUnit: function(du) {
@@ -10076,6 +10133,9 @@
 					}
 				},
 
+				/**
+				 * @private
+				 */
 				_executeScrollPositionHooks: function(scrollX, scrollY, hookOrigin) {
 					//代入初期値を保持するインスタンス
 					var assigning = WorldPoint.create(scrollX, scrollY);
@@ -10342,43 +10402,14 @@
 						return false;
 					}
 
-					//restrictContentScrollしている場合はゼロ～maxContentX/Yまでの間しかスクロールできない
-
-					var maxX = this.scrollConstraint.maxX;
-					var minX = this.scrollConstraint.minX;
-
 					var xVal = 0;
 					//境界スクロール量をセット。ただし、その方向にそれ以上スクロールできない場合はスクロール量をゼロにする
 					if (borderedNineSlicePosition.isBorderLeft) {
 						//左にスクロール
 						xVal = -scrollIncrementX;
-						/*
-						var rawNewX = this.scrollX - scrollAmount;
-						var clampedNewX = StageUtil.clamp(rawNewX, minX, maxX);
-
-						if (rawNewX - clampedNewX < 0) {
-							xVal = 0;
-						} else {
-							xVal = this.scrollX - scrollAmount;
-							if (xVal < 0) {
-								xVal = -scrollAmount + this._scrollX;
-							}
-						}
-						*/
 					} else if (borderedNineSlicePosition.isBorderRight) {
 						//右にスクロール
 						xVal = scrollIncrementX;
-						/*
-						var scrollRestX = maxX - this.width - this._scrollX;
-
-						if (scrollRestX <= 0) {
-							xVal = 0;
-						} else if (scrollRestX < scrollAmount) {
-							xVal = scrollRestX;
-						} else {
-							xVal = scrollAmount;
-						}
-						*/
 					}
 
 					var yVal = 0;
@@ -10388,18 +10419,34 @@
 						yVal = scrollIncrementY;
 					}
 
-					var isScrolled = (xVal !== 0 || yVal !== 0);
+					var isScrolled = false;
+					var diffX = 0;
+					var diffY = 0;
 
-					if (isScrolled) {
+					if (xVal !== 0 || yVal !== 0) {
+						var beforeSx = this._scrollX;
+						var beforeSy = this._scrollY;
+
 						this.scrollBy(xVal, yVal);
+
+						//スクロール処理を行った後、X,Yどちらかのスクロール位置が変わっているかを確認。
+						//スクロールに対してフックがかかっている場合にスクロールしない可能性があるため。
+						if (this._scrollX !== beforeSx) {
+							diffX = this._scrollX - beforeSx;
+							isScrolled = true;
+						}
+
+						if (this._scrollY !== beforeSy) {
+							diffY = this._scrollY - beforeSy;
+							isScrolled = true;
+						}
 					}
 
 					var ret = {
 						isScrolled: isScrolled,
-						dx: xVal,
-						dy: yVal
+						dx: diffX,
+						dy: diffY
 					};
-
 					return ret;
 				},
 
