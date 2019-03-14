@@ -13445,11 +13445,6 @@
 
 						_viewportReadOnly: null,
 
-						/**
-						 * 実際にDOMを描画する範囲
-						 */
-						_renderRect: null,
-
 						_scaleRangeX: null,
 						_scaleRangeY: null,
 
@@ -13474,7 +13469,13 @@
 						_overlaySpace: null,
 
 						_isUpdateLayerTransformRequested: null,
-						_isUpdateLayerScaleRequested: null
+						_isUpdateLayerScaleRequested: null,
+
+						isRenderRectClippedByWindow: null,
+
+						_willUpdateOnWindowChange: null,
+
+						_windowViewportChangeListenerWrapper: null
 					},
 
 					accessor: {
@@ -13567,6 +13568,23 @@
 								this._viewportReadOnly = this._viewport.createReadOnlyReference();
 								return this._viewportReadOnly;
 							}
+						},
+
+						willUpdateOnWindowChange: {
+							get: function() {
+								return this._willUpdateOnWindowChange;
+							},
+							set: function(value) {
+								if (this._willUpdateOnWindowChange !== value) {
+									if (value === true) {
+										$(window).on('scroll resize',
+												this._windowViewportChangeListenerWrapper);
+									} else {
+										$(window).off('scroll resize',
+												this._windowViewportChangeListenerWrapper);
+									}
+								}
+							}
 						}
 					},
 
@@ -13634,6 +13652,17 @@
 							overlaySpace
 									.addEventListener('displayUnitDirty', this._duDirtyListener);
 
+							//Windowスクロール時の自動アップデートはデフォルト：false
+							//このフラグは通常、ウィンドウビューポートとの重なり検知と合わせて使用する
+							this._windowViewportChangeListenerWrapper = function(event) {
+								that._windowViewportChangeListener(event);
+							};
+							//ハンドラのOn/Offを行うため、あえてアクセサ経由で代入する
+							this.willUpdateOnWindowChange = stage.willUpdateOnWindowChange;
+
+							//ウィンドウの可視範囲に入っている領域だけを描画領域にするオプション
+							this.isRenderRectClippedByWindow = stage.isRenderRectClippedByWindow;
+
 							this._addToStage();
 						},
 
@@ -13655,6 +13684,14 @@
 							this._rootElement = $root[0];
 
 							this._stage.rootElement.appendChild(this._rootElement);
+						},
+
+						/**
+						 * @private
+						 * @param event
+						 */
+						_windowViewportChangeListener: function(event) {
+							this.update();
 						},
 
 						init: function() {
@@ -14420,6 +14457,66 @@
 						//						},
 						//
 						/**
+						 * @private
+						 * @returns {Rect} ワールドグローバル座標系で表した描画範囲
+						 */
+						_getRenderRect: function() {
+							var viewport = this._viewport;
+
+							if (!this.isRenderRectClippedByWindow) {
+								//Viewport.getWorldRect()は毎回インスタンスを生成する。
+								//(あまりしたくないが)高速化のため内部変数を直接見る。
+								return viewport._worldRect;
+							}
+
+							//ViewのDOM要素のサイズではなく、現在ウィンドウに見えている（＝実際に「見えている」）範囲を描画範囲とする
+
+							var stageRect = this._rootElement.getBoundingClientRect();
+							var stageLeft = stageRect.left;
+							var stageTop = stageRect.top;
+
+							//ウィンドウのビューポートのサイズ
+							var winW = window.innerWidth;
+							var winH = window.innerHeight;
+
+							//i = intersection
+							var iLeft = Math.max(0, stageLeft);
+							var iRight = Math.min(winW, stageRect.right);
+							var iTop = Math.max(0, stageTop);
+							var iBottom = Math.min(winH, stageRect.bottom);
+
+							if (iLeft > winW || iRight < 0 || iTop > winH || iBottom < 0) {
+								//ウィンドウの可視範囲とこのビューは重なっていない＝まったく表示されていない場合はnullを返す
+								return null;
+							}
+
+							//ウィンドウビューポートとStageViewの重なっている領域のサイズ
+							var iWidth = iRight - iLeft;
+							var iHeight = iBottom - iTop;
+
+							//StageViewの左上を原点とする、重なっている領域の左上座標
+							var rLeft = 0;
+							if (stageLeft < 0) {
+								//StageViewの左端がウィンドウ左端より左にある場合ははみ出した分だけ重なり領域のLeftにオフセットを足す
+								rLeft = -stageLeft;
+							}
+
+							var rTop = 0;
+							if (stageTop < 0) {
+								//Leftと同様にオフセットを足す
+								rTop = -stageTop;
+							}
+
+							//グローバル座標系での値に変換
+							var gOrigin = viewport.getWorldPositionFromDisplayOffset(rLeft, rTop);
+							var gWidth = viewport.toWorldX(iWidth);
+							var gHeight = viewport.toWorldY(iHeight);
+
+							var ret = Rect.create(gOrigin.x, gOrigin.y, gWidth, gHeight);
+							return ret;
+						},
+
+						/**
 						 * 実際に描画を更新します。
 						 *
 						 * @private
@@ -14427,13 +14524,7 @@
 						 */
 						_doUpdate: function(renderRect) {
 							if (!renderRect) {
-								if (this._renderRect) {
-									renderRect = this._renderRect;
-								} else {
-									//Viewport.getWorldRect()は毎回インスタンスを生成する。
-									//(あまりしたくないが)高速化のため内部変数を直接見る。
-									renderRect = this._viewport._worldRect;
-								}
+								renderRect = this._getRenderRect();
 							}
 
 							var that = this;
@@ -14593,21 +14684,16 @@
 								return false;
 							}
 
-							var renderX = renderRect.x;
-							var renderY = renderRect.y;
+							if (!renderRect) {
+								//このビューがウィンドウの可視範囲にまったく含まれていない場合は全てExit
+								//（ウィンドウビューポート判定を使用した場合のみ）
+								return true;
+							}
 
-							var effectiveWidth = renderRect.width;
-							var effectiveHeight = renderRect.height;
-
-							var rLeft = renderX - effectiveWidth;
-							var rTop = renderY - effectiveHeight;
-							//							var rRight = renderX + renderRect.width + effectiveWidth;
-							//							var rBottom = renderY + renderRect.height + effectiveHeight;
-							//現在の値(effectiveWidth = renderWidth)だと意味的には上記と同じだが
-							//参照解決の回数を減らすためこの式にしている
-							var rRight = renderX + effectiveWidth * 2;
-							var rBottom = renderY + effectiveHeight * 2;
-
+							var rLeft = renderRect.x;
+							var rTop = renderRect.y;
+							var rRight = rLeft + renderRect.width;
+							var rBottom = rTop + renderRect.height;
 
 							var belongingLayer = du._belongingLayer;
 							switch (belongingLayer.UIDragScreenScrollDirection) {
@@ -14672,6 +14758,11 @@
 								//その後shouldExit()で常にfalseを返すことでDOMが削除されないようにしている。
 								//従って、ALWAYSの場合は初回描画判定に関しては通常プライオリティのときと同じ判定を行う。
 								return true;
+							}
+
+							if (!renderRect) {
+								//ウィンドウの可視範囲にまったく含まれていない場合はfalse
+								return false;
 							}
 
 							var rLeft = renderRect.x;
@@ -17261,6 +17352,10 @@
 
 		space: null,
 
+		_isRenderRectClippedByWindow: null,
+
+		_willUpdateOnWindowChange: null,
+
 		/**
 		 * @private
 		 */
@@ -17288,6 +17383,7 @@
 			};
 
 			var that = this;
+
 			this._duCascadeRemovingListener = function(event) {
 				that._onDUCascadeRemoving(event);
 			};
@@ -17297,6 +17393,38 @@
 			space.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
 
 			this._viewCollection = GridStageViewCollection.create(this);
+
+			//描画範囲をWindow領域のみに限定するフラグのプロパティを作成
+			//なおこの機能はデフォルト：false
+			this._isRenderRectClippedByWindow = false;
+			Object.defineProperty(this, 'isRenderRectClippedByWindow', {
+				get: function() {
+					return that._isRenderRectClippedByWindow;
+				},
+				set: function(value) {
+					if (that._isRenderRectClippedByWindow !== value) {
+						that._isRenderRectClippedByWindow = value;
+						that._viewCollection.getAllContentsViews().forEach(function(view) {
+							view.isRenderRectClippedByWindow = value;
+						});
+					}
+				}
+			});
+
+			this._willUpdateOnWindowChange = false;
+			Object.defineProperty(this, 'willUpdateOnWindowChange', {
+				get: function() {
+					return that._willUpdateOnWindowChange;
+				},
+				set: function(value) {
+					if (that._willUpdateOnWindowChange !== value) {
+						that._willUpdateOnWindowChange = value;
+						that._viewCollection.getAllContentsViews().forEach(function(view) {
+							view.willUpdateOnWindowChange = value;
+						});
+					}
+				}
+			});
 		},
 
 		/**
