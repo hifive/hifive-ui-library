@@ -1139,7 +1139,7 @@
 				rollbackLayout: function() {
 					var targets = this._targets;
 
-					if (this._isCompleted || !targets || targets.length === 0) {
+					if (!targets || targets.length === 0) {
 						return;
 					}
 
@@ -1154,7 +1154,7 @@
 				rollbackPosition: function() {
 					var targets = this._targets;
 
-					if (this._isCompleted || !targets || targets.length === 0) {
+					if (!targets || targets.length === 0) {
 						return;
 					}
 
@@ -1168,7 +1168,7 @@
 				rollbackSize: function() {
 					var targets = this._targets;
 
-					if (this._isCompleted || !targets || targets.length === 0) {
+					if (!targets || targets.length === 0) {
 						return;
 					}
 
