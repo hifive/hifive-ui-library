@@ -7386,9 +7386,6 @@
 				__renderDOM: function(view) {
 					var rootElement = this._source.__renderDOM(view);
 
-					//ID情報はこのDUのものに上書き
-					rootElement.setAttribute('data-h5-dyn-du-id', this.id);
-
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 					this.__updateDOM(view, rootElement, reason);
 
@@ -7984,7 +7981,6 @@
 				_renderRootSvg: function(view) {
 					var root = createSvgElement('svg');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
-					root.setAttribute('data-h5-dyn-du-id', this.id);
 
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
@@ -7996,7 +7992,6 @@
 				_renderRootDiv: function(view) {
 					var root = document.createElement('div');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
-					root.setAttribute('data-h5-dyn-du-id', this.id);
 
 					//任意の位置に配置できるようにする
 					root.style.position = 'absolute';
@@ -9292,7 +9287,6 @@
 
 							var rootSvg = createSvgElement('line');
 							rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
-							rootSvg.setAttribute('data-h5-dyn-du-id', this.id); //TODO for debugging
 
 							var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
@@ -10281,7 +10275,6 @@
 					root.style.overflow = this.overflow;
 
 					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
-					root.setAttribute('data-h5-dyn-du-id', this.id);
 
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
@@ -11324,7 +11317,6 @@
 					});
 
 					rootElement.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
-					rootElement.setAttribute('data-h5-dyn-du-id', this.id);
 
 					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 					this.__updateDOM(view, rootElement, reason);
@@ -12468,6 +12460,8 @@
 
 	//TODO クラス定義側にも同じ定義を書いているので統一する
 	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__i_LayerScaled__';
+
+	var DYN_DATA_DU_ID = 'data-h5-dyn-du-id';
 
 
 	var SortedList = RootClass.extend(function(super_) {
@@ -13723,6 +13717,17 @@
 							this.update();
 						},
 
+						/**
+						 * DUに対応するDOM要素に、このDUのIDをdata-属性として付与します。
+						 *
+						 * @private
+						 * @param displayUnit
+						 * @param rootElement
+						 */
+						_setIdAttribute: function(displayUnit, rootElement) {
+							rootElement.setAttribute(DYN_DATA_DU_ID, displayUnit.id);
+						},
+
 						init: function() {
 							if (this._isInitialized) {
 								return;
@@ -13750,6 +13755,7 @@
 								var layer = layers[i];
 
 								var layerRootElement = layer.__renderDOM(this);
+								this._setIdAttribute(layer, layerRootElement);
 
 								//レイヤーと対応する要素をDOMマネージャに登録
 								this._domManager.add(layer, layerRootElement, true);
@@ -14640,6 +14646,7 @@
 								//コンテナDUは、現状必ず描画する
 								if (!domManager.has(du)) {
 									var elem = du.__renderDOM(this, reason);
+									this._setIdAttribute(du, elem);
 									domManager.add(du, elem);
 									//描画待機マップから削除
 									this._duRenderStandbyMap['delete'](du);
@@ -14682,6 +14689,7 @@
 
 							//今すぐレンダーする
 							var elem = du.__renderDOM(this, reason);
+							this._setIdAttribute(du, elem);
 							domManager.add(du, elem);
 
 							if (du.isResizing) {
@@ -17854,9 +17862,15 @@
 				if (elem === root) {
 					return null;
 				}
-				var duId = elem.getAttribute('data-h5-dyn-du-id');
+				var duId = elem.getAttribute(DYN_DATA_DU_ID);
 				var du = this.getDisplayUnitById(duId);
-				if (BasicDisplayUnit.isClassOf(du) || Edge.isClassOf(du)) {
+				if (du && Layer.isClassOf(du)) {
+					//レイヤーに到達した場合は含まれていないとみなす
+					return null;
+				}
+				if (du && !DisplayUnitContainer.isClassOf(du)) {
+					//DUコンテナ以外のみを対象とする
+					//TODO ドラッグオーバーの対象にするかどうかの汎用的な仕組み
 					return du;
 				}
 				return getIncludingDUInner.call(this, elem.parentNode);
