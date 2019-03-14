@@ -3079,6 +3079,8 @@
 			.extend(function(super_) {
 
 				var EVENT_DRAG_CUSTOM_BEGIN = 'stageCustomDragBegin';
+				var EVENT_DRAG_CUSTOM_MOVE = 'stageCustomDragMove';
+				var EVENT_DRAG_CUSTOM_VIEW_BOUNDARY_SCROLL = 'stageCustomDragViewBoundaryScroll';
 				var EVENT_DRAG_CUSTOM_RELEASE = 'stageCustomDragRelease';
 				var EVENT_DRAG_CUSTOM_END = 'stageCustomDragEnd';
 				var EVENT_DRAG_CUSTOM_CANCEL = 'stageCustomDragCancel';
@@ -3100,6 +3102,10 @@
 						constructor: function CustomDragSession(stage, initialState, callback,
 								thisObject) {
 							super_.constructor.call(this, stage, initialState);
+
+							//カスタムドラッグでは、ビュー境界スクロールはデフォルト：false
+							//ただし、ユーザーによる有効化は可能とする
+							this._isViewBoundaryScrollEnabled = false;
 
 							this.moveCallbackFunction = callback;
 							this.thisObject = thisObject === undefined ? null : thisObject; //undefinedの場合は明示的にnullにする
@@ -3123,6 +3129,47 @@
 							if (customDragEvent.isDefaultPrevented()) {
 								return false;
 							}
+
+							var targets = this.getTargets();
+
+							if (!targets || targets.length === 0) {
+								//ターゲットがなければ、オーバーレイ周りの処理は行わない
+								return;
+							}
+
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
+							//強制的に元のDUを非表示にする
+							//ドラッグ時のライブモードがOVERLAYの場合は、元のDUは非表示にする。
+							//OVERLAY_AND_STAYなど他のモードの場合は強制非表示にはしない(DUのもともとのisVisibleに依存)
+							//TODO 他のライブモードへの対応、オーバーレイ時にソースDOMを使うよう改修した際はそれとの整合性
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
+
+							for (var i = 0, len = targets.length; i < len; i++) {
+								var du = targets[i];
+
+								if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+										|| this.liveMode === DragLiveMode.STAY) {
+									//ドラッグモードでSTAYの場合、ソースDUの描画位置をドラッグ開始時点の位置でオーバーライドする
+									//＝ドラッグ中、DUの描画位置は移動しない。
+									du._viewPositionOverride = WorldPoint.create(du.x, du.y);
+								}
+
+								//liveModeがOVERLAYの場合はレイヤーに存在する元々のDUは非表示にする
+								if (isForceHidden) {
+									du._isForceHidden = true;
+									du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+								}
+
+								//ソースDUと位置・サイズが同期したオーバーレイDUを作成
+								if (this.liveMode === DragLiveMode.OVERLAY
+										|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
+									contentsViews.forEach(function(view) {
+										view._overlaySpace.mapper.add(du);
+									});
+								}
+							}
 						},
 
 						__onMove: function(event, delta) {
@@ -3130,10 +3177,22 @@
 							if (this.moveCallbackFunction != null) {
 								this.moveCallbackFunction.call(this._thisObject, this, delta);
 							}
+
+							//前回のカーソル位置からの移動量差分（ディスプレイ座標系）も渡す
+							var evArg = {
+								session: this,
+								delta: delta
+							};
+							this.__triggerStageEvent(EVENT_DRAG_CUSTOM_MOVE, event.originalEvent,
+									evArg);
 						},
 
 						__onViewBoundaryScroll: function(scrollDelta) {
-						//TODO スクロール対応
+							var evArg = {
+								session: this,
+								scrollDelta: scrollDelta
+							};
+							this.stage.trigger(EVENT_DRAG_CUSTOM_VIEW_BOUNDARY_SCROLL, evArg);
 						},
 
 						__onRelease: function(event) {
@@ -3192,6 +3251,40 @@
 						__onDispose: function() {
 							this.moveCallbackFunction = null;
 							this.thisObject = null;
+
+							var contentsViews = this.stage.getViewCollection()
+									.getAllContentsViews();
+
+							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
+
+							var targets = this.getTargets();
+
+							if (targets && targets.length > 0) {
+								for (var i = 0, len = targets.length; i < len; i++) {
+									var du = targets[i];
+
+									if (isForceHidden) {
+										du._isForceHidden = false;
+										du._setDirtyInternal(REASON_VISIBILITY_CHANGE);
+									}
+
+									if (this.liveMode === DragLiveMode.OVERLAY_AND_STAY
+											|| this.liveMode === DragLiveMode.STAY) {
+										//ドラッグ時のライブモードがSTAYの場合に設定していたソースDUの表示位置のオーバーライドを解除する
+										du._viewPositionOverride = null;
+										du._setDirtyInternal(REASON_POSITION_CHANGE);
+									}
+
+									if (this.liveMode === DragLiveMode.OVERLAY
+											|| this.liveMode === DragLiveMode.OVERLAY_AND_STAY) {
+										//オーバーレイDUを削除
+										contentsViews.forEach(function(view) {
+											view._overlaySpace.mapper.remove(du);
+										});
+									}
+								}
+							}
+
 						}
 					}
 				};
@@ -7256,23 +7349,38 @@
 
 			field: {
 				_srcTargetMap: null,
-				_target: null
+				_sourceSpace: null,
+				_targetSpace: null,
+
+				_sourceDURemoveListenerWrapper: null,
+				_sourceDUDirtyListenerWrapper: null
 			},
 
 			method: {
 				/**
 				 * @memberOf h5.ui.components.stage.internal.OverlayMapper
 				 */
-				constructor: function OverlayMapper(targetSpace) {
+				constructor: function OverlayMapper(sourceSpace, targetSpace) {
 					super_.constructor.call(this);
+
+					//現在のところ、ソース空間でAddされても自動的にこちらで行うことはないので
+					//AddListenerは追加しない
+					var that = this;
+					this._sourceDUDirtyListenerWrapper = function(event) {
+						that._sourceDUDirtyListener(event);
+					};
+					this._sourceDURemoveListenerWrapper = function(event) {
+						that._sourceDURemoveListener(event);
+					};
 
 					this._srcTargetMap = new Map();
 
-					if (!targetSpace) {
-						throw new Error('ターゲットとなるオーバーレイDU空間は必須です。');
+					if (!sourceSpace || !targetSpace) {
+						throw new Error('ソースとターゲットのDU空間はどちらも必須です。');
 					}
 
-					this._target = targetSpace;
+					this._sourceSpace = sourceSpace;
+					this._targetSpace = targetSpace;
 				},
 
 				add: function(sourceDisplayUnit) {
@@ -7290,16 +7398,16 @@
 
 					if (srcLayer.type === 'svg') {
 						if (srcLayer.isUnscaledRendering) {
-							this._target.ovSvgUnscaledLayer.addDisplayUnit(ovDU);
+							this._targetSpace.ovSvgUnscaledLayer.addDisplayUnit(ovDU);
 						} else {
-							this._target.ovSvgLayer.addDisplayUnit(ovDU);
+							this._targetSpace.ovSvgLayer.addDisplayUnit(ovDU);
 						}
 					} else {
 						//現時点では、レイヤーはSVGかDIVの2種類のみなのでsvgでなければ必ずdiv
 						if (srcLayer.isUnscaledRendering) {
-							this._target.ovDivUnscaledLayer.addDisplayUnit(ovDU);
+							this._targetSpace.ovDivUnscaledLayer.addDisplayUnit(ovDU);
 						} else {
-							this._target.ovDivLayer.addDisplayUnit(ovDU);
+							this._targetSpace.ovDivLayer.addDisplayUnit(ovDU);
 						}
 					}
 
@@ -7337,6 +7445,33 @@
 
 				hasMapping: function(sourceDisplayUnit) {
 					return this._srcTargetMap.has(sourceDisplayUnit);
+				},
+
+				/**
+				 * @private
+				 * @param event
+				 */
+				_sourceDUDirtyListener: function(event) {
+					var info = this._srcTargetMap.get(sourceDisplayUnit);
+					if (!info) {
+						return;
+					}
+
+					var overlayDU = info.du;
+
+					//ソースDUと同じreasonを使ってオーバーレイDUの描画をDirtyにする
+					var mappedEvent = DisplayUnitDirtyEvent.create();
+					mappedEvent.displayUnit = overlayDU;
+					mappedEvent.reason = event.reason;
+					this._targetSpace.dispatchEvent(mappedEvent);
+				},
+
+				/**
+				 * @private
+				 * @param event
+				 */
+				_sourceDURemoveListener: function(event) {
+					this.remove(event.displayUnit);
 				}
 			}
 		};
@@ -11822,7 +11957,7 @@
 					this._ovDivUnscaledLayer = unscaledDivLayer;
 					this._ovSvgUnscaledLayer = unscaledSvgLayer;
 
-					this._mapper = OverlayMapper.create(this);
+					this._mapper = OverlayMapper.create(stage.space, this);
 				}
 			}
 		};
