@@ -14673,6 +14673,7 @@
 						 *
 						 * @private
 						 * @param du
+						 * @param renderRect {Rect} ワールドグローバル座標系で表す描画範囲
 						 */
 						_shouldRender: function(du, renderRect) {
 							if (du.isVisible === false) {
@@ -14688,10 +14689,6 @@
 								return true;
 							}
 
-							//TODO このコメントは古いと思われる。確認後削除
-							//Firefoxでは、スクロールの度に描画を増やしていくと
-							//判定などの方が重くなりfpsが安定しないので
-							//一旦全てのDUは追加時に描画するようにする
 							if (!renderRect) {
 								if (this._renderRect) {
 									renderRect = this._renderRect;
