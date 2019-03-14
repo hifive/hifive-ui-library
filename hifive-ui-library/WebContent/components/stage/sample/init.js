@@ -882,8 +882,46 @@
 		},
 
 		'{rootElement} stageDragBeginning': function(context) {
-		//console.log('stageDragBeginning', context.evArg);
-		//context.event.preventDefault();
+			console.log('stageDragBeginning', context.evArg);
+
+			//context.event.setDragMode(DragMode.CUSTOM);
+			//context.event.preventDefault();
+		},
+
+		'{rootElement} stageCustomDragBegin': function(context) {
+			var session = context.evArg.session;
+			console.log('stageCustomDragBegin', session);
+
+			//session.isViewBoundaryScrollEnabled = true;
+			//session.liveMode = DragLiveMode.SOURCE;
+		},
+
+		'{rootElement} stageCustomDragMove': function(context) {
+			//var session = context.evArg.session;
+			var evArg = context.evArg;
+			console.log('stageCustomDragMove delta =', evArg.delta);
+			var targets = evArg.session.getTargets();
+			targets[0].moveDisplayBy(evArg.delta.x, evArg.delta.y);
+		},
+
+		'{rootElement} stageCustomDragViewBoundaryScroll': function(context) {
+			//var session = context.evArg.session;
+			var evArg = context.evArg;
+			console.log('stageCustomDragViewBoundaryScroll scrollDelta =', evArg.scrollDelta);
+			var targets = evArg.session.getTargets();
+			targets[0].moveDisplayBy(evArg.scrollDelta.x, evArg.scrollDelta.y);
+		},
+
+		'{rootElement} stageCustomDragRelease': function(context) {
+			console.log('stageCustomDragRelease');
+		},
+
+		'{rootElement} stageCustomDragEnd': function(context) {
+			console.log('stageCustomDragEnd');
+		},
+
+		'{rootElement} stageCustomDragCancel': function(context) {
+			console.log('stageCustomDragCancel');
 		},
 
 		'[name="dragRegion"] click': function() {
