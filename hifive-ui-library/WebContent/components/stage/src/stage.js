@@ -5493,15 +5493,23 @@
 
 				/**
 				 * アタッチしているDisplayUnitの位置またはサイズが変更されようとしたときに呼ばれます。 変更対象外の値の引数にはnullが渡されます。
-				 * DisplayUnitの実際の値はまだ変更されていません。従って、this.displayUnitの値を取得すると、変更前の値が返ります。
+				 * DisplayUnitの実際の値はまだ変更されていません。従って、displayUnitの値を参照すると、変更「前」の値が返ります。
 				 */
 				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
 				//子クラスでオーバーライド
 				},
 
 				/**
+				 * アタッチしているDisplayUnitのスクロール位置が変更されようとしたときに呼ばれます。 変更対象外の値の引数にはnullが渡されます。
+				 * DisplayUnitの実際の値はまだ変更されていません。従って、displayUnitの値を参照すると、変更「前」の値が返ります。
+				 */
+				__onScrollPositionChanging: function(displayUnit, assigning, overwrite) {
+				//子クラスでオーバーライド
+				},
+
+				/**
 				 * 親(先祖)のコンテナがスクロールしたなどの理由により、アタッチしているDisplayUnitのグローバル座標値が変化した場合に呼ばれます。
-				 * グローバル座標値はすでに変わっているので、this.displayUnit.getWorldGlobalPosition()を呼び出すと変更後の値が返ります。
+				 * グローバル座標値はすでに変わっているので、displayUnit.getWorldGlobalPosition()を呼び出すと変更「後」の値が返ります。
 				 */
 				__onGlobalPositionChange: function(displayUnit) {
 				//子クラスでオーバーライド
@@ -7137,6 +7145,16 @@
 							}
 						},
 
+						/**
+						 * レイアウト値をセットします。DUのレイアウトプロパティの変更は、最終的に必ずこのメソッドを用いなければなりません。
+						 *
+						 * @private
+						 * @param x
+						 * @param y
+						 * @param width
+						 * @param height
+						 * @param hookOrigin
+						 */
 						_setLayoutValue: function(x, y, width, height, hookOrigin) {
 							var hooked = this._executeLayoutHooks(x, y, width, height, hookOrigin);
 							var hx = hooked.x;
@@ -9769,7 +9787,7 @@
 					},
 					set: function(value) {
 						if (this._scrollX !== value) {
-							this.scrollTo(value, this._scrollY);
+							this._setScrollPosition(value, null);
 						}
 					}
 				},
@@ -9783,7 +9801,7 @@
 					},
 					set: function(value) {
 						if (this._scrollY !== value) {
-							this.scrollTo(this._scrollX, value);
+							this._setScrollPosition(null, value);
 						}
 					}
 				},
@@ -9976,9 +9994,7 @@
 						return;
 					}
 
-					this._scrollX = worldX;
-					this._scrollY = worldY;
-					this._setDirty(REASON_SCROLL_POSITION_CHANGE);
+					this._setScrollPosition(worldX, worldY);
 				},
 
 				scrollBy: function(worldX, worldY) {
@@ -10026,6 +10042,65 @@
 					if (isScaleChanged) {
 						this._setDirty(REASON_SCALE_CHANGE);
 					}
+				},
+
+				/**
+				 * このコンテナのスクロール位置を変更します。スクロール位置の変更は、最終的に必ずこのメソッドを用いなければなりません。
+				 *
+				 * @private
+				 * @param scrollX
+				 * @param scrollY
+				 * @param hookOrigin
+				 */
+				_setScrollPosition: function(scrollX, scrollY, hookOrigin) {
+					var hookedScrollPosition = this._executeScrollPositionHooks(scrollX, scrollY,
+							hookOrigin);
+					var hookedX = hookedScrollPosition.x;
+					var hookedY = hookedScrollPosition.y;
+
+					var isScrollPositionChanged = false;
+
+					if (hookedX != null && this._scrollX !== hookedX) {
+						this._scrollX = hookedX;
+						isScrollPositionChanged = true;
+					}
+
+					if (hookedY != null && this._scrollY !== hookedY) {
+						this._scrollY = hookedY;
+						isScrollPositionChanged = true;
+					}
+
+					if (isScrollPositionChanged) {
+						//X,Y少なくともどちらか変更されたので、最後にPositionChangeでDirtyにする
+						this._setDirty(REASON_SCROLL_POSITION_CHANGE);
+					}
+				},
+
+				_executeScrollPositionHooks: function(scrollX, scrollY, hookOrigin) {
+					//代入初期値を保持するインスタンス
+					var assigning = WorldPoint.create(scrollX, scrollY);
+
+					var hooks = this._layoutHooks;
+					if (!hooks) {
+						return assigning;
+					}
+
+					//上書き値を保持するインスタンス。
+					//最初にセットされようとしている値を入れておき、ループ終了後にセットされていた値が実際に使われる値となる。
+					var overwrite = WorldPoint.create(scrollX, scrollY);
+
+					//フックを実行
+					//複数のLayoutHookで同じプロパティを上書きした場合は後勝ちになる。
+					for (var i = 0, len = hooks.length; i < len; i++) {
+						var hook = hooks[i];
+						if (hook !== hookOrigin) {
+							//hookOriginが指定されている場合、無限ループしないよう、そのフックはスキップする
+							hook.__onScrollPositionChanging(this, assigning, overwrite);
+						}
+					}
+
+					//最終的に、全てのLayoutHookを実行した後の値を返す。
+					return overwrite;
 				},
 
 				/**
