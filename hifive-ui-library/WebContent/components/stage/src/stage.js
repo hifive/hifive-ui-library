@@ -5765,7 +5765,9 @@
 				isXEnabled: null,
 				isYEnabled: null,
 				isWidthEnabled: null,
-				isHeightEnabled: null
+				isHeightEnabled: null,
+				isScrollXEnabled: null,
+				isScrollYEnabled: null
 			},
 
 			method: {
@@ -5773,7 +5775,7 @@
 				 * @memberOf h5.ui.components.stage.layouthook.SynchronizeHook
 				 */
 				constructor: function SynchronizeLayoutHook(isXEnabled, isYEnabled, isWidthEnabled,
-						isHeightEnabled) {
+						isHeightEnabled, isScrollXEnabled, isScrollYEnabled) {
 					super_.constructor.call(this);
 
 					//デフォルト：true（同期させる）
@@ -5782,12 +5784,14 @@
 					this.isYEnabled = isYEnabled !== false ? true : false;
 					this.isWidthEnabled = isWidthEnabled !== false ? true : false;
 					this.isHeightEnabled = isHeightEnabled !== false ? true : false;
+					this.isScrollXEnabled = isScrollXEnabled !== false ? true : false;
+					this.isScrollYEnabled = isScrollYEnabled !== false ? true : false;
 				},
 
 				__onAttach: function(displayUnit) {
 					var value = LayoutValue.create(displayUnit.x, displayUnit.y, displayUnit.width,
 							displayUnit.height);
-					this._synchronize(value);
+					this._synchronizeLayout(value);
 				},
 
 				__onTargetsAdd: function(targets) {
@@ -5795,15 +5799,25 @@
 					if (source) {
 						var layout = LayoutValue.create(source.x, source.y, source.width,
 								source.height);
-						this._synchronize(layout, targets);
+						this._synchronizeLayout(layout, targets);
+
+						if (DisplayUnitContainer.isClassOf(source)) {
+							//ソースがDUコンテナの場合、スクロール位置も同期できる
+							var scrollPosition = WorldPoint.create(source.scrollX, source.scrollY);
+							this._synchronizeScrollPosition(scrollPosition, targets);
+						}
 					}
 				},
 
 				__onLayoutChanging: function(displayUnit, assigning, overwrite) {
-					this._synchronize(assigning);
+					this._synchronizeLayout(assigning);
 				},
 
-				_synchronize: function(layoutValue, targets) {
+				__onScrollPositionChanging: function(displayUnit, assigning, overwrite) {
+					this._synchronizeScrollPosition(overwrite);
+				},
+
+				_synchronizeLayout: function(layoutValue, targets) {
 					//同期対象のプロパティのみ値をコピーし、同期対象外のプロパティは変更しない（nullをセット）
 					var x = this.isXEnabled ? layoutValue.x : null;
 					var y = this.isYEnabled ? layoutValue.y : null;
@@ -5815,6 +5829,21 @@
 					for (var i = 0, len = targets.length; i < len; i++) {
 						var du = targets[i];
 						this.__setLayoutValue(du, x, y, w, h);
+					}
+				},
+
+				_synchronizeScrollPosition: function(scrollPosition, targets) {
+					var scrollX = this.isScrollXEnabled ? scrollPosition.x : null;
+					var scrollY = this.isScrollYEnabled ? scrollPosition.y : null;
+
+					targets = targets == null ? this.targets : targets;
+
+					for (var i = 0, len = targets.length; i < len; i++) {
+						var du = targets[i];
+						if (DisplayUnitContainer.isClassOf(du)) {
+							//スクロール位置が同期可能なのは対象がDUコンテナの場合のみ
+							this.__setScrollPosition(du, scrollX, scrollY);
+						}
 					}
 				}
 			}
