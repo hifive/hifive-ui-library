@@ -6426,13 +6426,13 @@
 					var moveDy = 0;
 
 					if (duCy < 0) {
-						//DUがコンテナの左側にはみ出している場合
+						//DUがコンテナの上側にはみ出している場合
 						moveDy = duCy;
 					} else {
 						var duCBottom = duCy + du.height;
 						var containerBottom = container.height;
 						if (duCBottom > containerBottom) {
-							//DUの右側がコンテナの右側にはみ出している場合
+							//DUの右側がコンテナの下側にはみ出している場合
 							moveDy = duCBottom - containerBottom;
 						}
 					}
