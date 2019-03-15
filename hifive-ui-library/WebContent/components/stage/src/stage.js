@@ -6485,6 +6485,30 @@
 						_isSelected: null,
 						_isFocused: null,
 
+						_isEditable: null,
+
+						_isEditing: null,
+
+						/**
+						 * この要素を現在ドラッグ可能かどうか
+						 */
+						_isDraggable: null,
+
+						/**
+						 * 現在この要素をドラッグ中かどうか。
+						 */
+						_isDragging: null,
+
+						/**
+						 * この要素がリサイズ可能かどうか
+						 */
+						_isResizable: null,
+
+						/**
+						 * 現在この要素をリサイズ中かどうか
+						 */
+						_isResizing: null,
+
 						_viewPositionOverride: null,
 
 						_worldGlobalPositionCache: null,
@@ -6610,6 +6634,66 @@
 							}
 						},
 
+						isEditable: {
+							get: function() {
+								return this._isEditable;
+							},
+							set: function(value) {
+								if (this._isEditable === value) {
+									return;
+								}
+
+								if (this._isEditable === true && value === false) {
+									//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
+									this.cancelEdit();
+								}
+
+								this._isEditable = value;
+							}
+						},
+
+						isEditing: {
+							get: function() {
+								return this._isEditing;
+							}
+						},
+
+						isDraggable: {
+							get: function() {
+								return this._isDraggable;
+							},
+							set: function(value) {
+								if (this._isDraggable === value) {
+									return;
+								}
+								this._isDraggable = value;
+							}
+						},
+
+						isDragging: {
+							get: function() {
+								return this._isDragging;
+							}
+						},
+
+						isResizable: {
+							get: function() {
+								return this._isResizable;
+							},
+							set: function(value) {
+								if (this._isResizable === value) {
+									return;
+								}
+								this._isResizable = value;
+							}
+						},
+
+						isResizing: {
+							get: function() {
+								return this._isResizing;
+							}
+						},
+
 						isSelectable: {
 							get: function() {
 								return this._isSelectable;
@@ -6708,6 +6792,15 @@
 							this._isVisible = true;
 
 							this._isForceHidden = false;
+
+							this._isEditable = false;
+							this._isEditing = false;
+
+							this._isDraggable = false;
+							this._isDragging = false;
+
+							this._isResizable = false;
+							this._isResizing = false;
 
 							this._groupTag = SimpleSet.create();
 
@@ -7845,29 +7938,6 @@
 		var desc = {
 			name: 'h5.ui.components.stage.BasicDisplayUnit',
 			field: {
-				_isEditable: null,
-
-				_isEditing: null,
-
-				/**
-				 * この要素を現在ドラッグ可能かどうか
-				 */
-				_isDraggable: null,
-
-				/**
-				 * 現在この要素をドラッグ中かどうか。
-				 */
-				_isDragging: null,
-
-				/**
-				 * この要素がリサイズ可能かどうか
-				 */
-				_isResizable: null,
-
-				/**
-				 * 現在この要素をリサイズ中かどうか
-				 */
-				_isResizing: null,
 
 				/**
 				 * このDUがリサイズ可能な場合に、リサイズ操作とみなす境界の幅
@@ -7882,41 +7952,6 @@
 				_renderer: null
 			},
 			accessor: {
-				isEditable: {
-					get: function() {
-						return this._isEditable;
-					},
-					set: function(value) {
-						if (this._isEditable === value) {
-							return;
-						}
-
-						if (this._isEditable === true && value === false) {
-							//現在が編集可能で、編集不能状態に変更される場合は現在の編集をキャンセルする
-							this.cancelEdit();
-						}
-
-						this._isEditable = value;
-					}
-				},
-
-				isEditing: {
-					get: function() {
-						return this._isEditing;
-					}
-				},
-
-				isDraggable: {
-					get: function() {
-						return this._isDraggable;
-					},
-					set: function(value) {
-						if (this._isDraggable === value) {
-							return;
-						}
-						this._isDraggable = value;
-					}
-				},
 
 				width: {
 					get: function() {
@@ -7933,30 +7968,6 @@
 					},
 					set: function(value) {
 						super_.height.set.call(this, value);
-					}
-				},
-
-				isDragging: {
-					get: function() {
-						return this._isDragging;
-					}
-				},
-
-				isResizable: {
-					get: function() {
-						return this._isResizable;
-					},
-					set: function(value) {
-						if (this._isResizable === value) {
-							return;
-						}
-						this._isResizable = value;
-					}
-				},
-
-				isResizing: {
-					get: function() {
-						return this._isResizing;
 					}
 				},
 
@@ -7991,14 +8002,12 @@
 				constructor: function BasicDisplayUnit(id) {
 					super_.constructor.call(this, id);
 
+					//BasicDUはデフォルトで編集可能にする
 					this._isEditable = true;
-					this._isEditing = false;
 
+					//BasicDUはデフォルトでドラッグ可能にする
 					this._isDraggable = true;
-					this._isDragging = false;
 
-					this._isResizable = false;
-					this._isResizing = false;
 					this._resizeBoundary = {
 						//isDisplay: true, //TODO isWorldかisDisplayかは統一（他に似たことをしている部分がある）
 						top: 6,
