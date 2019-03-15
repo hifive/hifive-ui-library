@@ -6417,13 +6417,13 @@
 
 					//指定されたコンテナのコンテナローカル座標系で表したDUの座標を求める
 					//containerは必ずduの先祖である前提
-					var targetContainer = container;
-					var duCx = du.x - targetContainer.scrollX;
-					var duCy = du.y - targetContainer.scrollY;
-					while (targetContainer !== container) {
-						duCx += targetContainer.x - targetContainer.scrollX;
-						duCy += targetContainer.y - targetContainer.scrollY;
-						targetContainer = du.parentDisplayUnit;
+					var coordContainer = du.parentDisplayUnit;
+					var duCx = du.x - coordContainer.scrollX;
+					var duCy = du.y - coordContainer.scrollY;
+					while (coordContainer !== container) {
+						duCx += coordContainer.x - coordContainer.parentDisplayUnit.scrollX;
+						duCy += coordContainer.y - coordContainer.parentDisplayUnit.scrollY;
+						coordContainer = coordContainer.parentDisplayUnit;
 					}
 
 					var moveDx = 0;
@@ -14851,6 +14851,10 @@
 								return true;
 							}
 
+							if (!this._isOverflowVisible(du)) {
+								return true;
+							}
+
 							var rLeft = renderRect.x;
 							var rTop = renderRect.y;
 							var rRight = rLeft + renderRect.width;
@@ -14922,7 +14926,11 @@
 							}
 
 							if (!renderRect) {
-								//ウィンドウの可視範囲にまったく含まれていない場合はfalse
+								//可視範囲が設定されていない場合は描画しない
+								return false;
+							}
+
+							if (!this._isOverflowVisible(du)) {
 								return false;
 							}
 
@@ -14969,6 +14977,64 @@
 
 							if (duGlobalPos.y > rBottom) {
 								//DUの上端が描画領域の下端より下にある
+								return false;
+							}
+
+							return true;
+						},
+
+						_isOverflowVisible: function(du) {
+							//レイヤー直下のコンテナまで順に、そのコンテナの可視範囲内にこのDUが入るようにする
+							var parentContainer = du.parentDisplayUnit;
+							while (parentContainer && !Layer.isClassOf(parentContainer)) {
+								var isInView = this._isInView(du, parentContainer);
+								if (!isInView) {
+									//途中のDUコンテナで隠れてしまった場合はfalse
+									return false;
+								}
+								parentContainer = parentContainer.parentDisplayUnit;
+							}
+							//全ての親コンテナで表示範囲に入っていたらtrue
+							return true;
+						},
+
+						_isInView: function(du, container) {
+							if (container.overflow !== 'hidden') {
+								//指定されたコンテナはoverflowがhiddenではないので
+								//スクロールしなくても見えるので何もしなくてよい
+								return true;
+							}
+
+							//指定されたコンテナのコンテナローカル座標系で表したDUの座標を求める
+							//containerは必ずduの先祖である前提
+							var coordContainer = du.parentDisplayUnit;
+							var duCx = du.x - coordContainer.scrollX;
+							var duCy = du.y - coordContainer.scrollY;
+							while (coordContainer !== container) {
+								duCx += coordContainer.x - coordContainer.parentDisplayUnit.scrollX;
+								duCy += coordContainer.y - coordContainer.parentDisplayUnit.scrollY;
+								coordContainer = coordContainer.parentDisplayUnit;
+							}
+
+							if (duCx > container.width) {
+								//DUがこのコンテナの可視範囲より右にある
+								return false;
+							}
+
+							var duCRight = duCx + du.width;
+							if (duCRight < 0) {
+								//DUがこのコンテナの可視範囲より左にある
+								return false;
+							}
+
+							if (duCy > container.height) {
+								//DUがこのコンテナの可視範囲より下にある
+								return false;
+							}
+
+							var duCBottom = duCy + du.height;
+							if (duCBottom < 0) {
+								//DUがこのコンテナの可視範囲より上にある
 								return false;
 							}
 
