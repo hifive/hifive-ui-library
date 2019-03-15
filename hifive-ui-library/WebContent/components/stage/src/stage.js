@@ -7267,8 +7267,15 @@
 							if (this._belongingLayer.isUnscaledRendering) {
 								//unscaled描画レイヤーの場合、レイヤーに対してtransformによる拡縮がかかっていないので、
 								//ここで拡縮率をかけてDOMの座標自体を変更する
-								x = stageView._viewport.toDisplayX(x);
-								y = stageView._viewport.toDisplayY(y);
+								var rawDispX = stageView._viewport.toDisplayX(x);
+								var rawDispY = stageView._viewport.toDisplayY(y);
+
+								//left,topにセットするときに切り捨てが起きると、
+								//VisiblePositionHookで右寄せレイアウトしたときに
+								//右側に隙間ができる可能性があるので、暫定対応として切り上げする。
+								//TODO 左寄せの場合に逆に隙間ができてしまう可能性が考えられるので、全てtransformによる移動とするなど検討する
+								x = Math.ceil(rawDispX);
+								y = Math.ceil(rawDispY);
 							}
 
 							if (this._isOnSvgLayer) {
