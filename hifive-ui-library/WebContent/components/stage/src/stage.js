@@ -1584,7 +1584,7 @@
 				var EVENT_DRAG_DU_DROP = 'duDragDrop';
 				var EVENT_DRAG_DU_CANCEL = 'duDragCancel';
 
-				var FORE_CONTAINER_CACHE_CLEAR_EVENTS = 'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange';
+				var FORE_CONTAINER_CACHE_CLEAR_EVENTS = 'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange stageResize';
 
 				//eventはnullの場合がある（ビュー境界スクロールの場合）
 				function defaultMoveFunction(du, data, event, delta, dragSession) {
@@ -5775,7 +5775,7 @@
 		return desc;
 	});
 
-	var SynchronizeLayoutHook = OneToManyLayoutHook.extend(function(super_) {
+	var SynchronizeHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.layouthook.SynchronizeHook',
 
@@ -5792,7 +5792,7 @@
 				/**
 				 * @memberOf h5.ui.components.stage.layouthook.SynchronizeHook
 				 */
-				constructor: function SynchronizeLayoutHook(isXEnabled, isYEnabled, isWidthEnabled,
+				constructor: function SynchronizeHook(isXEnabled, isYEnabled, isWidthEnabled,
 						isHeightEnabled, isScrollXEnabled, isScrollYEnabled) {
 					super_.constructor.call(this);
 
@@ -5869,7 +5869,7 @@
 		return desc;
 	});
 
-	var FollowPositionLayoutHook = OneToManyLayoutHook.extend(function(super_) {
+	var FollowPositionHook = OneToManyLayoutHook.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.layouthook.FollowPositionHook',
 
@@ -5882,7 +5882,7 @@
 				/**
 				 * @memberOf h5.ui.components.stage.layouthook.FollowPositionHook
 				 */
-				constructor: function FollowPositionLayoutHook(offsetX, offsetY) {
+				constructor: function FollowPositionHook(offsetX, offsetY) {
 					super_.constructor.call(this);
 
 					//コンストラクタでX, Yそれぞれのオフセット値が与えられていればセット。デフォルトは0（同じ位置）
@@ -6029,7 +6029,7 @@
 						/**
 						 * @memberOf h5.ui.components.stage.layouthook.VisiblePositionHook
 						 */
-						constructor: function VisiblePositionLayoutHook(displayLeft, displayTop,
+						constructor: function VisiblePositionHook(displayLeft, displayTop,
 								displayRight, displayBottom) {
 							super_.constructor.call(this);
 
@@ -6053,7 +6053,7 @@
 								var that = this;
 								$(displayUnit._rootStage.rootElement)
 										.on(
-												'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange',
+												'stageViewUnifiedSightChange stageViewStructureChange stageViewRegionChange stageResize',
 												function(event, evArg) {
 													that._update();
 												});
@@ -6132,7 +6132,7 @@
 				/**
 				 * @memberOf h5.ui.components.stage.layouthook.DisplaySizeHook
 				 */
-				constructor: function DisplaySizeLayoutHook() {
+				constructor: function DisplaySizeHook() {
 					super_.constructor.call(this);
 					this._isFirstAttach = true;
 					this._duSizeMap = new Map();
@@ -6221,7 +6221,7 @@
 				/**
 				 * @memberOf h5.ui.components.stage.layouthook.HorizontalLineHook
 				 */
-				constructor: function HorizontalLineLayoutHook(alignment) {
+				constructor: function HorizontalLineHook(alignment) {
 					super_.constructor.call(this);
 					//デフォルト：上揃え
 					this._verticalAlignment = alignment != null ? alignment : 'top';
@@ -7726,12 +7726,12 @@
 					}
 
 					//幅と高さはSyncフックで同期
-					var syncHook = SynchronizeLayoutHook.create(false, false, true, true);
+					var syncHook = SynchronizeHook.create(false, false, true, true);
 					syncHook.setSource(sourceDisplayUnit);
 					syncHook.addTargets(ovDU);
 
 					//位置はFollowHookでグローバル座標で同期（オフセットをゼロにすることで同じ位置に重ねる）
-					var followHook = FollowPositionLayoutHook.create(0, 0);
+					var followHook = FollowPositionHook.create(0, 0);
 					followHook.setSource(sourceDisplayUnit);
 					followHook.addTargets(ovDU);
 
