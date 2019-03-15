@@ -14839,8 +14839,7 @@
 								return false;
 							}
 
-							if (BasicDisplayUnit.isClassOf(du)
-									&& (du.isResizing || du.isEditing || du.isDragging)) {
+							if (du.isResizing || du.isDragging || du.isEditing) {
 								//BasicDUで現在なんらかの変更処理中の場合はDOMは削除しない
 								return false;
 							}
