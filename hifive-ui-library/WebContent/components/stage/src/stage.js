@@ -1620,6 +1620,13 @@
 						//移動関数。移動対象のDUごとに呼ばれる
 						moveFunction: null,
 
+						//DUコンテナの境界スクロールが発生したときに、ドラッグ中のDUごとに呼ばれる移動関数
+						//セットされていない場合は境界スクロールを打ち消すような動きをさせる関数がデフォルトで使われる
+						containerScrollMoveFunction: null,
+
+						//DUコンテナの境界スクロールが発生したときに、1回のスクロールにつき1回だけ呼ばれる
+						//シグネチャは function(targetContainer, delta, DUDragDropSession)
+						//targetContainerは境界スクロールが発生したコンテナ、deltaはディスプレイ座標系での移動量
 						containerScrollCallbackFunction: null,
 
 						//ドラッグ時に選択されなかった（非代表の）ProxyDUを含めた、ステージ上の全てのDU
@@ -1673,6 +1680,8 @@
 
 							this._moveFunctionDataMap = new Map();
 							this.moveFunction = null;
+
+							this.containerScrollMoveFunction = null;
 							this.containerScrollCallbackFunction = null;
 
 							this.canDrop = true;
@@ -1711,7 +1720,7 @@
 							var moveFunc;
 							if (duContainer) {
 								//DUコンテナが指定された場合は、DUコンテナ境界スクロールによる移動
-								moveFunc = this.containerScrollCallbackFunction ? this.containerScrollCallbackFunction
+								moveFunc = this.containerScrollMoveFunction ? this.containerScrollMoveFunction
 										: defaultContainerScrollFunction;
 							} else {
 								//指定されていない場合は、マウス移動またはビュー境界スクロールによる移動
@@ -2161,15 +2170,23 @@
 								var displayDx = viewport.toDisplayX(containerScrollResult.dx);
 								var displayDy = viewport.toDisplayY(containerScrollResult.dy);
 
+								//スクロールした場合、子孫要素が動いてカーソル位置のDUコンテナが
+								//変わっている可能性があるのでキャッシュをクリアする
+								this._foremostDUContainerCache = null;
+
 								var delta = {
 									x: displayDx,
 									y: displayDy
 								};
+
+								//DUを動かす
 								this._deltaMove(null, delta, targetContainer);
 
-								//スクロールした場合、子孫要素が動いてカーソル位置のDUコンテナが
-								//変わっている可能性があるのでキャッシュをクリアする
-								this._foremostDUContainerCache = null;
+								if (this.containerScrollCallbackFunction) {
+									//DUコンテナスクロールのコールバックを呼び出す
+									this.containerScrollCallbackFunction(targetContainer, delta,
+											this);
+								}
 
 								return true;
 							}
