@@ -1595,8 +1595,15 @@
 					return ret;
 				}
 
-				function defaultContainerScrollFunction(du, displayUnitContainer, delta, data,
-						dragSession) {
+				function defaultContainerScrollFunction(displayUnit, scrolledDisplayUnitContainer,
+						delta, data, dragSession) {
+					if (!scrolledDisplayUnitContainer.isDescendant(displayUnit)) {
+						//このDUがスクロールしたDUコンテナの子孫でない場合は何もしない
+						return;
+					}
+
+					//このDUがスクロールしたDUコンテナの子孫の場合は
+					//スクロール分を打ち消すようにスクロールする
 					var ret = {
 						dx: delta.x,
 						dy: delta.y
@@ -1716,12 +1723,6 @@
 
 							for (var i = 0, len = targets.length; i < len; i++) {
 								var du = targets[i];
-
-								if (duContainer && !duContainer.isDescendant(du)) {
-									//DUコンテナが指定された場合、そのコンテナの子孫要素でない場合は
-									//移動させない
-									continue;
-								}
 
 								var data = this._moveFunctionDataMap.get(du);
 								if (!data) {
