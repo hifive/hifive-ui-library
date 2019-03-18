@@ -7283,11 +7283,13 @@
 						 * @private
 						 */
 						_onRemovedFromStage: function() {
+							this._space = null;
 							this._rootStage = null;
 							this._belongingLayer = null;
 							this._isOnSvgLayer = false;
 							this._isSelected = false;
 							this._isFocused = false;
+							this._worldGlobalPositionCache = null;
 							var event = Event.create('removeFromStage');
 							this.dispatchEvent(event);
 						},
@@ -10151,6 +10153,14 @@
 				},
 
 				addDisplayUnit: function(du) {
+					if (!du) {
+						throw new Error('DisplayUnitを指定してください。');
+					}
+
+					if (du && du.space) {
+						throw new Error('このDisplayUnitは既に特定のSpaceに属しています。 id=' + du.id);
+					}
+
 					du._parentDU = this;
 
 					this._children.push(du);
@@ -10212,7 +10222,7 @@
 						return getChildrenAll(this);
 					}
 					//デフォルトでは子要素のみ取得
-					return this._children;
+					return this._children.slice(0);
 				},
 
 				/**
@@ -13980,6 +13990,10 @@
 								//レイヤーと対応する要素をDOMマネージャに登録
 								this._domManager.add(layer, layerRootElement, true);
 
+								//先にaddしたレイヤーの方が手前に来るようにする
+								//layers配列的にはindexが若い＝手前、DOM的には後の子になる
+								this._rootElement.appendChild(layerRootElement);
+
 								//現時点で存在するレイヤー内のDUを描画
 								//レイヤー要素はビューのルート要素として先に生成しているため
 								//スタンバイマップには入れない
@@ -13988,10 +14002,6 @@
 								layer.getDisplayUnitAll().forEach(function(du) {
 									that._duRenderStandbyMap.set(du, du);
 								});
-
-								//先にaddしたレイヤーの方が手前に来るようにする
-								//layers配列的にはindexが若い＝手前、DOM的には後の子になる
-								this._rootElement.appendChild(layerRootElement);
 							}
 
 							//ビューポートが既に移動している状態でinitされる場合もあるので、レイヤーのスクロール位置をアップデート
