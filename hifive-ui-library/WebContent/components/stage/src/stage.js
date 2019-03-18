@@ -2248,7 +2248,10 @@
 						_onStageTargets: null,
 
 						//du.id -> 当該DUの、このセッションに限ったリサイズ制約 のマップ
-						_constraintOverrideMap: null
+						_constraintOverrideMap: null,
+
+						_stageSpaceDisplayUnitAddListenerWrapper: null,
+						_stageSpaceDisplayUnitRemoveListenerWrapper: null
 					},
 					accessor: {
 						handlingPosition: {
@@ -2271,10 +2274,73 @@
 							this._handlingPosition = handlingPosition;
 
 							this._constraintOverrideMap = null;
+
+							var that = this;
+							this._stageSpaceDisplayUnitAddListenerWrapper = function(event) {
+								that._stageSpaceDisplayUnitAddListener(event);
+							};
+							this._stageSpaceDisplayUnitRemoveListenerWrapper = function(event) {
+								that._stageSpaceDisplayUnitRemoveListener(event);
+							};
 						},
 
 						setConstraintOverride: function(constraintObject) {
 							this._constraintOverrideMap = constraintObject;
+						},
+
+						/**
+						 * このセッションの期間中に、リサイズ対象のDUのProxyDUが追加された場合に呼ばれます。
+						 * liveModeによって、必要に応じてオーバーレイDUを追加します。
+						 *
+						 * @private
+						 * @param event
+						 */
+						_stageSpaceDisplayUnitAddListener: function(event) {
+							if (this.liveMode !== DragLiveMode.OVERLAY
+									&& this.liveMode !== DragLiveMode.OVERLAY_AND_STAY) {
+								return;
+							}
+
+							var addedDU = event.displayUnit;
+
+							if (!ProxyDisplayUnit.isClassOf(addedDU)) {
+								//追加されたDUがProxyDUでない場合は何もしない
+								return;
+							}
+
+							var idx = this.getTargets().indexOf(addedDU.sourceDisplayUnit);
+							if (idx === -1) {
+								//ソースDUが、このリサイズセッションのリサイズ対象DUでない場合は何もしない
+								return;
+							}
+
+							//追加されたDUはOn-Stageなので、dispose時の削除処理対象になるように内部ターゲットに追加する
+							this._onStageTargets.push(addedDU);
+
+							//このリサイズセッションのリサイズ対象DUに対応するProxyDUが追加された、かつ
+							//ライブモードがオーバーレイを表示するモードなのでオーバーレイを追加する
+							var views = this.stage.getViewCollection().getAllContentsViews();
+							for (var i = 0, len = views.length; i < len; i++) {
+								var view = views[i];
+								view._overlaySpace.mapper.add(addedDU);
+							}
+						},
+
+						/**
+						 * このセッションの期間中に、リサイズ対象のDUに対応するProxyDUが削除された場合に呼ばれます。
+						 * このハンドラは、ViewportContainerによってProxyDUが削除されることを想定しており、
+						 * 当該DUを内部ターゲットリストから削除します。
+						 * オーバーレイDUは、マッパーによって必要に応じて自動的に削除されるのでここではremoveは呼びません。
+						 *
+						 * @private
+						 * @param event
+						 */
+						_stageSpaceDisplayUnitRemoveListener: function(event) {
+							var removedDU = event.displayUnit;
+							var idx = this._onStageTargets.indexOf(removedDU);
+							if (idx !== -1) {
+								this._onStageTargets.splice(idx, 1);
+							}
 						},
 
 						__onBeginning: function(event) {
@@ -2295,16 +2361,29 @@
 								return false;
 							}
 
+							this.stage.space.addEventListener('displayUnitAdd',
+									this._stageSpaceDisplayUnitAddListenerWrapper);
+
+							this.stage.space.addEventListener('displayUnitRemove',
+									this._stageSpaceDisplayUnitRemoveListenerWrapper);
+
+							//ProxyDUがユーザーによって追加された場合に備えて正規化し直す
+							var normalizedTargets = this.stage
+									._getSourceNormalizedDisplayUnits(this.getTargets());
+							this.setTargets(normalizedTargets);
+
+							this.setCursor('default');
+
+							var onStageTargets = this.stage
+									._getOnStageNormalizedDisplayUnits(normalizedTargets);
+							this._onStageTargets = onStageTargets;
+
 							this._setResizingFlag(true);
 
 							var contentsViews = this.stage.getViewCollection()
 									.getAllContentsViews();
 
 							var isForceHidden = this.liveMode === DragLiveMode.OVERLAY;
-
-							var onStageTargets = this.stage._getOnStageNormalizedDisplayUnits(this
-									.getTargets());
-							this._onStageTargets = onStageTargets;
 
 							var rawFocusedDU = this.initialState.displayUnit;
 
@@ -2640,6 +2719,11 @@
 						 */
 						__onDispose: function() {
 							this._setResizingFlag(false);
+
+							this.stage.space.removeEventListener('displayUnitAdd',
+									this._stageSpaceDisplayUnitAddListenerWrapper);
+							this.stage.space.removeEventListener('displayUnitRemove',
+									this._stageSpaceDisplayUnitRemoveListenerWrapper);
 
 							//確定・キャンセルどちらの場合であっても、
 							//ドラッグ対象のすべてのDU（ソースDU、プロキシDUとも）に対して
@@ -7186,7 +7270,6 @@
 						_onAddedToStage: function(stage, belongingLayer) {
 							this._rootStage = stage;
 							this._belongingLayer = belongingLayer;
-
 							this._isFocused = false;
 
 							//キャッシュ：SVGレイヤーの子孫要素かどうか。onRemovedでfalseにする
@@ -7205,7 +7288,6 @@
 							this._isOnSvgLayer = false;
 							this._isSelected = false;
 							this._isFocused = false;
-
 							var event = Event.create('removeFromStage');
 							this.dispatchEvent(event);
 						},
@@ -7677,6 +7759,15 @@
 				constructor: function OverlayMapper(sourceSpace, targetSpace) {
 					super_.constructor.call(this);
 
+					this._srcTargetMap = new Map();
+
+					if (!sourceSpace || !targetSpace) {
+						throw new Error('ソースとターゲットのDU空間はどちらも必須です。');
+					}
+
+					this._sourceSpace = sourceSpace;
+					this._targetSpace = targetSpace;
+
 					//現在のところ、ソース空間でAddされても自動的にこちらで行うことはないので
 					//AddListenerは追加しない
 					var that = this;
@@ -7686,15 +7777,10 @@
 					this._sourceDURemoveListenerWrapper = function(event) {
 						that._sourceDURemoveListener(event);
 					};
-
-					this._srcTargetMap = new Map();
-
-					if (!sourceSpace || !targetSpace) {
-						throw new Error('ソースとターゲットのDU空間はどちらも必須です。');
-					}
-
-					this._sourceSpace = sourceSpace;
-					this._targetSpace = targetSpace;
+					sourceSpace.addEventListener('displayUnitDirty',
+							this._sourceDUDirtyListenerWrapper);
+					sourceSpace.addEventListener('displayUnitRemove',
+							this._sourceDURemoveListenerWrapper);
 				},
 
 				add: function(sourceDisplayUnit) {
@@ -7747,9 +7833,11 @@
 
 				remove: function(sourceDisplayUnit) {
 					var info = this._srcTargetMap.get(sourceDisplayUnit);
+
 					if (!info) {
 						return;
 					}
+
 					this._srcTargetMap['delete'](sourceDisplayUnit);
 
 					info.syncHook.setSource(null);
@@ -7766,7 +7854,7 @@
 				 * @param event
 				 */
 				_sourceDUDirtyListener: function(event) {
-					var info = this._srcTargetMap.get(sourceDisplayUnit);
+					var info = this._srcTargetMap.get(event.displayUnit);
 					if (!info) {
 						return;
 					}
@@ -11146,7 +11234,6 @@
 									}
 								} else {
 									//DUの現在の範囲外
-
 									//空振りする場合がある
 									vc.removeSourceDisplayUnit(displayUnit);
 								}
@@ -14835,12 +14922,6 @@
 							var elem = du.__renderDOM(this, reason);
 							this._setIdAttribute(du, elem);
 							domManager.add(du, elem);
-
-							if (du.isResizing) {
-								//リサイズ中は、ソースDUの大きさに応じて動的にProxyDUが追加・削除される場合がある。
-								//従い、DUがリサイズ中の時はそのProxyDUに対してもフォアレイヤーのクローンを追加する。
-								this._overlaySpace.mapper.add(du);
-							}
 
 							//待機リストに入っていたら削除
 							this._duRenderStandbyMap['delete'](du);
