@@ -3483,10 +3483,10 @@
 
 					var $root = $(this.stage.rootElement);
 
-					var rootOffset = $root.offset();
-					var rootRight = rootOffset.left + $root.width()
+					var stagePagePos = this.stage.getPagePosition();
+					var rootRight = stagePagePos.x + $root.width()
 							- dragContext.separatorLine.width;
-					var rootBottom = rootOffset.top + $root.height()
+					var rootBottom = stagePagePos.y + $root.height()
 							- dragContext.separatorLine.height;
 
 					if (this.stage._viewCollection._isHScrollBarShow()) {
@@ -3498,8 +3498,8 @@
 
 					if (cursorPageY > rootBottom) {
 						cursorPageY = rootBottom;
-					} else if (cursorPageY < rootOffset.top) {
-						cursorPageY = rootOffset.top;
+					} else if (cursorPageY < stagePagePos.y) {
+						cursorPageY = stagePagePos.y;
 					}
 
 					if (this.stage._viewCollection._isVScrollBarShow()) {
@@ -3508,8 +3508,8 @@
 
 					if (cursorPageX > rootRight) {
 						cursorPageX = rootRight;
-					} else if (cursorPageX < rootOffset.left) {
-						cursorPageX = rootOffset.left;
+					} else if (cursorPageX < stagePagePos.x) {
+						cursorPageX = stagePagePos.x;
 					}
 
 					var dispDx = this.lastPagePosition.x - this.initialState.pagePosition.x;
@@ -7609,7 +7609,7 @@
 					this._source.__updateDOM(view, element, reason);
 
 					//位置だけはこのOverlayDUの情報に基づいて上書きする
-					this._updatePosition.call(this, element, view);
+					this._updatePosition(element, view);
 				}
 			}
 		};
@@ -12480,13 +12480,11 @@
 						return;
 					}
 
-					var stageRect = this._stage.rootElement.getBoundingClientRect();
+					var stagePagePos = this._stage.getPagePosition();
 
 					//this.x/y はStageの左上基準
-					var x = this._lastCursorPageX + this._offsetX
-							- (stageRect.left + window.pageXOffset);
-					var y = this._lastCursorPageY + this._offsetY
-							- (stageRect.top + window.pageYOffset);
+					var x = this._lastCursorPageX + this._offsetX - stagePagePos.x;
+					var y = this._lastCursorPageY + this._offsetY - stagePagePos.y;
 					this.setPosition(x, y);
 				}
 			}
@@ -13620,9 +13618,18 @@
 
 						isRenderRectClippedByWindow: null,
 
-						_willUpdateOnWindowChange: null,
+						//ページ座標のキャッシュを使用するかどうか
+						_isPagePositionCacheEnabled: null,
 
-						_windowViewportChangeListenerWrapper: null
+						//このStageViewのページ座標のキャッシュ。
+						//ウィンドウの現在の描画範囲のみ描画する機能を追加したのに伴い
+						//ウィンドウビューポートとこのビューの重なり範囲をdoUpdate()ごとに計算する必要が出たが、
+						//特にIE11では、多くの子孫要素を持つDOM要素のgetBoundingClientRect()を呼び出すと非常に重い(200ms以上かかることもある)ので
+						//代わりにページ座標を基準に計算するようにし、かつ、ページ座標の取得も都度行うとある程度時間がかかるのでキャッシュするようにした。
+						//ただし、Stage内部で起きたビューのサイズ変更はハンドルできるが、
+						//（ビューを含めた）Stage自体の位置が変更されたことは検出が難しいので、
+						//isPagePositionCacheEnabledで明示的にキャッシュを使うかどうかを制御できるようにしている。
+						_pagePositionCache: null
 					},
 
 					accessor: {
@@ -13717,18 +13724,18 @@
 							}
 						},
 
-						willUpdateOnWindowChange: {
+						isPagePositionCacheEnabled: {
 							get: function() {
-								return this._willUpdateOnWindowChange;
+								return this._isPagePositionCacheEnabled;
 							},
 							set: function(value) {
-								if (this._willUpdateOnWindowChange !== value) {
+								if (this._isPagePositionCacheEnabled !== value) {
+									this._isPagePositionCacheEnabled = value;
+
 									if (value === true) {
-										$(window).on('scroll resize',
-												this._windowViewportChangeListenerWrapper);
+										this.updatePagePosition();
 									} else {
-										$(window).off('scroll resize',
-												this._windowViewportChangeListenerWrapper);
+										this._pagePositionCache = null;
 									}
 								}
 							}
@@ -13799,18 +13806,18 @@
 							overlaySpace
 									.addEventListener('displayUnitDirty', this._duDirtyListener);
 
-							//Windowスクロール時の自動アップデートはデフォルト：false
-							//このフラグは通常、ウィンドウビューポートとの重なり検知と合わせて使用する
-							this._windowViewportChangeListenerWrapper = function(event) {
-								that._windowViewportChangeListener(event);
-							};
-							//ハンドラのOn/Offを行うため、あえてアクセサ経由で代入する
-							this.willUpdateOnWindowChange = stage.willUpdateOnWindowChange;
-
 							//ウィンドウの可視範囲に入っている領域だけを描画領域にするオプション
 							this.isRenderRectClippedByWindow = stage.isRenderRectClippedByWindow;
 
 							this._addToStage();
+
+							//キャッシュ使用のデフォルトはStageControllerと合わせる
+							this._pagePositionCache = null;
+							this._isPagePositionCacheEnabled = stage.isPagePositionCacheEnabled;
+							if (stage.isPagePositionCacheEnabled) {
+								//ページ座標キャッシュが有効ならこのビューの座標キャッシュを初期更新
+								this.updatePagePosition();
+							}
 						},
 
 						/**
@@ -13834,14 +13841,6 @@
 						},
 
 						/**
-						 * @private
-						 * @param event
-						 */
-						_windowViewportChangeListener: function(event) {
-							this.update();
-						},
-
-						/**
 						 * DUに対応するDOM要素に、このDUのIDをdata-属性として付与します。
 						 *
 						 * @private
@@ -13850,6 +13849,16 @@
 						 */
 						_setIdAttribute: function(displayUnit, rootElement) {
 							rootElement.setAttribute(DYN_DATA_DU_ID, displayUnit.id);
+						},
+
+						/**
+						 * このステージビューのページ座標を更新します。ページ座標のキャッシュが無効な場合はこのメソッドを呼んでも何も起こりません。
+						 * 各処理のタイミングで都度最新のページ座標が使用されます。
+						 */
+						updatePagePosition: function() {
+							if (this.isPagePositionCacheEnabled) {
+								this._pagePositionCache = $(this._rootElement).offset();
+							}
 						},
 
 						init: function() {
@@ -14127,9 +14136,10 @@
 								return;
 							}
 
+							var stateViewPagePos = null;
 							if (displayPageX != null || displayPageY != null) {
-								//rootOffsetが使われるのは、どちらかの変数が非nullの場合のみ
-								var rootOffset = $(this._rootElement).offset();
+								//stateViewPagePosが使われるのは、どちらかの変数が非nullの場合のみ
+								stateViewPagePos = this.getPagePosition();
 							}
 
 							var offX, offY;
@@ -14138,14 +14148,14 @@
 								//xが指定されていない場合はこのビューの中心とする
 								offX = this._viewport.displayWidth / 2;
 							} else {
-								offX = displayPageX - rootOffset.left;
+								offX = displayPageX - stateViewPagePos.x;
 							}
 
 							if (displayPageY == null) {
 								//Xと同様このビューの中心にする
 								offY = this._viewport.displayHeight / 2;
 							} else {
-								offY = displayPageY - rootOffset.top;
+								offY = displayPageY - stateViewPagePos.y;
 							}
 
 							var scaleCenter = this._viewport.getWorldPositionFromDisplayOffset(
@@ -14401,9 +14411,15 @@
 						 * @returns {Point} このビューのルートDOM要素の左上端のページ座標
 						 */
 						getPagePosition: function(offsetX, offsetY) {
-							var stageRect = this._rootElement.getBoundingClientRect();
-							var stagePageX = stageRect.left + window.pageXOffset;
-							var stagePageY = stageRect.top + window.pageYOffset;
+							var stagePagePos = null;
+							if (this._pagePositionCache) {
+								stagePagePos = this._pagePositionCache;
+							} else {
+								stagePagePos = $(this._rootElement).offset();
+							}
+
+							var stagePageX = stagePagePos.left;
+							var stagePageY = stagePagePos.top;
 
 							if (offsetX != null) {
 								stagePageX += offsetX;
@@ -14628,23 +14644,39 @@
 								return viewport._worldRect;
 							}
 
-							//ViewのDOM要素のサイズではなく、現在ウィンドウに見えている（＝実際に「見えている」）範囲を描画範囲とする
+							//ViewのDOM要素のサイズではなく、現在ウィンドウに見えている（＝実際に「見えている」）範囲。ページ座標系。
+							var vpLeft, vpTop, vpRight, vpBottom;
+							var windowLayoutCache = this._stage.__windowLayoutCache;
 
-							var stageRect = this._rootElement.getBoundingClientRect();
-							var stageLeft = stageRect.left;
-							var stageTop = stageRect.top;
+							if (windowLayoutCache) {
+								vpLeft = windowLayoutCache.pageX;
+								vpTop = windowLayoutCache.pageY;
+								vpRight = vpLeft + windowLayoutCache.width;
+								vpBottom = vpTop + windowLayoutCache.height;
+							} else {
+								//ウィンドウビューポートのキャッシュがない場合
+								vpLeft = window.pageXOffset;
+								vpTop = window.pageYOffset;
+								vpRight = vpLeft + window.innerWidth;
+								vpBottom = vpTop + window.innerHeight;
+							}
 
-							//ウィンドウのビューポートのサイズ
-							var winW = window.innerWidth;
-							var winH = window.innerHeight;
+							//ウィンドウのビューポートの位置とサイズ(ページ座標)
+
+							var stagePageOffset = this.getPagePosition();
+							var stPageLeft = stagePageOffset.x;
+							var stPageTop = stagePageOffset.y;
+							var stPageRight = stPageLeft + this.width;
+							var stPageBottom = stPageTop + this.height;
 
 							//i = intersection
-							var iLeft = Math.max(0, stageLeft);
-							var iRight = Math.min(winW, stageRect.right);
-							var iTop = Math.max(0, stageTop);
-							var iBottom = Math.min(winH, stageRect.bottom);
+							var iLeft = vpLeft > stPageLeft ? vpLeft : stPageLeft;
+							var iRight = vpRight < stPageRight ? vpRight : stPageRight;
+							var iTop = vpTop > stPageTop ? vpTop : stPageTop;
+							var iBottom = vpBottom < stPageBottom ? vpBottom : stPageBottom;
 
-							if (iLeft > winW || iRight < 0 || iTop > winH || iBottom < 0) {
+							if (iLeft > vpRight || iRight < vpLeft || iTop > vpBottom
+									|| iBottom < vpTop) {
 								//ウィンドウの可視範囲とこのビューは重なっていない＝まったく表示されていない場合はnullを返す
 								return null;
 							}
@@ -14653,21 +14685,9 @@
 							var iWidth = iRight - iLeft;
 							var iHeight = iBottom - iTop;
 
-							//StageViewの左上を原点とする、重なっている領域の左上座標
-							var rLeft = 0;
-							if (stageLeft < 0) {
-								//StageViewの左端がウィンドウ左端より左にある場合ははみ出した分だけ重なり領域のLeftにオフセットを足す
-								rLeft = -stageLeft;
-							}
-
-							var rTop = 0;
-							if (stageTop < 0) {
-								//Leftと同様にオフセットを足す
-								rTop = -stageTop;
-							}
-
 							//グローバル座標系での値に変換
-							var gOrigin = viewport.getWorldPositionFromDisplayOffset(rLeft, rTop);
+							var gOrigin = viewport.getWorldPositionFromDisplayOffset(iLeft
+									- stPageLeft, iTop - stPageTop);
 							var gWidth = viewport.toWorldX(iWidth);
 							var gHeight = viewport.toWorldY(iHeight);
 
@@ -16301,6 +16321,12 @@
 							}
 						},
 
+						updateViewPagePosition: function() {
+							this.getViewAll().forEach(function(view) {
+								view.updatePagePosition();
+							});
+						},
+
 						/**
 						 * @private
 						 */
@@ -16672,6 +16698,9 @@
 							this._sightChangeEvents = null;
 
 							this._isTriggerUnifiedSightChangeSuppressed = false;
+
+							//グリッドの構造が変わったので各ビューのページ座標を更新
+							this.updateViewPagePosition();
 						},
 
 						/**
@@ -16680,6 +16709,9 @@
 						_updateGridRegion: function() {
 							this._updateGridRegionRow();
 							this._updateGridRegionColumn();
+
+							//グリッドのサイズが変わった＝ビューのサイズが変わった(可能性がある)ので各ビューのページ座標キャッシュを更新
+							this.updateViewPagePosition();
 						},
 
 						/**
@@ -17362,6 +17394,8 @@
 
 		_editManager: null,
 
+		__windowLayoutCache: null,
+
 		UIDragScreenScrollDirection: SCROLL_DIRECTION_XY,
 
 		isWheelScrollDirectionReversed: false,
@@ -17598,6 +17632,13 @@
 
 			this._isDblclickEmulationEnabled = true;
 
+			this.__windowLayoutCache = {
+				pageX: 0,
+				pageY: 0,
+				width: 0,
+				height: 0
+			};
+
 			this._scaleRangeX = {
 				min: null,
 				max: null
@@ -17625,12 +17666,18 @@
 			this._isRenderRectClippedByWindow = false;
 			Object.defineProperty(this, 'isRenderRectClippedByWindow', {
 				get: function() {
-					return that._isRenderRectClippedByWindow;
+					return this._isRenderRectClippedByWindow;
 				},
 				set: function(value) {
-					if (that._isRenderRectClippedByWindow !== value) {
-						that._isRenderRectClippedByWindow = value;
-						that._viewCollection.getAllContentsViews().forEach(function(view) {
+					if (this._isRenderRectClippedByWindow !== value) {
+						this._isRenderRectClippedByWindow = value;
+
+						if (value === true) {
+							this._updateWindowPositionCache();
+							this._updateWindowSizeCache();
+						}
+
+						this._viewCollection.getAllContentsViews().forEach(function(view) {
 							view.isRenderRectClippedByWindow = value;
 						});
 					}
@@ -17640,14 +17687,31 @@
 			this._willUpdateOnWindowChange = false;
 			Object.defineProperty(this, 'willUpdateOnWindowChange', {
 				get: function() {
-					return that._willUpdateOnWindowChange;
+					return this._willUpdateOnWindowChange;
 				},
 				set: function(value) {
-					if (that._willUpdateOnWindowChange !== value) {
-						that._willUpdateOnWindowChange = value;
-						that._viewCollection.getAllContentsViews().forEach(function(view) {
-							view.willUpdateOnWindowChange = value;
+					this._willUpdateOnWindowChange = value;
+				}
+			});
+
+			this._isPagePositionCacheEnabled = true;
+			Object.defineProperty(this, 'isPagePositionCacheEnabled', {
+				get: function() {
+					return this._isPagePositionCacheEnabled;
+				},
+				set: function(value) {
+					if (this._isPagePositionCacheEnabled !== value) {
+						this._isPagePositionCacheEnabled = value;
+
+						this._viewCollection.getViewAll().forEach(function(view) {
+							view.isPagePositionCacheEnabled = value;
 						});
+
+						if (value === true) {
+							this.updatePagePosition();
+						} else {
+							this._pagePositionCache = null;
+						}
 					}
 				}
 			});
@@ -17665,10 +17729,55 @@
 				position: 'absolute',
 				overflow: 'hidden'
 			});
+
+			this._updateWindowPositionCache();
+			this._updateWindowSizeCache();
 		},
 
 		__dispose: function() {
 			this._viewMasterClock.dispose();
+		},
+
+		/**
+		 * @private
+		 */
+		_updateWindowPositionCache: function() {
+			this.__windowLayoutCache.pageX = window.pageXOffset;
+			this.__windowLayoutCache.pageY = window.pageYOffset;
+		},
+
+		/**
+		 * @private
+		 */
+		_updateWindowSizeCache: function() {
+			this.__windowLayoutCache.width = window.innerWidth;
+			this.__windowLayoutCache.height = window.innerHeight;
+		},
+
+		'{window} scroll': function(context) {
+			if (this.isRenderRectClippedByWindow) {
+				//Windowのレイアウトキャッシュが使われるのは今のところ
+				//可視範囲クリッピングが有効な場合だけなので、
+				//これが有効な場合のみキャッシュを更新する
+				this._updateWindowPositionCache();
+			}
+
+			if (this.willUpdateOnWindowChange) {
+				this._viewCollection.update();
+			}
+		},
+
+		'{window} resize': function(context) {
+			if (this.isRenderRectClippedByWindow) {
+				//Windowのレイアウトキャッシュが使われるのは今のところ
+				//可視範囲クリッピングが有効な場合だけなので、
+				//これが有効な場合のみキャッシュを更新する
+				this._updateWindowSizeCache();
+			}
+
+			if (this.willUpdateOnWindowChange) {
+				this._viewCollection.update();
+			}
 		},
 
 		/**
@@ -18308,12 +18417,6 @@
 		_dragSession: null,
 
 		/**
-		 * @private
-		 */
-		_dragStartRootOffset: null, //ドラッグ中のみ使用する、rootElementのoffset()値
-
-
-		/**
 		 * 指定されたディスプレイ座標（ただしStageルート要素の左上を原点とする値）が、現在の表示範囲において9-Sliceのどの位置になるかを取得します。
 		 *
 		 * @private
@@ -18408,10 +18511,6 @@
 				//ドラッグ開始全体をキャンセルされたので何もしない
 				return;
 			}
-
-			var $root = $(this.rootElement);
-
-			this._dragStartRootOffset = $root.offset(); //offset()は毎回取得すると重いのでドラッグ中はキャッシュ
 
 			if (dragStartMode === DRAG_MODE_AUTO) {
 				dragStartMode = this._autodetectDragMode(event, du);
@@ -18879,6 +18978,12 @@
 				return;
 			}
 
+			//ページ座標キャッシュを更新する。ページ座標キャッシュは適切なタイミングで更新されているはずなので
+			//本質的にはこのコードは不要だが、
+			//ページ座標キャッシュは主にドラッグ操作時に使用されているので、どこかで更新漏れがあった場合に備えて
+			//（＆開始時に一度だけ更新するだけならまだ負荷が軽いので）ドラッグ開始時に念のため更新しておく。
+			this.updatePagePosition();
+
 			context.event.preventDefault();
 
 			if (this._isGridSeparatorDragging()) {
@@ -18993,7 +19098,6 @@
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragInitialState = null;
 
-			this._dragStartRootOffset = null;
 			this._dragLastPagePos = null;
 		},
 
@@ -19233,6 +19337,10 @@
 			return this._getActiveView().getScrollPosition();
 		},
 
+		_pagePositionCache: null,
+
+		_isPagePositionCacheEnabled: true,
+
 		/**
 		 * このStageのルートDOM要素の左上端のページ座標を返します。引数にオフセットを指定すると、その値を加算した値を返します。
 		 *
@@ -19241,9 +19349,15 @@
 		 * @returns {Point} このビューのルートDOM要素の左上端のページ座標
 		 */
 		getPagePosition: function(offsetX, offsetY) {
-			var stageRect = this.rootElement.getBoundingClientRect();
-			var stagePageX = stageRect.left + window.pageXOffset;
-			var stagePageY = stageRect.top + window.pageYOffset;
+			var stagePagePos = null;
+			if (this._pagePositionCache) {
+				stagePagePos = this._pagePositionCache;
+			} else {
+				stagePagePos = $(this.rootElement).offset();
+			}
+
+			var stagePageX = stagePagePos.left;
+			var stagePageY = stagePagePos.top;
 
 			if (offsetX != null) {
 				stagePageX += offsetX;
@@ -19255,6 +19369,14 @@
 
 			var pos = Point.create(stagePageX, stagePageY);
 			return pos;
+		},
+
+		updatePagePosition: function() {
+			if (this._isPagePositionCacheEnabled) {
+				this._pagePositionCache = $(this.rootElement).offset();
+
+				this._viewCollection.updateViewPagePosition();
+			}
 		},
 
 		/**
@@ -19432,13 +19554,10 @@
 		 * @param event
 		 */
 		_updateResizeCursor: function(mouseoverDU, event) {
-			var bRect = this.rootElement.getBoundingClientRect();
+			var stagePagePos = this.getPagePosition();
 
-			var offsetLeft = bRect.left + window.pageXOffset;
-			var offsetTop = bRect.top + window.pageYOffset;
-
-			var displayOffsetX = event.pageX - offsetLeft;
-			var displayOffsetY = event.pageY - offsetTop;
+			var displayOffsetX = event.pageX - stagePagePos.x;
+			var displayOffsetY = event.pageY - stagePagePos.y;
 			var nineSlicePos = this._getNineSlicePosition(mouseoverDU, event.target,
 					displayOffsetX, displayOffsetY);
 
