@@ -6874,10 +6874,6 @@
 
 							this._renderPriority = RenderPriority.NORMAL;
 
-							this._isSelectable = true;
-							this._isSelected = false;
-							this._isFocused = false;
-
 							//コンストラクタではバッキングストアを直接初期化するが、
 							//他の場所では必ずアクセサ経由で呼び出すこと。
 							//子クラスにて位置やサイズが変わった場合に
@@ -6893,6 +6889,10 @@
 							this._isVisible = true;
 
 							this._isForceHidden = false;
+
+							this._isSelectable = false;
+							this._isSelected = false;
+							this._isFocused = false;
 
 							this._isEditable = false;
 							this._isEditing = false;
@@ -8115,6 +8115,9 @@
 				 */
 				constructor: function BasicDisplayUnit(id) {
 					super_.constructor.call(this, id);
+
+					//BasicDUはデフォルトで選択可能
+					this._isSelectable = true;
 
 					//BasicDUはデフォルトで編集可能にする
 					this._isEditable = true;
@@ -11939,11 +11942,12 @@
 	});
 
 	var DisplayUnitSpace = EventDispatcher.extend(function(super_) {
-
 		var EVENT_DISPLAY_UNIT_ADD = 'displayUnitAdd';
 		var EVENT_DISPLAY_UNIT_REMOVE = 'displayUnitRemove';
 
 		var EVENT_DISPLAY_UNIT_DIRTY_INTERNAL = 'displayUnitDirtyInternal';
+
+		var arrayPush = Array.prototype.push;
 
 		/**
 		 * コンテナを含む、全てのDUを返す
@@ -11961,7 +11965,7 @@
 				for (var i = 0, len = children.length; i < len; i++) {
 					var child = children[i];
 					var descendants = getAllDisplayUnits(child);
-					Array.prototype.push.apply(ret, descendants);
+					arrayPush.apply(ret, descendants);
 				}
 			} else {
 				ret.push(root);
@@ -11985,9 +11989,9 @@
 					var child = children[i];
 					var descendants = getAllSelectableDisplayUnits(child);
 					var filtered = descendants.filter(function(du) {
-						return BasicDisplayUnit.isClassOf(du) && du.isSelectable;
+						return du.isSelectable;
 					});
-					Array.prototype.push.apply(ret, filtered);
+					arrayPush.apply(ret, filtered);
 				}
 			} else {
 				ret.push(root);
