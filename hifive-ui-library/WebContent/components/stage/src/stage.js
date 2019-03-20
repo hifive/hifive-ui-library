@@ -386,6 +386,163 @@
 		containsElement: containsElement
 	});
 
+	var CountUpSequenceGenerator = RootClass.extend(function(super_) {
+
+		var DEFAULT_INITIAL_VALUE = 0;
+		var DEFAULT_MAX_VALUE = 1000000;
+		var DEFAULT_INCREMENT = 1;
+
+		var ERR_MAX_REACHED = 'シーケンスが上限に達しました。シーケンスをループさせたい場合はisCyclicをtrueにセットしてください。';
+
+		function isNumber(value) {
+			return typeof value === 'number';
+		}
+
+		var desc = {
+			name: 'h5.ui.components.stage.CountUpSequenceGenerator',
+
+			field: {
+				/**
+				 * 初期値。ループした場合はこの値に戻ります。
+				 */
+				initialValue: null,
+
+				/**
+				 * このシーケンスの最大値。
+				 */
+				maxValue: null,
+
+				/**
+				 * 増分。
+				 */
+				incrementValue: null,
+
+				/**
+				 * シーケンスがmaxValueに達した後値を取得しようとしたときにinitialValueに戻ってループするかどうか。
+				 * trueの場合、ループします。falseの場合、値を取得しようとすると例外を発生させます。デフォルト：true。
+				 */
+				isCyclic: null,
+
+				/**
+				 * シーケンス文字列に、リセット時のタイムスタンプを付与するかどうか。デフォルト：false。
+				 */
+				withTimestamp: null,
+
+				/**
+				 * シーケンス文字列に付加するプレフィックス文字列。
+				 */
+				prefix: null,
+
+				_timestamp: null,
+
+				_lastValue: null
+			},
+
+			accessor: {
+				lastValue: {
+					get: function() {
+						return this._lastValue;
+					}
+				},
+
+				timestamp: {
+					get: function() {
+						return this._timestamp;
+					}
+				}
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.CountUpSequenceGenerator
+				 */
+				constructor: function CountUpSequenceGenerator(initialValue, maxValue,
+						incrementValue, withTimestamp, isCyclic, prefix) {
+					super_.constructor.call(this);
+
+					this._timestamp = null;
+
+					this.initialValue = isNumber(initialValue) ? initialValue
+							: DEFAULT_INITIAL_VALUE;
+					this.maxValue = isNumber(maxValue) ? maxValue : DEFAULT_MAX_VALUE;
+					this.incrementValue = isNumber(incrementValue) ? incrementValue
+							: DEFAULT_INCREMENT;
+
+					//デフォルト：タイムスタンプを付加しない
+					this.withTimestamp = withTimestamp === true;
+					//デフォルト：最大値に達したらループする
+					this.isCyclic = isCyclic !== true;
+					//デフォルト：文字列プレフィックスを付与しない
+					this.prefix = prefix != null ? prefix : null;
+
+					//初期化
+					this.reset();
+				},
+
+				/**
+				 * 次のシーケンス番号を数値で返します。文字列プレフィックスやタイムスタンプはつきません。
+				 * isCyclicがfalseの場合にシーケンスが最大値を超えると例外が発生します。
+				 *
+				 * @returns {Number} シーケンス番号（数値）
+				 */
+				getNextValue: function() {
+					var val;
+					if (this._lastValue == null) {
+						val = this.initialValue;
+					} else {
+						val = this._lastValue + this.incrementValue;
+					}
+
+					if (val > this.maxValue) {
+						if (this.isCyclic) {
+							//ループが有効な場合はリセット
+							this.reset();
+							val = this.initialValue;
+						} else {
+							//ループが無効な場合はエラーにする
+							throw new Error(ERR_MAX_REACHED);
+						}
+					}
+
+					this._lastValue = val;
+
+					return val;
+				},
+
+				/**
+				 * 次のシーケンス番号を文字列で返します。設定されている場合、文字列プレフィックスやタイムスタンプが付加された文字列が返ります。
+				 * isCyclicがfalseの場合にシーケンスが最大値を超えると例外が発生します。
+				 *
+				 * @returns {String} シーケンス文字列
+				 */
+				getNextString: function() {
+					var val = this.getNextValue();
+
+					//プレフィックスが設定されていればその文字列、なければ空文字（最後に連結するため）
+					var prefix = this.prefix || '';
+
+					//タイムスタンプ付加が有効な場合は付加し、ハイフンの後ろにシーケンス番号が来るようにする。
+					//一意性が壊れる可能性があるのでタイムスタンプとシーケンス番号の間には
+					//必ずハイフンなどの非数字文字を挟めること。
+					var timestamp = this.withTimestamp ? this._timestamp + '-' : '';
+
+					var ret = prefix + timestamp + val;
+					return ret;
+				},
+
+				reset: function() {
+					//lastValueは最初に数値を発行する前はnullを返す
+					this._lastValue = null;
+
+					//実際にタイムスタンプを付加するかどうかはwithTimestampで制御するが、
+					//内部的にはタイムスタンプは常にリセットのタイミングで更新しておく。
+					this._timestamp = new Date().getTime();
+				}
+			}
+		};
+		return desc;
+	});
+
 	var NineSlicePosition = RootClass.extend(function(super_) {
 		var desc = {
 			name: 'h5.ui.components.stage.NineSlicePosition',
@@ -5204,15 +5361,12 @@
 	});
 
 	var SVGGraphics = RootClass.extend(function(super_) {
-		//TODO 仮実装
-		var idSequence = 0;
-
-		var ID_SEQ_PREFIX = 'def_';
-
-		//TODO 仮実装、連番一意ID生成
-		function createDefId(view) {
-			return ID_SEQ_PREFIX + view.rowIndex + '_' + view.columnIndex + '_' + idSequence++;
-		}
+		//Graphicsの<defs>の中に追加する各種定義のID用ジェネレータ。
+		//ページ内で一意である必要があるので、シングルトンで使用する。
+		var sequenceGeneratror = CountUpSequenceGenerator.create();
+		sequenceGeneratror.isCyclic = true;
+		sequenceGeneratror.prefix = '_def_';
+		sequenceGeneratror.withTimestamp = true;
 
 		var desc = {
 			name: 'h5.ui.components.stage.SVGGraphics',
@@ -5281,7 +5435,7 @@
 
 				createLinearGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId(this._view);
+						id = sequenceGenerator.getNextString();
 					}
 
 					var element = createSvgElement('linearGradient');
@@ -5292,7 +5446,7 @@
 
 				createRadialGradient: function(id) {
 					if (id === undefined) {
-						id = createDefId(this._view);
+						id = sequenceGenerator.getNextString();
 					}
 
 					var element = createSvgElement('radialGradient');
@@ -6480,15 +6634,11 @@
 
 	var DisplayUnit = EventDispatcher
 			.extend(function(super_) {
-				//DUのID自動採番時のカウントの上限。この値に達したらカウンタをリセットする。
-				//1ms以内にこの数を超えてIDを生成するとIDがかぶるので、あまり小さすぎる値にはしないこと。
-				var MAX_DU_ID_LOOP = 1000000;
-
-				//現在のIDカウンタのリセット日時
-				var currentDUIDCounterDate = new Date().getTime();
-
-				//ID自動生成カウンタ
-				var DUIDCounter = 0;
+				//DUのID自動採番時のシーケンスジェネレータ。シングルトン。
+				var duIdSequenceGenerator = CountUpSequenceGenerator.create();
+				duIdSequenceGenerator.prefix = '_du_';
+				duIdSequenceGenerator.isCyclic = true;
+				duIdSequenceGenerator.withTimestamp = true;
 
 				function scrollIntoContainerView(du, container) {
 					if (container.overflow !== 'hidden') {
@@ -6855,16 +7005,7 @@
 							super_.constructor.call(this);
 
 							if (id == null) {
-								//1ms以内に大量のIDを生成するとIDがかぶるが、現実的には起こらないと思われるのでこの仕組みにする
-								this.id = 'duid_' + currentDUIDCounterDate + '-' + DUIDCounter;
-
-								if (DUIDCounter >= MAX_DU_ID_LOOP) {
-									//カウンタと、カウンタの生成日時をリセットする
-									DUIDCounter = 0;
-									currentDUIDCounterDate = new Date().getTime();
-								} else {
-									DUIDCounter++;
-								}
+								this.id = duIdSequenceGenerator.getNextString();
 							} else {
 								//IDの一意性チェックは、ここではなく、StageにaddされるときにStage側で行う
 								this.id = id;
@@ -10852,15 +10993,6 @@
 
 	var StackViewport = RootClass
 			.extend(function(super_) {
-
-				//IDの自動生成カウンタの最大値（20億。32bit signed intの21億を意識）。この値を超えたらカウンタをゼロにリセットする。
-				var MAX_VC_ID_LOOP = 2000000000;
-
-				var currentIdCounterDate = new Date().getTime();
-
-				//IDの自動生成カウンタ。VCContainerを生成するたびにインクリメントされる。
-				var vcIdCounter = 0;
-
 				var desc = {
 					name: 'h5.ui.components.stage.StackViewport',
 
@@ -10964,8 +11096,7 @@
 							}
 
 							for (var i = 0; i < numPartitions; i++) {
-								var vcid = this._generateContainerId();
-								var vc = ViewportDisplayUnitContainer.create(vcid, this);
+								var vc = ViewportDisplayUnitContainer.create(null, this);
 
 								if (this._orientation === true) {
 									//水平方向にスタック
@@ -11159,30 +11290,6 @@
 								end: sliceEndIndex
 							};
 							return retV;
-						},
-
-						/**
-						 * 現在の方式だと、1ms以内にMAX_VC_ID_LOOP個以上IDを生成すると
-						 * IDが重複するが、現実的には起こらないと考えてよい（1msに生成できるのはせいぜい数十）ので
-						 * 生成負荷等も考え、乱数を用いるUUIDではなくこの方式にしている。
-						 *
-						 * @private
-						 * @returns {String}
-						 */
-						_generateContainerId: function() {
-							var ret = 'vcid_' + currentIdCounterDate + '-' + vcIdCounter;
-
-							if (vcIdCounter >= MAX_VC_ID_LOOP) {
-								//カウンタの上限に達したらゼロに戻す
-								vcIdCounter = 0;
-								//カウンタをリセットしたので、リセット時刻も更新する
-								currentIdCounterDate = new Date().getTime();
-							} else {
-								//カウントアップ
-								vcIdCounter++;
-							}
-
-							return ret;
 						},
 
 						_duAddListener: function(event) {
