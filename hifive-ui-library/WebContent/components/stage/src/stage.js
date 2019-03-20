@@ -3324,10 +3324,6 @@
 		return desc;
 	});
 
-	//TODO DragSession, ResizeSessionと共通の親クラスを作ってI/F統一する
-	//TODO カスタムドラッグ処理で「移動」もしたい場合に、
-	//ドラッグプロキシの生成などを行うためのヘルパーも提供する
-	//(現時点では、リサイズ用途のみ想定している)
 	/**
 	 * カスタムドラッグモードのドラッグセッションです。
 	 *
@@ -5197,7 +5193,6 @@
 	});
 
 	SVGElementWrapper.extend(function(super_) {
-		// TODO SVGDefinitionsに追加するWrapperはidプロパティを持つ必要がある
 		var desc = {
 			name: 'h5.ui.components.stage.SVGDefinitions',
 			field: {
@@ -5400,7 +5395,7 @@
 				 */
 				_addDefinition: function(svgElementWrapper) {
 					if (this._defs.has(svgElementWrapper)) {
-						//TODO 同じIDを持つ要素が既にdefsにあったらエラーにする
+						//TODO (インスタンスではなく)同じID値を持つ要素が既にdefsにあったらエラーにする
 						return;
 					}
 
@@ -6870,7 +6865,7 @@
 								return this._parentDU;
 							}
 						},
-						//TODO isVisibleがfalseになったら、DOMごと消す。
+
 						//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
 						isVisible: {
 							get: function() {
@@ -8817,7 +8812,7 @@
 						return this._parentDU;
 					}
 				},
-				//TODO isVisibleがfalseになったら、DOMごと消す。
+
 				//コンテナの場合、子孫要素のisVisibleに関わらず、コンテナ自身と子孫全てを非表示にする。
 				isVisible: {
 					get: function() {
@@ -11412,7 +11407,6 @@
 		return desc;
 	});
 
-	//TODO LayerはDUの子クラスにしない方がよいか（DUContainerと一部が同じだとしても）
 	var Layer = DisplayUnitContainer.extend(function(super_) {
 
 		var MSG_CANNOT_MOVE = 'Layerは動かせません。スクロール位置を変更したい場合はStageView.scrollTo()を使用してください。';
@@ -18611,11 +18605,6 @@
 		/**
 		 * @private
 		 */
-		_dragLastPagePos: null,
-
-		/**
-		 * @private
-		 */
 		_dragSession: null,
 
 		/**
@@ -18808,7 +18797,6 @@
 			}
 
 			if (this.UIDragScreenScrollDirection !== SCROLL_DIRECTION_NONE) {
-				//TODO スクリーンドラッグの場合もstageDragScrollStartイベントをだしpreventDefault()できるようにする
 				return DRAG_MODE_SCREEN;
 			}
 
@@ -19078,11 +19066,6 @@
 			this._isMousedown = true;
 			this._isDraggingStarted = false;
 
-			this._dragLastPagePos = {
-				x: evPageX,
-				y: evPageY
-			};
-
 			//DUのドラッグの場合、IE、Firefoxではmousedownの場合textなどでドラッグすると
 			//文字列選択になってしまうのでキャンセルする
 			event.preventDefault();
@@ -19213,6 +19196,9 @@
 				return;
 			}
 
+			//実際にドラッグ処理を行うのはビューの更新クロックのタイミングだが、
+			//それまでの間に複数回mousemoveイベントが起きる可能性があるので、
+			//最後に発生したイベントを保持しておく。_doDragMove()でクリアされる。
 			this._throttledLastDragMoveContext = context;
 
 			this._viewMasterClock.listenOnce(this._doDragMove, this);
@@ -19224,22 +19210,11 @@
 		 */
 		_doDragMove: function() {
 			var context = this._throttledLastDragMoveContext;
-
 			this._throttledLastDragMoveContext = null;
 
 			var event = context.event;
 
-			var dispDx = event.pageX - this._dragLastPagePos.x;
-			var dispDy = event.pageY - this._dragLastPagePos.y;
-
-			//TODO UIDragSessionに寄せる
-			this._dragLastPagePos = {
-				x: event.pageX,
-				y: event.pageY
-			};
-
-			if ((dispDx === 0 && dispDy === 0) || this._currentDragMode === DRAG_MODE_NONE) {
-				//X,Yどちらの方向にも実質的に動きがない場合は何もしない
+			if (this._currentDragMode === DRAG_MODE_NONE) {
 				return;
 			}
 
@@ -19299,8 +19274,6 @@
 		_cleanUpDragStates: function() {
 			this._currentDragMode = DRAG_MODE_NONE;
 			this._dragInitialState = null;
-
-			this._dragLastPagePos = null;
 		},
 
 		/**
@@ -19602,12 +19575,6 @@
 
 		'.h5-stage-view-root contextmenu': function(context) {
 			var du = this._getIncludingDisplayUnit(context.event.target);
-
-			// TODO: Edgeの選択が実装されておらず例外が発生するため、一時的に別関数で処理することでこれを回避
-			//			if (Edge.isClassOf(du)) {
-			//				this._temporarilyProcessEdgeContextmenu(context, du);
-			//				return;
-			//			}
 
 			var orgEvent = context.event.originalEvent;
 
