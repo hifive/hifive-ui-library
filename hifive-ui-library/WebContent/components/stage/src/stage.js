@@ -817,7 +817,10 @@
 				_rafId: null,
 				_rafCallbackWrapper: null,
 				_listeners: null,
-				_onceListeners: null
+				_onceListeners: null,
+
+				//優先度：低 の1回限りのリスナーを保持する配列
+				_onceListenersLow: null
 			},
 
 			method: {
@@ -831,6 +834,7 @@
 
 					this._listeners = [];
 					this._onceListeners = [];
+					this._onceListenersLow = [];
 
 					var that = this;
 					this._rafCallbackWrapper = function() {
@@ -858,30 +862,44 @@
 					this._listeners.push(listenerObj);
 				},
 
-				listenOnce: function(listener, thisArg) {
+				listenOnce: function(listener, thisArg, priority) {
 					if (this._has(listener, thisArg)) {
 						//既に登録済みのリスナーなので何もしない(Onceか通常かは問わない)
 						return;
+					}
+
+					var targetListeners = null;
+					if (priority != null && priority < 0) {
+						targetListeners = this._onceListenersLow;
+					} else {
+						targetListeners = this._onceListeners;
 					}
 
 					var listenerObj = {
 						func: listener,
 						thisArg: thisArg !== undefined ? thisArg : null
 					};
-					this._onceListeners.push(listenerObj);
+					targetListeners.push(listenerObj);
 				},
 
 				unlisten: function(listener, thisArg) {
-					var idx = this._getListenerIndex(listener, thisArg, false);
+					var idx = this._getListenerIndex(listener, thisArg, this._listeners);
 					if (idx !== -1) {
 						this._listeners.splice(idx, 1);
 						return;
 					}
 
 					//通常リスナーのリストにない場合、Onceリスナーのリストの中から探索
-					var onceIdx = this._getListenerIndex(listener, thisArg, true);
+					var onceIdx = this._getListenerIndex(listener, thisArg, this._onceListeners);
 					if (onceIdx !== -1) {
 						this._onceListeners.splice(onceIdx, 1);
+					}
+
+					//さらに、優先度：低のOnceリスナーのリストの中から探索
+					var onceLowIdx = this._getListenerIndex(listener, thisArg,
+							this._onceListenersLow);
+					if (onceLowIdx !== -1) {
+						this._onceListenersLow.splice(onceLowIdx, 1);
 					}
 				},
 
@@ -897,19 +915,22 @@
 				},
 
 				_has: function(listener, thisArg) {
-					if (this._getListenerIndex(listener, thisArg, false) !== -1) {
+					if (this._getListenerIndex(listener, thisArg, this._onceListeners) !== -1) {
 						return true;
 					}
 
-					if (this._getListenerIndex(listener, thisArg, true) !== -1) {
+					if (this._getListenerIndex(listener, thisArg, this._listeners) !== -1) {
+						return true;
+					}
+
+					if (this._getListenerIndex(listener, thisArg, this._onceListenersLow) !== -1) {
 						return true;
 					}
 
 					return false;
 				},
 
-				_getListenerIndex: function(listenerFunc, thisArg, isOnce) {
-					var listeners = isOnce === true ? this._onceListeners : this._listeners;
+				_getListenerIndex: function(listenerFunc, thisArg, listeners) {
 					for (var i = 0, len = listeners.length; i < len; i++) {
 						var listener = listeners[i];
 						if (listener.func === listenerFunc && listener.thisArg === thisArg) {
@@ -937,6 +958,18 @@
 					for (var j = 0, jLen = onceListeners.length; j < jLen; j++) {
 						var onceListener = onceListeners[j];
 						onceListener.func.call(onceListener.thisArg);
+					}
+
+					//優先度：低のリスナーを実行
+					var onceListenersLow = this._onceListenersLow.slice();
+
+					//一回だけ購読するリスナーのリストはここで一旦削除
+					//（これから発火させるリスナーの中でlistenOnceされる可能性もあるため）
+					this._onceListenersLow = [];
+
+					for (var i = 0, olLen = onceListenersLow.length; i < olLen; i++) {
+						var onceListenerLow = onceListenersLow[i];
+						onceListenerLow.func.call(onceListenerLow.thisArg);
 					}
 				}
 			}
@@ -2535,8 +2568,6 @@
 									._getSourceNormalizedDisplayUnits(this.getTargets());
 							this.setTargets(normalizedTargets);
 
-							this.setCursor('default');
-
 							var onStageTargets = this.stage
 									._getOnStageNormalizedDisplayUnits(normalizedTargets);
 							this._onStageTargets = onStageTargets;
@@ -3282,8 +3313,6 @@
 					if (stageScrollBeginEvent.isDefaultPrevented()) {
 						return false;
 					}
-
-					this.setCursor('move');
 				},
 
 				__onMove: function(event, delta) {
@@ -17842,6 +17871,8 @@
 
 			this._isDblclickEmulationEnabled = true;
 
+			this._lastCursorPosition = Point.create(0, 0);
+
 			this.__windowLayoutCache = {
 				pageX: 0,
 				pageY: 0,
@@ -19125,7 +19156,9 @@
 			//カーソルをリサイズ用のアイコンに変更する
 			if (currentMouseOverDU && !currentMouseOverDU.isEditing
 					&& currentMouseOverDU.isResizable) {
-				this._updateResizeCursor(currentMouseOverDU, event);
+				this
+						._updateResizeCursor(currentMouseOverDU, event.target, event.pageX,
+								event.pageY);
 			} else {
 				this._setRootCursor('auto');
 			}
@@ -19278,6 +19311,17 @@
 
 			this._isMousedown = false;
 			this._cleanUpDragStates();
+
+			//カーソルの状態を更新を予約する。ドラッグ中は本来のDUを非表示にして
+			//(pointer-eventをnoneにしてマウスイベントを拾わないようにしてある)オーバーレイ表示にしていることがあるので、
+			//mouseupのタイミングでevent.targetを見てもDUのDOM要素でなく
+			//ビューのルート要素になっている可能性がある。
+			//そのため、次のフレームで描画状態を通常に戻した後に判定を行う。
+			//なお、-1はリスナーの発火優先順位の指定で、
+			//描画の更新が終わった後にカーソル更新が行われるようにするため
+			//このリスナーの優先度を下げている。
+			this._viewMasterClock.listenOnce(this._updateCursor, this, -1);
+			this._viewMasterClock.next();
 		},
 
 		/**
@@ -19293,9 +19337,33 @@
 		/**
 		 * @private
 		 */
+		_updateCursor: function() {
+			var mouseoverElement = document.elementFromPoint(this._lastCursorPosition.x,
+					this._lastCursorPosition.y);
+
+			//編集中でない、かつリサイズ可能なDUの境界部分にカーソルが載ったら
+			//カーソルをリサイズ用のアイコンに変更する
+			//DU以外の場所にカーソルがある場合はautoに戻す
+			var currentMouseOverDU = this._getIncludingDisplayUnit(mouseoverElement);
+			if (currentMouseOverDU && !currentMouseOverDU.isEditing
+					&& currentMouseOverDU.isResizable) {
+				this._updateResizeCursor(currentMouseOverDU, mouseoverElement,
+						this._lastCursorPosition.x, this._lastCursorPosition.y);
+			} else {
+				this._setRootCursor('auto');
+			}
+		},
+
+		/**
+		 * @private
+		 */
 		_disposeDragSession: function() {
 			this._dragSession = null;
-			this._setRootCursor('auto');
+
+			//ドラッグセッションが非同期で完了する場合に備えて
+			//（同期・非同期に関わらず）セッションが完了したタイミングでカーソル状態をもう一度更新する
+			this._viewMasterClock.listenOnce(this._updateCursor, this, -1);
+			this._viewMasterClock.next();
 		},
 
 		/**
@@ -19657,6 +19725,10 @@
 		'{document} mousemove': function(context) {
 			var event = context.event;
 
+			//this._lastCursorPositionはconstruct時にPoint型のインスタンスで初期化済み
+			this._lastCursorPosition.x = event.pageX;
+			this._lastCursorPosition.y = event.pageY;
+
 			if (this._isMousedown) {
 				//IE(11で確認)の場合、DIVレイヤーに置いたDIVタイプのDUでネイティブのスクロールバーが表示されているとき、
 				//そのスクロールバーを操作するとmouseupイベントが発生しない。
@@ -19698,7 +19770,9 @@
 			//カーソルをリサイズ用のアイコンに変更する
 			if (currentMouseOverDU && !currentMouseOverDU.isEditing
 					&& currentMouseOverDU.isResizable) {
-				this._updateResizeCursor(currentMouseOverDU, event);
+				this
+						._updateResizeCursor(currentMouseOverDU, event.target, event.pageX,
+								event.pageY);
 			} else {
 				this._setRootCursor('auto');
 			}
@@ -19732,16 +19806,23 @@
 		},
 
 		/**
+		 * 最後にmousemoveが起きたときのカーソルのページ座標（＝現在のカーソル位置）を保持する。 Point型。
+		 *
+		 * @private
+		 */
+		_lastCursorPosition: null,
+
+		/**
 		 * @private
 		 * @param mouseoverDU
 		 * @param event
 		 */
-		_updateResizeCursor: function(mouseoverDU, event) {
+		_updateResizeCursor: function(mouseoverDU, targetElement, pageX, pageY) {
 			var stagePagePos = this.getPagePosition();
 
-			var displayOffsetX = event.pageX - stagePagePos.x;
-			var displayOffsetY = event.pageY - stagePagePos.y;
-			var nineSlicePos = this._getNineSlicePosition(mouseoverDU, event.target,
+			var displayOffsetX = pageX - stagePagePos.x;
+			var displayOffsetY = pageY - stagePagePos.y;
+			var nineSlicePos = this._getNineSlicePosition(mouseoverDU, targetElement,
 					displayOffsetX, displayOffsetY);
 
 			this._resizeOverNineSlice = nineSlicePos;
