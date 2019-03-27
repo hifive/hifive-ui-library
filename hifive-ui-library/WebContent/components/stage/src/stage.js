@@ -5402,10 +5402,10 @@
 	var SVGGraphics = RootClass.extend(function(super_) {
 		//Graphicsの<defs>の中に追加する各種定義のID用ジェネレータ。
 		//ページ内で一意である必要があるので、シングルトンで使用する。
-		var sequenceGeneratror = CountUpSequenceGenerator.create();
-		sequenceGeneratror.isCyclic = true;
-		sequenceGeneratror.prefix = '_def_';
-		sequenceGeneratror.withTimestamp = true;
+		var sequenceGenerator = CountUpSequenceGenerator.create();
+		sequenceGenerator.isCyclic = true;
+		sequenceGenerator.prefix = '_def_';
+		sequenceGenerator.withTimestamp = true;
 
 		var desc = {
 			name: 'h5.ui.components.stage.SVGGraphics',
