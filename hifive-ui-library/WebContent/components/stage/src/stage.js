@@ -267,26 +267,29 @@
 		XY: 3
 	};
 
-	var REASON_RENDER_REQUEST = '__duRenderRequest__';
-	var REASON_SIZE_CHANGE = '__duSizeChange__';
-	var REASON_POSITION_CHANGE = '__duPositionChange__';
-	var REASON_VISIBILITY_CHANGE = '__duVisibilityChange__';
-	var REASON_SCALE_CHANGE = '__duScaleChange__';
-	var REASON_Z_INDEX_CHANGE = '__duZIndexChange__';
-	var REASON_INITIAL_RENDER = '__duInitialRender__';
-	var REASON_SCROLL_POSITION_CHANGE = '__duScrollPositionChange__';
-	var REASON_SELECTION_CHANGE = '__duSelectionChange__';
-	var REASON_FOCUS_CHANGE = '__duFocusChange__';
-	var REASON_GLOBAL_POSITION_CHANGE = '__duGlobalPositionChange__';
-	var REASON_EDIT_CHANGE = '__duEditChange__';
-	var REASON_UPDATE_DEPENDENCY_REQUEST = '__duUpdateDependencyRequest__';
-	var REASON_OVERFLOW_CHANGE = '__duOverflowChange__';
+	var REASON_RENDER_REQUEST = '__req';
+	var REASON_SIZE_CHANGE = '__size';
+	var REASON_POSITION_CHANGE = '__pos';
+	var REASON_VISIBILITY_CHANGE = '__vis';
+	var REASON_SCALE_CHANGE = '__scl';
+	var REASON_Z_INDEX_CHANGE = '__z';
+	var REASON_INITIAL_RENDER = '__init';
+	var REASON_SCROLL_POSITION_CHANGE = '__scpos';
+	var REASON_SELECTION_CHANGE = '__sel';
+	var REASON_FOCUS_CHANGE = '__fc';
+	var REASON_GLOBAL_POSITION_CHANGE = '__gpos';
+	var REASON_EDIT_CHANGE = '__ed';
+	var REASON_UPDATE_DEPENDENCY_REQUEST = '__dep';
+	var REASON_OVERFLOW_CHANGE = '__of';
 
-	var REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE = '__i_LayerScaledUpdate__';
-	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__i_LayerScaled__';
+	//Unscaledレイヤーに配置されているDUについて、親(レイヤー)が拡大縮小した場合に
+	//実効サイズ（スケールを割り戻した後の実際のDOMのサイズ）が変わった
+	var REASON_UNSCALED_SIZE_CHANGE = '__usize';
+
+	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__LayerSc';
 
 
-	var UpdateReasons = {
+	var UpdateReason = {
 		RENDER_REQUEST: REASON_RENDER_REQUEST,
 		SIZE_CHANGE: REASON_SIZE_CHANGE,
 		POSITION_CHANGE: REASON_POSITION_CHANGE,
@@ -300,7 +303,8 @@
 		GLOBAL_POSITION_CHANGE: REASON_GLOBAL_POSITION_CHANGE,
 		EDIT_CHANGE: REASON_EDIT_CHANGE,
 		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST,
-		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE
+		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE,
+		UNSCALED_SIZE_CHANGE: REASON_UNSCALED_SIZE_CHANGE
 	};
 
 	var DragLiveMode = {
@@ -320,7 +324,9 @@
 		DragMode: DragMode,
 		DragLiveMode: DragLiveMode,
 		ScrollDirection: ScrollDirection,
-		UpdateReasons: UpdateReasons,
+		UpdateReason: UpdateReason,
+		//UpdateReasonsはdeprecated. UpdateReasonを代わりに使用。互換性のため残している。
+		UpdateReasons: UpdateReason,
 		ResizeDirection: ResizeDirection,
 		RenderPriority: RenderPriority
 	});
@@ -7466,12 +7472,12 @@
 							}
 
 							if (reason.isInitialRender || reason.isPositionChanged
-									|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
+									|| reason.isUnscaledSizeChanged) {
 								this._updatePosition(element, stageView);
 							}
 
 							if (reason.isInitialRender || reason.isSizeChanged
-									|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
+									|| reason.isUnscaledSizeChanged) {
 								this._updateSize(element, stageView);
 							}
 						},
@@ -7580,11 +7586,11 @@
 								//DOMの位置・サイズを変更する必要があるので自身をsetDirtyする
 								if (!Array.isArray(reasons)) {
 									if (reasons === REASON_INTERNAL_LAYER_SCALE_CHANGE) {
-										this._setDirty(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE);
+										this._setDirty(REASON_UNSCALED_SIZE_CHANGE);
 									}
 								} else {
 									if (reasons.indexOf(REASON_INTERNAL_LAYER_SCALE_CHANGE) !== -1) {
-										this._setDirty(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE);
+										this._setDirty(REASON_UNSCALED_SIZE_CHANGE);
 									}
 								}
 							}
@@ -7720,7 +7726,7 @@
 								this._worldGlobalPositionCache = null;
 							}
 							if (isSizeChanged) {
-								reasons.push(REASON_SIZE_CHANGE);
+								reasons.push(REASON_SIZE_CHANGE, REASON_UNSCALED_SIZE_CHANGE);
 							}
 
 							this._setDirty(reasons);
@@ -8031,6 +8037,12 @@
 				isSizeChanged: {
 					get: function() {
 						return this.has(REASON_SIZE_CHANGE);
+					}
+				},
+
+				isUnscaledSizeChanged: {
+					get: function() {
+						return this.has(REASON_UNSCALED_SIZE_CHANGE);
 					}
 				},
 
@@ -8758,8 +8770,9 @@
 					},
 					set: function(value) {
 						if (this._width !== value) {
+							//TODO サイズ変更はsyncのフローに統一.ここでは自分には代入しない
 							this._width = value;
-							this._setDirty(REASON_SIZE_CHANGE);
+							this._setDirty([REASON_SIZE_CHANGE, REASON_UNSCALED_SIZE_CHANGE]);
 
 							if (!this.isResizing || (this.isResizing && this._isRepresentative)) {
 								this._sourceDU.width = value;
@@ -8774,8 +8787,9 @@
 					},
 					set: function(value) {
 						if (this._height !== value) {
+							//TODO サイズ変更はsyncのフローに統一
 							this._height = value;
-							this._setDirty(REASON_SIZE_CHANGE);
+							this._setDirty([REASON_SIZE_CHANGE, REASON_UNSCALED_SIZE_CHANGE]);
 
 							if (!this.isResizing || (this.isResizing && this._isRepresentative)) {
 								this._sourceDU.height = value;
@@ -9003,7 +9017,7 @@
 						} else if (!Array.isArray(reasons)) {
 							reasons = [reasons];
 						}
-						reasons.push(REASON_SIZE_CHANGE);
+						reasons.push(REASON_SIZE_CHANGE, REASON_UNSCALED_SIZE_CHANGE);
 					}
 
 					if (isPositionChanged || isSizeChanged) {
@@ -12774,7 +12788,7 @@
 	var SVGRectDisplayUnit = classManager
 			.getClass('h5.ui.components.stage.internal.SVGRectDisplayUnit');
 
-	var UpdateReasons = h5.ui.components.stage.UpdateReasons;
+	var UpdateReason = h5.ui.components.stage.UpdateReason;
 	var ScrollDirection = h5.ui.components.stage.ScrollDirection;
 	var DragMode = h5.ui.components.stage.DragMode;
 	var DragLiveMode = h5.ui.components.stage.DragLiveMode;
@@ -14665,9 +14679,9 @@
 							//オーバーレイレイヤーも同様に動かす
 							arrayPush.apply(layers, this._overlaySpace.layers);
 
-							var reason = UpdateReasonSet.create([
-									UpdateReasons.SCROLL_POSITION_CHANGE,
-									UpdateReasons.SCALE_CHANGE]);
+							var reason = UpdateReasonSet
+									.create([UpdateReason.SCROLL_POSITION_CHANGE,
+											UpdateReason.SCALE_CHANGE]);
 
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
@@ -14986,7 +15000,7 @@
 						 */
 						_renderDisplayUnit: function(du, renderRect, isNested) {
 							var domManager = this._domManager;
-							var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
+							var reason = UpdateReasonSet.create(UpdateReason.INITIAL_RENDER);
 
 							if (DisplayUnitContainer.isClassOf(du)) {
 								//コンテナDUは、現状必ず描画する
@@ -15286,7 +15300,7 @@
 							//zIndexはDOMManager内でキャッシュを持っているので、
 							//都度DOMManager側を更新する必要がある。
 							if (reason.isZIndexChanged) {
-								var dirtyReason = reason.get(UpdateReasons.Z_INDEX_CHANGE);
+								var dirtyReason = reason.get(UpdateReason.Z_INDEX_CHANGE);
 								this._domManager.updateElementZIndex(du, dirtyReason.oldValue,
 										dirtyReason.newValue);
 							}
@@ -18238,11 +18252,11 @@
 
 				var newSelectedDULogical = this._getSourceDU(rawNewSelected);
 
-				var reasons = [UpdateReasons.SELECTION_CHANGE];
+				var reasons = [UpdateReason.SELECTION_CHANGE];
 				if (newSelectedDULogical === focusedDU) {
 					//あるDUが選択され同時にフォーカスも得た場合には
 					//Dirtyの通知回数を減らすためreasonに追加
-					reasons.push(UpdateReasons.FOCUS_CHANGE);
+					reasons.push(UpdateReason.FOCUS_CHANGE);
 
 					//先に状態を変更してからsetDirty()する
 					focusedDU._isFocused = true;
@@ -18278,10 +18292,10 @@
 
 				var unselectedDULogical = this._getSourceDU(rawUnselected);
 
-				var reasons = [UpdateReasons.SELECTION_CHANGE];
+				var reasons = [UpdateReason.SELECTION_CHANGE];
 				if (unselectedDULogical === unfocusedDU) {
 					//newSelectedと同様、Dirtyの回数を最適化
-					reasons.push(UpdateReasons.FOCUS_CHANGE);
+					reasons.push(UpdateReason.FOCUS_CHANGE);
 
 					//先に状態を変更してからsetDirty()する
 					unfocusedDU._isFocused = false;
@@ -18300,12 +18314,12 @@
 				//こちらではsetDirtyしない（Dirty回数の最適化）
 				focusedDU._isFocused = true;
 				//this._focusController.setFocusedElement(focusedDU._domRoot);
-				focusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
+				focusedDU._setDirty(UpdateReason.FOCUS_CHANGE);
 			}
 
 			if (unfocusedDU && !isUnfocusDirtyNotified) {
 				unfocusedDU._isFocused = false;
-				unfocusedDU._setDirty(UpdateReasons.FOCUS_CHANGE);
+				unfocusedDU._setDirty(UpdateReason.FOCUS_CHANGE);
 			}
 
 			var selectedLogical = this._getSourceNormalizedDisplayUnits(ev.selected);
