@@ -1502,7 +1502,7 @@
 				 * @param event
 				 */
 				_processMousemove: function(event) {
-					if (!this._hasBegun || this._isCompleted) {
+					if (!this._hasBegun || this._isCompleted || this._isDisposed) {
 						//begin()される前は何もしない
 						return;
 					}
@@ -1521,7 +1521,7 @@
 				 * @param event
 				 */
 				_processMouseup: function(event) {
-					if (this._isReleased || this._isCompleted) {
+					if (this._isReleased || this._isCompleted || this._isDisposed) {
 						return;
 					}
 					this._isReleased = true;
@@ -1761,6 +1761,9 @@
 
 					this._targetInitialStates = null;
 					this._targetInitialParentDU = null;
+
+					//完了フラグはセットしたままにしておく
+					this._isCompleted = true;
 				}
 			}
 		};
@@ -3612,6 +3615,12 @@
 
 				__onBeginning: function(event) {
 					var $el = $(event.target);
+
+					var isFixed = $el.hasClass('fixed');
+					if (isFixed) {
+						//セパレータ定義でisFixed=trueが指定されているセパレータの場合は動かさない
+						return false;
+					}
 
 					var index = parseInt($el.data('stageDynSepIdx'));
 					var isHorizontal = $el.hasClass('horizontal');
@@ -16251,9 +16260,10 @@
 	var GridStageViewCollection = RootClass
 			.extend(function(super_) {
 
-				function $createGridSeparator(index, isHorizontal, thickness, pos) {
+				function $createGridSeparator(index, isHorizontal, thickness, pos, isFixed) {
 					var $sep = $('<div data-stage-dyn-sep-idx="' + index
-							+ '" class="stageGridSeparator"></div>');
+							+ '" class="stageGridSeparator ' + (isFixed === true ? 'fixed' : '')
+							+ '"></div>');
 
 					if (isHorizontal) {
 						$sep.addClass('horizontal'); //TODO 効率化
@@ -16690,8 +16700,11 @@
 									//セパレータにはoverallIndexを持たせる
 									var desiredHeight = def.height != null ? def.height
 											: DEFAULT_GRID_SEPARATOR_THICKNESS;
+									//isFixed=trueが明示的に指定された場合のみ、このセパレータを固定（ドラッグ操作による移動不可）にする
+									var isFixed = def.isFixed === true;
+
 									var $separator = $createGridSeparator(rowOverallIndex, true,
-											desiredHeight, totalHeight);
+											desiredHeight, totalHeight, isFixed);
 
 									$separator.appendTo(this._stage.rootElement);
 
@@ -16735,8 +16748,11 @@
 									var desiredWidth = def.width != null ? def.width
 											: DEFAULT_GRID_SEPARATOR_THICKNESS;
 
+									//isFixed=trueが明示的に指定された場合のみ、このセパレータを固定（ドラッグ操作による移動不可）にする
+									var isFixed = def.isFixed === true;
+
 									var $separator = $createGridSeparator(colOverallIndex, false,
-											desiredWidth, totalWidth);
+											desiredWidth, totalWidth, isFixed);
 
 									$separator.appendTo(this._stage.rootElement);
 
@@ -19218,7 +19234,7 @@
 
 			context.event.preventDefault();
 
-			if (this._isGridSeparatorDragging()) {
+			if (this._isGridSeparatorDragging) {
 				this._processGridSeparatorDragMove(context.event);
 				return;
 			}
@@ -19301,7 +19317,7 @@
 
 			this._viewMasterClock.unlisten(this._doDragMove, this);
 
-			if (this._isGridSeparatorDragging()) {
+			if (this._isGridSeparatorDragging) {
 				//グリッドセパレータのドラッグの場合
 				this._endGridSeparatorDrag(context.event);
 			} else if (this._currentDragMode !== DRAG_MODE_NONE) {
@@ -20077,16 +20093,18 @@
 		},
 
 		/**
+		 * このフラグは、実際にドラッグによってセパレータが移動するかどうかにかかわらず、セパレータのドラッグを開始した（mousedownした）らtrueにする。
+		 *
 		 * @private
 		 */
-		_isGridSeparatorDragging: function() {
-			return this._gridSeparatorDragSession != null;
-		},
+		_isGridSeparatorDragging: false,
 
 		/**
 		 * @private
 		 */
 		_beginDragGridSeparator: function(event) {
+			this._isGridSeparatorDragging = true;
+
 			var dragInitialState = {
 				view: null,
 				targetElement: event.target,
@@ -20096,24 +20114,36 @@
 				pagePosition: DisplayPoint.create(event.pageX, event.pageY)
 			};
 
-			this._gridSeparatorDragSession = GridSeparatorDragSession
-					.create(this, dragInitialState);
-			this._gridSeparatorDragSession.begin(event);
+			var dragSession = GridSeparatorDragSession.create(this, dragInitialState);
+			var isProceeded = dragSession.begin(event);
+			if (isProceeded) {
+				this._gridSeparatorDragSession = dragSession;
+			}
+
+			//セパレータのドラッグは、外部からはドラッグしていないように見せる
+			this._currentDragMode = DRAG_MODE_NONE;
 		},
 
 		/**
 		 * @private
 		 */
 		_processGridSeparatorDragMove: function(event) {
-			this._gridSeparatorDragSession.__processEvent(event);
+			if (this._gridSeparatorDragSession) {
+				this._gridSeparatorDragSession.__processEvent(event);
+			}
 		},
 
 		/**
 		 * @private
 		 */
 		_endGridSeparatorDrag: function(event) {
-			this._gridSeparatorDragSession.__processEvent(event);
-			this._gridSeparatorDragSession = null;
+			if (this._gridSeparatorDragSession) {
+				this._gridSeparatorDragSession.__processEvent(event);
+				this._gridSeparatorDragSession = null;
+			}
+
+			//セパレータのドラッグフラグをオフにする
+			this._isGridSeparatorDragging = false;
 		}
 	};
 
