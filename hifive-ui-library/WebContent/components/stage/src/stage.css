@@ -1,0 +1,89 @@
+@charset "UTF-8";
+/*
+ * Copyright (C) 2019 NS Solutions Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+
+/* ------  graphicsによるSVG描画時、何も設定していないと見た目上描画されないので
+           定義しているスタイル（必要に応じて変更してよい）  ------ */
+line {
+	stroke: #000;
+	stroke-width: 2px;
+}
+
+rect,circle {
+	/* 	fill: #000; */
+	stroke-width: 2px;
+}
+
+text {
+	color: black;
+	fill: black;
+	stroke-width: 2px;
+}
+
+
+/* ------  内蔵機能のデフォルトスタイル（必要に応じて変更してよい）  ------ */
+
+/* ビューセパレータの見た目 */
+.stageGridSeparator {
+	background-color: black;
+	margin: 0;
+	padding: 0;
+}
+
+/* DisplayUnit編集中の操作ブロック用のカバーのスタイル */
+.h5-stage-edit-du-cover {
+	text-align: center;
+	vertical-align: middle;
+	color: white;
+	font-size: 11px;
+	background-color: rgba(60, 60, 60, 0.6);
+	z-index: 1000; //
+	background-color: rgba(200, 200, 200, 0.6); //
+	background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%,//transparent 50%,
+		rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%,//transparent 75%, transparent); //
+	background-size: 10px 10px;
+}
+
+/* DisplayUnit選択モードのドラッグ時の囲み範囲表示オーバーレイのスタイル */
+.stageDragSelectRangeOverlay {
+	opacity: 0.3;
+	fill: #7ff;
+	stroke: #00f;
+	stroke-width: 1px;
+}
+
+/* 領域生成モードのドラッグ時の囲み範囲表示オーバーレイのスタイル */
+.stageDragRegionOverlay {
+	opacity: 0.3;
+	fill: #FF9933;
+	stroke: #0066FF;
+	stroke-width: 1px;
+}
+
+
+/* ------  内蔵機能の動作に関するデフォルトスタイル（※通常変更不要）  ------ */
+
+/* 上下分割セパレータのうちドラッグ可能なセパレータのカーソルスタイル */
+.stageGridSeparator.horizontal:not(.fixed) {
+	cursor: n-resize;
+}
+
+/* 左右分割セパレータのうちドラッグ可能なセパレータのカーソルスタイル */
+.stageGridSeparator.vertical:not(.fixed) {
+	cursor: w-resize;
+}

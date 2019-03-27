@@ -26,6 +26,8 @@
 
 <link rel="stylesheet" href="/hifive-res/fw/current/h5.css">
 
+<link rel="stylesheet" href="../src/stage.css">
+
 <link rel="stylesheet" href="../src/scrollbar.css">
 
 
@@ -73,40 +75,11 @@
 	/* 	box-sizing: border-box; */
 }
 
-line {
-	stroke: #000;
-	stroke-width: 2px;
-}
-
-rect,circle {
-	fill: #000;
-	stroke-width: 2px;
-}
-
-text {
-	color: black;
-	fill: black;
-	stroke-width: 2px;
-}
-
 .dragProxy {
 	width: 150px;
 	height: 30px;
 }
 
-.stageDragSelectRangeOverlay {
-	opacity: 0.3;
-	fill: #7ff;
-	stroke: #00f;
-	stroke-width: 1px;
-}
-
-.stageDragRegionOverlay {
-	opacity: 0.3;
-	fill: #FF9933;
-	stroke: #0066FF;
-	stroke-width: 1px;
-}
 
 .myEdge {
 	stroke: #f00;
@@ -125,6 +98,7 @@ text {
 	font-family: "ＭＳ ゴシック", sans-serif;
 	/* エディタのbg-colorと合わせる */
 	background-color: rgb(204, 238, 204);
+	/* 	background-color: red; */
 }
 
 .commentDU.focused {
@@ -183,43 +157,7 @@ text {
 	vertical-align: bottom;
 }
 
-/* ------------------------------------------ */
-.stageGridSeparator {
-	background-color: black;
-	margin: 0;
-	padding: 0;
-}
 
-.stageGridSeparator.horizontal {
-	cursor: n-resize;
-}
-
-.stageGridSeparator.vertical {
-	cursor: w-resize;
-}
-
-.h5-stage-invisible-du {
-	display: none;
-}
-
-.h5-stage-edit-unit-cover {
-	background-color: black;
-	opacity: 0.7;
-	position: absolute;
-}
-
-.h5-stage-edit-du-cover {
-	text-align: center;
-	vertical-align: middle;
-	color: white;
-	font-size: 11px;
-	background-color: rgba(60, 60, 60, 0.6);
-	z-index: 1000; //
-	background-color: rgba(200, 200, 200, 0.6); //
-	background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%,//transparent 50%,
-		rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%,//transparent 75%, transparent); //
-	background-size: 10px 10px;
-}
 </style>
 
 </head>
