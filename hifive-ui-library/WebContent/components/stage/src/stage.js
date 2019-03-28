@@ -7300,6 +7300,11 @@
 							view.scrollWorldBy(moveDx, moveDy);
 						},
 
+						/**
+						 * @private
+						 * @param mode
+						 * @param view
+						 */
 						_scrollIntoViewProxy: function(mode, view) {
 							var plane = this._rootStage;
 
@@ -7520,6 +7525,9 @@
 							}
 						},
 
+						/**
+						 * @private
+						 */
 						_updatePosition: function(element, stageView) {
 							var x, y;
 
@@ -7564,6 +7572,11 @@
 							}
 						},
 
+						/**
+						 * @private
+						 * @param element
+						 * @param stageView
+						 */
 						_updateSize: function(element, stageView) {
 							var width, height;
 
@@ -9771,6 +9784,8 @@
 			name: 'h5.ui.components.stage.EdgeEndpoint',
 
 			field: {
+				_style: null,
+
 				_verticalAlign: null,
 				_horizontalAlign: null,
 				_alignOffsetX: null,
@@ -9778,6 +9793,22 @@
 			},
 
 			accessor: {
+				style: {
+					get: function() {
+						return this._style;
+					},
+					set: function(value) {
+						if (this._style !== value) {
+							var oldValue = this._style;
+
+							this._style = value;
+
+							var ev = PropertyChangeEvent.create('style', oldValue, value);
+							this.dispatchEvent(ev);
+						}
+					}
+				},
+
 				//top, middle, bottom, offset, nearestSide, null
 				verticalAlign: {
 					get: function() {
@@ -12244,7 +12275,7 @@
 					}
 
 					//TODO Layer配下のDUをMapから削除
-					this._idDUMap['delete'](layer);
+					this._idDUMap['delete'](layer.id);
 
 					this._layers.splice(idx, 1);
 
@@ -15250,6 +15281,11 @@
 							return true;
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @returns {Boolean}
+						 */
 						_isOverflowVisible: function(du) {
 							//レイヤー直下のコンテナまで順に、そのコンテナの可視範囲内にこのDUが入るようにする
 							var parentContainer = du.parentDisplayUnit;
@@ -15265,6 +15301,12 @@
 							return true;
 						},
 
+						/**
+						 * @private
+						 * @param du
+						 * @param container
+						 * @returns {Boolean}
+						 */
 						_isInView: function(du, container) {
 							if (container.overflow !== 'hidden') {
 								//指定されたコンテナはoverflowがhiddenではないので
