@@ -10004,6 +10004,10 @@
 				 */
 				constructor: function EdgeEndpoint() {
 					super_.constructor.call(this);
+
+					//デフォルトでは矢じりは出さない
+					//TODO 定数を定義する(Edge側でも定義しているので要共通化)
+					this._style = 'none';
 				}
 
 			}
