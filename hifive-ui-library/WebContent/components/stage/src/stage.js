@@ -286,6 +286,7 @@
 	//実効サイズ（スケールを割り戻した後の実際のDOMのサイズ）が変わった
 	var REASON_UNSCALED_SIZE_CHANGE = '__usize';
 
+	//TODO 同じ定義がStageController側にも書いてあるので統一する
 	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__LayerSc';
 
 
@@ -9177,6 +9178,57 @@
 			.extend(function(super_) {
 				var ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD = 'Edgeでは位置やサイズを直接変更するメソッドは使えません';
 
+				var formatString = h5.u.str.format;
+
+				var arrowheadStyleFunctions = {
+					open: function(edge, pathElem, isFrom) {
+						var lx = edge._x2 - edge._x1;
+						var ly = edge._y2 - edge._y1;
+
+						var lhyp = Math.sqrt(lx * lx + ly * ly);
+
+						var sin;
+						if (lhyp != 0) {
+							sin = ly / lhyp;
+						} else {
+							sin = 0;
+						}
+
+						var th = (lx > 0) ? Math.asin(sin) + Math.PI : -Math.asin(sin);
+
+						var arrowPoint;
+						if (isFrom) {
+							arrowPoint = {
+								x: edge._x1,
+								y: edge._y1
+							};
+						} else {
+							arrowPoint = {
+								x: edge._x2,
+								y: edge._y2
+							};
+						}
+
+						var len = 10;
+						var pi6 = Math.PI / 6;
+						var direction = 1;
+						if (isFrom) {
+							direction = -1;
+						}
+						var hx1 = arrowPoint.x + direction * len * Math.cos(th - pi6);
+						var hy1 = arrowPoint.y + direction * len * Math.sin(th - pi6);
+						var hx2 = arrowPoint.x + direction * len * Math.cos(th + pi6);
+						var hy2 = arrowPoint.y + direction * len * Math.sin(th + pi6);
+
+						var dStr = formatString('M {0} {1} L {2} {3} L {4} {5}', hx1, hy1,
+								arrowPoint.x, arrowPoint.y, hx2, hy2);
+						$(pathElem).attr({
+							d: dStr
+						});
+					}
+				};
+
+
 				var desc = {
 					name: 'h5.ui.components.stage.Edge',
 					field: {
@@ -9195,6 +9247,9 @@
 						_isUpdateLinePositionRequired: null,
 
 						_isDrawable: null,
+
+						_arrowheadElemFrom: null,
+						_arrowheadElemTo: null,
 
 						_x1: null,
 						_x2: null,
@@ -9703,8 +9758,16 @@
 								throw new Error('EdgeはSVGレイヤーにのみ配置可能です。');
 							}
 
-							var rootSvg = createSvgElement('line');
+							var rootSvg = createSvgElement('svg');
 							rootSvg.setAttribute('data-stage-role', 'edge'); //TODO for debugging
+
+							//エッジはグローバル座標ベースでlineの座標を直接計算するので
+							//ルート要素自体は移動しない。そのため、overflowは常にvisibleにして
+							//ボックスからはみ出しても描画するよう設定する必要がある。
+							rootSvg.style.overflow = 'visible';
+
+							var line = createSvgElement('line');
+							rootSvg.appendChild(line);
 
 							var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
 
@@ -9719,11 +9782,13 @@
 						 * @param line
 						 * @param reason
 						 */
-						__updateDOM: function(view, line, reason) {
+						__updateDOM: function(view, element, reason) {
+							var line = element.firstChild;
+
 							var isLogicallyVisible = this._isVisible;
 
 							if (reason.isInitialRender || reason.isVisibilityChanged) {
-								line.style.display = isLogicallyVisible ? '' : 'none';
+								element.style.display = isLogicallyVisible ? '' : 'none';
 							}
 
 							if (!reason.isInitialRender && !reason.isRenderRequested
@@ -9736,26 +9801,61 @@
 
 							this._updateLinePosition();
 
-							if (isLogicallyVisible) {
-								//論理的には表示状態だが、From/ToどちらかのDUがStage上にないために
-								//実際には表示できない場合、非表示にするs
-								if (!this._isDrawable && line.style.display !== 'none') {
-									line.style.display = 'none';
-								} else if (this._isDrawable && line.style.display === 'none') {
-									line.style.display = '';
-								}
-							}
-
-							//Edgeの場合、自身が最初のrender時に返しているのは<line>なので、
-							//Update時に渡されるelementはline要素である
-							line.className.baseVal = this.getClassSet().toArray().join(' ');
-
 							setSvgAttributes(line, {
 								x1: this._x1,
 								y1: this._y1,
 								x2: this._x2,
 								y2: this._y2
 							});
+
+							//Edgeの場合、自身が最初のrender時に返しているのは<line>なので、
+							//Update時に渡されるelementはline要素である
+							var cssClass = this.getClassSet().toArray().join(' ');
+							element.className.baseVal = cssClass;
+
+							//始点の矢じりを計算
+							if (this.endpointFrom.style === 'triangle') {
+								if (!this._arrowheadElemFrom) {
+									var arFrom = createSvgElement('path');
+									$(arFrom).css({
+										display: 'inline'
+									});
+									arFrom.className.baseVal = 'arrowhead triangle from';
+									this._arrowheadElemFrom = arFrom;
+									element.appendChild(arFrom);
+								}
+								arrowheadStyleFunctions.open(this, this._arrowheadElemFrom, true);
+							} else if (this._arrowheadElemFrom) {
+								element.removeChild(this._arrowheadElemFrom);
+								this._arrowheadElemFrom = null;
+							}
+
+							//終点の矢じりを計算
+							if (this.endpointTo.style === 'triangle') {
+								if (!this._arrowheadElemTo) {
+									var arTo = createSvgElement('path');
+									$(arTo).css({
+										display: 'inline'
+									});
+									arTo.className.baseVal = 'arrowhead triangle to';
+									this._arrowheadElemTo = arTo;
+									element.appendChild(arTo);
+								}
+								arrowheadStyleFunctions.open(this, this._arrowheadElemTo, false);
+							} else if (this._arrowheadElemTo) {
+								element.removeChild(this._arrowheadElemTo);
+								this._arrowheadElemTo = null;
+							}
+
+							if (isLogicallyVisible) {
+								//論理的には表示状態だが、From/ToどちらかのDUがStage上にないために
+								//実際には表示できない場合、非表示にする
+								if (!this._isDrawable && line.style.display !== 'none') {
+									element.style.display = 'none';
+								} else if (this._isDrawable && line.style.display === 'none') {
+									element.style.display = '';
+								}
+							}
 						},
 
 						/**
@@ -12866,7 +12966,7 @@
 	var RenderPriority = h5.ui.components.stage.RenderPriority;
 
 	//TODO クラス定義側にも同じ定義を書いているので統一する
-	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__i_LayerScaled__';
+	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__LayerSc';
 
 	var DYN_DATA_DU_ID = 'data-h5-dyn-du-id';
 
