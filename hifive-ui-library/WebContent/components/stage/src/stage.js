@@ -9817,10 +9817,6 @@
 							var cssClass = this.getClassSet().toArray().join(' ');
 							element.className.baseVal = cssClass;
 
-							var ARROWHEAD_STYLE_OPEN = 'open';
-							var ARROWHEAD_STYLE_TRIANGLE = 'triangle';
-
-
 							//始点の矢じりを計算
 							if (this.endpointFrom.style !== ARROWHEAD_STYLE_NONE) {
 								if (!this._arrowheadElemFrom) {
