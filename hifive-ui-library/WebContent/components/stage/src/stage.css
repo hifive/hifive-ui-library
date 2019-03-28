@@ -19,10 +19,13 @@
 
 /* ------  graphicsによるSVG描画時、何も設定していないと見た目上描画されないので
            定義しているスタイル（必要に応じて変更してよい）  ------ */
+
+/*
 line {
 	stroke: #000;
 	stroke-width: 2px;
 }
+*/
 
 rect,circle {
 	/* 	fill: #000; */
@@ -37,6 +40,22 @@ text {
 
 
 /* ------  内蔵機能のデフォルトスタイル（必要に応じて変更してよい）  ------ */
+
+
+/* Edgeの矢じりの見た目（open = 塗りつぶしのない矢じり） */
+.arrowhead.open {
+	stroke: #000;
+	stroke-width: 1px;
+	fill: none;
+}
+
+/* Edgeの矢じりの見た目（triangle = 塗りつぶしのある矢じり） */
+.arrowhead.triangle {
+	stroke: #000;
+	stroke-width: 1px;
+	fill: #000;
+}
+
 
 /* ビューセパレータの見た目 */
 .stageGridSeparator {

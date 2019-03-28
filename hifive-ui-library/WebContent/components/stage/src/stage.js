@@ -9178,6 +9178,10 @@
 			.extend(function(super_) {
 				var ERR_CANNOT_USE_UPDATE_POS_SIZE_METHOD = 'Edgeでは位置やサイズを直接変更するメソッドは使えません';
 
+				var ARROWHEAD_STYLE_NONE = 'none';
+				var ARROWHEAD_STYLE_OPEN = 'open';
+				var ARROWHEAD_STYLE_TRIANGLE = 'triangle';
+
 				var formatString = h5.u.str.format;
 
 				var arrowheadStyleFunctions = {
@@ -9813,14 +9817,23 @@
 							var cssClass = this.getClassSet().toArray().join(' ');
 							element.className.baseVal = cssClass;
 
+							var ARROWHEAD_STYLE_OPEN = 'open';
+							var ARROWHEAD_STYLE_TRIANGLE = 'triangle';
+
+
 							//始点の矢じりを計算
-							if (this.endpointFrom.style === 'triangle') {
+							if (this.endpointFrom.style !== ARROWHEAD_STYLE_NONE) {
 								if (!this._arrowheadElemFrom) {
 									var arFrom = createSvgElement('path');
 									$(arFrom).css({
 										display: 'inline'
 									});
-									arFrom.className.baseVal = 'arrowhead triangle from';
+
+									//TODO open/triangle以外のスタイルへの対応
+									var styleClassFrom = this.endpointFrom.style === ARROWHEAD_STYLE_OPEN ? 'open'
+											: 'triangle';
+									arFrom.className.baseVal = 'arrowhead from ' + styleClassFrom;
+
 									this._arrowheadElemFrom = arFrom;
 									element.appendChild(arFrom);
 								}
@@ -9831,13 +9844,18 @@
 							}
 
 							//終点の矢じりを計算
-							if (this.endpointTo.style === 'triangle') {
+							if (this.endpointTo.style !== ARROWHEAD_STYLE_NONE) {
 								if (!this._arrowheadElemTo) {
 									var arTo = createSvgElement('path');
 									$(arTo).css({
 										display: 'inline'
 									});
-									arTo.className.baseVal = 'arrowhead triangle to';
+
+									//TODO open/triangle以外のスタイルへの対応
+									var styleClassTo = this.endpointTo.style === ARROWHEAD_STYLE_OPEN ? 'open'
+											: 'triangle';
+									arTo.className.baseVal = 'arrowhead to ' + styleClassTo;
+
 									this._arrowheadElemTo = arTo;
 									element.appendChild(arTo);
 								}
