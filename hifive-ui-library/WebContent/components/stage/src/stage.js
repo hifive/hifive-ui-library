@@ -14659,7 +14659,7 @@
 									//unscaledレイヤーについては、子供に対してスケール変更（内部イベント）を通知する
 									//unscaledレイヤーに限定しているのは、dirtyにするDUを最小限にするため（パフォーマンスのため）
 									var children = layer.getDisplayUnitAll();
-									for (var j = 0, len = children.length; j < len; j++) {
+									for (var j = 0, cLen = children.length; j < cLen; j++) {
 										children[j].__onParentDirtyNotify(layer,
 												REASON_INTERNAL_LAYER_SCALE_CHANGE);
 									}
