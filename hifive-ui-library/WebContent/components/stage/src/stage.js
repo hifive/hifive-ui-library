@@ -18023,6 +18023,12 @@
 			overlayView.__onStageAdd(this);
 		},
 
+		getSnapshot: function() {
+			this._viewCollection.update(true);
+			var rootElement = this.rootElement.cloneNode(true);
+			return rootElement;
+		},
+
 		_isIE: null,
 
 		space: null,
