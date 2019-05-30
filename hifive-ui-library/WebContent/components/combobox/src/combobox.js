@@ -355,7 +355,7 @@
 
 			var $box = $('<div></div>').addClass(BOX_CLASS).css({
 				height: '100%',
-				float: 'left'
+				"float": 'left'
 			}).appendTo(this.__rootElement);
 			this.boxRootElement = $box[0];
 
