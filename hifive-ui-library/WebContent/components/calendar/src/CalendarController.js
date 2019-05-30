@@ -237,7 +237,7 @@
 			var defaultGroup = this._renderMonth(this._firstDate);
 			defaultGroup.attr('id', root.attr('id') + '_calendar_group0');
 			root.append(defaultGroup);
-			for ( var i = 1; i < this._monthCount; i++) {
+			for (var i = 1; i < this._monthCount; i++) {
 				var group = this._renderMonth(this._getFirstDayOfMonth(this._firstDate, i));
 				group.attr('id', root.attr('id') + '_calendar_group' + i);
 				root.append(group);
@@ -274,9 +274,9 @@
 			}
 
 			// Add all the cells to the calendar
-			for ( var row = 0, cellIndex = 0; row < option.maxRow + 1; row++) {
+			for (var row = 0, cellIndex = 0; row < option.maxRow + 1; row++) {
 				var $rowLine = $('<tr/>');
-				for ( var col = 0; col < option.maxCol; col++, cellIndex++) {
+				for (var col = 0; col < option.maxCol; col++, cellIndex++) {
 					var cellDate = new Date(startDate);
 					var cellClass = 'day';
 					var $cell = $('<td/>');
@@ -296,7 +296,7 @@
 							borderBottomWidth: option.borderSize,
 							borderLeftWidth: (row > 0 || (!row && !col)) ? option.borderSize : 0,
 							borderRightWidth: (row > 0 || (!row && col == 6)) ? option.borderSize
-									: 0,
+									: 0
 						});
 					} else {
 						var specialData = '';
@@ -329,7 +329,7 @@
 							width: option.cellWidth,
 							height: option.cellHeight,
 							lineHeight: option.cellHeight / 3 + 'px',
-							borderWidth: option.borderSize,
+							borderWidth: option.borderSize
 						});
 					}
 
@@ -412,7 +412,7 @@
 			var $title = $('<tr/>').css({
 				height: this._option.cellHeight,
 				lineHeight: this._option.cellHeight + 'px',
-				borderWidth: this._option.borderSize,
+				borderWidth: this._option.borderSize
 			});
 			$title.addClass(this._coreCssClass);
 
@@ -463,7 +463,7 @@
 		_updateCalendar: function() {
 			//For all class .day for update option
 			var $dateDOMs = this.$find('.day');
-			for ( var cnt = 0; cnt < $dateDOMs.length; cnt++) {
+			for (var cnt = 0; cnt < $dateDOMs.length; cnt++) {
 				var $cell = $($dateDOMs[cnt]);
 
 				// Get value for this date
@@ -537,7 +537,8 @@
 			var text = clickedData.data;
 			if (text) {
 				$(el).append(
-						'<div class="tooltips" style="top:' + this._option.cellHeight + 'px">' + text+ '</div>');
+						'<div class="tooltips" style="top:' + this._option.cellHeight + 'px">'
+								+ text + '</div>');
 			}
 		},
 
@@ -739,7 +740,7 @@
 					}
 					break;
 				case 'multi':
-					for ( var i = 0; i < this._selectedDates.length; i++) {
+					for (var i = 0; i < this._selectedDates.length; i++) {
 						dates.push(new Date(this._selectedDates[i]));
 					}
 					break;
@@ -748,7 +749,7 @@
 				}
 			}
 
-			for ( var i = 0; i < dates.length; i++) {
+			for (var i = 0; i < dates.length; i++) {
 				var datetime = dates[i].getTime();
 				if ($.inArray(datetime, this._unselectableDates) != -1) {
 					dates.splice(i, 1);
@@ -806,7 +807,7 @@
 			if (dates == undefined) {
 				this._unselectableDates = [];
 			} else {
-				for ( var i = 0; i < dates.length; i++) {
+				for (var i = 0; i < dates.length; i++) {
 					dateTime = dates[i].getTime();
 					var index = $.inArray(dateTime, this._unselectableDates);
 					if (!isSelectable) {
@@ -841,7 +842,7 @@
 		 */
 		setCssClass: function(dates, className) {
 			var specDate = {};
-			for ( var i = 0; i < dates.length; i++) {
+			for (var i = 0; i < dates.length; i++) {
 				var date = dates[i];
 				if (className == 'default') {
 					if (this._specialDateMap.hasOwnProperty(date)) {
