@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<!--
+ Copyright (C) 2016 NS Solutions Corporation
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+  -->
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<meta name="viewport" content="width=device-width">
+<title>ハイパフォーマンス描画</title>
+
+<!-- <link rel="stylesheet" href="/hifive-res/ext/bootstrap/3.3.6/css/bootstrap.css"> -->
+
+
+<link rel="stylesheet" href="/hifive-res/fw/current/h5.css">
+
+<link rel="stylesheet" href="../src/scrollbar.css">
+
+
+<!-- <link rel="stylesheet" href="index.css"> -->
+
+<script src="/hifive-res/ext/jquery/jquery-2.js"></script>
+<script src="/hifive-res/fw/current/h5.js"></script>
+
+
+<script src="/hifive-res/fw/current/ejs-h5mod.js"></script>
+
+<!-- クラスモジュール -->
+<!-- <script src="/hifive/src/h5.cls.js"></script> -->
+<!-- <script src="/hifive/src/h5.event.js"></script> -->
+
+<script src="../../../src/h5/ui/SelectionLogic.js"></script>
+<!-- <script src="/hifive/src/h5.ui.focusManager.js"></script> -->
+
+<script src="../src/stage.js"></script>
+<script src="../src/scrollbar.js"></script>
+
+<script src="init.js"></script>
+
+
+<style>
+#appRoot {
+	width: 800px;
+	height: 900px;
+	border: 1px solid black;
+}
+
+#controls {
+	width: 100%;
+	height: 200px;
+	background-color: yellow;
+}
+
+#stageRoot {
+	/* 	width: 100%; */
+	width: 800px;
+	height: 700px;
+	/* 	border: 10px solid black; */
+	/* 	box-sizing: border-box; */
+}
+
+line {
+	stroke: #000;
+	stroke-width: 2px;
+}
+
+rect,circle {
+	fill: #000;
+	stroke-width: 2px;
+}
+
+text {
+	color: black;
+	fill: black;
+	stroke-width: 2px;
+}
+
+.dragProxy {
+	width: 150px;
+	height: 30px;
+}
+
+.stageDragSelectRangeOverlay {
+	opacity: 0.3;
+	fill: #7ff;
+	stroke: #00f;
+	stroke-width: 1px;
+}
+
+.stageDragRegionOverlay {
+	opacity: 0.3;
+	fill: #FF9933;
+	stroke: #0066FF;
+	stroke-width: 1px;
+}
+
+.myEdge {
+	stroke: #f00;
+	stroke-width: 3px;
+}
+
+.commentDU {
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	word-break: break-all;
+	overflow: auto;
+	padding: 6px;
+	box-sizing: border-box;
+	/* editorのtextareaと合わせる */
+	font-size: 0.8rem;
+	font-family: "ＭＳ ゴシック", sans-serif;
+	/* エディタのbg-colorと合わせる */
+	background-color: rgb(204, 238, 204);
+}
+
+.commentDU.focused {
+	box-shadow: rgba(0, 0, 0, 0.5) 3px 3px 5px;
+}
+
+/* -------------- エディタ関連 -------------- */
+.simpleTextEditor {
+	min-width: 11rem;
+	min-height: 3rem;
+	text-align: center;
+	padding: 0;
+	font-size: 0;
+	/* コメント本体のbg-colorと合わせる */
+	background-color: rgb(204, 238, 204);
+}
+
+.simpleTextEditor .innerPad {
+	width: 100%;
+	height: 100%;
+	padding: 6px;
+	box-sizing: border-box;
+}
+
+.simpleTextEditor .simpleTextEditorTextarea {
+	width: 100%;
+	border: none;
+	font-family: "ＭＳ ゴシック", sans-serif;
+	padding: 0;
+	/* コメント本体のfont-sizeと合わせる */
+	font-size: 0.8rem;
+	background-color: rgb(204, 238, 204);
+}
+
+.simpleTextEditor .commitButton {
+	font-weight: bold;
+}
+
+.simpleTextEditor .cancelButton {
+
+}
+
+.simpleTextEditor .editorControls .controlSpacer {
+	display: inline-block;
+	width: 5px;
+}
+
+.simpleTextEditor .editorControls {
+	display: inline-block;
+	margin-top: 2px;
+}
+
+.simpleTextEditor .editorControls * {
+	font-size: 0.7rem;
+	line-height: 0.9;
+	vertical-align: bottom;
+}
+
+/* ------------------------------------------ */
+.stageGridSeparator {
+	background-color: black;
+	margin: 0;
+	padding: 0;
+}
+
+.stageGridSeparator.horizontal {
+	cursor: n-resize;
+}
+
+.stageGridSeparator.vertical {
+	cursor: w-resize;
+}
+
+.h5-stage-invisible-du {
+	display: none;
+}
+
+.h5-stage-edit-unit-cover {
+	background-color: black;
+	opacity: 0.7;
+	position: absolute;
+}
+
+.h5-stage-edit-du-cover {
+	text-align: center;
+	vertical-align: middle;
+	color: white;
+	font-size: 11px;
+	background-color: rgba(60, 60, 60, 0.6);
+	z-index: 1000; //
+	background-color: rgba(200, 200, 200, 0.6); //
+	background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%,//transparent 50%,
+		rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%,//transparent 75%, transparent); //
+	background-size: 10px 10px;
+}
+</style>
+
+</head>
+<body>
+	<h1>ハイパフォーマンス描画</h1>
+
+	<div>
+
+		<!--
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:ev="http://www.w3.org/2001/xml-events" style='
+     border: 1px solid red;
+     display: block; width:100px; height:100px;
+     overflow-x: scroll; overflow-y: scroll;'>
+     <rect x="50" y="50" width="100" height="100" style="fill:blue"/>
+</svg>
+
+<div style="width: 100px; height: 100px; overflow-x: hidden; overflow-y: visible;">
+<div style="width: 200px; height: 200px; background-color: red;"></div>
+</div>
+
+<svg overflow="scroll" width="200" height="300" viewBox="0 0 200 300">
+
+<svg overflow="scroll" width="100" height="100">
+<rect x="10" y="20" width="400" height="30" fill="#ff0000"></rect>
+</svg>
+</svg>
+</div>
+ -->
+
+
+		<div id="appRoot">
+			<div id="controls">
+				<input type="button" name="createDUByRegion" value="ドラッグしてDUを作成"> <input type="button" name="createEdge"
+					value="2つ選択してエッジを作成"><span id="createEdgeMode"></span>
+				<hr>
+				<span id="stat"></span> <input placeholder="dummy" type="text" name="dummy"> <input type="button"
+					name="moveTo" value="DU moveTo"> <input type="button" name="moveBy" value="DU moveBy"> <input
+					type="button" name="stageScrollTo" value="Stage scrollTo"> <input type="button" name="stageScrollBy"
+					value="Stage scrollBy"> ScaleX:<input type="range" name="scaleX" min="1" max="500" value="100">
+				ScaleY:<input type="range" name="scaleY" min="1" max="500" value="100"> <input type="button"
+					name="getScrollPosition" value="getScrollPosition"> <span id="scrollPos"></span> <input type="button"
+					name="scrollIntoView" value="scrollIntoView(center)=duid_4"> <input type="button"
+					name="scrollIntoView_glance" value="scrollIntoView(glance)=duid_5"> <input type="button" name="dragRegion"
+					value="dragRegion"> <input type="button" name="splitView" value="splitView"> <input type="button"
+					name="clearSplitView" value="split全解除"> <input type="button" name="removeDU" value="remove selection">
+				<input type="button" name="visibleRangeY" value="visibleRangeY"> <input type="button" name="visibleRangeX"
+					value="visibleRangeX"> <input type="button" name="setup" value="setup"> <input type="button"
+					name="cascadeRemove" value="cascadeRemove"> <input type="button" name="row1vr"
+					value="row=1,visibleRange=100"> <input type="button" name="zIndex" value="zIndex = 4"> <input
+					type="button" name="editDivDU" value="Edit DIV-DU"> <input type="button" name="setSize"
+					value="Set Stage Size"> <input type="button" name="setRectDU" value="Set DU Rect"> <input
+					type="button" name="scrollC2" value="scroll Container2">
+			</div>
+			<div id="stageRoot"></div>
+
+		</div>
+
+		<!--
+
+<svg width="180" height="200"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+<g transform="translate(30) rotate(45 50 50)">
+
+  <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" fill-opacity=0.2 stroke-opacity=0.2></rect>
+
+  <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" ></rect>
+  <text x="60" y="105" > Hello Moz! </text>
+</g>
+</svg>
+ -->
+</body>
+</html>

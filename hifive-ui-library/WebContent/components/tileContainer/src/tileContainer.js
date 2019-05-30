@@ -50,7 +50,8 @@
 
 			var check = false;
 			// カラムの順序のカラムの名前があっているかどうかチェック
-			if (order && order.length === $(this.rootElement).children(':not(.dummy-column)').length) {
+			if (order
+					&& order.length === $(this.rootElement).children(':not(.dummy-column)').length) {
 				check = true;
 				for (var i = 0, l = order.length; i < l; i++) {
 					if (this.$find('#' + order[i]).length === 0) {
@@ -65,6 +66,7 @@
 				// その通りの順序に並び替える
 				for (var i = 0, l = order.length; i < l; i++) {
 					this.$columns.push($(this.rootElement).find('#' + order[i]));
+					this.columnSize++;
 				}
 			} else {
 				// $columnsに現在の状態を追加
@@ -180,10 +182,8 @@
 		/**
 		 * 指定された位置へ移動
 		 *
-		 * @param x
-		 *            x座標
-		 * @param y
-		 *            y座標
+		 * @param x x座標
+		 * @param y y座標
 		 * @memberOf h5.ui.components.tileContainer.tileContainerController
 		 */
 		move: function(x, y) {
@@ -205,7 +205,8 @@
 			for (var j = 0, l = this.$columns.length; j < l; j++) {
 				// 移動中のカラムの中心位置と各カラムの中心位置との距離を計測して、最小値をとる
 				var center = this.getCenter(this.$columns[j]);
-				var tempD = Math.pow(currentCenter.x - center.x, 2) + Math.pow(currentCenter.y - center.y, 2);
+				var tempD = Math.pow(currentCenter.x - center.x, 2)
+						+ Math.pow(currentCenter.y - center.y, 2);
 				if (d > tempD) {
 					d = tempD;
 					targetIndex = j;
@@ -279,7 +280,8 @@
 					left: left,
 					top: top
 				});
-				height = Math.max(height, $div.outerHeight() + Math.round(parseFloat($div.css('margin-top')))
+				height = Math.max(height, $div.outerHeight()
+						+ Math.round(parseFloat($div.css('margin-top')))
 						+ Math.round(parseFloat($div.css('margin-bottom'))));
 
 				left += $div.outerWidth() + Math.round(parseFloat($div.css('margin-left')))

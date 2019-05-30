@@ -106,6 +106,10 @@
 		return isDefaultPrevented;
 	};
 
+	EventDispatcher.prototype.clearEventListeners = function() {
+		this.__listeners = null;
+	};
+
 	h5.u.obj.expose('h5.ui.components.virtualScroll.data', {
 
 		/**
@@ -178,7 +182,6 @@
 	// ---- LocalDataSource ---- //
 
 	var LocalDataSource = function(baseData) {
-		this._filters = {};
 		this.setBaseData(baseData);
 	};
 
@@ -193,6 +196,8 @@
 		_searchOptions: null,
 
 		_filters: null,
+
+		_isReady: true,
 
 
 		// --- Private Method --- //
@@ -262,6 +267,10 @@
 
 
 		// --- Public Method --- //
+
+		getBaseData: function() {
+			return this._baseData.slice();
+		},
 
 		/**
 		 * 使用するデータのリストを設定する。検索を行い、データが変更されたことを示すchangeSourceイベントをあげる。
@@ -437,6 +446,28 @@
 			}
 
 			return this._searched[index];
+		},
+
+		/**
+		 * 利用可能となったかを返す。
+		 *
+		 * @returns {boolean} 利用可能となったか
+		 */
+		isReady: function() {
+			return this._isReady;
+		},
+
+		/**
+		 * 廃棄する。
+		 */
+		dispose: function() {
+			this.clearEventListeners();
+
+			for ( var key in this) {
+				if (this.hasOwnProperty(key)) {
+					this[key] = null;
+				}
+			}
 		}
 
 	});
@@ -494,6 +525,10 @@
 
 		_numPerPage: LAZY_LOAD_DEFUALT_NUM_PER_PAGE,
 
+		_isActive: true,
+
+		_isReady: false,
+
 
 		// --- Private Method --- //
 
@@ -518,12 +553,22 @@
 				data: requestData
 			});
 
+
 			return h5.ajax(this._url, settings).then(function(result) {
+
+				// Active でないときは reject する
+				if (!that._isActive) {
+					var rejectedDeferred = h5.async.deferred();
+					rejectedDeferred.reject('DataSource is not Active');
+					return rejectedDeferred.promise();
+				}
+
 				that._addToCache(result.list, startIndex);
 
 				if (that._isFirstLoad) {
 					that._isFirstLoad = false;
 					that._totalLength = result.totalCount;
+					that._isReady = true;
 					that.dispatchEvent({
 						type: 'changeSource'
 					});
@@ -734,6 +779,8 @@
 			var that = this;
 			this._search(range.start, range.end).done(function() {
 				deferred.resolve(that._getCachedData(range.start, range.end));
+			}).fail(function(jqXHR, textStatus, errorThrown) {
+				deferred.reject(jqXHR, textStatus, errorThrown);
 			});
 
 			return deferred.promise();
@@ -793,6 +840,30 @@
 				throw new Error(msg, index);
 			}
 			return this._getCachedData(index, index + 1)[0];
+		},
+
+		/**
+		 * 利用可能となったかを返す。
+		 *
+		 * @returns {boolean} 利用可能となったか
+		 */
+		isReady: function() {
+			return this._isReady;
+		},
+
+		/**
+		 * 登録したイベントハンドラをクリアして破棄できるようにする。
+		 */
+		dispose: function() {
+			this.clearEventListeners();
+
+			for ( var key in this) {
+				if (this.hasOwnProperty(key)) {
+					this[key] = null;
+				}
+			}
+
+			this._isActive = false;
 		}
 
 	});
