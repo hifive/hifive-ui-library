@@ -127,6 +127,7 @@
 
 	<module name="combobox" description="combobox">
 		<dependencies>
+			<dependency name="virtualScroll" />
 		</dependencies>
 		<files>
 			<file name="combobox/src/combobox.js" />
