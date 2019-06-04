@@ -81,6 +81,16 @@
 		</cssfiles>
 	</module>
 
+	<module name="artboardMagnifier" description="artboardMagnifier">
+		<dependencies>
+		</dependencies>
+		<files>
+			<file name="artboard/src/MagnifierController.js" />
+		</files>
+		<cssfiles>
+		</cssfiles>
+	</module>
+
 	<module name="arrowbox" description="arrowbox">
 		<dependencies>
 		</dependencies>

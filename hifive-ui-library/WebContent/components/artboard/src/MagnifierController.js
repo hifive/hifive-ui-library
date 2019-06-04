@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 NS Solutions Corporation
+ * Copyright (C) 2014-2019 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,12 @@
 	var ERR_MSG_SIZE_OBJECT = 'setSize()に渡すサイズは、プロパティwidth,heightに数値を指定したオブジェクトを指定してください';
 	var ERR_MSG_INVALID_SCALE = '拡大率は0より大きい数値を指定してください';
 
+	var XMLNS = 'http://www.w3.org/2000/svg';
+	var XLINKNS = 'http://www.w3.org/1999/xlink';
+
 	//------------------------------------------------------------
 	// Cache
 	//------------------------------------------------------------
-	var XMLNS = h5.ui.components.artboard.consts.XMLNS;
-	var XLINKNS = h5.ui.components.artboard.consts.XLINKNS;
 
 	//------------------------------------------------------------
 	// Variable
