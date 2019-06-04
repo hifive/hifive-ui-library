@@ -90,7 +90,7 @@
 
 	/**
 	 * スクロールグリッドコントローラ
-	 *
+	 * 
 	 * @class
 	 * @name ScrollGridController
 	 */
@@ -98,7 +98,7 @@
 
 		/**
 		 * コントローラ名
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type string
 		 */
@@ -107,7 +107,7 @@
 
 		/**
 		 * メタ定義
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type object
 		 */
@@ -120,7 +120,7 @@
 		// --- 子コントローラ --- //
 		/**
 		 * ScrollGridControllerライブラリ
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @type Controller
 		 */
@@ -132,7 +132,7 @@
 		// --- ライフサイクル関連メソッド --- //
 		/**
 		 * 初期処理
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
@@ -143,7 +143,7 @@
 		// --- イベントハンドラメソッド --- //
 		/**
 		 * サンプルデータ件数の変更
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
@@ -158,7 +158,7 @@
 
 		/**
 		 * グリッドが描画されたら bootstrap の table-striped を追加する
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */
@@ -171,7 +171,7 @@
 		/**
 		 * チェックボックスクリック
 		 * <p>
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 */
 		'#grid gridChangeDataSelect': function() {
@@ -180,7 +180,7 @@
 
 		/**
 		 * グリッドセルを mosuedown
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param context
 		 * @param $el
@@ -194,7 +194,7 @@
 
 		/**
 		 * 選択社員IDリンク クリック
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param context
 		 * @param $el
@@ -234,7 +234,7 @@
 			// dataAccessor 取得
 			var dataAccessor = dataSource.getDataAccessor();
 			// data を設定(内部で search が走る)
-			dataAccessor.setSourceDataSet(data);
+			dataAccessor.setSourceDataArray(data);
 			// data を設定後、選択状態を全て解除する
 			this._gridController.unselectDataAll();
 
@@ -247,7 +247,7 @@
 
 		/**
 		 * 選択社員IDの表示を更新する
-		 *
+		 * 
 		 * @memberOf datagrid.sample.ScrollGridController
 		 * @param
 		 */

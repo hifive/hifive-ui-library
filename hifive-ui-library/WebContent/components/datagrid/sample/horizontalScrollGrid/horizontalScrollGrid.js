@@ -96,7 +96,7 @@
 
 	/**
 	 * 横スクロールグリッドコントローラ
-	 *
+	 * 
 	 * @class
 	 * @name horiozntalScrollGridController
 	 */
@@ -104,7 +104,7 @@
 
 		/**
 		 * コントローラ名
-		 *
+		 * 
 		 * @memberOf datagrid.sample.horizontalScrollGridController
 		 * @type string
 		 */
@@ -127,7 +127,7 @@
 		// --- イベントハンドラ --- //
 		/**
 		 * サンプルデータ件数の変更
-		 *
+		 * 
 		 * @memberOf datagrid.sample.scrollGridController
 		 * @param
 		 */
@@ -142,7 +142,7 @@
 
 		/**
 		 * グリッドセルを mosuedown
-		 *
+		 * 
 		 * @memberOf datagrid.sample.scrollGridController
 		 * @param context
 		 * @param $el
@@ -182,7 +182,7 @@
 			// dataAccessor 取得
 			var dataAccessor = dataSource.getDataAccessor();
 			// data を設定(内部で search が走る)
-			dataAccessor.setSourceDataSet(data);
+			dataAccessor.setSourceDataArray(data);
 			// data を設定後、選択状態を全て解除する
 			this._gridController.unselectDataAll();
 
