@@ -286,6 +286,8 @@
 	//実効サイズ（スケールを割り戻した後の実際のDOMのサイズ）が変わった
 	var REASON_UNSCALED_SIZE_CHANGE = '__usize';
 
+	var REASON_PRINTING = '__pr';
+
 	//TODO 同じ定義がStageController側にも書いてあるので統一する
 	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__LayerSc';
 
@@ -305,7 +307,8 @@
 		EDIT_CHANGE: REASON_EDIT_CHANGE,
 		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST,
 		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE,
-		UNSCALED_SIZE_CHANGE: REASON_UNSCALED_SIZE_CHANGE
+		UNSCALED_SIZE_CHANGE: REASON_UNSCALED_SIZE_CHANGE,
+		PRINTING: REASON_PRINTING
 	};
 
 	var DragLiveMode = {
@@ -8174,6 +8177,12 @@
 					get: function() {
 						return this.has(REASON_OVERFLOW_CHANGE);
 					}
+				},
+
+				isPrinting: {
+					get: function() {
+						return this.has(REASON_PRINTING);
+					}
 				}
 			},
 
@@ -9756,7 +9765,7 @@
 						 * @param view
 						 * @returns
 						 */
-						__renderDOM: function(view) {
+						__renderDOM: function(view, reason) {
 							if (!this._isOnSvgLayer) {
 								//TODO 将来的にはEdgeをDIVレイヤーにも配置できるようにする？
 								throw new Error('EdgeはSVGレイヤーにのみ配置可能です。');
@@ -9773,7 +9782,9 @@
 							var line = createSvgElement('line');
 							rootSvg.appendChild(line);
 
-							var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+							if (!reason) {
+								reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+							}
 
 							this.__updateDOM(view, rootSvg, reason);
 
@@ -11796,10 +11807,7 @@
 				 * @private
 				 */
 				__createGraphics: function(view, svgRoot) {
-					var SVGGraphics = classManager.getClass('h5.ui.components.stage.SVGGraphics');
-
 					var defs = view.getDefsForLayer(this);
-
 					var graphics = SVGGraphics.create(view, svgRoot, defs);
 					return graphics;
 				},
@@ -13965,6 +13973,35 @@
 				return desc;
 			});
 
+	var RenderingContext = RootClass.extend(function(super_) {
+		var desc = {
+			name: 'h5.ui.components.stage.internal.RenderingContext',
+
+			field: {
+				renderRect: null,
+				reasonSet: null,
+				domManager: null,
+				standbyMap: null
+			},
+
+			method: {
+				/**
+				 * @memberOf h5.ui.components.stage.internal.RenderingContext
+				 */
+				constructor: function RenderingContext(renderRect, initialRenderReasonSet,
+						domManager, standbyMap) {
+					super_.constructor.call(this);
+
+					this.renderRect = renderRect;
+					this.reasonSet = initialRenderReasonSet;
+					this.domManager = domManager;
+					this.standbyMap = standbyMap;
+				}
+			}
+		};
+		return desc;
+	});
+
 	var StageView = EventDispatcher
 			.extend(function(super_) {
 				//DUとViewportの位置関係を表す定数
@@ -14161,7 +14198,7 @@
 							this._isUpdateLayerTransformRequested = false;
 							this._isUpdateLayerScaleRequested = false;
 
-							this._domManager = DOMManager.create(this);
+							this._domManager = DOMManager.create();
 
 							this._duDirtyReasonMap = new Map();
 
@@ -14285,8 +14322,24 @@
 							//これにより、オーバーレイレイヤーがDOMの重ね順的に「手前」になる
 							arrayPush.apply(layers, this._overlaySpace.layers);
 
-							var that = this;
+							this._renderLayers(layers, this._rootElement, this._domManager,
+									this._duRenderStandbyMap);
 
+							//ビューポートが既に移動している状態でinitされる場合もあるので、レイヤーのスクロール位置をアップデート
+							this._updateLayerScrollPosition();
+
+							//描画更新を予約
+							this.update();
+						},
+
+						/**
+						 * @private
+						 * @param layers
+						 * @param parentElement
+						 * @param domManager
+						 * @param standbyMap
+						 */
+						_renderLayers: function(layers, parentElement, domManager, standbyMap) {
 							for (var i = 0, len = layers.length; i < len; i++) {
 								var layer = layers[i];
 
@@ -14294,11 +14347,11 @@
 								this._setIdAttribute(layer, layerRootElement);
 
 								//レイヤーと対応する要素をDOMマネージャに登録
-								this._domManager.add(layer, layerRootElement, true);
+								domManager.add(layer, layerRootElement, true);
 
 								//先にaddしたレイヤーの方が手前に来るようにする
 								//layers配列的にはindexが若い＝手前、DOM的には後の子になる
-								this._rootElement.appendChild(layerRootElement);
+								parentElement.appendChild(layerRootElement);
 
 								//現時点で存在するレイヤー内のDUを描画
 								//レイヤー要素はビューのルート要素として先に生成しているため
@@ -14306,15 +14359,9 @@
 								//（入れてしまうと「このDUに対応するDOMを既に持っているか」という判定がtrueになり
 								//renderDisplayUnit()内の処理が不正になる）
 								layer.getDisplayUnitAll().forEach(function(du) {
-									that._duRenderStandbyMap.set(du, du);
+									standbyMap.set(du, du);
 								});
 							}
-
-							//ビューポートが既に移動している状態でinitされる場合もあるので、レイヤーのスクロール位置をアップデート
-							this._updateLayerScrollPosition();
-
-							//描画更新を予約
-							this.update();
 						},
 
 						dispose: function() {
@@ -15117,12 +15164,18 @@
 
 							var dirtyMap = this._duDirtyReasonMap;
 
+							var initialRenderReasonSet = UpdateReasonSet
+									.create(UpdateReason.INITIAL_RENDER);
+							var renderingContext = RenderingContext.create(renderRect,
+									initialRenderReasonSet, this._domManager,
+									this._duRenderStandbyMap);
+
 							//前回のアップデートから今回までに新たに追加されたDU、および
 							//描画範囲が変更されて新たに描画されることになったDUを処理。
 							//なお、shouldRender()の実装によってはこのタイミングでDUが描画されないこともある（可視範囲外等）ので、
 							//duRenderStandbyMapにはDUが残る場合もある。よって、このMapはクリアしてはいけない。
 							this._duRenderStandbyMap.forEach(function(du) {
-								that._renderDisplayUnit(du, renderRect);
+								that._renderDisplayUnit(du, renderingContext);
 
 								//Addされた後さらにDUに変更が加えられてDirtyの方にも入っている可能性があるが、
 								//InitialRenderのタイミングで現在の状態に基づくDUの描画はなされているはずなので
@@ -15181,22 +15234,87 @@
 							this._stage._viewMasterClock.next();
 						},
 
+						getViewSnapshot: function(snapshotOption) {
+							//opt = renderRect, reasons, withSvgDefs, withOverlay
+							if (!snapshotOption) {
+								snapshotOption = {};
+							}
+
+							//renderRectが明示的に指定されていない場合は現在の範囲をスナップショットの範囲とする。
+							//なお、Stageがブラウザのビューポートの範囲外にある場合、isRenderRectClippedByWindow=trueだと
+							//_getRenderRect()が返す値はビューポートでクリップされてしまうので
+							//内部viewportのworldRectを直接参照する。
+							var renderRect = snapshotOption.renderRect || this._viewport._worldRect;
+
+							//RenderReasonを作成。INITIAL_RENDERは必ず含む。
+							//それ以外のreasonsが指定された場合、それを含むReasonSetを使ってDUを描画する。
+							//reasonsは1つまたは配列で複数指定可能。
+							var initialRenderReason = [UpdateReason.INITIAL_RENDER];
+							var specialReasons = snapshotOption.reasons;
+							if (specialReasons != null) {
+								var specialReasonsArray = Array.isArray(specialReasons) ? specialReasons
+										: [specialReasons];
+								arrayPush.apply(initialRenderReason, specialReasonsArray);
+							}
+							var initialRenderReasonSet = UpdateReasonSet
+									.create(initialRenderReason);
+
+							//space.layersを直接変更しないようにレイヤー配列をクローンする
+							var layers = this._stage.space.layers.slice(0);
+
+							//withOverlayに明示的にtrueが渡された場合のみ（＝省略時はスナップショットにオーバーレイは含まない）
+							//呼び出された瞬間のオーバーレイレイヤーの内容をスナップショットに含める
+							//オーバーレイレイヤーはユーザーレイヤーの後ろにつける
+							//これにより、オーバーレイレイヤーがDOMの重ね順的に「手前」になる
+							if (snapshotOption.withOverlay === true) {
+								arrayPush.apply(layers, this._overlaySpace.layers);
+							}
+
+							var ssRootElement = this._rootElement.cloneNode(false);
+							var ssDomManager = DOMManager.create();
+							var ssStandbyMap = new Map();
+
+							this._renderLayers(layers, ssRootElement, ssDomManager, ssStandbyMap);
+
+							var renderingContext = RenderingContext.create(renderRect,
+									initialRenderReasonSet, ssDomManager, ssStandbyMap);
+
+							var that = this;
+							ssStandbyMap.forEach(function(du) {
+								that._renderDisplayUnit(du, renderingContext);
+							});
+
+							//withSvgDefsに明示的にtrueが渡された場合以外（＝省略時はdefsはスナップショットに含まない）は
+							//SVGレイヤーの<defs>タグ（とその子孫要素）はスナップショットから取り除く
+							if (snapshotOption.withSvgDefs !== true) {
+								var defsElements = ssRootElement.getElementsByTagName('defs');
+								for (var didx = 0, len = defsElements.length; didx < len; didx++) {
+									var defs = defsElements[didx];
+									defs.remove();
+								}
+							}
+
+							return ssRootElement;
+						},
+
 						/**
 						 * @private
 						 * @param du
+						 * @param renderingContext {RenderingContext} レンダリングコンテキスト
 						 */
-						_renderDisplayUnit: function(du, renderRect, isNested) {
-							var domManager = this._domManager;
-							var reason = UpdateReasonSet.create(UpdateReason.INITIAL_RENDER);
+						_renderDisplayUnit: function(du, renderingContext, isNested) {
+							var reasonSet = renderingContext.reasonSet;
+							var domManager = renderingContext.domManager;
+							var standbyMap = renderingContext.standbyMap;
 
 							if (DisplayUnitContainer.isClassOf(du)) {
 								//コンテナDUは、現状必ず描画する
 								if (!domManager.has(du)) {
-									var elem = du.__renderDOM(this, reason);
+									var elem = du.__renderDOM(this, reasonSet);
 									this._setIdAttribute(du, elem);
 									domManager.add(du, elem);
 									//描画待機マップから削除
-									this._duRenderStandbyMap['delete'](du);
+									standbyMap['delete'](du);
 								}
 
 								if (isNested !== true) {
@@ -15206,7 +15324,7 @@
 								var children = du.getDisplayUnitAll();
 								for (var i = 0, len = children.length; i < len; i++) {
 									var child = children[i];
-									this._renderDisplayUnit(child, renderRect, true);
+									this._renderDisplayUnit(child, renderingContext, true);
 								}
 
 								if (isNested !== true) {
@@ -15223,6 +15341,8 @@
 								return;
 							}
 
+							var renderRect = renderingContext.renderRect;
+
 							if (!this._shouldRender(du, renderRect)) {
 								//今はまだ描画すべきでない場合は何もしない。
 								//duRenderStandbyMapに入れておく。
@@ -15230,17 +15350,17 @@
 								//DOM要素を生成していかないといけないので
 								//このrenderDU()メソッドで操作するタイミングで
 								//スタンバイマップの追加・削除を制御する必要がある。）
-								this._duRenderStandbyMap.set(du, du);
+								standbyMap.set(du, du);
 								return;
 							}
 
 							//今すぐレンダーする
-							var elem = du.__renderDOM(this, reason);
+							var elem = du.__renderDOM(this, reasonSet);
 							this._setIdAttribute(du, elem);
 							domManager.add(du, elem);
 
 							//待機リストに入っていたら削除
-							this._duRenderStandbyMap['delete'](du);
+							standbyMap['delete'](du);
 						},
 
 						/**
@@ -18027,6 +18147,45 @@
 			this._viewCollection.update(true);
 			var rootElement = this.rootElement.cloneNode(true);
 			return rootElement;
+		},
+
+		getViewSnapshot: function(snapshotOption) {
+			if (!snapshotOption) {
+				snapshotOption = {};
+			}
+
+			var ssRootElement = this.rootElement.cloneNode(false);
+
+			//Stageのルート要素にid属性が付与されていた場合に備えて自動的に削除
+			ssRootElement.removeAttribute('id');
+
+			var views = this._viewCollection.getViewAll();
+			views.forEach(function(view) {
+				var ssViewElement = view.getViewSnapshot(snapshotOption);
+				ssRootElement.appendChild(ssViewElement);
+			});
+
+			var separatorElements = this.rootElement.getElementsByClassName('stageGridSeparator');
+			for (var sepIdx = 0, sepLen = separatorElements.length; sepIdx < sepLen; sepIdx++) {
+				var sepElement = separatorElements[sepIdx];
+				ssRootElement.appendChild(sepElement);
+			}
+
+			if (snapshotOption.withOverlay === true) {
+				var stageOverlayElements = this.rootElement
+						.getElementsByClassName('h5-stage-overlay-root');
+				for (var ovIdx = 0, ovLen = stageOverlayElements.length; ovIdx < ovLen; ovIdx++) {
+					var ovElement = stageOverlayElements[ovIdx];
+					ssRootElement.appendChild(ovElement);
+				}
+			}
+
+			var ret = {
+				//コピーしたStageのルート要素
+				element: ssRootElement
+			};
+
+			return ret;
 		},
 
 		_isIE: null,
