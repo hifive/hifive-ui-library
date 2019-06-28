@@ -15285,7 +15285,7 @@
 							//内部viewportのworldRectを直接参照する。
 							var renderRect = snapshotOption.renderRect || this._viewport._worldRect;
 
-							//RenderReasonを作成。INITIAL_RENDERは必ず含む。
+							//RenderReasonを作成。INITIAL_RENDERとSNAPSHOTは必ず含む。
 							//それ以外のreasonsが指定された場合、それを含むReasonSetを使ってDUを描画する。
 							//reasonsは1つまたは配列で複数指定可能。
 							var initialRenderReason = [UpdateReason.INITIAL_RENDER,
