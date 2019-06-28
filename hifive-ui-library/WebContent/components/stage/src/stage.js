@@ -18220,7 +18220,7 @@
 
 			var separatorElements = this.rootElement.getElementsByClassName('stageGridSeparator');
 			for (var sepIdx = 0, sepLen = separatorElements.length; sepIdx < sepLen; sepIdx++) {
-				var sepElement = separatorElements[sepIdx];
+				var sepElement = separatorElements[sepIdx].cloneNode(true);
 				ssRootElement.appendChild(sepElement);
 			}
 
@@ -18228,7 +18228,7 @@
 				var stageOverlayElements = this.rootElement
 						.getElementsByClassName('h5-stage-overlay-root');
 				for (var ovIdx = 0, ovLen = stageOverlayElements.length; ovIdx < ovLen; ovIdx++) {
-					var ovElement = stageOverlayElements[ovIdx];
+					var ovElement = stageOverlayElements[ovIdx].cloneNode(true);
 					ssRootElement.appendChild(ovElement);
 				}
 			}
