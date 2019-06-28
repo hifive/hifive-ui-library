@@ -7612,7 +7612,7 @@
 						/**
 						 * @private
 						 */
-						__renderDOM: function(view) {
+						__renderDOM: function(view, reason) {
 							throw new Error('__renderDOMは子クラスでオーバーライドする必要があります。');
 						},
 
@@ -7872,10 +7872,13 @@
 					this._source = sourceDisplayUnit;
 				},
 
-				__renderDOM: function(view) {
+				__renderDOM: function(view, reason) {
 					var rootElement = this._source.__renderDOM(view);
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
+
 					this.__updateDOM(view, rootElement, reason);
 
 					//isVisible=falseをすることでDOMにdisplay:noneがつくので強制的に解除
@@ -7914,12 +7917,15 @@
 					this._className = className;
 				},
 
-				__renderDOM: function(view) {
+				__renderDOM: function(view, reason) {
 					var rect = SvgUtil.createElement('rect');
 
 					rect.className.baseVal = this._className;
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
+
 					this.__updateDOM(view, rect, reason);
 
 					return rect;
@@ -8397,32 +8403,36 @@
 				 * @private
 				 * @overrides オーバーライド
 				 */
-				__renderDOM: function(view) {
+				__renderDOM: function(view, reason) {
 					if (this._isOnSvgLayer) {
-						return this._renderRootSvg(view);
+						return this._renderRootSvg(view, reason);
 					}
-					return this._renderRootDiv(view);
+					return this._renderRootDiv(view, reason);
 				},
 
-				_renderRootSvg: function(view) {
+				_renderRootSvg: function(view, reason) {
 					var root = createSvgElement('svg');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
 
 					this.__updateDOM(view, root, reason);
 
 					return root;
 				},
 
-				_renderRootDiv: function(view) {
+				_renderRootDiv: function(view, reason) {
 					var root = document.createElement('div');
 					root.setAttribute('data-h5-dyn-stage-role', 'basicDU'); //TODO for debugging
 
 					//任意の位置に配置できるようにする
 					root.style.position = 'absolute';
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
 
 					this.__updateDOM(view, root, reason);
 
@@ -9130,8 +9140,8 @@
 					}
 				},
 
-				__renderDOM: function(view) {
-					return this._sourceDU.__renderDOM.call(this, view);
+				__renderDOM: function(view, reason) {
+					return this._sourceDU.__renderDOM.call(this, view, reason);
 				},
 
 				__updateDOM: function(view, element, reason) {
@@ -10828,13 +10838,13 @@
 				/**
 				 * @private
 				 */
-				__renderDOM: function(view) {
+				__renderDOM: function(view, reason) {
 					var root = null;
 
 					if (this._isOnSvgLayer) {
-						root = this._renderDOMSvg(view);
+						root = this._renderDOMSvg(view, reason);
 					} else {
-						root = this._renderDOMDiv(view);
+						root = this._renderDOMDiv(view, reason);
 					}
 
 					//Bootstrapは、非ルートな全てのSVGタグに対してoverflow:hiddenを設定するようになっている（svg:not(:root)指定）。
@@ -10849,7 +10859,9 @@
 
 					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
 
 					this.__updateDOM(view, root, reason);
 
@@ -11812,7 +11824,7 @@
 					return graphics;
 				},
 
-				__renderDOM: function(view) {
+				__renderDOM: function(view, reason) {
 					var rootElement = null;
 
 					if (this.type === 'svg') {
@@ -11852,7 +11864,10 @@
 
 					rootElement.setAttribute('data-h5-dyn-stage-role', 'layer'); //TODO for debugging
 
-					var reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					if (!reason) {
+						reason = UpdateReasonSet.create(REASON_INITIAL_RENDER);
+					}
+
 					this.__updateDOM(view, rootElement, reason);
 
 					return rootElement;
@@ -12019,8 +12034,8 @@
 					super_.constructor.call(this, id, stage, type, isUnscaledRendering);
 				},
 
-				__renderDOM: function(view) {
-					var rootElement = super_.__renderDOM.call(this, view);
+				__renderDOM: function(view, reason) {
+					var rootElement = super_.__renderDOM.call(this, view, reason);
 
 					if (this.type === 'svg') {
 						SvgUtil.setAttributes(rootElement, {
