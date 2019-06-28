@@ -9271,9 +9271,6 @@
 
 						_isDrawable: null,
 
-						_arrowheadElemFrom: null,
-						_arrowheadElemTo: null,
-
 						_x1: null,
 						_x2: null,
 						_y1: null,
@@ -9838,48 +9835,58 @@
 							var cssClass = this.getClassSet().toArray().join(' ');
 							element.className.baseVal = cssClass;
 
+							var arrowheadElemFrom = element.querySelector('path.arrowhead.from');
+
 							//始点の矢じりを計算
 							if (this.endpointFrom.style !== ARROWHEAD_STYLE_NONE) {
-								if (!this._arrowheadElemFrom) {
-									var arFrom = createSvgElement('path');
-									$(arFrom).css({
+								//矢じりを表示する(NONE以外)場合にpath要素がなければ生成
+								if (!arrowheadElemFrom) {
+									arrowheadElemFrom = createSvgElement('path');
+									$(arrowheadElemFrom).css({
 										display: 'inline'
 									});
 
 									//TODO open/triangle以外のスタイルへの対応
 									var styleClassFrom = this.endpointFrom.style === ARROWHEAD_STYLE_OPEN ? 'open'
 											: 'triangle';
-									arFrom.className.baseVal = 'arrowhead from ' + styleClassFrom;
+									arrowheadElemFrom.className.baseVal = 'arrowhead from '
+											+ styleClassFrom;
 
-									this._arrowheadElemFrom = arFrom;
-									element.appendChild(arFrom);
+									element.appendChild(arrowheadElemFrom);
 								}
-								arrowheadStyleFunctions.open(this, this._arrowheadElemFrom, true);
-							} else if (this._arrowheadElemFrom) {
-								element.removeChild(this._arrowheadElemFrom);
-								this._arrowheadElemFrom = null;
+
+								//矢じりをpathで表現する
+								arrowheadStyleFunctions.open(this, arrowheadElemFrom, true);
+							} else if (arrowheadElemFrom) {
+								//矢じりがNONEに設定されていてpath要素がある場合は削除する
+								element.removeChild(arrowheadElemFrom);
 							}
+
+							var arrowheadElemTo = element.querySelector('path.arrowhead.to');
 
 							//終点の矢じりを計算
 							if (this.endpointTo.style !== ARROWHEAD_STYLE_NONE) {
-								if (!this._arrowheadElemTo) {
-									var arTo = createSvgElement('path');
-									$(arTo).css({
+								//矢じりを表示する(NONE以外)場合にpath要素がなければ生成
+								if (!arrowheadElemTo) {
+									arrowheadElemTo = createSvgElement('path');
+									$(arrowheadElemTo).css({
 										display: 'inline'
 									});
 
 									//TODO open/triangle以外のスタイルへの対応
 									var styleClassTo = this.endpointTo.style === ARROWHEAD_STYLE_OPEN ? 'open'
 											: 'triangle';
-									arTo.className.baseVal = 'arrowhead to ' + styleClassTo;
+									arrowheadElemTo.className.baseVal = 'arrowhead to '
+											+ styleClassTo;
 
-									this._arrowheadElemTo = arTo;
-									element.appendChild(arTo);
+									element.appendChild(arrowheadElemTo);
 								}
-								arrowheadStyleFunctions.open(this, this._arrowheadElemTo, false);
-							} else if (this._arrowheadElemTo) {
-								element.removeChild(this._arrowheadElemTo);
-								this._arrowheadElemTo = null;
+
+								//矢じりをpathで表現する
+								arrowheadStyleFunctions.open(this, arrowheadElemTo, false);
+							} else if (arrowheadElemTo) {
+								//矢じりがNONEに設定されていてpath要素がある場合は削除する
+								element.removeChild(arrowheadElemTo);
 							}
 
 							if (isLogicallyVisible) {
@@ -14060,6 +14067,12 @@
 
 						_domManager: null,
 
+						//Snapshot取得時に一時的にセットされるDOMマネージャ。
+						//現在の実装では、BasicDU.__updateDOM()内でctxオブジェクトをview._getDOMContext(du)で取得していて
+						//引数渡しにしていないため、一旦_getDOMContext()で返すDOMマネージャを差し替える形で対応。
+						//将来的には、__updateDOM()の際、DOMManagerまたはctxの渡し方を変えることで対応するのが望ましいと思われる。
+						_ssDomManager: null,
+
 						_duRenderStandbyMap: null,
 
 						_duDirtyReasonMap: null,
@@ -15289,6 +15302,8 @@
 							var ssDomManager = DOMManager.create();
 							var ssStandbyMap = new Map();
 
+							this._ssDomManager = ssDomManager;
+
 							this._renderLayers(layers, ssRootElement, ssDomManager, ssStandbyMap);
 
 							var renderingContext = RenderingContext.create(renderRect,
@@ -15308,6 +15323,8 @@
 									defs.remove();
 								}
 							}
+
+							this._ssDomManager = null;
 
 							return ssRootElement;
 						},
@@ -15775,6 +15792,11 @@
 						 * @returns
 						 */
 						_getDOMContext: function(du) {
+							//Snapshot取得時はDOMマネージャを差し替える。
+							//このメソッドはBasicDU.__updateDOM()から呼ばれている。setDOMContext()も同様。
+							if (this._ssDomManager) {
+								return this._ssDomManager.getContext(du);
+							}
 							return this._domManager.getContext(du);
 						},
 
@@ -15784,6 +15806,10 @@
 						 * @param context
 						 */
 						_setDOMContext: function(du, context) {
+							if (this._ssDomManager) {
+								this._ssDomManager.setContext(du, context);
+								return;
+							}
 							this._domManager.setContext(du, context);
 						}
 					}
