@@ -286,7 +286,11 @@
 	//実効サイズ（スケールを割り戻した後の実際のDOMのサイズ）が変わった
 	var REASON_UNSCALED_SIZE_CHANGE = '__usize';
 
+	//印刷用描画
 	var REASON_PRINTING = '__pr';
+
+	//スナップショット取得用描画
+	var REASON_SNAPSHOT = '__ss';
 
 	//TODO 同じ定義がStageController側にも書いてあるので統一する
 	var REASON_INTERNAL_LAYER_SCALE_CHANGE = '__LayerSc';
@@ -308,7 +312,8 @@
 		UPDATE_DEPENDENCY_REQUEST: REASON_UPDATE_DEPENDENCY_REQUEST,
 		OVERFLOW_CHANGE: REASON_OVERFLOW_CHANGE,
 		UNSCALED_SIZE_CHANGE: REASON_UNSCALED_SIZE_CHANGE,
-		PRINTING: REASON_PRINTING
+		PRINTING: REASON_PRINTING,
+		SNAPSHOT: REASON_SNAPSHOT
 	};
 
 	var DragLiveMode = {
@@ -8189,6 +8194,12 @@
 					get: function() {
 						return this.has(REASON_PRINTING);
 					}
+				},
+
+				isSnapshot: {
+					get: function() {
+						return this.has(REASON_SNAPSHOT);
+					}
 				}
 			},
 
@@ -15277,7 +15288,8 @@
 							//RenderReasonを作成。INITIAL_RENDERは必ず含む。
 							//それ以外のreasonsが指定された場合、それを含むReasonSetを使ってDUを描画する。
 							//reasonsは1つまたは配列で複数指定可能。
-							var initialRenderReason = [UpdateReason.INITIAL_RENDER];
+							var initialRenderReason = [UpdateReason.INITIAL_RENDER,
+									UpdateReason.SNAPSHOT];
 							var specialReasons = snapshotOption.reasons;
 							if (specialReasons != null) {
 								var specialReasonsArray = Array.isArray(specialReasons) ? specialReasons
