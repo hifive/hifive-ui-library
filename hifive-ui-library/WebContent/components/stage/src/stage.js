@@ -14007,6 +14007,8 @@
 			});
 
 	var RenderingContext = RootClass.extend(function(super_) {
+
+
 		var desc = {
 			name: 'h5.ui.components.stage.internal.RenderingContext',
 
@@ -14014,7 +14016,8 @@
 				renderRect: null,
 				reasonSet: null,
 				domManager: null,
-				standbyMap: null
+				standbyMap: null,
+				renderPromises: null
 			},
 
 			method: {
@@ -14029,6 +14032,7 @@
 					this.reasonSet = initialRenderReasonSet;
 					this.domManager = domManager;
 					this.standbyMap = standbyMap;
+					this.renderPromises = [];
 				}
 			}
 		};
@@ -14045,6 +14049,7 @@
 				var DU_POSITION_BEYOND_BOTTOM = 4;
 
 				var arrayPush = Array.prototype.push;
+				var isPromise = h5.async.isPromise;
 
 				var desc = {
 					name: 'h5.ui.components.stage.StageView',
@@ -15338,7 +15343,18 @@
 
 							this._ssDomManager = null;
 
-							return ssRootElement;
+							var renderPromise = h5.async.when(renderingContext.renderPromises);
+
+							var dfd = h5.async.deferred();
+
+							renderPromise.always(function() {
+								var ret = {
+									element: ssRootElement
+								};
+								dfd.resolve(ret);
+							});
+
+							return dfd.promise();
 						},
 
 						/**
@@ -15350,13 +15366,28 @@
 							var reasonSet = renderingContext.reasonSet;
 							var domManager = renderingContext.domManager;
 							var standbyMap = renderingContext.standbyMap;
+							var renderPromises = renderingContext.renderPromises;
+
+							var that = this;
 
 							if (DisplayUnitContainer.isClassOf(du)) {
 								//コンテナDUは、現状必ず描画する
 								if (!domManager.has(du)) {
-									var elem = du.__renderDOM(this, reasonSet);
-									this._setIdAttribute(du, elem);
-									domManager.add(du, elem);
+									var containerRenderResult = du.__renderDOM(this, reasonSet);
+									if (isPromise(containerRenderResult)) {
+										//戻り値がPromiseだった場合
+										renderPromises.push(containerRenderResult);
+
+										containerRenderResult.done(function(elem) {
+											that._setIdAttribute(du, elem);
+											domManager.add(du, elem);
+										});
+									} else {
+										//戻り値がElementだった場合
+										this._setIdAttribute(du, containerRenderResult);
+										domManager.add(du, containerRenderResult);
+									}
+
 									//描画待機マップから削除
 									standbyMap['delete'](du);
 								}
@@ -15399,9 +15430,20 @@
 							}
 
 							//今すぐレンダーする
-							var elem = du.__renderDOM(this, reasonSet);
-							this._setIdAttribute(du, elem);
-							domManager.add(du, elem);
+							var renderResult = du.__renderDOM(this, reasonSet);
+							if (isPromise(renderResult)) {
+								//戻り値がPromiseだった場合
+								renderPromises.push(renderResult);
+
+								renderResult.done(function(elem) {
+									that._setIdAttribute(du, elem);
+									domManager.add(du, elem);
+								});
+							} else {
+								//戻り値がElementだった場合
+								this._setIdAttribute(du, renderResult);
+								domManager.add(du, renderResult);
+							}
 
 							//待機リストに入っていたら削除
 							standbyMap['delete'](du);
@@ -18212,10 +18254,23 @@
 			//Stageのルート要素にid属性が付与されていた場合に備えて自動的に削除
 			ssRootElement.removeAttribute('id');
 
+			var viewRenderPromises = [];
+
 			var views = this._viewCollection.getViewAll();
 			views.forEach(function(view) {
-				var ssViewElement = view.getViewSnapshot(snapshotOption);
-				ssRootElement.appendChild(ssViewElement);
+				//StageView.getViewSS()はPromiseを返すので、
+				//各ビューのPromiseを集め全てのPromiseが解決したタイミングでStage全体としてのPromiseを解決する
+				var viewRenderPromise = view.getViewSnapshot(snapshotOption);
+				viewRenderPromises.push(viewRenderPromise);
+
+				//各ビューのPromiseが解決したらStageのルート要素に追加する。
+				//実際のビューと順序が変わる可能性があるが、
+				//現在のGridViewCollectionの実装では、ビューが重なり合うことはなく、
+				//各ビューはoverflow:hiddenなので、順序が変わっても問題ない。
+				viewRenderPromise.always(function(result) {
+					var ssViewElement = result.element;
+					ssRootElement.appendChild(ssViewElement);
+				});
 			});
 
 			var separatorElements = this.rootElement.getElementsByClassName('stageGridSeparator');
@@ -18233,12 +18288,18 @@
 				}
 			}
 
-			var ret = {
-				//コピーしたStageのルート要素
-				element: ssRootElement
-			};
+			var dfd = h5.async.deferred();
 
-			return ret;
+			//全てのビューのレンダリングが完了したら、このメソッドが返したPromiseを完了させる
+			h5.async.when(viewRenderPromises).always(function() {
+				var ret = {
+					//コピーしたStageのルート要素
+					element: ssRootElement
+				};
+				dfd.resolve(ret);
+			});
+
+			return dfd.promise();
 		},
 
 		_isIE: null,
