@@ -11,9 +11,6 @@
 
 	var VerticalScrollBarController = h5.ui.components.stage.VerticalScrollBarController;
 
-	//TODO この定数はpublicにするか、別の方法で通知可能にすべき。個々のカスタムなDU作成者が意識すべきではない
-	var REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE = '__i_LayerScaledUpdate__';
-
 
 	/**
 	 * @class DUScrollBar
@@ -28,7 +25,6 @@
 			name: 'h5.ui.components.stage.DUScrollBar',
 
 			field: {
-				_controller: null,
 				_viewControllerMap: null
 			},
 
@@ -41,39 +37,55 @@
 					//TODO controllerのbind/unbindに対応して、Alwaysでなくてもよいようにする
 					this.renderPriority = RenderPriority.ALWAYS;
 					this._viewControllerMap = new Map();
+					this.isDraggable = false;
 				},
 
-				__renderDOM: function(stageView) {
+				__renderDOM: function(stageView, reason) {
 					var $root = $('<div class="vertical"></div>');
 					var rootElement = $root[0];
 
 					rootElement.style.position = 'absolute';
 					rootElement.style.cursor = 'default';
 
-					var reason = UpdateReasonSet.create(UpdateReasons.INITIAL_RENDER);
+					var controller = h5.core.controller(rootElement, VerticalScrollBarController);
+
+					var dfd = null;
+					if (reason.isSnapshot) {
+						//このDeferredが使われるのはスナップショット取得の場合のみ
+						dfd = h5.async.deferred();
+					}
 
 					//TODO __updateDOMのINITIAL_RENDER呼出はStage側で行うようにする。
 					//これに伴い、__renderDOM -> __createDOM に改名したほうが意味が通りやすくなる。
 					//(SVG/DIVレイヤーの種類に応じて要素を変えたり、<table>など別のタグを出力したい場合もここをオーバーライドする)
+					//初回描画でルート要素のサイズをDUのサイズに合わせる
 					this.__updateDOM(stageView, rootElement, reason);
-
-					var controller = h5.core.controller(rootElement, VerticalScrollBarController);
-
-					this._viewControllerMap.set(stageView, controller);
 
 					var that = this;
 					controller.readyPromise.done(function() {
-						that._setDirty([UpdateReasons.POSITION_CHANGE, UpdateReasons.SIZE_CHANGE,
-								UpdateReasons.GLOBAL_POSITION_CHANGE]);
+						if (!reason.isSnapshot) {
+							//通常の画面描画
+							that._viewControllerMap.set(stageView, controller);
+							controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
 
-						controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
+							that
+									._setDirty([UpdateReasons.POSITION_CHANGE,
+											UpdateReasons.SIZE_CHANGE,
+											UpdateReasons.GLOBAL_POSITION_CHANGE]);
+						} else {
+							//スナップショット取得時
+							//スクロールバーをコントローラに描画させ、すぐにコントローラを破棄する
+							that._updateScrollBar(rootElement, controller);
+							controller.dispose();
 
-						//						this.setBarSize(rightmostView.height);
-						//						that._updateScrollBarLogicalValues();
+							dfd.resolve(rootElement);
+						}
 					});
 
-					//this._controller.setDisplayMode(SCROLL_BAR_DISPLAY_MODE_ALWAYS);
-
+					if (reason.isSnapshot) {
+						return dfd.promise();
+					}
+					//Snapshot以外の場合は要素を直接返す
 					return rootElement;
 				},
 
@@ -87,10 +99,14 @@
 					}
 
 					if (reason.isInitialRender || reason.isSizeChanged
-							|| reason.has(REASON_INTERNAL_UNSCALED_LAYOUT_UPDATE)) {
-						controller.setBarSize($(element).height());
-						this._updateScrollBarLogicalValues(controller);
+							|| reason.isUnscaledSizeChanged) {
+						this._updateScrollBar(element, controller);
 					}
+				},
+
+				_updateScrollBar: function(element, controller) {
+					controller.setBarSize($(element).height());
+					this._updateScrollBarLogicalValues(controller);
 				},
 
 				_updateScrollBarLogicalValues: function(controller) {

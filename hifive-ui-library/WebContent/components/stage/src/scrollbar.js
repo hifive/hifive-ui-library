@@ -4014,7 +4014,8 @@
 			this._pressScrollAreaDownRepeat.dispose();
 			this._trackKnobThrottle.dispose();
 
-			$(this.rootElement).empty();
+			//スナップショット取得時にスクロールバーのDOMがなくならないよう、
+			//unbind時のDOM削除は行わない
 		},
 
 		// --- Public Method --- //
