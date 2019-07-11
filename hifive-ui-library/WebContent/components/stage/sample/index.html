@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <!--
- Copyright (C) 2016 NS Solutions Corporation
+ Copyright (C) 2016-2019 NS Solutions Corporation
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@
 <style>
 #appRoot {
 	width: 800px;
-	height: 900px;
+	height: 1620px;
 	border: 1px solid black;
 }
 
@@ -67,13 +67,25 @@
 	background-color: yellow;
 }
 
-#stageRoot {
+.stageWrapper {
+	position: relative;
+	width: 800px;
+	height: 700px;
+}
+
+.stageRoot {
 	/* 	width: 100%; */
 	width: 800px;
 	height: 700px;
 	/* 	border: 10px solid black; */
 	/* 	box-sizing: border-box; */
 }
+
+.snapshotContainer {
+	width: 100%;
+	height: 700px;
+}
+
 
 .dragProxy {
 	width: 150px;
@@ -176,32 +188,6 @@
 	<h1>ハイパフォーマンス描画</h1>
 
 	<div>
-
-		<!--
-
-<svg xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink"
-     xmlns:ev="http://www.w3.org/2001/xml-events" style='
-     border: 1px solid red;
-     display: block; width:100px; height:100px;
-     overflow-x: scroll; overflow-y: scroll;'>
-     <rect x="50" y="50" width="100" height="100" style="fill:blue"/>
-</svg>
-
-<div style="width: 100px; height: 100px; overflow-x: hidden; overflow-y: visible;">
-<div style="width: 200px; height: 200px; background-color: red;"></div>
-</div>
-
-<svg overflow="scroll" width="200" height="300" viewBox="0 0 200 300">
-
-<svg overflow="scroll" width="100" height="100">
-<rect x="10" y="20" width="400" height="30" fill="#ff0000"></rect>
-</svg>
-</svg>
-</div>
- -->
-
-
 		<div id="appRoot">
 			<div id="controls">
 				<input type="button" name="createDUByRegion" value="ドラッグしてDUを作成"> <input type="button" name="createEdge"
@@ -224,25 +210,15 @@
 					type="button" name="editDivDU" value="Edit DIV-DU"> <input type="button" name="setSize"
 					value="Set Stage Size"> <input type="button" name="setRectDU" value="Set DU Rect"> <input
 					type="button" name="scrollC2" value="scroll Container2">
+					 <input type="button" name="snapshot" value="getSnapshot">
 			</div>
-			<div id="stageRoot"></div>
-
+			<div class="stageWrapper">
+				<div id="stageRoot" class="stageRoot"></div>
+			</div>
+			<hr>
+			<div class="snapshotContainer"></div>
 		</div>
+	</div>
 
-		<!--
-
-<svg width="180" height="200"
-  xmlns="http://www.w3.org/2000/svg"
-  xmlns:xlink="http://www.w3.org/1999/xlink">
-
-<g transform="translate(30) rotate(45 50 50)">
-
-  <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" fill-opacity=0.2 stroke-opacity=0.2></rect>
-
-  <rect x="50" y="50" height="100" width="100" style="stroke:#000; fill: #0086B2" ></rect>
-  <text x="60" y="105" > Hello Moz! </text>
-</g>
-</svg>
- -->
 </body>
 </html>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 NS Solutions Corporation
+ * Copyright (C) 2016-2019 NS Solutions Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,31 @@
  */
 (function($) {
 	'use strict';
+
+
+	function createSvgElement(name) {
+		return document.createElementNS('http://www.w3.org/2000/svg', name);
+	}
+
+	function setSvgAttribute(element, key, value) {
+		setAttributeNS(element, null, key, value);
+	}
+
+	function setAttributeNS(element, ns, key, value) {
+		if (value && value.isDefinition && value.definitionUrl) {
+			element.setAttributeNS(ns, key, value.definitionUrl);
+			return;
+		}
+		element.setAttributeNS(ns, key, value);
+	}
+
+	function setSvgAttributes(element, param) {
+		for ( var key in param) {
+			element.setAttributeNS(null, key, param[key]);
+			//			setSvgAttribute(element, key, param[key]);
+		}
+	}
+
 
 	var LAYER_ID_MAIN = 'main';
 	var LAYER_ID_DIV = 'divlayer';
@@ -40,20 +65,25 @@
 			.getClass('h5.ui.components.stage.ViewportDisplayUnitContainer');
 	var DragLiveMode = h5.ui.components.stage.DragLiveMode;
 
-	var SynchronizeLayoutHook = classManager
-			.getClass('h5.ui.components.stage.SynchronizeLayoutHook');
-	var FollowPositionLayoutHook = classManager
-			.getClass('h5.ui.components.stage.FollowPositionLayoutHook');
-	var DisplaySizeLayoutHook = classManager
-			.getClass('h5.ui.components.stage.DisplaySizeLayoutHook');
-	var HorizontalLineLayoutHook = classManager
-			.getClass('h5.ui.components.stage.HorizontalLineLayoutHook');
-	var VisiblePositionLayoutHook = classManager
-			.getClass('h5.ui.components.stage.VisiblePositionLayoutHook');
+	var SynchronizeHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.SynchronizeHook');
+	var FollowPositionHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.FollowPositionHook');
+	var DisplaySizeHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.DisplaySizeHook');
+	var HorizontalLineHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.HorizontalLineHook');
+	var VisiblePositionHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.VisiblePositionHook');
+
+	var ScrollRangeHook = classManager
+			.getClass('h5.ui.components.stage.layouthook.ScrollRangeHook');
 
 	var DUScrollBar = classManager.getClass('h5.ui.components.stage.DUScrollBar');
 
 	var DragMode = h5.ui.components.stage.DragMode;
+
+	var UpdateReason = h5.ui.components.stage.UpdateReason;
 
 
 	var editorHtml = '<div class="simpleTextEditor"><div class="innerPad"><textarea class="simpleTextEditorTextarea"></textarea>'
@@ -288,6 +318,8 @@
 			}
 		},
 
+		_lastClickDU: null,
+
 		_stageController: h5.ui.components.stage.StageController,
 
 		'[name="moveTo"] click': function(context, $el) {
@@ -320,6 +352,18 @@
 			var val = $el.val();
 			var newScaleY = parseInt(val) / 100;
 			this._stageController.setScale(null, newScaleY);
+		},
+
+		'[name="snapshot"] click': function() {
+			var snapshotOpt = {
+				reasons: UpdateReason.PRINTING,
+				withOverlay: false
+			};
+
+			var snapshotPromise = this._stageController.getViewSnapshot(snapshotOpt);
+			snapshotPromise.done(this.own(function(snapshot) {
+				this.$find('.snapshotContainer').empty().append(snapshot.element);
+			}));
 		},
 
 		'[name="getScrollPosition"] click': function() {
@@ -362,9 +406,103 @@
 					return;
 				}
 
-				var du = context.displayUnit;
+				var view = context.view;
+				//var defs =view._rootElement.querySelector('[data-h5-dyn-du-id="main"] defs');
 
-				graphics.clear();
+				if (context.reason.isInitialRender) {
+					var id = 'mypattern-' + parseInt(Math.random() * 10000); //※仮。本来はきちんと一意になるようにする必要がある
+					//var defs = createSvgElement('defs');
+					//context.rootElement.appendChild(defs);
+
+					var pattern = createSvgElement('pattern');
+					setSvgAttributes(pattern, {
+						id: id,
+						//						viewBox: '0 0 10 10',
+						patternUnits: 'userSpaceOnUse',
+						patternTransform: 'rotate(-45)',
+						x: 0,
+						y: 0,
+						width: 10,
+						height: 10
+					});
+					//defs.appendChild(pattern);
+
+					var pr1 = createSvgElement('rect');
+					setSvgAttributes(pr1, {
+						fill: 'yellow',
+						x: 0,
+						y: 0,
+						width: 20,
+						height: 20
+					});
+					pattern.appendChild(pr1);
+
+					var pr2 = createSvgElement('rect');
+					setSvgAttributes(pr2, {
+						fill: 'black',
+						width: 10,
+						height: 5
+					});
+					pattern.appendChild(pr2);
+
+					graphics._addDefinition({
+						id: id,
+						_element: pattern
+					});
+
+					var rect = createSvgElement('rect');
+					setSvgAttributes(rect, {
+						x: 0,
+						y: 0,
+						opacity: 1,
+						fill: 'url(#' + id + ')'
+					});
+					context.rootElement.appendChild(rect);
+				}
+
+				var rect2 = context.rootElement.querySelector('rect');
+
+				setSvgAttributes(rect2, {
+					width: du.width,
+					height: du.height
+				});
+
+				return;
+
+				var lg = createSvgElement('linearGradient');
+				setSvgAttribute(lg, 'id', id);
+				var stop1 = createSvgElement('stop');
+				setSvgAttributes(stop1, {
+					offset: '20%',
+					'stop-color': '#39F'
+				});
+
+				var stop2 = createSvgElement('stop');
+				setSvgAttributes(stop2, {
+					offset: '90%',
+					'stop-color': '#F3F'
+				});
+
+				//$defs.append(defs);
+				//				defs.appendChild(lg);
+				//				lg.appendChild(stop1);
+				//				lg.appendChild(stop2);
+
+
+				var rect = createSvgElement('rect');
+				setSvgAttributes(rect, {
+					x: 10,
+					y: 0,
+					width: du.width,
+					height: du.height,
+					opacity: 1,
+					fill: 'url(#' + id + ')'
+				});
+
+				context.rootElement.appendChild(rect);
+
+				return;
+				//graphics.clear();
 
 				var rect2 = graphics.drawRect();
 				rect2.setAttributes({
@@ -372,9 +510,12 @@
 					y: 0,
 					width: du.width,
 					height: du.height,
-					opacity: 1
+					opacity: 1,
+					fill: 'url(#mygrad)'
 				});
 				//				rect2.fill = du.isSelected ? 'red' : 'black';
+
+				return;
 
 				if (du.isFocused) {
 					rect2._element.style.fill = 'blue';
@@ -417,9 +558,14 @@
 			//			edge.endpointFrom.verticalAlign = 'bottom';
 			edge.endpointFrom.horizontalAlign = hAlign ? hAlign : 'left';
 
+			edge.endpointFrom.style = 'open';
+
+
 			edge.endpointTo.verticalAlign = 'nearestSide';
 			//			edge.endpointTo.verticalAlign = 'top';
 			edge.endpointTo.horizontalAlign = hAlign ? hAlign : 'left';
+
+			edge.endpointTo.style = 'triangle';
 
 			//			edge.endpointFrom.horizontalAlign = 'offset';
 			//			edge.endpointFrom.alignOffsetX = 15;
@@ -472,12 +618,18 @@
 		fixLayout: null,
 
 		__ready: function() {
+			this._stageController.isRenderRectClippedByWindow = true;
+			this._stageController.willUpdateOnWindowChange = true;
+
 			this._stageController.setup(stageInitParam);
+
+			this._stageController.setScaleRangeX(0.1, 30);
+			this._stageController.setScaleRangeY(0.1, 30);
 
 			//this._stageController.isWheelScrollDirectionReversed = false;
 
-			this._stageController.setScaleRangeX(0.2, 2);
-			this._stageController.setScaleRangeY(0.2, 2);
+			//			this._stageController.setScaleRangeX(0.2, 2);
+			//			this._stageController.setScaleRangeY(0.2, 2);
 
 			var startTime = new Date().getTime();
 
@@ -490,11 +642,15 @@
 			unscaledLayer.addDisplayUnit(usContainer);
 			var usDU = this._createDivDU(Rect.create(200, 200, 100, 40));
 			usContainer.addDisplayUnit(usDU);
+
+			//usContainer.overflow = 'hidden';
+
 			usDU.isResizable = true;
 			usDU.isDraggable = true;
 			usDU.extraData = {
 				text: 'in unscaled-rendering layer with ScrollBar'
 			};
+
 
 			var usDU2 = this._createDivDU(Rect.create(200, 300, 100, 40));
 			usContainer.addDisplayUnit(usDU2);
@@ -502,11 +658,14 @@
 			usDU2.isDraggable = true;
 
 			var sb = DUScrollBar.create();
-			sb.width = 16;
+			sb.width = 17;
 			sb.height = 100;
+			sb.overflow = 'visible';
 			sb.isDraggable = false;
 			sb.isResizable = false;
 			usContainer.addDisplayUnit(sb);
+
+			this._c3 = usContainer;
 
 			var container = DisplayUnitContainer.create();
 			//TODO コンテナのwidth, heightに関わらず、無限に出る
@@ -598,24 +757,24 @@
 
 			this._divDU = divDU;
 
-			var syncLayout = SynchronizeLayoutHook.create(false, true, false, true);
+			var syncLayout = SynchronizeHook.create(false, true, false, true);
 			syncLayout.setSource(usDU);
 			syncLayout.addTargets(sb);
 
 			/*
-			var followLayout = FollowPositionLayoutHook.create(40, 30);
+			var followLayout = FollowPositionHook.create(40, 30);
 			followLayout.setSource(divDU);
 			followLayout.addTargets(usDU);
 			*/
 
-			var displaySizeLayout = DisplaySizeLayoutHook.create();
-			displaySizeLayout.attachTo(sb, 16, null);
+			var displaySizeLayout = DisplaySizeHook.create();
+			displaySizeLayout.attachTo(sb, 17, null);
 
-			var visiblePositionLayout = VisiblePositionLayoutHook.create(null, null, 0, null);
+			var visiblePositionLayout = VisiblePositionHook.create(null, null, 0, null);
 			visiblePositionLayout.attachTo(sb);
 
 			/*
-			var hLineLayout = HorizontalLineLayoutHook.create('top');
+			var hLineLayout = HorizontalLineHook.create('top');
 			hLineLayout.attachTo([usDU, sb]);
 			 */
 
@@ -638,7 +797,7 @@
 			var container = DisplayUnitContainer.create();
 			container.setRect(Rect.create(300, 200, 200, 200));
 			this._stageController.addDisplayUnit(container);
-			container.isBoundaryScrollEnabled = true;
+			container.isBoundaryScrollEnabled = false;
 			var du1 = BasicDisplayUnit.create();
 
 			du1.isEditable = false;
@@ -649,10 +808,12 @@
 			du1.setRenderer(renderer);
 			container.addDisplayUnit(du1);
 
+			this._rdu1 = du1;
+
 			var c2 = DisplayUnitContainer.create();
 			c2.setRect(Rect.create(300, 500, 200, 200));
 			this._stageController.addDisplayUnit(c2);
-			this._c2 = c2;
+			this._c2 = container;
 
 			var du2 = BasicDisplayUnit.create();
 			du2.setRect(Rect.create(0, 0, 50, 50));
@@ -662,7 +823,10 @@
 			du2.setRenderer(renderer);
 			du2.isEditable = false;
 			container.addDisplayUnit(du2);
-			c2.overflow = 'hidden';
+			container.overflow = 'hidden';
+
+			//			var scrollRangeHook = ScrollRangeHook.create(0, 100, 0, 100);
+			//			scrollRangeHook.attachTo(container);
 
 			var e1 = this._createEdge(du1, du2);
 			this._stageController.addDisplayUnit(e1);
@@ -714,11 +878,14 @@
 		_c2: null,
 
 		'[name="scrollC2"] click': function(context) {
-			this._c2.scrollBy(-10, -10);
+			this._c3.scrollBy(10, 10);
 		},
 
 		'{rootElement} duClick': function(context) {
 			var du = context.evArg.displayUnit;
+
+			this._lastClickDU = du;
+
 			var duId = du.id;
 			//this.log.debug('duClick! id={0}', duId);
 
@@ -866,10 +1033,16 @@
 			//context.event.preventDefault();
 		},
 
+		'{rootElement} stageViewRegionChange': function() {
+			console.log('*** stageViewRegionChange ***');
+		},
+
 		'[name="scrollIntoView"] click': function() {
 			//var du = this._stageController.getDisplayUnitById('duid_4');
-			var du = this._units[4];
-			du.scrollIntoView('center');
+			var du = this._lastClickDU;
+			if (du) {
+				du.scrollIntoView('center');
+			}
 		},
 
 		'[name="scrollIntoView_glance"] click': function() {
@@ -1029,7 +1202,20 @@
 				"scrollBarMode": "always"
 			}, {
 				"type": "separator",
-				"height": 4
+				"height": 4,
+				isFixed: true
+			}, {
+				//"height": 300, // 末尾のcontentsのheightは省略可能
+				"visibleRangeY": {
+					"min": -1000,
+					"max": 2000
+				},
+				height: 200,
+				scrollBarMode: 'always'
+			}, {
+				"type": "separator",
+				"height": 4,
+				isFixed: false
 			}, {
 				//"height": 300, // 末尾のcontentsのheightは省略可能
 				"visibleRangeY": {
@@ -1153,6 +1339,11 @@
 
 		'input[name="setSize"] click': function() {
 			this._stageController.setSize(600, 600);
+
+			//			this._rdu1.zIndex = 1;
+			//
+			//			this._rdu1.zIndex = 0;
+
 
 			//			var that = this;
 			//			setTimeout(function(){
