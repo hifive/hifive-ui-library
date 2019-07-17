@@ -11660,19 +11660,15 @@
 
 		//小数表現を正規化して小数文字列を返す
 		function getNormalizedValueString(value) {
-			var intPart = Math.floor(value);
-			if (value === intPart) {
-				//TODO 十分誤差が小さい場合は整数化(あまり極端に整数部が大きくならない前提)
-				return '' + intPart;
-			}
 			var str = value.toString();
 			var dotIdx = str.indexOf('.');
 			if (dotIdx === -1) {
-				return '' + intPart;
+				return str;
 			}
+			var intstr = str.substring(0, dotIdx);
 			var decstr = str.slice(dotIdx + 1);
 			var len = decstr.length > FRACTION_PRECISION ? FRACTION_PRECISION : decstr.length;
-			var ret = '' + intPart + '.' + decstr.slice(0, len);
+			var ret = '' + intstr + '.' + decstr.slice(0, len);
 			return ret;
 		}
 
