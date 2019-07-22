@@ -6812,7 +6812,14 @@
 
 						_worldGlobalPositionCache: null,
 
-						_layoutHooks: null
+						_layoutHooks: null,
+
+						/**
+						 * @private overflowスタイルの値。"visible"、"hidden"、またはnullを指定可能。
+						 *          デフォルト値はnull。nullの場合、ルート要素に対するoverflowスタイルはセットせず、
+						 *          UserAgentのスタイルまたはCSSによる指定に任せる。
+						 */
+						_overflow: null
 					},
 					accessor: {
 						logicalId: {
@@ -6893,6 +6900,18 @@
 									return;
 								}
 								this._setLayoutValue(null, null, null, value);
+							}
+						},
+
+						overflow: {
+							get: function() {
+								return this._overflow;
+							},
+							set: function(value) {
+								if (this._overflow !== value) {
+									this._overflow = value;
+									this._setDirty(REASON_OVERFLOW_CHANGE);
+								}
 							}
 						},
 
@@ -7072,6 +7091,8 @@
 							this._zIndex = 0;
 							this._width = 0;
 							this._height = 0;
+
+							this._overflow = null;
 
 							this._worldGlobalPositionCache = null;
 
@@ -7532,6 +7553,10 @@
 									|| reason.isUnscaledSizeChanged) {
 								this._updateSize(element, stageView);
 							}
+
+							if (reason.isOverflowChanged || reason.isInitialRender) {
+								this._updateOverflow(element);
+							}
 						},
 
 						/**
@@ -7611,6 +7636,19 @@
 									width: width,
 									height: height
 								});
+							}
+						},
+
+						/**
+						 * @private
+						 * @param element ルート要素
+						 */
+						_updateOverflow: function(element) {
+							if (this.overflow == null) {
+								//overflowがnullの場合はルート要素のstyle属性でのoverflowの直接指定をやめる
+								element.style.overflow = '';
+							} else {
+								element.style.overflow = this.overflow;
 							}
 						},
 
@@ -9329,6 +9367,19 @@
 							}
 						},
 
+						/**
+						 * @override
+						 */
+						overflow: {
+							get: function() {
+								//Edgeは必ずoverflow==visible
+								return 'visible';
+							},
+							set: function(value) {
+								throw new Error('Edgeのoverflowは変更できません。');
+							}
+						},
+
 						endpointFrom: {
 							get: function() {
 								return this._endpointFrom;
@@ -10443,8 +10494,7 @@
 				_minScaleX: null,
 				_minScaleY: null,
 				_maxScaleX: null,
-				_maxScaleY: null,
-				_overflow: null
+				_maxScaleY: null
 			},
 
 			accessor: {
@@ -10484,18 +10534,6 @@
 							this._setScrollPosition(null, value);
 						}
 					}
-				},
-
-				overflow: {
-					get: function() {
-						return this._overflow;
-					},
-					set: function(value) {
-						if (this._overflow !== value) {
-							this._overflow = value;
-							this._setDirty(REASON_OVERFLOW_CHANGE);
-						}
-					}
 				}
 			},
 
@@ -10520,8 +10558,12 @@
 					this._scrollX = 0;
 					this._scrollY = 0;
 
-					//DUContainerのルート要素のoverflowはデフォルトで明示的にvisibleに設定する
-					//例えばBootstrapは、not(:root)なSVG要素のoverflowをhiddenに設定するため。
+					//DUContainerのルート要素のoverflowはデフォルトで明示的にvisibleに設定する。
+					//Bootstrapは、非ルートな全てのSVGタグに対してoverflow:hiddenを設定するようになっている（svg:not(:root)指定）。
+					//また、SVGのoverflow「属性」の指定は、CSSによるスタイル指定よりも優先順位が低い。
+					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
+					//属性ではなくスタイル指定によってoverflow:visibleを指定する。
+					//レイヤーについても同様。
 					this._overflow = 'visible';
 
 					this._belongingLayer = null;
@@ -10865,16 +10907,6 @@
 						root = this._renderDOMDiv(view, reason);
 					}
 
-					//Bootstrapは、非ルートな全てのSVGタグに対してoverflow:hiddenを設定するようになっている（svg:not(:root)指定）。
-					//また、SVGのoverflow「属性」の指定は、CSSによるスタイル指定よりも優先順位が低い。
-					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
-					//属性ではなくスタイル指定によってoverflow:visibleを指定する。
-					//レイヤーについても同様。
-					//since 2019/2/8: DUContainerではoverflowを指定可能になったので、
-					//固定でvisibleをセットするのではなくoverflowプロパティの値をセットする。
-					//なお、overflowのデフォルト値はvisible（コンストラクタでセットしている）
-					root.style.overflow = this.overflow;
-
 					root.setAttribute('data-h5-dyn-stage-role', 'container'); //TODO for debugging
 
 					if (!reason) {
@@ -10932,10 +10964,6 @@
 				 */
 				__updateDOM: function(view, element, reason) {
 					super_.__updateDOM.call(this, view, element, reason);
-
-					if (reason.isOverflowChanged || reason.isInitialRender) {
-						element.style.overflow = this.overflow;
-					}
 
 					if (reason.isScaleChanged || reason.isScrollPositionChanged
 							|| reason.isInitialRender) {
@@ -11687,7 +11715,8 @@
 				 */
 				overflow: {
 					get: function() {
-						return super_.overflow.get.call(this);
+						//レイヤーは必ずoverflow=visible
+						return 'visible';
 					},
 					set: function(value) {
 						throw new Error('Layerのoverflowは変更できません。');
@@ -11844,9 +11873,6 @@
 					if (this.type === 'svg') {
 						rootElement = createSvgElement('svg');
 
-						//レイヤーは直下の<g>をtransformしてスクロールを実現するので
-						//overflowはvisibleである必要がある
-
 						//rootGは<g>要素。transformを一括してかけるため、
 						//子要素は全てこの<g>の下に追加する。
 						var rootG = createSvgElement('g');
@@ -11859,6 +11885,7 @@
 					//また、SVGのoverflow「属性」の指定は、CSSによるスタイル指定よりも優先順位が低い。
 					//Bootstrapと組み合わせた場合にコンテナに対してoverflow:visibleが適用されるようにするため、
 					//typeがsvgの場合でも、属性ではなくスタイル指定によってoverflow:visibleを指定する。
+					//親クラスのupdateDOM()を呼び出していないので、ここで直接styleをセットする。
 					rootElement.style.overflow = 'visible';
 
 					//SVGのwidth, heightはSVGAttirubute
@@ -15628,9 +15655,10 @@
 						 * @returns {Boolean}
 						 */
 						_isInView: function(du, container) {
-							if (container.overflow !== 'hidden') {
-								//指定されたコンテナはoverflowがhiddenではないので
+							if (container.overflow === 'visible') {
+								//指定されたコンテナはoverflowが明示的にvisibleになっているので
 								//スクロールしなくても見えるので何もしなくてよい
+								//（overflowはnullの場合がある）
 								return true;
 							}
 
