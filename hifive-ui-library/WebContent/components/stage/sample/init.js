@@ -1408,6 +1408,13 @@
 			this.$find('#createEdgeMode').text('1つ目のDUを選択');
 		},
 
+		'[name="scaleScroll"] click': function() {
+			var pos = $(this._stageController.rootElement).offset();
+
+			this._stageController.setScale(2, 2, pos.left, pos.top);
+			this._stageController.scrollBy(0, 1);
+		},
+
 		_isCreatingEdge: false,
 
 		_ceDUFrom: null
