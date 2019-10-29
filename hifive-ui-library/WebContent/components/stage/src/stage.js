@@ -356,6 +356,16 @@
 	}
 
 	function getUniquelyMergedArray(array1, array2) {
+		//両方の配列がnullの場合空配列を返す。
+		//いずれかの引数の配列がnullの場合、もう片方の配列をシャローコピーして返す。
+		if (array1 == null && array2 == null) {
+			return [];
+		} else if (array1 == null) {
+			return array2.slice(0);
+		} else if (array2 == null) {
+			return array1.slice(0);
+		}
+
 		var ret = array1.slice(0);
 
 		array2.forEach(function(elem) {
@@ -1048,6 +1058,10 @@
 				 */
 				viewBoundaryScrollAmount: null,
 
+				//このセッションの開始がキャンセルされたかどうか。
+				//__onBeginningでfalseが返された場合にtrue。それ以外はfalse。
+				_isCanceled: null,
+
 				_hasBegun: null,
 				_isReleased: null,
 				_isCompleted: null,
@@ -1089,6 +1103,12 @@
 					},
 					set: function(value) {
 						this._isAsync = value;
+					}
+				},
+
+				isCanceled: {
+					get: function() {
+						return this._isCanceled;
 					}
 				},
 
@@ -1212,6 +1232,7 @@
 
 					this._tooltip = null;
 
+					this._isCanceled = false;
 					this._hasBegun = false;
 					this._isReleased = false;
 					this._isCompleted = false;
@@ -1285,10 +1306,11 @@
 
 					var isProceeded = this.__onBeginning(event);
 
-					//onBegin()が何も返さなかった場合はtrueとみなす
+					//onBeginning()が何も返さなかった場合はtrueとみなす
 					if (isProceeded === false) {
 						//onBegin()がfalseを返した場合、そのセッションはキャンセルされたとみなし、破棄処理を行う
 						//(end()やcancel()を呼ぶと子クラスでイベントが送出される可能性があるので、直接_dispose()に遷移する)
+						this._isCanceled = true;
 						this._dispose();
 						return false;
 					}
@@ -2215,6 +2237,12 @@
 						},
 
 						__onDispose: function() {
+							if (this.isCanceled) {
+								//onBeginning()でpreventDefault()されていた場合は
+								//DragDropSessionとしてのクリーンアップは不要なのですぐにリターン
+								return;
+							}
+
 							this._setDUDraggingFlag(false);
 
 							var targetDUs = this.getTargets();
@@ -2924,6 +2952,12 @@
 						 * @private
 						 */
 						__onDispose: function() {
+							if (this.isCanceled) {
+								//onBeginning()でpreventDefault()されていた場合は
+								//DUResizeSessionとしてのクリーンアップは不要なのですぐにリターン
+								return;
+							}
+
 							this._setResizingFlag(false);
 
 							this.stage.space.removeEventListener('displayUnitAdd',
