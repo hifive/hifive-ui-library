@@ -10520,6 +10520,9 @@
 				//境界スクロールを有効にするかどうか。デフォルト：false
 				isBoundaryScrollEnabled: null,
 
+				//ホイールによるスクロールに反応するかどうか。デフォルト：false
+				isWheelSensitive: null,
+
 				_children: null,
 				_scaleX: null,
 				_scaleY: null,
@@ -10605,6 +10608,8 @@
 					this._children = [];
 
 					this.isBoundaryScrollEnabled = false;
+
+					this.isWheelSensitive = false;
 				},
 
 				addDisplayUnit: function(du) {
@@ -11057,6 +11062,42 @@
 				},
 
 				/**
+				 * 引数の値だけ差分スクロールを試行する。戻り値として、実際にスクロールしたかのフラグと実際にスクロールした量を返す。
+				 * @private
+				 */
+				_attemptScrollBy: function(dx, dy) {
+					var isScrolled = false;
+					var diffX = 0;
+					var diffY = 0;
+
+					if (dx !== 0 || dy !== 0) {
+						var beforeSx = this._scrollX;
+						var beforeSy = this._scrollY;
+
+						this.scrollBy(dx, dy);
+
+						//スクロール処理を行った後、X,Yどちらかのスクロール位置が変わっているかを確認。
+						//スクロールに対してフックがかかっている場合にスクロールしない可能性があるため。
+						if (this._scrollX !== beforeSx) {
+							diffX = this._scrollX - beforeSx;
+							isScrolled = true;
+						}
+
+						if (this._scrollY !== beforeSy) {
+							diffY = this._scrollY - beforeSy;
+							isScrolled = true;
+						}
+					}
+
+					var ret = {
+						isScrolled: isScrolled,
+						dx: diffX,
+						dy: diffY
+					};
+					return ret;
+				},
+
+				/**
 				 * このDUコンテナで境界スクロールを試みる。
 				 *
 				 * @private
@@ -11106,34 +11147,7 @@
 						yVal = scrollIncrementY;
 					}
 
-					var isScrolled = false;
-					var diffX = 0;
-					var diffY = 0;
-
-					if (xVal !== 0 || yVal !== 0) {
-						var beforeSx = this._scrollX;
-						var beforeSy = this._scrollY;
-
-						this.scrollBy(xVal, yVal);
-
-						//スクロール処理を行った後、X,Yどちらかのスクロール位置が変わっているかを確認。
-						//スクロールに対してフックがかかっている場合にスクロールしない可能性があるため。
-						if (this._scrollX !== beforeSx) {
-							diffX = this._scrollX - beforeSx;
-							isScrolled = true;
-						}
-
-						if (this._scrollY !== beforeSy) {
-							diffY = this._scrollY - beforeSy;
-							isScrolled = true;
-						}
-					}
-
-					var ret = {
-						isScrolled: isScrolled,
-						dx: diffX,
-						dy: diffY
-					};
+					var ret = this._attemptScrollBy(xVal, yVal);
 					return ret;
 				},
 
@@ -18025,6 +18039,8 @@
 	var EVENT_DU_KEY_PRESS = 'duKeyPress';
 	var EVENT_DU_KEY_UP = 'duKeyUp';
 
+	var EVENT_DU_SCROLL = 'duScroll';
+
 	var EVENT_VIEW_STRUCTURE_CHANGE = 'stageViewStructureChange';
 
 	/**
@@ -18409,9 +18425,14 @@
 				that._onDUCascadeRemoving(event);
 			};
 
+			this._duDirtyListener = function(event) {
+				that._onDUDirty(event);
+			};
+
 			var space = DisplayUnitSpace.create();
 			this.space = space;
 			space.addEventListener('displayUnitCascadeRemoving', this._duCascadeRemovingListener);
+			space.addEventListener('displayUnitDirty', this._duDirtyListener);
 
 			this._viewCollection = GridStageViewCollection.create(this);
 
@@ -18945,7 +18966,7 @@
 		 * @param globalX
 		 * @param globalY
 		 */
-		_getForemostDisplayUnitContainerAt: function(gX, gY) {
+		_getForemostDisplayUnitContainerAt: function(gX, gY, isWheelSensitiveOnly) {
 			var layers = this.space.layers;
 
 			if (layers.length === 0) {
@@ -18953,10 +18974,14 @@
 				return null;
 			}
 
+			//isWheelSensitiveOnlyはデフォルト＝false（全てのDUコンテナが対象）
+			//明示的にtrueが指定された場合のみ、WheelSensitiveなDUコンテナだけを対象にする
+			var wheelSensitiveOnly = isWheelSensitiveOnly === true ? true : false;
+
 			//レイヤーの配列インデックスが後ろの方が手前に表示されるレイヤーなので降順ループ
 			for (var i = layers.length - 1; i >= 0; i--) {
 				var layer = layers[i];
-				var foremostContainer = getForemostDUContainer(layer, gX, gY);
+				var foremostContainer = getForemostDUContainer(layer, gX, gY, wheelSensitiveOnly);
 
 				if (foremostContainer != null && foremostContainer !== layer) {
 					return foremostContainer;
@@ -18970,7 +18995,7 @@
 
 			/* ---- 以下は再帰用関数 ---- */
 
-			function getForemostDUContainer(duContainer, globalX, globalY) {
+			function getForemostDUContainer(duContainer, globalX, globalY, isWheelSensitiveOnly) {
 				//DUコンテナのzIndexが大きい順、かつ、zIndexが同じ場合はchildrenの配列内のインデックスが大きい（より後ろにある）順で
 				//DUコンテナが手前にある
 
@@ -19014,7 +19039,10 @@
 				//自分の子要素にDUコンテナがあったが、どのコンテナも指定された座標を含んでいなかった場合、
 				//自分が指定座標を含んでいれば自分がForemostなDUコンテナ。含んでいない場合はnull
 				if (duContainer._includesPointGlobal(globalX, globalY)) {
-					return duContainer;
+					if(!isWheelSensitiveOnly || duContainer.isWheelSensitive) {
+						//全てのDUコンテナを対象に探しているか、このDUコンテナがWheelSensitiveであればこれが該当のコンテナ
+						return duContainer;
+					}
 				}
 				return null;
 			}
@@ -19969,6 +19997,23 @@
 			}
 		},
 
+		/**
+		 * @private
+		 */
+		_duDirtyListener: null,
+
+		/**
+		 * @private
+		 */
+		_onDUDirty: function(event) {
+			if(event.reason.isScrollPositionChanged) {
+				var evArg = {
+					displayUnit: event.displayUnit
+				};
+				this.trigger(EVENT_DU_SCROLL, evArg);
+			}
+		},
+
 		_planes: null,
 
 		addPlane: function(plane) {
@@ -20429,6 +20474,31 @@
 				wheelDirection *= -1;
 			}
 			var dy = 40 * wheelDirection;
+
+			var viewPagePos = view.getPagePosition();
+			//ホイールしたときのマウスカーソルのグローバルワールド座標値を計算
+			var wPos = view._viewport.getWorldPositionFromDisplayOffset(wheelEvent.pageX - viewPagePos.x,
+					wheelEvent.pageY - viewPagePos.y);
+
+			//WheelSensitiveなDUコンテナのみを対象に検索する
+			var foremostContainer = this._getForemostDisplayUnitContainerAt(wPos.x, wPos.y, true);
+			if(foremostContainer) {
+				for(var container = foremostContainer; !Layer.isClassOf(container) ; container = container.parentDisplayUnit) {
+					if(!container.isWheelSensitive) {
+						//WheelSensitiveでないDUコンテナは対象外
+						continue;
+					}
+
+					var scrollResult = container._attemptScrollBy(0, dy);
+					if(scrollResult.isScrolled) {
+						return;
+					}
+				}
+			}
+
+			//どの階層にもWheel-sensitiveなDUコンテナがなかった、もしくは
+			//現在のカーソル位置には（レイヤーを除く）DUコンテナが存在しなかった。
+			//個の場合はビュー全体をスクロールする
 
 			view.scrollBy(0, dy);
 		},
