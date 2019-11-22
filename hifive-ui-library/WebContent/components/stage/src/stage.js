@@ -1859,6 +1859,12 @@
 						//targetContainerは境界スクロールが発生したコンテナ、deltaはディスプレイ座標系での移動量
 						containerScrollCallbackFunction: null,
 
+						//コンテナに対するスクロールを試行する境界のサイズ。
+						//デフォルト: null。nullの場合はデフォルトのサイズが使われる。
+						//値をセットする場合、{ top: right: bottom: left: } のようなプロパティを持つオブジェクトをセットする。
+						//値を指定していない方向の境界サイズは「ゼロ」とみなす。
+						containerScrollBoundarySize: null,
+
 						//ドラッグ時に選択されなかった（非代表の）ProxyDUを含めた、ステージ上の全てのDU
 						_onStageTargets: null,
 
@@ -1904,6 +1910,8 @@
 						 */
 						constructor: function(stage, initialState) {
 							super_.constructor.call(this, stage, initialState);
+
+							this.containerScrollBoundarySize = null;
 
 							this._containerBoundaryScrollTimerId = null;
 							this._foremostDUContainerCache = null;
@@ -2370,15 +2378,34 @@
 								var scrollIncrementWorldY = viewport
 										.toWorldY(CONTAINER_BOUNDARY_SCROLL_INCREMENT);
 
-								var boundaryX = viewport.toWorldX(CONTAINER_BOUNDARY_WIDTH);
-								var boundaryY = viewport.toWorldY(CONTAINER_BOUNDARY_WIDTH);
+								var defaultBoundaryX = viewport.toWorldX(CONTAINER_BOUNDARY_WIDTH);
+								var defaultBoundaryY = viewport.toWorldY(CONTAINER_BOUNDARY_WIDTH);
+
 
 								var targetContainer = foremostDUContainer;
 								var shouldRetry = true;
+
 								do {
+									//境界スクロールの境界サイズの優先順位：このDragSessionのSize > DUコンテナに設定されているSize > デフォルトサイズ
+									//値が設定されていない場合、順にサイズを探して決定する
+									var boundarySize = this.containerScrollBoundarySize;
+									if(!boundarySize) {
+										if(targetContainer.scrollBoundarySize) {
+											boundarySize = targetContainer.scrollBoundarySize;
+										} else {
+											//境界サイズが設定されていない場合は上下左右すべてにデフォルト値を使用
+											boundarySize = {
+												top: defaultBoundaryY,
+												right: defaultBoundaryX,
+												bottom: defaultBoundaryY,
+												left: defaultBoundaryX
+											};
+										}
+									}
+
 									containerScrollResult = targetContainer._attemptBoundaryScroll(
 											this.lastGlobalPosition.x, this.lastGlobalPosition.y,
-											boundaryX, boundaryY, scrollIncrementWorldX,
+											boundarySize, scrollIncrementWorldX,
 											scrollIncrementWorldY);
 
 									if (containerScrollResult.isScrolled) {
@@ -10520,6 +10547,8 @@
 				//境界スクロールを有効にするかどうか。デフォルト：false
 				isBoundaryScrollEnabled: null,
 
+				scrollBoundarySize: null,
+
 				//ホイールによるスクロールに反応するかどうか。デフォルト：false
 				isWheelSensitive: null,
 
@@ -10608,6 +10637,7 @@
 					this._children = [];
 
 					this.isBoundaryScrollEnabled = false;
+					this.scrollBoundarySize = null;
 
 					this.isWheelSensitive = false;
 				},
@@ -11063,6 +11093,7 @@
 
 				/**
 				 * 引数の値だけ差分スクロールを試行する。戻り値として、実際にスクロールしたかのフラグと実際にスクロールした量を返す。
+				 *
 				 * @private
 				 */
 				_attemptScrollBy: function(dx, dy) {
@@ -11105,7 +11136,7 @@
 				 * @param globalY
 				 * @returns {Boolean}
 				 */
-				_attemptBoundaryScroll: function(globalX, globalY, boundaryWidth, boundaryHeight,
+				_attemptBoundaryScroll: function(globalX, globalY, boundarySize,
 						scrollIncrementX, scrollIncrementY) {
 					if (!this.isBoundaryScrollEnabled) {
 						//境界スクロールが無効化されている、または指定された座標がこのコンテナの内部でない場合はスクロールしない
@@ -11116,11 +11147,17 @@
 					var boundingRect = Rect.create(globalPos.x, globalPos.y, this.width,
 							this.height);
 					//TODO サイズが変わっていない場合はキャッシュすべき
+					//boundarySizeでサイズが設定されていない方向は境界サイズ＝ゼロとみなす
+					var bTop = isNaN(boundarySize.top) ? 0 : boundarySize.top;
+					var bRight = isNaN(boundarySize.right) ? 0 : boundarySize.right;
+					var bBottom = isNaN(boundarySize.bottom) ? 0 : boundarySize.bottom;
+					var bLeft = isNaN(boundarySize.left) ? 0 : boundarySize.left;
+
 					var boundary = {
-						top: boundaryHeight,
-						right: boundaryWidth,
-						bottom: boundaryHeight,
-						left: boundaryWidth
+						top: bTop,
+						right: bRight,
+						bottom: bBottom,
+						left: bLeft
 					};
 					var borderedNineSlicePosition = boundingRect.getNineSlicePosition(globalX,
 							globalY, boundary);
